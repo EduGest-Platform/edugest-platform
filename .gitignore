@@ -1,0 +1,33 @@
+node_modules/
+dist/
+build/
+.cache/
+.env*
+# Safe templates stay versioned; real .env files never do.
+!.env.example
+.vite/
+vite.config.*.timestamp-*
+*.tsbuildinfo
+*-debug.log*
+logs/
+*.log
+.claude-replay.*
+.tmp-*
+/.figma/design-context/
+
+# Platform-managed agentplat state, not project source. In the
+# client-initiated single-repo workspace layout (make's `Path: "."` spec) the
+# repo root IS the workspace root, so these land inside this repo rather than
+# beside it.
+/.plugins/
+/.opencode-skills/
+
+# Python API
+api/.venv/
+.venv/
+# Stray virtualenv accidentally created inside the frontend source tree
+src/gistar/env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/

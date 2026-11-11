@@ -1,0 +1,2101 @@
+{
+  "meta": {
+    "producto": "Gistar",
+    "version_esquema": 1,
+    "fecha_simulada": "2026-11-02",
+    "tipo": "DEMO_SINTETICA",
+    "prohibido_conectar_servicios_reales": true,
+    "sin_personas_reales": true,
+    "nota": "Los criterios, fechas, grupos, nombres y resultados son ficticios. El equipo validará requisitos con Somos F5."
+  },
+  "usuarios_demo": [
+    {
+      "id": "USR-ADM",
+      "rol": "admin",
+      "nombre": "Administración",
+      "entidad_demo_id": null
+    },
+    {
+      "id": "USR-ASP",
+      "rol": "aspirante",
+      "nombre": "Aspirante demo",
+      "entidad_demo_id": "A-001"
+    },
+    {
+      "id": "USR-SEL",
+      "rol": "seleccion",
+      "nombre": "Colaborador de selección",
+      "entidad_demo_id": null
+    },
+    {
+      "id": "USR-DOC",
+      "rol": "docente",
+      "nombre": "Docente demo",
+      "entidad_demo_id": null
+    },
+    {
+      "id": "USR-FUND",
+      "rol": "fundacion",
+      "nombre": "Personal de la fundación",
+      "entidad_demo_id": null
+    },
+    {
+      "id": "USR-COD",
+      "rol": "coder",
+      "nombre": "Coder demo",
+      "entidad_demo_id": "E-001"
+    },
+    {
+      "id": "USR-COORD",
+      "rol": "coordinacion",
+      "nombre": "Coordinación demo",
+      "entidad_demo_id": null
+    }
+  ],
+  "programas": [
+    {
+      "id": "P-IA",
+      "nombre": "Desarrollo IA Aplicada",
+      "descripcion": "Bootcamp de IA y desarrollo con proyectos",
+      "cohorte_principal": "COH-IA"
+    },
+    {
+      "id": "P-DATA",
+      "nombre": "Data y Automatización",
+      "descripcion": "Análisis de datos y automatizaciones",
+      "cohorte_principal": "COH-DATA"
+    }
+  ],
+  "cohortes": [
+    {
+      "id": "COH-IA",
+      "programa_id": "P-IA",
+      "nombre": "IA aplicada · otoño 2026",
+      "inicio": "2026-09-14",
+      "fin": "2026-12-18",
+      "docente_responsable": "USR-DOC"
+    },
+    {
+      "id": "COH-DATA",
+      "programa_id": "P-DATA",
+      "nombre": "Data y automatización · otoño 2026",
+      "inicio": "2026-09-21",
+      "fin": "2026-12-18",
+      "docente_responsable": "USR-DOC"
+    }
+  ],
+  "competencias": [
+    {
+      "id": "IA-01",
+      "programa_id": "P-IA",
+      "codigo": "C1",
+      "nombre": "Python",
+      "niveles": {
+        "1": "Reconoce tipos, variables y flujo básico",
+        "2": "Crea funciones, valida entradas y documenta decisiones",
+        "3": "Diseña y prueba soluciones modulares"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-02",
+      "programa_id": "P-IA",
+      "codigo": "C2",
+      "nombre": "Datos y calidad",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-03",
+      "programa_id": "P-IA",
+      "codigo": "C3",
+      "nombre": "Git y GitHub",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-04",
+      "programa_id": "P-IA",
+      "codigo": "C4",
+      "nombre": "Lógica algorítmica",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-05",
+      "programa_id": "P-IA",
+      "codigo": "C5",
+      "nombre": "Fundamentos IA",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-06",
+      "programa_id": "P-IA",
+      "codigo": "C6",
+      "nombre": "Procesamiento de lenguaje",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-07",
+      "programa_id": "P-IA",
+      "codigo": "C7",
+      "nombre": "Colaboración",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-08",
+      "programa_id": "P-IA",
+      "codigo": "C8",
+      "nombre": "Ética de IA",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-09",
+      "programa_id": "P-IA",
+      "codigo": "C9",
+      "nombre": "Presentación de proyectos",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "IA-10",
+      "programa_id": "P-IA",
+      "codigo": "C10",
+      "nombre": "Despliegue",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-01",
+      "programa_id": "P-DATA",
+      "codigo": "C1",
+      "nombre": "Fundamentos de datos",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-02",
+      "programa_id": "P-DATA",
+      "codigo": "C2",
+      "nombre": "SQL",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-03",
+      "programa_id": "P-DATA",
+      "codigo": "C3",
+      "nombre": "ETL",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-04",
+      "programa_id": "P-DATA",
+      "codigo": "C4",
+      "nombre": "Visualización",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-05",
+      "programa_id": "P-DATA",
+      "codigo": "C5",
+      "nombre": "Automatización",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-06",
+      "programa_id": "P-DATA",
+      "codigo": "C6",
+      "nombre": "Control de versiones",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-07",
+      "programa_id": "P-DATA",
+      "codigo": "C7",
+      "nombre": "Calidad de datos",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    },
+    {
+      "id": "DAT-08",
+      "programa_id": "P-DATA",
+      "codigo": "C8",
+      "nombre": "Análisis exploratorio",
+      "niveles": {
+        "1": "Identifica conceptos básicos",
+        "2": "Aplica con autonomía en una tarea guiada",
+        "3": "Justifica decisiones y transfiere a un proyecto"
+      },
+      "activo": true
+    }
+  ],
+  "coders": [
+    {
+      "id": "E-001",
+      "nombre_ficticio": "Alma Vega",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-01@example.test"
+    },
+    {
+      "id": "E-002",
+      "nombre_ficticio": "Nora Gil",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-02@example.test"
+    },
+    {
+      "id": "E-003",
+      "nombre_ficticio": "Leo Vidal",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-03@example.test"
+    },
+    {
+      "id": "E-004",
+      "nombre_ficticio": "Inés Soto",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-04@example.test"
+    },
+    {
+      "id": "E-005",
+      "nombre_ficticio": "Rui Soler",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-05@example.test"
+    },
+    {
+      "id": "E-006",
+      "nombre_ficticio": "Mara Cruz",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-06@example.test"
+    },
+    {
+      "id": "E-007",
+      "nombre_ficticio": "Teo Luna",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-07@example.test"
+    },
+    {
+      "id": "E-008",
+      "nombre_ficticio": "Eva Arias",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-08@example.test"
+    },
+    {
+      "id": "E-009",
+      "nombre_ficticio": "Noa Prado",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-09@example.test"
+    },
+    {
+      "id": "E-010",
+      "nombre_ficticio": "Nil Costa",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-10@example.test"
+    },
+    {
+      "id": "E-011",
+      "nombre_ficticio": "Iris Serra",
+      "cohorte_id": "COH-IA",
+      "estado": "activo",
+      "email_demo": "coder-11@example.test"
+    },
+    {
+      "id": "E-012",
+      "nombre_ficticio": "Ada Mena",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-12@example.test"
+    },
+    {
+      "id": "E-013",
+      "nombre_ficticio": "Sol Fuentes",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-13@example.test"
+    },
+    {
+      "id": "E-014",
+      "nombre_ficticio": "Hugo Lira",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-14@example.test"
+    },
+    {
+      "id": "E-015",
+      "nombre_ficticio": "Lía Canto",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-15@example.test"
+    },
+    {
+      "id": "E-016",
+      "nombre_ficticio": "Tao Ríos",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-16@example.test"
+    },
+    {
+      "id": "E-017",
+      "nombre_ficticio": "Paz Blanco",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-17@example.test"
+    },
+    {
+      "id": "E-018",
+      "nombre_ficticio": "Mia Vela",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-18@example.test"
+    },
+    {
+      "id": "E-019",
+      "nombre_ficticio": "Alex Serra",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-19@example.test"
+    },
+    {
+      "id": "E-020",
+      "nombre_ficticio": "Uma Ros",
+      "cohorte_id": "COH-DATA",
+      "estado": "activo",
+      "email_demo": "coder-20@example.test"
+    }
+  ],
+  "candidaturas": [
+    {
+      "id": "A-001",
+      "nombre_ficticio": "Alex Roca",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-01@example.test",
+      "motivacion": "Quiero aprender y desarrollar proyectos reales de tecnología.",
+      "estado": "borrador",
+      "asistencia_jornada": "pendiente",
+      "ejercicio_acceso": "pendiente",
+      "taller_recomendado": "pendiente",
+      "entrevista": "pendiente",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-002",
+      "nombre_ficticio": "Vera Mora",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-02@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "enviada",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "asistio",
+      "entrevista": "pendiente",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-003",
+      "nombre_ficticio": "Ari Vega",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-03@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "requisitos_en_revision",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "no_consta",
+      "entrevista": "pendiente",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-004",
+      "nombre_ficticio": "Sara Luz",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-04@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "convocada",
+      "asistencia_jornada": "pendiente",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "no_consta",
+      "entrevista": "pendiente",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-005",
+      "nombre_ficticio": "Noa Marín",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-05@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "evaluacion_en_curso",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "pendiente",
+      "taller_recomendado": "asistio",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": true
+    },
+    {
+      "id": "A-006",
+      "nombre_ficticio": "Pau Vidal",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-06@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "pendiente_decision_humana",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "no_consta",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-007",
+      "nombre_ficticio": "Héctor Sierra",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-07@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "admitida",
+      "asistencia_jornada": "pendiente",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "no_consta",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": {
+        "actor": "USR-DOC",
+        "propuesta": "admitida",
+        "motivo": "Evaluación humana de demo"
+      },
+      "validacion_fundacion": {
+        "actor": "USR-FUND",
+        "propuesta": "admitida",
+        "motivo": "Evaluación humana conjunta de demo"
+      },
+      "decision_final": {
+        "resultado": "admitida",
+        "responsable": "equipo_humano",
+        "es_simulada": true
+      },
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-008",
+      "nombre_ficticio": "Ona Casas",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-08@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "lista_espera",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "asistio",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": {
+        "actor": "USR-DOC",
+        "propuesta": "lista_espera",
+        "motivo": "Evaluación humana de demo"
+      },
+      "validacion_fundacion": {
+        "actor": "USR-FUND",
+        "propuesta": "lista_espera",
+        "motivo": "Evaluación humana conjunta de demo"
+      },
+      "decision_final": {
+        "resultado": "lista_espera",
+        "responsable": "equipo_humano",
+        "es_simulada": true
+      },
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-009",
+      "nombre_ficticio": "Eva Montes",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-09@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "no_admitida",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "pendiente",
+      "taller_recomendado": "no_consta",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": {
+        "actor": "USR-DOC",
+        "propuesta": "no_admitida",
+        "motivo": "Evaluación humana de demo"
+      },
+      "validacion_fundacion": {
+        "actor": "USR-FUND",
+        "propuesta": "no_admitida",
+        "motivo": "Evaluación humana conjunta de demo"
+      },
+      "decision_final": {
+        "resultado": "no_admitida",
+        "responsable": "equipo_humano",
+        "es_simulada": true
+      },
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-010",
+      "nombre_ficticio": "Leo Pons",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-10@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "borrador",
+      "asistencia_jornada": "pendiente",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "no_consta",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-011",
+      "nombre_ficticio": "Lara Vega",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-11@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "enviada",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "asistio",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-012",
+      "nombre_ficticio": "Tina Costa",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-12@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "requisitos_en_revision",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "no_consta",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-013",
+      "nombre_ficticio": "Mara Alba",
+      "programa_id": "P-IA",
+      "email_demo": "aspirante-13@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "convocada",
+      "asistencia_jornada": "pendiente",
+      "ejercicio_acceso": "pendiente",
+      "taller_recomendado": "no_consta",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    },
+    {
+      "id": "A-014",
+      "nombre_ficticio": "Elio Cano",
+      "programa_id": "P-DATA",
+      "email_demo": "aspirante-14@example.test",
+      "motivacion": "Interés en la formación tecnológica.",
+      "estado": "evaluacion_en_curso",
+      "asistencia_jornada": "asistio",
+      "ejercicio_acceso": "entregado",
+      "taller_recomendado": "asistio",
+      "entrevista": "realizada",
+      "recomendacion_preliminar": null,
+      "validacion_docente": null,
+      "validacion_fundacion": null,
+      "decision_final": null,
+      "requiere_contacto_confidencial": false
+    }
+  ],
+  "formulario_demo": {
+    "programa_id": "P-IA",
+    "campos": [
+      {
+        "id": "nombre_ficticio",
+        "label": "Nombre de demostración",
+        "tipo": "texto",
+        "requerido": true
+      },
+      {
+        "id": "email_demo",
+        "label": "Correo de demostración",
+        "tipo": "email",
+        "requerido": true
+      },
+      {
+        "id": "motivacion",
+        "label": "Motivación",
+        "tipo": "texto_largo",
+        "requerido": true
+      },
+      {
+        "id": "disponibilidad",
+        "label": "Disponibilidad",
+        "tipo": "opciones",
+        "opciones": [
+          "Mañana",
+          "Tarde",
+          "Flexible"
+        ],
+        "requerido": true
+      },
+      {
+        "id": "acepta_info_demo",
+        "label": "He leído que este entorno usa datos sintéticos",
+        "tipo": "casilla",
+        "requerido": true
+      }
+    ]
+  },
+  "evaluaciones_competencia": [
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-02",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-03",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-04",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-05",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-06",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-07",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-08",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-09",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-001",
+      "competencia_id": "IA-10",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-01",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-02",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-03",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-04",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-05",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-06",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-07",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-08",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-09",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-002",
+      "competencia_id": "IA-10",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-01",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-02",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-03",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-04",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-05",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-06",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-07",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-08",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-09",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-003",
+      "competencia_id": "IA-10",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-02",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-03",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-04",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-05",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-06",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-07",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-08",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-09",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-004",
+      "competencia_id": "IA-10",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-01",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-02",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-03",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-04",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-05",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-06",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-07",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-08",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-09",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-005",
+      "competencia_id": "IA-10",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-01",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-02",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-03",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-04",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-05",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-06",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-07",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-08",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-09",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-006",
+      "competencia_id": "IA-10",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-02",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-03",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-04",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-05",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-06",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-07",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-08",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-09",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-007",
+      "competencia_id": "IA-10",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-01",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-02",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-03",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-04",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-05",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-06",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-07",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-08",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-09",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-008",
+      "competencia_id": "IA-10",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-01",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-02",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-03",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-04",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-05",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-06",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-07",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-08",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-09",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-009",
+      "competencia_id": "IA-10",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-02",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-03",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-04",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-05",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-06",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-07",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-08",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-09",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-010",
+      "competencia_id": "IA-10",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-01",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-02",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-03",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-04",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-05",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-06",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-07",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-08",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-09",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-011",
+      "competencia_id": "IA-10",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-04",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-012",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-03",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-013",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-02",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-014",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-01",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-015",
+      "competencia_id": "DAT-08",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-07",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-016",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-06",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-017",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-05",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-018",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-03",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-04",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-019",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-01",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-02",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-03",
+      "nivel_validado": null
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-04",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-05",
+      "nivel_validado": 3
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-06",
+      "nivel_validado": 1
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-07",
+      "nivel_validado": 2
+    },
+    {
+      "coder_id": "E-020",
+      "competencia_id": "DAT-08",
+      "nivel_validado": 3
+    }
+  ],
+  "asistencias_resumen": [
+    {
+      "coder_id": "E-001",
+      "sesiones_totales": 12,
+      "presencias": 11,
+      "faltas": 1
+    },
+    {
+      "coder_id": "E-002",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-003",
+      "sesiones_totales": 12,
+      "presencias": 10,
+      "faltas": 2
+    },
+    {
+      "coder_id": "E-004",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-005",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-006",
+      "sesiones_totales": 12,
+      "presencias": 11,
+      "faltas": 1
+    },
+    {
+      "coder_id": "E-007",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-008",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-009",
+      "sesiones_totales": 12,
+      "presencias": 8,
+      "faltas": 4
+    },
+    {
+      "coder_id": "E-010",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-011",
+      "sesiones_totales": 12,
+      "presencias": 11,
+      "faltas": 1
+    },
+    {
+      "coder_id": "E-012",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-013",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-014",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-015",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-016",
+      "sesiones_totales": 12,
+      "presencias": 11,
+      "faltas": 1
+    },
+    {
+      "coder_id": "E-017",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-018",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-019",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    },
+    {
+      "coder_id": "E-020",
+      "sesiones_totales": 12,
+      "presencias": 12,
+      "faltas": 0
+    }
+  ],
+  "tareas": [
+    {
+      "id": "T-IA-01",
+      "programa_id": "P-IA",
+      "nombre": "Proyecto integrador IA",
+      "fecha_entrega": "2026-11-13",
+      "rubrica": [
+        "solución",
+        "pruebas",
+        "documentación"
+      ]
+    },
+    {
+      "id": "T-DAT-01",
+      "programa_id": "P-DATA",
+      "nombre": "Dashboard y automatización",
+      "fecha_entrega": "2026-11-20",
+      "rubrica": [
+        "datos",
+        "visualización",
+        "explicación"
+      ]
+    }
+  ],
+  "entregas": [
+    {
+      "id": "ENT-001",
+      "coder_id": "E-001",
+      "tarea_id": "T-IA-01",
+      "estado": "borrador",
+      "repositorio_ficticio": "https://example.test/repos/coder-01",
+      "feedback_borrador": "Buen trabajo inicial; revisar pruebas y documentación.",
+      "feedback_publicado": null
+    },
+    {
+      "id": "ENT-002",
+      "coder_id": "E-002",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-02",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-003",
+      "coder_id": "E-003",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-03",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-004",
+      "coder_id": "E-004",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-04",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-005",
+      "coder_id": "E-005",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-05",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-006",
+      "coder_id": "E-006",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-06",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-007",
+      "coder_id": "E-007",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-07",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-008",
+      "coder_id": "E-008",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-08",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-009",
+      "coder_id": "E-009",
+      "tarea_id": "T-IA-01",
+      "estado": "fuera_de_plazo",
+      "repositorio_ficticio": "https://example.test/repos/coder-09",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-010",
+      "coder_id": "E-010",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-10",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-011",
+      "coder_id": "E-011",
+      "tarea_id": "T-IA-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-11",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-012",
+      "coder_id": "E-012",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-12",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-013",
+      "coder_id": "E-013",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-13",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-014",
+      "coder_id": "E-014",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-14",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-015",
+      "coder_id": "E-015",
+      "tarea_id": "T-DAT-01",
+      "estado": "fuera_de_plazo",
+      "repositorio_ficticio": "https://example.test/repos/coder-15",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-016",
+      "coder_id": "E-016",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-16",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-017",
+      "coder_id": "E-017",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-17",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-018",
+      "coder_id": "E-018",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-18",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-019",
+      "coder_id": "E-019",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-19",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    },
+    {
+      "id": "ENT-020",
+      "coder_id": "E-020",
+      "tarea_id": "T-DAT-01",
+      "estado": "enviada",
+      "repositorio_ficticio": "https://example.test/repos/coder-20",
+      "feedback_borrador": null,
+      "feedback_publicado": "Revisión docente sintética registrada."
+    }
+  ],
+  "alertas_simuladas": [
+    {
+      "id": "AL-008",
+      "coder_id": "E-009",
+      "estado": "por_revisar",
+      "senales": [
+        "4 faltas de 12 sesiones",
+        "entrega fuera de plazo"
+      ],
+      "plan_apoyo": null,
+      "es_prediccion_real": false
+    }
+  ],
+  "planes_apoyo": [],
+  "documentos": [
+    {
+      "id": "DOC-01",
+      "programa_id": "P-IA",
+      "titulo": "Roadmap IA aplicada",
+      "secciones": [
+        {
+          "id": "S01",
+          "titulo": "Proyecto de módulo 2",
+          "contenido": "Entregar memoria breve, enlace de repositorio ficticio y reflexión sobre decisiones."
+        },
+        {
+          "id": "S02",
+          "titulo": "Calendario",
+          "contenido": "Revisión de portfolio el 19 de noviembre de 2026."
+        }
+      ]
+    },
+    {
+      "id": "DOC-02",
+      "programa_id": "P-IA",
+      "titulo": "Rúbrica Python",
+      "secciones": [
+        {
+          "id": "S01",
+          "titulo": "Nivel 2",
+          "contenido": "Funciones reutilizables, validación de entradas y documentación de decisiones."
+        }
+      ]
+    },
+    {
+      "id": "DOC-03",
+      "programa_id": "P-DATA",
+      "titulo": "Brief Data y Automatización",
+      "secciones": [
+        {
+          "id": "S01",
+          "titulo": "Entrega",
+          "contenido": "Presentar dashboard, datos sintéticos y controles de calidad."
+        }
+      ]
+    }
+  ],
+  "respuestas_rag_mock": [
+    {
+      "clave": "entrega_modulo_2",
+      "pregunta": "¿Qué se entrega en el proyecto del módulo 2?",
+      "respuesta": "Memoria breve, repositorio ficticio y reflexión.",
+      "doc_id": "DOC-01",
+      "seccion_id": "S01"
+    },
+    {
+      "clave": "python_nivel_2",
+      "pregunta": "¿Qué tengo que demostrar para alcanzar el nivel 2 de Python?",
+      "respuesta": "Funciones reutilizables, validación de entradas y documentación de decisiones.",
+      "doc_id": "DOC-02",
+      "seccion_id": "S01"
+    },
+    {
+      "clave": "revision_portfolio",
+      "pregunta": "¿Cuándo es la próxima revisión de portfolio?",
+      "respuesta": "El 19 de noviembre de 2026.",
+      "doc_id": "DOC-01",
+      "seccion_id": "S02"
+    }
+  ],
+  "bitacora_demo": [
+    {
+      "id": "EV-001",
+      "fecha_simulada": "2026-10-27",
+      "actor_rol": "docente",
+      "entidad": "E-001",
+      "accion": "registro_nivel",
+      "detalle": "Python nivel 1"
+    }
+  ],
+  "escenarios_prueba": {
+    "candidatura": "A-001",
+    "coder": "E-001",
+    "competencia_python": "IA-01",
+    "alerta_al_registrar_nueva_falta": "E-003",
+    "candidatura_revision_inicial": "A-006",
+    "programa_para_nueva_competencia": "P-IA"
+  }
+}
