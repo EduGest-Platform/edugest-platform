@@ -1,0 +1,1506 @@
+{
+  "components": {
+    "schemas": {
+      "ApplicationCreate": {
+        "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
+        "properties": {
+          "acepta_datos_sinteticos": {
+            "const": true,
+            "description": "Confirmación obligatoria: el entorno solo usa datos sintéticos",
+            "title": "Acepta Datos Sinteticos",
+            "type": "boolean"
+          },
+          "call_id": {
+            "maxLength": 30,
+            "title": "Call Id",
+            "type": "string"
+          },
+          "disponibilidad": {
+            "enum": [
+              "Mañana",
+              "Tarde",
+              "Flexible"
+            ],
+            "title": "Disponibilidad",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "motivacion": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Motivacion",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "call_id",
+          "nombre",
+          "email",
+          "motivacion",
+          "disponibilidad",
+          "acepta_datos_sinteticos"
+        ],
+        "title": "ApplicationCreate",
+        "type": "object"
+      },
+      "ApplicationDetail": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disponibilidad": {
+            "title": "Disponibilidad",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "legacy_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Ref"
+          },
+          "motivacion": {
+            "title": "Motivacion",
+            "type": "string"
+          },
+          "person": {
+            "$ref": "#/components/schemas/PersonOut"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "enviada",
+              "requisitos_en_revision",
+              "convocada",
+              "evaluacion_en_curso",
+              "pendiente_decision_humana",
+              "admitida",
+              "lista_espera",
+              "no_admitida",
+              "retirada"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "legacy_ref",
+          "call_id",
+          "program_id",
+          "stage",
+          "person",
+          "created_at",
+          "updated_at",
+          "motivacion",
+          "disponibilidad",
+          "events"
+        ],
+        "title": "ApplicationDetail",
+        "type": "object"
+      },
+      "ApplicationList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ApplicationList",
+        "type": "object"
+      },
+      "ApplicationReceipt": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "enviada",
+              "requisitos_en_revision",
+              "convocada",
+              "evaluacion_en_curso",
+              "pendiente_decision_humana",
+              "admitida",
+              "lista_espera",
+              "no_admitida",
+              "retirada"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "call_id",
+          "stage",
+          "created_at"
+        ],
+        "title": "ApplicationReceipt",
+        "type": "object"
+      },
+      "ApplicationSelfView": {
+        "description": "What an aspirant sees about their own application: no internal notes or CRM history.",
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "call_nombre": {
+            "title": "Call Nombre",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "enviada",
+              "requisitos_en_revision",
+              "convocada",
+              "evaluacion_en_curso",
+              "pendiente_decision_humana",
+              "admitida",
+              "lista_espera",
+              "no_admitida",
+              "retirada"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "call_id",
+          "call_nombre",
+          "stage",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ApplicationSelfView",
+        "type": "object"
+      },
+      "ApplicationSummary": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "legacy_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Ref"
+          },
+          "person": {
+            "$ref": "#/components/schemas/PersonOut"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "enviada",
+              "requisitos_en_revision",
+              "convocada",
+              "evaluacion_en_curso",
+              "pendiente_decision_humana",
+              "admitida",
+              "lista_espera",
+              "no_admitida",
+              "retirada"
+            ],
+            "title": "Stage",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "legacy_ref",
+          "call_id",
+          "program_id",
+          "stage",
+          "person",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ApplicationSummary",
+        "type": "object"
+      },
+      "AuditEventOut": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_roles": {
+            "title": "Actor Roles",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor User Id"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "actor_user_id",
+          "actor_roles",
+          "action",
+          "target_type",
+          "target_id",
+          "meta"
+        ],
+        "title": "AuditEventOut",
+        "type": "object"
+      },
+      "CallOut": {
+        "properties": {
+          "closes_on": {
+            "format": "date",
+            "title": "Closes On",
+            "type": "string"
+          },
+          "estado": {
+            "title": "Estado",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "opens_on": {
+            "format": "date",
+            "title": "Opens On",
+            "type": "string"
+          },
+          "plazas": {
+            "title": "Plazas",
+            "type": "integer"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "program_nombre": {
+            "title": "Program Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "program_id",
+          "program_nombre",
+          "nombre",
+          "opens_on",
+          "closes_on",
+          "plazas",
+          "estado"
+        ],
+        "title": "CallOut",
+        "type": "object"
+      },
+      "CallSummaryOut": {
+        "properties": {
+          "by_stage": {
+            "items": {
+              "$ref": "#/components/schemas/StageCount"
+            },
+            "title": "By Stage",
+            "type": "array"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "min_cell_size": {
+            "title": "Min Cell Size",
+            "type": "integer"
+          },
+          "min_group_size": {
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "required": [
+          "call_id",
+          "total",
+          "suppressed",
+          "min_group_size",
+          "min_cell_size",
+          "by_stage"
+        ],
+        "title": "CallSummaryOut",
+        "type": "object"
+      },
+      "EnrollmentOut": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "estado": {
+            "title": "Estado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "estado"
+        ],
+        "title": "EnrollmentOut",
+        "type": "object"
+      },
+      "EventCreate": {
+        "properties": {
+          "canal": {
+            "anyOf": [
+              {
+                "enum": [
+                  "email",
+                  "telefono",
+                  "presencial",
+                  "videollamada"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canal"
+          },
+          "resumen": {
+            "description": "Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Resumen",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "contacto",
+              "nota",
+              "recordatorio"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "resumen"
+        ],
+        "title": "EventCreate",
+        "type": "object"
+      },
+      "EventOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "canal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canal"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "resumen": {
+            "title": "Resumen",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "canal",
+          "resumen",
+          "actor",
+          "occurred_at"
+        ],
+        "title": "EventOut",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LoginIn": {
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginIn",
+        "type": "object"
+      },
+      "LoginOut": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "me": {
+            "$ref": "#/components/schemas/MeOut"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "expires_at",
+          "me"
+        ],
+        "title": "LoginOut",
+        "type": "object"
+      },
+      "MeOut": {
+        "properties": {
+          "application_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Application Ids",
+            "type": "array"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "enrollments": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentOut"
+            },
+            "title": "Enrollments",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleAssignmentOut"
+            },
+            "title": "Roles",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "email",
+          "person_id",
+          "roles",
+          "application_ids",
+          "enrollments"
+        ],
+        "title": "MeOut",
+        "type": "object"
+      },
+      "PersonOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "email"
+        ],
+        "title": "PersonOut",
+        "type": "object"
+      },
+      "RoleAssignmentOut": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "title": "Scope Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "scope_type",
+          "scope_id"
+        ],
+        "title": "RoleAssignmentOut",
+        "type": "object"
+      },
+      "StageCount": {
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "stage",
+          "count",
+          "suppressed"
+        ],
+        "title": "StageCount",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "description": "Token opaco obtenido en POST /api/v1/auth/login",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "API del Proyecto Final 2 · Fundación Somos F5. **Datos exclusivamente sintéticos.** La autorización se comprueba en el servidor por rol y ámbito (programa, convocatoria o cohorte). La plataforma no toma decisiones automáticas de admisión, exclusión ni baja.",
+    "title": "Gistar API (nombre provisional)",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/applications": {
+      "get": {
+        "operationId": "list_applications_api_v1_applications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "call_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stage",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "enviada",
+                    "requisitos_en_revision",
+                    "convocada",
+                    "evaluacion_en_curso",
+                    "pendiente_decision_humana",
+                    "admitida",
+                    "lista_espera",
+                    "no_admitida",
+                    "retirada"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stage"
+            }
+          },
+          {
+            "description": "Busca por nombre, correo o código",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca por nombre, correo o código",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Expedientes dentro del ámbito del usuario (captación / selección / administración)",
+        "tags": [
+          "admissions"
+        ]
+      },
+      "post": {
+        "operationId": "post_application_api_v1_applications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Inscripción pública: crea o reutiliza la ficha de persona",
+        "tags": [
+          "admissions"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}": {
+      "get": {
+        "operationId": "get_application_api_v1_applications__application_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ficha del expediente con historial CRM",
+        "tags": [
+          "admissions"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/events": {
+      "post": {
+        "operationId": "post_event_api_v1_applications__application_id__events_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar contacto, nota o recordatorio en el CRM",
+        "tags": [
+          "admissions"
+        ]
+      }
+    },
+    "/api/v1/audit-events": {
+      "get": {
+        "operationId": "list_audit_api_v1_audit_events_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "target_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "target_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventOut"
+                  },
+                  "title": "Response List Audit Api V1 Audit Events Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registro de auditoría (solo administración)",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Iniciar sesión con una cuenta sintética de demo",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revocar la sesión actual (no afecta a otras sesiones)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Usuario, roles con ámbito y estados de la persona",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/calls": {
+      "get": {
+        "operationId": "list_calls_api_v1_calls_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "estado",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "abierta",
+                    "cerrada"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CallOut"
+                  },
+                  "title": "Response List Calls Api V1 Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Convocatorias (público: solo datos de la oferta)",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/summary": {
+      "get": {
+        "operationId": "call_summary_api_v1_calls__call_id__summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Agregados de una convocatoria, sin datos nominales",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/me/applications": {
+      "get": {
+        "operationId": "my_applications_api_v1_me_applications_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationSelfView"
+                  },
+                  "title": "Response My Applications Api V1 Me Applications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Candidaturas propias de la persona autenticada",
+        "tags": [
+          "admissions"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Estado del servicio y de la base de datos",
+        "tags": [
+          "ops"
+        ]
+      }
+    }
+  }
+}

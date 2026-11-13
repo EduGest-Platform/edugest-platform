@@ -1,0 +1,32 @@
+# Entorno local reproducible: PostgreSQL 16 + pgvector y la API. La web se arranca con `pnpm dev`.
+# Uso: docker compose -f infra/compose.yaml up --build
+# NOTA: no verificado en el sandbox de Figma Make (Docker rootless no disponible); validar en F1 con el equipo.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: gistar
+      # Secret lives in git-ignored infra/.env; no default value here on purpose.
+      POSTGRES_PASSWORD: ${GISTAR_DB_PASSWORD:?Set GISTAR_DB_PASSWORD in infra/.env}
+      POSTGRES_DB: gistar
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gistar"]
+      interval: 3s
+      retries: 20
+  api:
+    build: ../api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GISTAR_DATABASE_URL: postgresql+psycopg://gistar:${GISTAR_DB_PASSWORD:?Set GISTAR_DB_PASSWORD in infra/.env}@db:5432/gistar
+      GISTAR_CORS_ORIGINS: '["http://localhost:5173","http://localhost:8443"]'
+    ports: ["127.0.0.1:8000:8000"]
+    volumes:
+      - ../src/gistar/seed.json:/data/seed.json:ro
+volumes:
+  pgdata:

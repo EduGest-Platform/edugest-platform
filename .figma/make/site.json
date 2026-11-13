@@ -1,0 +1,10 @@
+{
+  "description": "Provides a simple interface for viewing and working with attached content, helping users access shared materials in one place.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
