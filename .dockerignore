@@ -1,0 +1,16 @@
+# Contexto de build compartido por el frontend (Dockerfile) y la API (api/Dockerfile).
+node_modules
+dist
+.git
+.github
+.vscode
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/*.egg-info
+.env*
+!.env.example
+docs
+e2e
+*.log
