@@ -1,0 +1,44 @@
+# Blueprint de Render para EduGest (YO10). Estado: PROPOSED; no se ha desplegado.
+# El despliegue real exige autorización del equipo (projectplan.md). Ver docs/deploy/README.md.
+# Solo datos sintéticos: no cargar datos reales en este entorno.
+databases:
+  - name: edugest-db
+    databaseName: gistar
+    user: gistar
+    postgresMajorVersion: "16"
+    plan: free # El plan gratuito caduca a los 30 días: crear la base cerca de la defensa o subir de plan.
+
+services:
+  - type: web
+    name: edugest-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: edugest-db
+          property: connectionString
+      - key: GISTAR_DEMO_PASSWORD
+        generateValue: true # Contraseña de las cuentas sintéticas; consultarla en el panel de Render.
+      - key: GISTAR_CORS_ORIGINS
+        sync: false # Lista JSON con la URL pública de la web, p. ej. ["https://edugest-web.onrender.com"]
+      - key: GISTAR_GITHUB_TOKEN
+        sync: false # Opcional (YO9): token de solo lectura para la API de GitHub.
+
+  - type: web
+    name: edugest-web
+    runtime: static
+    buildCommand: npm install -g pnpm@10.34.3 && pnpm install --frozen-lockfile && pnpm build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_GISTAR_API_URL
+        sync: false # URL pública de edugest-api, p. ej. https://edugest-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
