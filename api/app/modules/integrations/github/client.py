@@ -1,7 +1,7 @@
 """Minimal read-only GitHub REST client built on the standard library.
 
-Only GET requests to api.github.com under /repos/ and /users/ are possible. The transport is injectable,
-so tests never touch the network.
+Only GET requests to api.github.com under /repos/ and /users/ are possible. Redirects are never followed.
+The transport is injectable, so tests never touch the network.
 """
 
 import json
@@ -40,6 +40,18 @@ class GithubApiError(GithubError):
     """Unexpected status or payload."""
 
 
+class GithubConflict(GithubApiError):
+    """HTTP 409. For the commits endpoint it means the repository is empty."""
+
+
+class GithubRedirected(GithubApiError):
+    """The repository or user moved (3xx). Redirects are never followed; the link must be updated."""
+
+    def __init__(self, location: str | None = None):
+        super().__init__("GitHub says this resource moved; update the portfolio link")
+        self.location = location
+
+
 class GithubUnavailable(GithubError):
     """Network failure or timeout."""
 
@@ -62,10 +74,21 @@ class HttpResponse:
 Transport = Callable[[HttpRequest], HttpResponse]
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """urllib follows redirects by default and forwards the Authorization header with them.
+    Refusing here means the token can only ever reach the host we validated."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102
+        return None
+
+
+_opener = urllib.request.build_opener(_NoRedirect())
+
+
 def urllib_transport(request: HttpRequest) -> HttpResponse:
     req = urllib.request.Request(request.url, headers=dict(request.headers), method=request.method)
     try:
-        with urllib.request.urlopen(req, timeout=request.timeout) as resp:  # noqa: S310 (fixed https host)
+        with _opener.open(req, timeout=request.timeout) as resp:  # noqa: S310 (fixed https host)
             return HttpResponse(resp.status, {k.lower(): v for k, v in resp.headers.items()}, resp.read())
     except urllib.error.HTTPError as exc:
         return HttpResponse(exc.code, {k.lower(): v for k, v in exc.headers.items()}, exc.read())
@@ -85,7 +108,7 @@ class GithubReadOnlyClient:
     def get_json(self, path: str, params: Mapping[str, str | int] | None = None) -> Any:
         """GET `path` (must start with /repos/ or /users/) and return the decoded JSON body."""
         status, headers, body = self._get(path, params)
-        if status >= 400:
+        if status >= 300:
             self._raise_for_status(status, headers)
         try:
             return json.loads(body)
@@ -97,7 +120,7 @@ class GithubReadOnlyClient:
         status, headers, _ = self._get(path, None)
         if status == 404:
             return False
-        if status >= 400:
+        if status >= 300:
             self._raise_for_status(status, headers)
         return True
 
@@ -117,6 +140,10 @@ class GithubReadOnlyClient:
 
     @staticmethod
     def _raise_for_status(status: int, headers: Mapping[str, str]) -> None:
+        if 300 <= status < 400:
+            raise GithubRedirected(headers.get("location"))
+        if status == 409:
+            raise GithubConflict("GitHub answered 409 (for commits this means an empty repository)")
         if status == 404:
             raise GithubNotFound("Not found on GitHub")
         if status == 401:

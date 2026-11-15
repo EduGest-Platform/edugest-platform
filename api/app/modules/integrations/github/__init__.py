@@ -7,9 +7,12 @@ Persistence (PortfolioLink) and HTTP routes are added once migration 0003 and th
 from app.modules.integrations.github.client import (
     GithubApiError,
     GithubAuthError,
+    GithubConflict,
+    GithubError,
     GithubNotFound,
     GithubRateLimited,
     GithubReadOnlyClient,
+    GithubRedirected,
     GithubUnavailable,
 )
 from app.modules.integrations.github.schemas import ProfileSnapshot, RepositorySnapshot
@@ -19,9 +22,12 @@ from app.modules.integrations.github.urls import InvalidGithubUrl, parse_github_
 __all__ = [
     "GithubApiError",
     "GithubAuthError",
+    "GithubConflict",
+    "GithubError",
     "GithubNotFound",
     "GithubRateLimited",
     "GithubReadOnlyClient",
+    "GithubRedirected",
     "GithubUnavailable",
     "InvalidGithubUrl",
     "ProfileSnapshot",

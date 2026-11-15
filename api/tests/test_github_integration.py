@@ -1,6 +1,8 @@
 """YO9 · Read-only GitHub consumer. No network: every call goes through a fake transport."""
 
 import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 from pydantic import SecretStr
@@ -8,14 +10,16 @@ from pydantic import SecretStr
 from app.modules.integrations.github import (
     GithubApiError,
     GithubAuthError,
+    GithubConflict,
     GithubNotFound,
     GithubRateLimited,
     GithubReadOnlyClient,
+    GithubRedirected,
     InvalidGithubUrl,
     fetch_portfolio_snapshot,
     parse_github_url,
 )
-from app.modules.integrations.github.client import HttpRequest, HttpResponse
+from app.modules.integrations.github.client import HttpRequest, HttpResponse, urllib_transport
 from app.modules.integrations.github.config import GithubSettings
 
 REPO = {
@@ -222,3 +226,121 @@ def test_invalid_link_never_reaches_the_network():
     with pytest.raises(InvalidGithubUrl):
         fetch_portfolio_snapshot("https://evil.example/o/r", client)
     assert fake.requests == []
+
+
+# ---------- review fixes: empty repositories, redirects, malformed payloads ----------
+
+
+def test_empty_repository_409_is_zero_commits_not_a_crash():
+    client, _ = client_for(
+        {
+            "/repos/o/empty": (200, {**REPO, "full_name": "o/empty"}, {}),
+            "/repos/o/empty/commits": (409, {"message": "Git Repository is empty."}, {}),
+            # no /readme route: the fake answers 404 and the snapshot reports has_readme=False
+        }
+    )
+    snap = fetch_portfolio_snapshot("https://github.com/o/empty", client)
+    assert snap.recent_commit_count == 0
+    assert snap.last_commit_at is None
+    assert snap.has_readme is False
+
+
+def test_409_on_the_repository_itself_is_still_an_error():
+    client, _ = client_for({"/repos/o/r": (409, {"message": "conflict"}, {})})
+    with pytest.raises(GithubConflict):
+        fetch_portfolio_snapshot("https://github.com/o/r", client)
+
+
+@pytest.mark.parametrize("status", [301, 302, 307, 308])
+def test_redirect_statuses_raise_redirected_and_are_never_followed(status):
+    client, fake = client_for({"/repos/o/old": (status, {}, {"location": "https://api.github.com/repositories/1"})})
+    with pytest.raises(GithubRedirected) as info:
+        fetch_portfolio_snapshot("https://github.com/o/old", client)
+    assert info.value.location == "https://api.github.com/repositories/1"
+    assert len(fake.requests) == 1  # the new location was not requested
+
+
+def test_redirect_on_readme_check_is_reported():
+    client, _ = client_for(
+        {
+            "/repos/o/r": (200, REPO, {}),
+            "/repos/o/r/commits": (200, COMMITS, {}),
+            "/repos/o/r/readme": (301, {}, {"location": "https://api.github.com/x"}),
+        }
+    )
+    with pytest.raises(GithubRedirected):
+        fetch_portfolio_snapshot("https://github.com/o/r", client)
+
+
+def test_default_transport_does_not_follow_redirects_or_forward_the_token():
+    """Real sockets on 127.0.0.1 only: a 301 must come back as a 301 and the target must see no request."""
+    seen: list[dict] = []
+
+    class Target(BaseHTTPRequestHandler):
+        def do_GET(self):
+            seen.append(dict(self.headers))
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    target = ThreadingHTTPServer(("127.0.0.1", 0), Target)
+
+    class Redirector(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(301)
+            self.send_header("Location", f"http://127.0.0.1:{target.server_port}/stolen")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    redirector = ThreadingHTTPServer(("127.0.0.1", 0), Redirector)
+    servers = [target, redirector]
+    for server in servers:
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        response = urllib_transport(
+            HttpRequest("GET", f"http://127.0.0.1:{redirector.server_port}/repos/o/r", {"Authorization": "Bearer s3cret-token"}, 5)
+        )
+    finally:
+        for server in servers:
+            server.shutdown()
+            server.server_close()
+    assert response.status == 301
+    assert response.headers["location"].endswith("/stolen")
+    assert seen == []
+
+
+@pytest.mark.parametrize(
+    "routes",
+    [
+        # repository without full_name
+        {"/repos/o/r": (200, {k: v for k, v in REPO.items() if k != "full_name"}, {}), "/repos/o/r/commits": (200, [], {})},
+        # repository without default_branch
+        {"/repos/o/r": (200, {k: v for k, v in REPO.items() if k != "default_branch"}, {}), "/repos/o/r/commits": (200, [], {})},
+        # unparsable date
+        {"/repos/o/r": (200, {**REPO, "pushed_at": "yesterday"}, {}), "/repos/o/r/commits": (200, [], {})},
+        # commit entry that is not an object
+        {"/repos/o/r": (200, REPO, {}), "/repos/o/r/commits": (200, [42], {})},
+    ],
+)
+def test_malformed_repository_payloads_raise_github_api_error(routes):
+    client, _ = client_for(routes)
+    with pytest.raises(GithubApiError):
+        fetch_portfolio_snapshot("https://github.com/o/r", client)
+
+
+def test_malformed_profile_payloads_raise_github_api_error():
+    client, _ = client_for({"/users/coder-01": (200, {"html_url": "https://github.com/coder-01"}, {}), "/users/coder-01/repos": (200, [], {})})
+    with pytest.raises(GithubApiError):
+        fetch_portfolio_snapshot("https://github.com/coder-01", client)
+    client, _ = client_for(
+        {
+            "/users/coder-01": (200, {"login": "coder-01", "html_url": "https://github.com/coder-01", "public_repos": 1}, {}),
+            "/users/coder-01/repos": (200, [{"language": "Python"}], {}),  # repo without name
+        }
+    )
+    with pytest.raises(GithubApiError):
+        fetch_portfolio_snapshot("https://github.com/coder-01", client)

@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from app.modules.integrations.github.client import GithubApiError, GithubReadOnlyClient
+from app.modules.integrations.github.client import GithubApiError, GithubConflict, GithubError, GithubReadOnlyClient
 from app.modules.integrations.github.schemas import ProfileSnapshot, RepositorySnapshot, RepositorySummary
 from app.modules.integrations.github.urls import parse_github_url
 
@@ -23,16 +23,25 @@ def _expect(data: Any, kind: type) -> Any:
 
 def fetch_portfolio_snapshot(url: str, client: GithubReadOnlyClient) -> RepositorySnapshot | ProfileSnapshot:
     """Read-only. Raises InvalidGithubUrl for bad links and GithubError subclasses for API problems."""
-    target = parse_github_url(url)
-    if target.repo is None:
-        return _profile(target.owner, client)
-    return _repository(target.owner, target.repo, client)
+    target = parse_github_url(url)  # InvalidGithubUrl is raised here, before any network call
+    try:
+        if target.repo is None:
+            return _profile(target.owner, client)
+        return _repository(target.owner, target.repo, client)
+    except GithubError:
+        raise
+    except (KeyError, TypeError, ValueError, AttributeError) as exc:
+        # GitHub answered 200 but a field is missing or has the wrong type: report it, never crash with a 500.
+        raise GithubApiError("GitHub returned data in an unexpected shape") from exc
 
 
 def _repository(owner: str, repo: str, client: GithubReadOnlyClient) -> RepositorySnapshot:
     base = f"/repos/{owner}/{repo}"
     info = _expect(client.get_json(base), dict)
-    commits = _expect(client.get_json(f"{base}/commits", {"per_page": COMMIT_SAMPLE_SIZE}), list)
+    try:
+        commits = _expect(client.get_json(f"{base}/commits", {"per_page": COMMIT_SAMPLE_SIZE}), list)
+    except GithubConflict:
+        commits = []  # GitHub answers 409 (not an empty list) for a repository with no commits yet
     last_commit = None
     if commits:
         last_commit = _when(commits[0].get("commit", {}).get("committer", {}).get("date"))
