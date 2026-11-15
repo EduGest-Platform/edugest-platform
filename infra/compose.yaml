@@ -1,6 +1,7 @@
-# Entorno local reproducible: PostgreSQL 16 + pgvector y la API. La web se arranca con `pnpm dev`.
+# Entorno local reproducible: PostgreSQL 16 + pgvector, API, web y MLflow.
 # Uso: docker compose -f infra/compose.yaml up --build
-# NOTA: no verificado en el sandbox de Figma Make (Docker rootless no disponible); validar en F1 con el equipo.
+# Web: http://localhost:8443 · API: http://localhost:8000/docs · MLflow: http://localhost:5000
+# Estado: CODE_PRESENT_NOT_RUN para web y mlflow hasta completar YO1 con evidencia (infra/smoke-test.sh).
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -17,16 +18,58 @@ services:
       test: ["CMD-SHELL", "pg_isready -U gistar"]
       interval: 3s
       retries: 20
+
   api:
-    build: ../api
+    # Contexto en la raíz del repo para poder copiar src/gistar/seed.json dentro de la imagen.
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
     depends_on:
       db:
         condition: service_healthy
     environment:
       GISTAR_DATABASE_URL: postgresql+psycopg://gistar:${GISTAR_DB_PASSWORD:?Set GISTAR_DB_PASSWORD in infra/.env}@db:5432/gistar
       GISTAR_CORS_ORIGINS: '["http://localhost:5173","http://localhost:8443"]'
+      # Para el código de ML (Abdur): registrar experimentos en el servicio mlflow.
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     ports: ["127.0.0.1:8000:8000"]
     volumes:
       - ../src/gistar/seed.json:/data/seed.json:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      retries: 30
+      start_period: 10s
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: mlflow.Dockerfile
+    ports: ["127.0.0.1:5000:5000"]
+    volumes:
+      - mlflowdata:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:5000/health', timeout=3)"]
+      interval: 5s
+      retries: 30
+      start_period: 15s
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        # El navegador llama a la API publicada en el host, no al nombre interno del contenedor.
+        VITE_GISTAR_API_URL: ${GISTAR_PUBLIC_API_URL:-http://localhost:8000}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: ["127.0.0.1:8443:80"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      retries: 20
+
 volumes:
   pgdata:
+  mlflowdata:
