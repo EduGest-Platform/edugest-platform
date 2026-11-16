@@ -30,6 +30,8 @@ services:
     environment:
       GISTAR_DATABASE_URL: postgresql+psycopg://gistar:${GISTAR_DB_PASSWORD:?Set GISTAR_DB_PASSWORD in infra/.env}@db:5432/gistar
       GISTAR_CORS_ORIGINS: '["http://localhost:5173","http://localhost:8443"]'
+      # La contraseña de las cuentas sintéticas no tiene valor por defecto: se define en infra/.env.
+      GISTAR_DEMO_PASSWORD: ${GISTAR_DEMO_PASSWORD:?Set GISTAR_DEMO_PASSWORD in infra/.env}
       # Para el código de ML (Abdur): registrar experimentos en el servicio mlflow.
       MLFLOW_TRACKING_URI: http://mlflow:5000
     ports: ["127.0.0.1:8000:8000"]
