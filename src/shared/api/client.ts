@@ -1,6 +1,7 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { components, paths } from './schema.gen'
 import { API_URL } from './config'
+import { detailText } from './errors'
 
 export type Schemas = components['schemas']
 
@@ -24,7 +25,10 @@ const auth: Middleware = {
     return request
   },
   onResponse({ response, request }) {
-    if (response.status === 401 && !request.url.endsWith('/auth/login')) onUnauthorized?.()
+    // Error 401 means the session has ended (it expired, or the person logged out in another place).
+    // We skip the login call itself: there, 401 only means a wrong password.
+    const sentToken = request.headers.has('Authorization')
+    if (response.status === 401 && sentToken && !request.url.endsWith('/auth/login')) onUnauthorized?.()
     return response
   },
 }
@@ -34,12 +38,5 @@ api.use(auth)
 
 /** Human-readable message from FastAPI errors (detail string or validation list). */
 export function errorMessage(err: unknown, fallback = 'No se ha podido completar la operación'): string {
-  const detail = (err as { detail?: unknown })?.detail
-  if (typeof detail === 'string') return detail
-  if (Array.isArray(detail) && detail.length) {
-    return detail
-      .map((d: { loc?: (string | number)[]; msg?: string }) => `${d.loc?.slice(-1)[0] ?? 'campo'}: ${d.msg ?? 'no válido'}`)
-      .join(' · ')
-  }
-  return fallback
+  return detailText(err) ?? fallback
 }

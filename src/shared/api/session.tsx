@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Role } from '../../gistar/types'
 import { api, errorMessage, setUnauthorizedHandler, tokenStore, type Schemas } from './client'
 import { API_MODE } from './config'
+import { describeApiError, problemText } from './errors'
 
 export type Me = Schemas['MeOut']
 
@@ -27,6 +28,8 @@ interface SessionCtx {
   me: Me | null
   loading: boolean
   apiDown: boolean
+  /** Message for the login screen when the session ended by itself (for example, it expired). */
+  notice: string | null
   login: (email: string, password: string) => Promise<string | null>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -37,6 +40,7 @@ const Ctx = createContext<SessionCtx>({
   me: null,
   loading: false,
   apiDown: false,
+  notice: null,
   login: async () => null,
   logout: async () => undefined,
   refresh: async () => undefined,
@@ -46,6 +50,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<Me | null>(null)
   const [loading, setLoading] = useState(API_MODE)
   const [apiDown, setApiDown] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     if (!API_MODE) return
@@ -67,6 +72,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => {
       tokenStore.clear()
       setMe(null)
+      setNotice(problemText(describeApiError(401)))
     })
     refresh().finally(() => setLoading(false))
     return () => setUnauthorizedHandler(null)
@@ -77,6 +83,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
       const { data, error } = await api.POST('/api/v1/auth/login', { body: { email, password } })
       if (error || !data) return errorMessage(error, 'Credenciales no válidas')
       tokenStore.set(data.access_token)
+      setNotice(null)
       setMe(data.me)
       setApiDown(false)
       return null
@@ -95,7 +102,10 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const value = useMemo(() => ({ enabled: API_MODE, me, loading, apiDown, login, logout, refresh }), [me, loading, apiDown, login, logout, refresh])
+  const value = useMemo(
+    () => ({ enabled: API_MODE, me, loading, apiDown, notice, login, logout, refresh }),
+    [me, loading, apiDown, notice, login, logout, refresh],
+  )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
