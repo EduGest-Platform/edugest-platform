@@ -1,13 +1,14 @@
 # KAN-107 · Entregable 1 — Diccionario de datos consolidado / Consolidated data dictionary
 
-**Estado:** borrador para revisión (no es validación jurídica) · **Fecha:** 17/11/2026 · **Rama:** `docs/KAN-107-data-governance`
+**Estado:** revisión documental V2 para aprobación PO/Anas (no es validación jurídica ni código implementado) · **Fecha base:** 17/11/2026 · **Ubicación de entrega:** paquete local; **rama remota no creada/verificada**. No declarar PR de KAN-107 existente.
 **Base reutilizada:** [`docs/producto/diccionario-campos-candidatura.md`](https://github.com/EduGest-Platform/edugest-platform/pull/15) (Anas, KAN-92/93). Está **solo en la rama del PR #15** (`feat/KAN-115-api-errors-401-403`, abierto); **no está en `dev`**. Este documento *no copia* ese inventario: lo referencia por número de fila (`#1`…`#14`) y le añade gobierno, destino técnico y trazabilidad.
 
 > **EN summary:** Technical + functional dictionary for the 14 fields of the real Somos F5 form plus EduGest-only fields. Each field has an owner entity (Person vs Application), a stable technical id, a proposed legal-basis *candidate* (all pending confirmation by the Foundation/DPO), access scope and status. Nothing here changes code, models or contract yet.
 
 ## 0. Cómo leer este documento
 
-- **Confirmado** = decisión funcional comunicada por la PO el 17/11/2026 (no es validación jurídica).
+- **OBSERVADO** = campo mostrado en el formulario documentado por Anas, con fuente y fecha (no implica obligación de financiador).
+- **DECISIÓN PO** = instrucción funcional comunicada en KAN-93 el 17/11/2026 (no es validación jurídica).
 - **Propuesta** = recomendación de este análisis, pendiente de aprobación.
 - **Pendiente** = depende de Melissa / Fundación / DPO; no se inventa.
 - Estado del campo: **MVP**, **POSTERIOR**, **PENDIENTE** (necesidad por validar).
@@ -28,15 +29,15 @@ Dadas por el equipo, **no por Melissa**; quedan como supuestos de trabajo a rati
 
 | Tema | Respuesta |
 |---|---|
-| Nacionalidad, país de nacimiento, género | El financiador los exige (figura en la web de Somos F5). Se piden como en el formulario real |
-| Uso | No se usa nacionalidad para admitir o no. Género y vulnerabilidad pueden pesar en la revisión (p. ej. 70–80 % de mujeres en una convocatoria; prioridad por nacionalidad extranjera unida a otras vulnerabilidades). Siempre decide una persona |
+| Nacionalidad, país de nacimiento, género | **OBSERVADO:** obligatorios en el formulario del bootcamp inventariado por Anas. **DECISIÓN PO:** mantenerlos en el diseño sintético. **PENDIENTE MELISSA:** confirmar si hay exigencia contractual del financiador y para qué finalidad se utilizarían. |
+| Uso | **PENDIENTE DE APROBACIÓN:** no se ha validado documentalmente ninguna cuota, prioridad ni tratamiento diferencial. El MVP muestra estos campos solo para revisión humana autorizada con datos sintéticos; **no implementa scoring ni cuotas basadas en género, nacionalidad o vulnerabilidad**. Una intervención humana no basta por sí sola para legitimar estos criterios. |
 | Situación actual por convocatoria | En el MVP se **simula** con datos sintéticos de seed; la Fundación no la va a implementar ahora (prueba de concepto) |
 | "Joven <30" | Autodeclaración si el formulario no pide fecha de nacimiento |
 | Experiencia vs. motivación | Se mantiene la experiencia en programación |
 | "Cómo nos has conocido" | Opcional, con "otros". Pendiente de revisar con la captura del formulario real |
 | Edad mínima | 18 años |
 | Residencia | Depende de la convocatoria (Madrid, Barcelona, online). Se pide siempre; lo confirma una persona |
-| Quién ve los datos | Selección, preselección y administración (todo el personal que gestiona candidaturas). No coder, alumno ni aspirante |
+| Quién ve los datos | **DECISIÓN DE PRODUCTO REFINADA:** acceso operativo según **rol + convocatoria + grupo de datos + concesión vigente**. Los roles de captación/selección pueden consultar datos operativos dentro de su ámbito; los grupos protegidos requieren habilitación específica, no acceso automático. Coordinación solo agregados; docente no gestiona admisión. La persona solicitante conserva sus derechos sobre sus propios datos: esto no significa que el personal pueda mostrárselos por defecto. |
 | Rectificación/borrado | Llegan por correo. Proceso **pendiente** (fuera del alcance de la prueba de concepto) |
 | Responsable del tratamiento y DPO | **Pendiente**; se deja anotado en el README, no se resuelve ahora |
 | Revisión legal (RGPD/LOPDGDD/AEPD) | **Fuera del alcance** del proyecto (gratuito, datos sintéticos); corresponde a la Fundación en una fase posterior |
@@ -52,9 +53,9 @@ Fuente: captura de `landings.somosf5.org/proyecto-ai4inclusion-curso15h` aportad
 | Nacionalidad, país de nacimiento, género, situación, año de nacimiento | Sí | **No aparecen** |
 
 Consecuencias:
-1. **Cada oferta formativa tiene su propio formulario**, con campos distintos: refuerza el versionado por convocatoria (Entregable 2). La respuesta del equipo sobre "el financiador exige nacionalidad, país y género" se refiere al formulario de **bootcamp**; no debe extenderse a otros cursos.
-2. Aparece un campo **`city`** (texto libre, "Ciudad") que el inventario no tenía. En el bootcamp la residencia es un desplegable de provincia/distrito (#9). Propuesta: ambos son configurables por versión (`residence_region` select o `city` texto).
-3. Hay que **confirmar con Anas/PO qué formulario es la referencia del MVP** (bootcamp de 1250 h o curso de 15 h). El diccionario documenta el bootcamp, que es el más completo; el del curso de 15 h cabe como una segunda definición con menos campos.
+1. **Son dos flujos diferentes:** el bootcamp es **inscripción/candidatura**, mientras el curso de 15 h es **contacto/lead**. Un lead **no crea `Application`** por defecto. Las diferencias pueden justificar reutilizar componentes visuales, no unificar procesos ni finalidades automáticamente.
+2. El campo `city` solo está **observado en contacto/lead**; **no se incorpora a la definición de candidatura** del MVP sin requisito aprobado. `residence_region` sigue siendo un campo de inscripción.
+3. **Referencia del MVP de inscripción:** formulario de **bootcamp** inventariado por Anas (KAN-92/93). El curso de 15 h queda como flujo futuro de captación/lead, sujeto a decisión y modelo propios.
 4. En el curso de 15 h "teléfono" y los comentarios no parecen obligatorios (confirmar).
 
 ## 1. Auditoría del inventario (qué falta, qué se duplica, qué choca)
@@ -75,19 +76,19 @@ Consecuencias:
 | ID | Tipo | Hallazgo | Acción propuesta |
 |---|---|---|---|
 | H1 | Ausente | 11 de los 14 campos del formulario real **no existen** en BD/API (`#2, #4–#12`, y `#13`). | Añadir según §2 (migración incremental, Entregable 4). |
-| H2 | Duplicidad | `#5 Año de nacimiento` ↔ opción "Joven de menos de 30 años" de `#11`. | Derivar la condición de `birth_year`; mantener la opción solo si el financiador exige autodeclaración (Pendiente). |
+| H2 | Posible duplicidad | `#5 Año de nacimiento` ↔ opción "Joven de menos de 30 años" de `#11`. | No derivar automáticamente criterios de elegibilidad con solo el año; conservar declaración y revisión humana, pendiente de ratificación de la Fundación. |
 | H3 | Duplicidad | `#6/#7` ↔ opción "Inmigrante" de `#11`. | Documentar que son datos distintos (hecho vs autodeclaración de situación); decidir con PO si ambos son necesarios (minimización). |
 | H4 | Duplicidad | "Desempleada/o (<3 meses)" y "de larga duración" son excluyentes entre sí. | Regla de validación por convocatoria (§3.3), no por UI. |
 | H5 | Regla | "No me identifico con ninguna…" es excluyente con el resto de `#11`. | Opción con `exclusive: true` en la definición del formulario. |
 | H6 | Persona vs candidatura | Residencia (`#9`), experiencia (`#10`), situación (`#11`), canal (`#12`) cambian con el tiempo/convocatoria. | Van a **Application** (instantánea de lo declarado en esa candidatura). |
-| H7 | Persona vs candidatura | Nombre, apellidos, correo, teléfono, año de nacimiento, país de nacimiento, nacionalidad, género son estables. | Van a **Person** (un expediente por persona, ADR-0002). Ver H8. |
-| H8 | Riesgo de integridad | `create_application` **reutiliza** la `Person` por correo y **no actualiza** sus datos. Un segundo envío con otro teléfono se perdería o, si se actualizara, alteraría el pasado. | Regla propuesta: Person guarda el dato vigente; **cada Application congela sus respuestas** en `answers`. Actualizar Person solo por acción explícita y auditada. |
+| H7 | Persona vs candidatura | Nombre, teléfono, nacionalidad y género **pueden cambiar**. | `Person` representa el valor **actual**; la declaración necesaria para la decisión de cada convocatoria se conserva separadamente en una **instantánea protegida de `Application`**, con retención limitada. |
+| H8 | Riesgo de integridad | `create_application` reutiliza `Person` por correo. El cambio futuro de datos actuales podría reinterpretar decisiones históricas. | `Person` actualizable con control; `Application.submitted_snapshot` contiene solo valores **efectivamente usados** en esa candidatura y se conserva según política de retención, con rectificaciones auditadas y minimización. No actualizar datos actuales por reenvío silencioso. |
 | H9 | Incompatibilidad | `disponibilidad`: BD `NOT NULL`, API `Literal["Mañana","Tarde","Flexible"]` obligatorio; la PO la quiere opcional. | `nullable` en BD + `\| None = None` en Pydantic + regenerar cliente TS. |
 | H10 | Incompatibilidad | `nombre` (min 2) ↔ `display_name` (120). Hay que separar. | Añadir `first_name`/`last_name`; mantener `display_name` como campo **derivado** durante la transición. |
 | H11 | Pendiente | `motivacion` **no existe en el formulario real** (el real pide experiencia, `#10`). | Marcar PENDIENTE: no pedir dos textos largos sin justificar necesidad (minimización). Decide la PO. |
 | H12 | Técnico | `acepta_datos_sinteticos` es un aviso de entorno de demo, no un consentimiento RGPD. | Mantener solo mientras haya datos sintéticos; **no** reutilizarlo como base jurídica ni como `#14`. |
 | H13 | Pendiente | `#13` (comunicaciones) y `#14` (tratamiento): el real los mezcla en el mismo bloque. | Separar finalidades; `#13` fuera de MVP (la demo no envía comunicaciones). |
-| H14 | Exposición | `PersonOut`/`ApplicationSummary` (listados) llegan a todo el que tenga `applications.read`. | Los nuevos datos sensibles **no** entran en listados ni en `Summary`; solo en detalle y con el mismo permiso `applications.read` (decisión del equipo 17/11: no hace falta permiso nuevo en el MVP). |
+| H14 | Exposición | `PersonOut`/`ApplicationSummary` se comparten según `applications.read`, pero los nuevos campos son de riesgo variable. | Mantener protegidos G3/G6 **fuera de listados**; en detalle, **redactar/omitir por grupo** salvo permiso de ámbito más concesión de categoría válida. `applications.read` **no basta** para datos G3/G6. Ver matriz §2.5. |
 | H15 | Consistencia | El prototipo web (`src/gistar/views/Aspirant.tsx`, `seed.json`) usa `nombre_ficticio`, `motivacion`, `disponibilidad`. | Migrar al cliente generado (`src/shared/api/schema.gen.ts`) en el paso de frontend. |
 
 ## 2. Diccionario por campo
@@ -104,13 +105,13 @@ Convenciones: **Entidad** = `P` Person · `A` Application (instantánea) · `C` 
 | 2 | Apellidos | `last_name` / `person.last_name` | `str` 1–120 | Sí (real: obligatorio) | Persona | P | ORD | MVP |
 | 3 | Correo | `email` / `person.email` | email, normalizado, único | Sí. Ya existe (`normalize_email`). Demo: solo `@example.test` | Persona | P | ORD | MVP (existe) |
 | 4 | Teléfono | `phone` / `person.phone` | E.164 (`+34600000000`) `str` ≤16 | Sí (real) — necesario para AS-IS (recordatorios) | Persona | P | ORD | MVP |
-| 5 | Año de nacimiento | `birth_year` / `person.birth_year` | `int`; `birth_year <= año actual − 18` (edad mínima 18, dato del equipo 17/11) | Sí (real). Solo año (minimización). Con solo el año no se prueba la mayoría de edad exacta: lo comprueba la persona que revisa | Persona | P | ORD | MVP |
-| 6 | País de nacimiento | `birth_country` / `person.birth_country` | ISO 3166-1 alfa-2 `str(2)` | **Sí** (el equipo indica que el financiador lo exige y figura en la web de Somos F5) | Persona | P | ORD* | MVP (uso restringido, ver G3) |
-| 7 | Nacionalidad | `nationality` / `person.nationality` | ISO 3166-1 alfa-2 `str(2)` | **Sí** (ídem #6) | Persona | P | ORD* | MVP (uso restringido, ver G3) |
-| 8 | Género | `gender` / `person.gender` | opciones estables: `woman, man, non_binary, other, prefer_not_to_say` | **Sí** (ídem #6). Se mantiene `prefer_not_to_say` como opción válida. Uso: cuotas/estadística de la convocatoria (ver G3) | Persona (autodeclarado) | P | ORD* | MVP (uso restringido, ver G3) |
+| 5 | Año de nacimiento | `birth_year` / `person.birth_year` | `int`, año calendario plausible | Sí (observado). **No usar** `birth_year <= año actual − 18` como prueba definitiva: quien cumplirá 18 más tarde este año aún es menor. Valorar elegibilidad de forma humana con información suficiente, según necesidad y proporcionalidad | Persona | P + instantánea si se usa en evaluación | ORD | MVP |
+| 6 | País de nacimiento | `birth_country` / `person.birth_country` | ISO 3166-1 alfa-2 `str(2)` **propuesto**; cotejar opciones reales | **Sí observado** en el bootcamp; **obligación contractual pendiente Melissa** | Persona | P + instantánea limitada si interviene en revisión | ORD* | MVP sintético; protegido G3 |
+| 7 | Nacionalidad | `nationality` / `person.nationality` | ISO 3166-1 alfa-2 `str(2)` **propuesto**; cotejar opciones reales | **Sí observado** en el bootcamp; **obligación contractual pendiente Melissa** | Persona | P + instantánea limitada si interviene en revisión | ORD* | MVP sintético; protegido G3 |
+| 8 | Género | `gender` / `person.gender` | **Opciones reales no capturadas por Anas**; IDs propuestos solo como ejemplos, no enum aprobado | **Sí observado** en bootcamp; decidir opciones/alternativas antes de implementar. **No se autorizan cuotas** | Persona (autodeclarado) | P + instantánea limitada si se usa en revisión | ORD* / evaluar contexto | PENDIENTE OPCIONES; protegido G3 |
 | 9 | Provincia/distrito de residencia | `residence_region` / `application.answers` | código de provincia (INE) o distrito (PT) | Sí. El requisito de residencia **depende de la convocatoria** (Madrid, Barcelona, online = sin requisito); lo confirma una persona al revisar, no hay exclusión automática | Persona | A | ORD | MVP |
 | 10 | Experiencia en programación | `programming_experience` / `application.answers` | texto 1–1500 | Sí (real). No pedir datos sensibles (aviso en UI) | Persona | A | ORD | MVP |
-| 11 | Situación actual (varias) | `current_situation` / `application.answers` | lista de IDs de opción de la versión de formulario | Sí, ≥1. `none` excluyente (H5). Opciones por convocatoria (PO) | Persona (autodeclarado) | A | **ESP?** (p. ej. discapacidad) / ORD* | MVP con cuidado |
+| 11 | Situación actual (varias) | `current_situation` / `application.answers` | lista de IDs por versión | Sí observado, ≥1. `none` excluyente. **Todo el grupo se protege como G6** si incluye discapacidad; sin exposición parcial accidental | Persona (autodeclarado) | A | **ESP?** (p. ej. discapacidad) / ORD* | MVP sintético, acceso explícito |
 | 12 | ¿Cómo nos conociste? (varias) | `referral_source` / `application.answers` | lista de IDs | **Opcional**, con opción `other` (decisión del equipo 17/11; pendiente de contrastar con la captura del formulario real) | Persona | A | ORD | MVP |
 | 13 | Comunicaciones de Somos F5 | `marketing_opt_in` | `bool` | No | Persona | P (con fecha y versión de texto) | ORD | POSTERIOR |
 | 14 | Información/consentimiento de tratamiento | `privacy_notice_version`, `privacy_notice_ack_at` / `application` | `str` + `datetime` | Sí. **Es acuse de información (art. 13), no se presume base jurídica** (H12) | Persona | A | TEC | MVP |
@@ -138,10 +139,10 @@ Agrupado por perfil de riesgo para no repetir 24 filas idénticas; cada campo he
 |---|---|---|---|---|---|---|
 | G1 Identificación y contacto | `#1–#4`, `email` | Captación (PO decide) | Art. 6.1 (b ó f ó e según naturaleza de la Fundación) — **confirmar** | Necesario para contactar y gestionar la candidatura | `applications.read`: admin global · captación programa · selección convocatoria. Coordinación y docente: **no** | Contacto; no entra en estadísticas nominales |
 | G2 Edad | `#5` | Selección | Ídem G1 | Año, no fecha completa; sirve a criterio "<30" del financiador | Igual G1 | Preselección **informativa**; estadística agregada |
-| G3 Origen y género | `#6, #7, #8` | PO / Fundación | **Sin confirmar** (queda para la Fundación/DPO) | Exigido por el financiador (dato del equipo, figura en la web de Somos F5) | Solo en detalle, mismo ámbito que `applications.read` (selección, preselección/captación, administración); **nunca** en listados; fuera de coder, alumno y aspirante | **Sí influye en la selección de forma documentada, siempre con revisión humana**: p. ej. cuota de mujeres de la convocatoria o prioridad por vulnerabilidad combinada con nacionalidad. **Nunca** como criterio único ni automático. Estadísticas agregadas con supresión |
+| G3 Origen y género | `#6, #7, #8` | Fundación / responsable funcional por designar | **Pendiente acreditar** finalidad, necesidad y base jurídica | Observados en bootcamp; exigencia de financiador **no documentada** | **Denegado por defecto**, incluso a quien tenga `applications.read`; solo detalle bajo concesión explícita G3 vigente para la convocatoria | No usar para scoring, cuotas ni priorización mientras no se apruebe documentalmente su necesidad y legalidad. Agregados suprimidos según riesgo |
 | G4 Residencia | `#9` | Selección | Ídem G1 | Requisito de la convocatoria (Madrid) | Igual G1 | Señal para revisión humana; **sin exclusión automática** |
 | G5 Perfil técnico | `#10`, `motivacion` | Selección | Ídem G1 | Valoración humana de itinerario | Igual G1 | Apoya revisión humana |
-| G6 Situación personal | `#11` | PO / Fundación / DPO | **Posible art. 9**: si trata discapacidad u otra categoría especial hace falta además una excepción del art. 9.2 — **pendiente DPO** | Opciones definidas por financiador/convocatoria; justificar cada opción | Solo detalle, mismo ámbito que `applications.read`; agregados con supresión | Criterio de elegibilidad para **revisión humana**; sin decisión automatizada (art. 22) |
+| G6 Situación personal | `#11` | Fundación / responsable funcional por designar | **Posible art. 9**, requiere art. 6 y excepción art. 9.2 cuando corresponda; pendiente DPO | Autodeclaración; justificar cada opción por convocatoria | **Denegado por defecto**; autorización G6 explícita por usuario, finalidad y convocatoria; solo detalle, nunca listas/logs; agrupaciones sensibles con supresión | Solo información para revisión humana si criterios formalmente aprobados; no criterio automático de exclusión ni ranking |
 | G7 Captación | `#12` | Captación | Ídem G1 | Métrica de canal; no necesaria para decidir | Igual G1 | Solo estadística |
 | G8 Información/consentimientos | `#13, #14` | DPO/Fundación | Texto de información art. 13; consentimiento solo donde sea base válida (p. ej. comunicaciones) | — | Registro de versión y fecha; lectura por admin | No |
 | G9 Técnicos | `codigo`, `stage`, `form_version_id`, … | Equipo técnico | n/a | n/a | Según endpoint | No |
@@ -155,8 +156,24 @@ Agrupado por perfil de riesgo para no repetir 24 filas idénticas; cada campo he
 | Plazo de conservación de candidaturas **no admitidas** | **Pendiente — decide la Fundación** | Propuesta: fijar un plazo `[N meses desde cierre de la convocatoria]`; al vencer, borrado o anonimización |
 | Plazo de conservación de candidaturas **admitidas** | **Pendiente** | Pasa a expediente de aprendizaje; plazo propio |
 | Rectificación | **Propuesta** | La persona rectifica Person; la candidatura ya registrada conserva lo declarado, con evento de rectificación auditado |
-| Supresión | **Propuesta** | Procedimiento por solicitud; `audit_event` conserva IDs sin datos personales |
+| Supresión | **Propuesta** | Procedimiento conforme a la Fundación; los IDs de `audit_event` **pueden ser datos personales seudonimizados**. Retención y eventual disociación sujetas a justificación; el trigger append-only no autoriza conservación indefinida. |
 | Datos de formulario sensibles | **Propuesta** | Plazo igual o menor que el general; revisión por DPO |
+
+### 2.5 Política de acceso por grupo, rol y convocatoria — DISEÑO V2
+
+La existencia de `role_assignment` (rol + ámbito) en `dev` **no significa que estén implementados** el filtrado de grupos de campos, la gestión de concesiones ni una pantalla de permisos. Para implementarlos, véanse la [especificación de acceso dinámico](kan-107-6-control-acceso-dinamico.md) y el Entregable 4.
+
+| Grupo | Contenido | Acceso base a la candidatura | Grupo protegido adicional | Política recomendada |
+|---|---|---|---|---|
+| G1/G2 | Identificación, contacto y edad | Captación o selección en convocatoria/programa autorizado; admin operacional según tarea | No, pero nunca público ni fuera de ámbito | Solo mínimos por finalidad y pantalla |
+| G4/G5/G7 | Residencia, experiencia, canal y motivación autorizada | Captación o selección en ámbito correcto | No, pero ocultar datos no necesarios en listados | Nunca decisión automática |
+| G3 | País de nacimiento, nacionalidad y género | `applications.read` **necesario pero insuficiente** | **Sí:** concesión G3 explícita vigente en la convocatoria | Redactado/omitido por defecto; no cuota automática |
+| G6 | Situaciones personales, incluida discapacidad | `applications.read` **necesario pero insuficiente** | **Sí:** concesión G6 explícita vigente | Proteger `current_situation` completo si alguna opción revela categoría especial |
+| G8/G9 | Aceptación informativa, referencias técnicas, eventos y auditoría | Según finalidad y operación | Auditoría interna solo para perfiles con `audit.read` | Nunca incluir valores personales en registros |
+
+**Cambios de permiso durante la convocatoria:** administrador autorizado y con aprobación funcional concede/revoca G3/G6 para una persona concreta y una `call_id`; incluir vigencia/revocación inmediata, razón y auditoría de acceso y cambio. Nadie puede concederse a sí mismo acceso. El rol administrativo **no implica lectura automática** de G3/G6. Esta es una **capacidad propuesta para KAN-42**, no implementada por KAN-107. La persona solicitante puede ejercer sus derechos a través del procedimiento que establezca la Fundación, distinto del portal de personal.
+
+**EN:** Sensitive field groups require both an existing scoped application permission and an additional time-bound per-call grant. Grants/revocations during an active call must be authorised, logged, immediately enforced and never self-issued; these controls are proposed, not implemented.
 
 ## 3. Entidad de destino: resumen
 
@@ -172,7 +189,7 @@ Person   (1 por persona)         Application (1 por persona+convocatoria)       
                                  stage, codigo, …
 ```
 
-Criterio de reparto: **dato estable de la persona → Person; lo declarado para una convocatoria concreta → Application (congelado)**.
+Criterio de reparto: **ficha actual de la persona → `Person`; declaraciones y reglas usadas para una candidatura → instantánea mínima y protegida en `Application`**. Los datos pueden rectificarse y su conservación está limitada por la finalidad. No congelar indiscriminadamente todos los atributos de `Person`.
 
 ## 4. Cambios incompatibles detectados
 
@@ -191,6 +208,6 @@ Criterio de reparto: **dato estable de la persona → Person; lo declarado para 
 | `schemas.py`, `models.py` (`admissions`, `identity`, `catalog`) | **Leído** en `dev` | §1.1 |
 | `contracts/openapi.json` | **Leído** (esquemas `ApplicationCreate`, etc.) | §1.1 |
 | `docs/reports/RBAC_MATRIX_2026-11-13.md` | **Leído** (no versionado aún en `dev`, estado `CODE_PRESENT_NOT_RUN`) | Accesos |
-| KAN-92 / KAN-93 / KAN-107 / KAN-112 (Jira y comentarios) | **No accesible** desde esta sesión | **Bloqueo B1**: contrastar |
+| [KAN-92](https://anasfady87-1789923749606.atlassian.net/browse/KAN-92), [KAN-93](https://anasfady87-1789923749606.atlassian.net/browse/KAN-93), [KAN-107](https://anasfady87-1789923749606.atlassian.net/browse/KAN-107), [KAN-112](https://anasfady87-1789923749606.atlassian.net/browse/KAN-112) | **Contrastados por revisor el 17/11/2026** | KAN-93 contiene decisiones PO sobre campos y obligatoriedad; no hay aprobación de cuotas ni requisitos contractuales |
 | AS-IS y aclaraciones de Melissa (Drive) | **No accesible** | **Bloqueo B2**: se cita lo que recoge el documento de Anas (06 y 08/11/2026) |
 | Formulario real Somos F5 | **No re-consultado**; se usa la captura de Anas del 17/11/2026 | — |

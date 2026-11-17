@@ -5,13 +5,14 @@
 
 ## 1. Fuentes y su uso
 
-> **Aviso de verificación:** en esta sesión **no se ha podido consultar en línea** el BOE, EUR-Lex ni la web de la AEPD. Las referencias siguientes se citan por su identificación habitual y **deben verificarse** contra el texto oficial antes de usarse fuera del equipo (**Bloqueo B3**).
+> **Verificación de la revisión V2 (17/11/2026):** se contrastaron referencias oficiales de RGPD en EUR-Lex y las guías de privacidad desde el diseño/por defecto de la AEPD, incluidas las recomendaciones de acceso según necesidad. **No hay validación de conformidad para una puesta en producción ni estudio jurídico particular de la Fundación.**
 
 | Fuente | Referencia | Para qué se usa aquí | Tipo |
 |---|---|---|---|
-| RGPD — Reglamento (UE) 2016/679 | Art. 4 (definiciones, incl. datos relativos a la salud), 5 (principios: minimización, limitación de finalidad, limitación del plazo), 6 (bases de licitud), 7 (condiciones del consentimiento), 9 (categorías especiales), 13 (información), 22 (decisiones automatizadas), 25 (privacidad desde el diseño y por defecto), 32 (seguridad), 35 (EIPD) | Requisitos jurídicos | **Requisito legal** |
-| LOPDGDD — Ley Orgánica 3/2018 | Arts. relativos a tratamiento de categorías especiales, derechos y deber de información por capas | Requisitos jurídicos nacionales | **Requisito legal** |
-| AEPD | Guías sobre privacidad desde el diseño y por defecto, sobre EIPD, y lista de tratamientos que requieren EIPD (art. 35.4) | Metodología y criterio de la autoridad | **Recomendación** (la lista de la AEPD se aplica como criterio de la autoridad) |
+| [RGPD — Reglamento (UE) 2016/679 (EUR-Lex)](https://eur-lex.europa.eu/legal-content/ES/ALL/?uri=CELEX:32016R0679) | Arts. 4, 5, 6, 7, 9, 13, 15–17, 22, 25, 32 y 35 | Principios y obligaciones aplicables si se tratan datos personales reales | **Norma legal** |
+| [LOPDGDD — Ley Orgánica 3/2018 (BOE)](https://www.boe.es/buscar/act.php?id=BOE-A-2018-16673) | Régimen complementario español y garantías | Debe ser revisada con asesoría responsable antes de tratar datos reales | **Norma legal; aplicación concreta pendiente** |
+| [AEPD — privacidad desde el diseño](https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/medidas-de-cumplimiento/proteccion-de-datos-desde-el-diseno) y [Guía de Privacidad desde el Diseño](https://www.aepd.es/guias/guia-privacidad-desde-diseno.pdf) | Need-to-know, perfiles de acceso diferenciados y datos mínimos | Orientación de la autoridad, que fundamenta controles por grupo/ámbito | **Guías oficiales** |
+| [AEPD — Guía de Protección de Datos por Defecto](https://www.aepd.es/guias/guia-proteccion-datos-por-defecto.pdf) | Privilegios mínimos y administración de roles por personas autorizadas | Base para gestión segura de concesiones y revocaciones | **Guía oficial** |
 | Documentos del repositorio | `CONSTITUTION.md`, `AGENTS.md`, ADR-0003 | Reglas del proyecto (datos sintéticos, revisión humana, RBAC por ámbito) | Política interna |
 
 ## 2. Naturaleza de los datos
@@ -20,7 +21,7 @@
 |---|---|---|
 | Nombre, apellidos, correo, teléfono, año de nacimiento, provincia | Ordinario | Identificación/contacto; riesgo bajo-medio |
 | Nacionalidad, país de nacimiento | Ordinario, **no categoría especial automáticamente**; riesgo de actuar como *proxy* de origen étnico/racial | Evaluar finalidad y contexto; puede facilitar discriminación indirecta |
-| Género | Ordinario según el contexto; no es art. 9 por sí mismo. Atención a opciones como `non_binary`/`other` en contextos que puedan revelar orientación o identidad de género | Opcional + `prefer_not_to_say`; solo estadística |
+| Género | Puede ser dato personal ordinario, con riesgos elevados según contexto y combinaciones; el conjunto real de opciones **no está capturado** | En el formulario observado figura obligatorio; opción "prefiero no decirlo" es propuesta, no confirmada. Sin cuotas ni scoring no autorizados |
 | "Situación actual": discapacidad | **Probable dato relativo a la salud (art. 9)** | Requiere condición adicional del art. 9.2, **a determinar por DPO** |
 | "Situación actual": inmigrante, refugiada/o, riesgo de exclusión, mujer en situación de vulnerabilidad, acceso limitado a recursos | **A evaluar**: pueden revelar condición socioeconómica o, según el caso, origen étnico/racial o convicciones; no se puede decidir sin análisis de contexto | Tratar con las mismas medidas que art. 9 por precaución (decisión de diseño, no afirmación jurídica) |
 | Disponibilidad, experiencia, canal | Ordinario | — |
@@ -33,17 +34,17 @@ Probabilidad (P) e impacto (I): B/M/A. Estado: ABIERTO · MITIGADO EN DISEÑO ·
 |---|---|---|---|---|---|---|
 | R1 | Recogida **excesiva** (campos sin finalidad acreditada: motivación, país de nacimiento, canal) | M | M | Cada campo con finalidad (Entregable 1 §2.3); `opcional` por defecto cuando no sea exigencia del financiador | PO + Fundación | PENDIENTE |
 | R2 | **Base jurídica no confirmada** para el tratamiento; confusión entre "casilla" y consentimiento | A | A | No usar la casilla `#14` como base; registrar versión de aviso y fecha; determinar base con DPO. Consentimiento explícito solo donde proceda (p. ej. comunicaciones `#13`, y posible excepción art. 9.2.a para datos especiales) | Fundación / DPO | PENDIENTE |
-| R3 | **Nacionalidad, país de nacimiento y género**: el equipo indica que el financiador los exige; el género puede pesar en cuotas y la vulnerabilidad en prioridades | M | A | Se mantienen como en el formulario real. Mitigación: nunca criterio único ni automático; los criterios de cuota/prioridad se documentan por convocatoria; decide siempre una persona (art. 22); solo en detalle y para el personal de gestión; estadísticas con supresión. La Fundación debe validar con su DPO que ese uso es proporcionado | Fundación / DPO (fase con datos reales) | ABIERTO (decisión del equipo aplicada; validación legal fuera de alcance) |
-| R4 | **Discapacidad** y otras opciones de `#11` (art. 9) | M | A | Opción informada; acceso solo con `applications.read` (selección, preselección/captación, administración), solo en detalle; nunca en listados ni logs; no usar para exclusión; excepción art. 9.2 identificada por DPO antes de recoger datos **reales** | DPO / Fundación | PENDIENTE |
+| R3 | **Nacionalidad, país de nacimiento y género** observados en formulario; exigencia del financiador y uso para cuotas **no acreditados** | M | A | Mantener campos en diseño sintético por decisión PO, pero bloquear ranking/cuotas/prioridades hasta acreditar finalidad, base y proporcionalidad; acceso G3 solo con concesión explícita por convocatoria | Fundación / DPO (antes de datos reales) | ABIERTO |
+| R4 | **Discapacidad** y otras opciones de `#11`, con posible art. 9 | M | A | Además de permiso de expediente se exige concesión **G6 por persona y convocatoria**; si una casilla es de categoría especial, proteger el grupo entero. Sin acceso en listados ni logs; art. 6 + condición art. 9.2 deben determinarse antes de usar datos reales | Fundación / DPO | ABIERTO; diseño preparado |
 | R5 | **Decisión automatizada** sobre personas | B | A | Reglas de convocatoria (p. ej. residencia Madrid) solo *señalan* para revisión humana; admisión siempre humana (`pendiente_decision_humana`; art. 22) | PO | MITIGADO EN DISEÑO |
-| R6 | **Exposición horizontal**: un usuario de otra convocatoria/programa ve fichas ajenas | M | A | Alcance servidor `Scope(program_id, call_id)` ya existe (`authz.py`); tests de acceso horizontal para endpoints nuevos | Backend | MITIGADO PARCIALMENTE (tests de ámbito existen; faltan los de campos sensibles) |
+| R6 | **Exposición horizontal y vertical**: leer otra convocatoria o categoría sin habilitación | M | A | Conjunción de rol activo + `Scope(call/program)` + concesión G3/G6 no caducada. Comprobarlo en FastAPI y filtrar en serialización, no solo en UI. Test 403/redacción, revocación inmediata y acceso cruzado | Backend / responsable funcional | ABIERTO; RBAC base ya existe, permiso granular **no** |
 | R7 | **Datos sensibles en notas CRM** (`application_event.resumen`) | M | A | Aviso ya presente en `EventCreate.resumen`; propuesta: lista de comprobación y formación de usuarios; evaluación posterior de detección | Selección / DPO | ABIERTO |
 | R8 | **Datos sensibles en logs** | B | A | No existe logging propio hoy; antes de añadirlo: filtro que prohíba `answers` y campos G3/G6; `audit_event.meta` solo IDs/códigos | Backend | MITIGADO EN DISEÑO (a verificar con test) |
 | R9 | **Sin plazo de retención** definido | A | M | Fijar `[N meses]` con la Fundación; job de borrado/anonimización posterior | Fundación | PENDIENTE |
 | R10 | **Estadísticas reidentificables** (grupos pequeños) | M | M | Supresión ya implementada: `min_group_size=5`, `min_cell_size=3` en `GET /calls/{id}/summary`; aplicar igual a cualquier agregado de datos sensibles | Backend | MITIGADO (código presente; test existente) |
-| R11 | **Sesgo/discriminación indirecta** por proxy (nacionalidad, residencia, género) y uso de cuotas | M | A | No usar G3/G6 como entrada de un ranking automático; las cuotas y prioridades se aplican por personas y se registran; si entra IA/ML en el futuro: evaluación específica (fuera de KAN-107; dropout ML es otro alcance) | Fundación / equipo ML | ABIERTO |
-| R12 | **Menores**: con solo el año, una persona de 17 años nacida a final de año pasaría el filtro `año ≤ actual−18` | B | A | Edad mínima **18** (equipo 17/11). Filtro por año + comprobación humana; para garantizarlo hará falta fecha completa (decisión futura) | Fundación | PENDIENTE (fuera de alcance PoC) |
-| R13 | **Rectificación/supresión** de datos en versiones históricas | M | M | Procedimiento de derechos; respuestas congeladas con evento de rectificación; supresión con borrado de `answers` y `person` conservando `audit_event` sin datos personales | Fundación / DPO | PENDIENTE |
+| R11 | **Sesgo/discriminación indirecta** por nacionalidad, residencia, género o situaciones vulnerables | M | A | **No implementar cuotas ni prioridades** por esos datos hasta acreditar criterio legal, necesidad, no discriminación y aprobación de Fundación. Revisión humana necesaria, pero no suficiente para legitimarlos. Evaluar si se plantea IA | Fundación / DPO / PO | ABIERTO |
+| R12 | **Mayoría de edad**: el año de nacimiento no permite verificar el día exacto del 18.º cumpleaños | B | A | Año anterior al umbral permite inferir mayoría de edad; año umbral **requiere verificación humana**, no aceptación/rechazo automático. Pedir información adicional solo si es imprescindible y proporcionada | Fundación / PO | PENDIENTE |
+| R13 | **Rectificación/supresión** con instantáneas y auditoría | M | M | Aplicar proceso autorizado de rectificación, supresión y límites de conservación. `audit_event` con IDs reidentificables sigue siendo **seudonimizado**, no anónimo; planificar retención/disociación conforme a finalidad y garantías | Fundación / DPO | PENDIENTE |
 | R14 | **Datos reales introducidos por error** en el entorno de demo | M | A | `is_synthetic`, aviso `acepta_datos_sinteticos`, dominios reservados en demo | Equipo | MITIGADO PARCIALMENTE |
 
 ## 4. ¿Hace falta una EIPD?
@@ -63,12 +64,25 @@ Probabilidad (P) e impacto (I): B/M/A. Estado: ABIERTO · MITIGADO EN DISEÑO ·
 | # | Tema | Estado |
 |---|---|---|
 | D1 | Responsable del tratamiento y base de licitud | **Pendiente**, anotado en `docs/producto/README.md`; fuera de alcance |
-| D2 | ¿El financiador exige nacionalidad, país y género? | **Respondida por el equipo: sí**; ratificar con Melissa |
+| D2 | ¿El financiador exige nacionalidad, país y género? | **OBSERVADO en bootcamp + DECISIÓN PO de mantener en demo**; **exigencia contractual no confirmada**. Solicitar fundamento a Melissa |
 | D3 | Opciones de situación actual por financiador | **Simuladas en seed** para el MVP; la lista real la aporta la Fundación después |
 | D4 | Plazos de conservación | **Pendiente**, fuera de alcance |
 | D5 | Edad mínima | **18 años** (equipo) |
-| D6 | Quién ve datos sensibles | **Respondida**: selección, preselección/captación y administración; no coder, alumno ni aspirante |
+| D6 | Quién ve datos sensibles | **Refinada a política configurable**: solo personal con rol y ámbito autorizado **y concesión G3/G6** activa por convocatoria. Admin gestiona, pero no obtiene lectura G3/G6 automáticamente. El aspirante tiene derechos de protección de datos, independientes del acceso a notas internas |
 | D7 | EIPD | **Pendiente**, la valora la Fundación antes de usar datos reales |
 | D8 | `motivacion` | Se mantiene la experiencia; `motivacion` queda opcional/heredada |
 | D9 | Residencia: revisión o elegibilidad | **Depende de la convocatoria**; la confirma una persona; se pide siempre |
 | D10 | Rectificación y borrado (por correo) | Proceso **pendiente**, fuera de alcance |
+
+## 7. Privilegios dinámicos y riesgos adicionales (V2)
+
+| ID | Riesgo | Control preventivo | Estado |
+|---|---|---|---|
+| R15 | Persona asigna acceso sensible a sí misma o excede su convocatoria | El operador solo gestiona concesiones si tiene `data_access.manage`; **prohibir auto-concesión**, exigir aprobación funcional y comprobar `call_id` | DISEÑO, NO IMPLEMENTADO |
+| R16 | Acceso permanece activo después del cambio de rol, revocación o fecha fin | Comprobación de permiso por petición; `expires_at`, `revoked_at` y vigencia de rol; revocación inmediata, sin depender del frontend | DISEÑO, NO IMPLEMENTADO |
+| R17 | Campos protegidos escapan por `Summary`, notas CRM, exportación o logs | DTO allowlist según categoría/ámbito; omisión por defecto; pruebas negativas en todas las rutas/exportaciones | DISEÑO, NO IMPLEMENTADO |
+| R18 | Concesión sin justificación o auditoría de lectura | Registrar actor, destinatario, convocatoria, grupo, acción, fecha, motivo codificado y expiración; `audit_event` sin valores sensibles | DISEÑO, NO IMPLEMENTADO |
+
+**Principio:** los accesos pueden cambiar mientras la convocatoria esté abierta, **pero no cualquier usuario puede modificarlos**. La persona responsable de la Fundación define quién aprueba; un administrador autorizado los ejecuta. La categoría protegida requiere concesión adicional, aun para personal admin que consulte datos. Los datos siguen sujetos a principios RGPD incluso cuando exista acceso técnicamente concedido.
+
+**EN:** Access to protected field groups is denied by default, time-bound and call-scoped, with grant/revoke operations separated from read permission and audited. Existing RBAC alone does not implement this capability. Human review is not a blanket lawful basis for selection criteria.
