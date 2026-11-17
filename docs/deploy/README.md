@@ -5,7 +5,7 @@
 
 ## ES · Local con Docker Compose
 
-1. `cp infra/.env.example infra/.env` y pon un valor aleatorio largo en `GISTAR_DB_PASSWORD`.
+1. `cp infra/.env.example infra/.env` y pon un valor aleatorio largo en `GISTAR_DB_PASSWORD` y otro en `GISTAR_DEMO_PASSWORD` (la contraseña de las cuentas sintéticas; no tiene valor por defecto).
 2. `docker compose -f infra/compose.yaml config --quiet` (valida sin imprimir secretos).
 3. `docker compose -f infra/compose.yaml up -d --build --wait`
 4. `bash infra/smoke-test.sh` y guarda la salida como evidencia (YO1).
@@ -39,7 +39,7 @@ Límites del plan gratuito: los servicios se duermen sin tráfico (primera petic
 
 ## EN · Local with Docker Compose
 
-1. `cp infra/.env.example infra/.env` and set a long random value for `GISTAR_DB_PASSWORD`.
+1. `cp infra/.env.example infra/.env` and set a long random value for both `GISTAR_DB_PASSWORD` and `GISTAR_DEMO_PASSWORD` (the password of the synthetic accounts; it has no default).
 2. `docker compose -f infra/compose.yaml config --quiet` (validates without printing secrets).
 3. `docker compose -f infra/compose.yaml up -d --build --wait`
 4. `bash infra/smoke-test.sh` and keep the output as evidence (YO1).

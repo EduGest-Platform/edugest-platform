@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # Comprobación de humo del compose (evidencia de YO1). Uso, tras `docker compose -f infra/compose.yaml up -d --build --wait`:
 #   bash infra/smoke-test.sh
-# Variables opcionales: API_URL, WEB_URL, MLFLOW_URL, DEMO_PASSWORD.
+# Variables opcionales: API_URL, WEB_URL, MLFLOW_URL.
+# La contraseña de las cuentas sintéticas sale de DEMO_PASSWORD o, si no está, de GISTAR_DEMO_PASSWORD en infra/.env.
 set -u
 API_URL="${API_URL:-http://127.0.0.1:8000}"
 WEB_URL="${WEB_URL:-http://127.0.0.1:8443}"
 MLFLOW_URL="${MLFLOW_URL:-http://127.0.0.1:5000}"
-DEMO_PASSWORD="${DEMO_PASSWORD:-gistar-demo-2026}"
+ENV_FILE="$(cd "$(dirname "$0")" && pwd)/.env"
+
+if [ -z "${DEMO_PASSWORD:-}" ] && [ -f "$ENV_FILE" ]; then
+  DEMO_PASSWORD="$(grep '^GISTAR_DEMO_PASSWORD=' "$ENV_FILE" | head -n 1 | cut -d= -f2- | tr -d '\r')"
+fi
+if [ -z "${DEMO_PASSWORD:-}" ]; then
+  echo "Falta la contraseña demo: define DEMO_PASSWORD o GISTAR_DEMO_PASSWORD en infra/.env" >&2
+  exit 2
+fi
 fail=0
 
 check() { # nombre, comando...
