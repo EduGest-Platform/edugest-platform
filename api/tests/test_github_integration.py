@@ -373,7 +373,7 @@ def test_invalid_url_exposes_stable_code_without_network():
 
 def test_demo_password_template_is_empty():
     template = Path(__file__).resolve().parents[1] / ".env.example"
-    values = dict(line.split("=", 1) for line in template.read_text().splitlines() if line and not line.startswith("#"))
+    values = dict(line.split("=", 1) for line in template.read_text(encoding="utf-8").splitlines() if line and not line.startswith("#"))
     assert values["GISTAR_DEMO_PASSWORD"] == ""
 
 

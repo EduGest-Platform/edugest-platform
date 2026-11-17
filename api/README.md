@@ -10,6 +10,8 @@ cd api
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env              # pon la contraseña de infra/.env en GISTAR_DATABASE_URL (ver infra/.env.example)
+# En .env, configura GISTAR_DEMO_PASSWORD con un valor seguro, no vacío y distinto por entorno antes de continuar.
+# In .env, set GISTAR_DEMO_PASSWORD to a strong, non-empty, environment-specific value before continuing.
 alembic upgrade head
 python -m app.seed                # carga ../src/gistar/seed.json (idempotente; --reset para recargar)
 uvicorn app.main:app --reload     # http://localhost:8000/docs
@@ -34,7 +36,11 @@ La base de pruebas se migra de `base` a `head` en cada sesión y se vacía y re-
 `python scripts/export_openapi.py` → `contracts/openapi.json`; después `pnpm gen:api` en la raíz para regenerar
 `src/shared/api/schema.gen.ts`. `tests/test_contract.py` falla si el contrato versionado no coincide con la API.
 
-## Cuentas sintéticas (contraseña: `GISTAR_DEMO_PASSWORD`, por defecto `gistar-demo-2026`)
+## Cuentas sintéticas (contraseña: `GISTAR_DEMO_PASSWORD` configurada en `.env`)
+
+La plantilla deja `GISTAR_DEMO_PASSWORD` vacía: debes definirla **antes del seed y del arranque**. Una variable vacía no usa el valor por defecto del código; generaría cuentas con contraseña vacía que el login no acepta. No publiques la contraseña ni el archivo `.env`. Si ya cargaste el seed con un valor vacío, cambiar `.env` no actualiza las cuentas existentes: coordina la corrección del seed local sintético antes de continuar.
+
+**EN:** The template leaves `GISTAR_DEMO_PASSWORD` empty. Set it **before seeding and startup**; an empty variable overrides the code fallback and creates accounts whose empty password the login rejects. Never publish the password or `.env`. Changing `.env` does not update already seeded accounts; coordinate correction of the local synthetic seed if it was loaded with an empty value.
 
 | Cuenta | Rol · ámbito |
 |---|---|
