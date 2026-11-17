@@ -1,7 +1,7 @@
 # KAN-107 · Entregable 1 — Diccionario de datos consolidado / Consolidated data dictionary
 
-**Estado:** revisión documental V2 para aprobación PO/Anas (no es validación jurídica ni código implementado) · **Fecha base:** 17/11/2026 · **Ubicación de entrega:** paquete local; **rama remota no creada/verificada**. No declarar PR de KAN-107 existente.
-**Base reutilizada:** [`docs/producto/diccionario-campos-candidatura.md`](https://github.com/EduGest-Platform/edugest-platform/pull/15) (Anas, KAN-92/93). Está **solo en la rama del PR #15** (`feat/KAN-115-api-errors-401-403`, abierto); **no está en `dev`**. Este documento *no copia* ese inventario: lo referencia por número de fila (`#1`…`#14`) y le añade gobierno, destino técnico y trazabilidad.
+**Estado:** revisión documental V2 para aprobación PO/Anas (no es validación jurídica ni código implementado) · **Fecha base:** 17/11/2026 · **Ubicación de entrega:** [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (abierto hacia `dev`, rama `docs/KAN-107-data-governance`; pendiente de revisión, no fusionado).
+**Base reutilizada:** [`docs/producto/diccionario-campos-candidatura.md`](https://github.com/EduGest-Platform/edugest-platform/pull/15) (Anas, KAN-92/93). Está **solo en la rama del PR #15** (`feat/KAN-115-api-errors-401-403`, abierto); **no está en `dev`**. Referencia fijada: archivo `docs/producto/diccionario-campos-candidatura.md` en el commit `f1d7ac6eb2e541eb36e952723931c0f313bb796f` (cabeza del PR #15 comprobada el 17/11/2026; si el PR cambia, revisar esta referencia). Este documento *no copia* ese inventario: lo referencia por número de fila (`#1`…`#14`) y le añade gobierno, destino técnico y trazabilidad.
 
 > **EN summary:** Technical + functional dictionary for the 14 fields of the real Somos F5 form plus EduGest-only fields. Each field has an owner entity (Person vs Application), a stable technical id, a proposed legal-basis *candidate* (all pending confirmation by the Foundation/DPO), access scope and status. Nothing here changes code, models or contract yet.
 
@@ -85,7 +85,7 @@ Consecuencias:
 | H8 | Riesgo de integridad | `create_application` reutiliza `Person` por correo. El cambio futuro de datos actuales podría reinterpretar decisiones históricas. | `Person` actualizable con control; `Application.submitted_snapshot` contiene solo valores **efectivamente usados** en esa candidatura y se conserva según política de retención, con rectificaciones auditadas y minimización. No actualizar datos actuales por reenvío silencioso. |
 | H9 | Incompatibilidad | `disponibilidad`: BD `NOT NULL`, API `Literal["Mañana","Tarde","Flexible"]` obligatorio; la PO la quiere opcional. | `nullable` en BD + `\| None = None` en Pydantic + regenerar cliente TS. |
 | H10 | Incompatibilidad | `nombre` (min 2) ↔ `display_name` (120). Hay que separar. | Añadir `first_name`/`last_name`; mantener `display_name` como campo **derivado** durante la transición. |
-| H11 | Pendiente | `motivacion` **no existe en el formulario real** (el real pide experiencia, `#10`). | Marcar PENDIENTE: no pedir dos textos largos sin justificar necesidad (minimización). Decide la PO. |
+| H11 | Pendiente | `motivacion` **no existe en el formulario real** (el real pide experiencia, `#10`). | Marcar PENDIENTE: no pedir dos textos largos sin justificar necesidad (minimización). Decide la PO. Mientras tanto, `motivacion` **sigue siendo obligatoria** en el contrato actual (`schemas.py`, `NOT NULL`). |
 | H12 | Técnico | `acepta_datos_sinteticos` es un aviso de entorno de demo, no un consentimiento RGPD. | Mantener solo mientras haya datos sintéticos; **no** reutilizarlo como base jurídica ni como `#14`. |
 | H13 | Pendiente | `#13` (comunicaciones) y `#14` (tratamiento): el real los mezcla en el mismo bloque. | Separar finalidades; `#13` fuera de MVP (la demo no envía comunicaciones). |
 | H14 | Exposición | `PersonOut`/`ApplicationSummary` se comparten según `applications.read`, pero los nuevos campos son de riesgo variable. | Mantener protegidos G3/G6 **fuera de listados**; en detalle, **redactar/omitir por grupo** salvo permiso de ámbito más concesión de categoría válida. `applications.read` **no basta** para datos G3/G6. Ver matriz §2.5. |
@@ -105,16 +105,36 @@ Convenciones: **Entidad** = `P` Person · `A` Application (instantánea) · `C` 
 | 2 | Apellidos | `last_name` / `person.last_name` | `str` 1–120 | Sí (real: obligatorio) | Persona | P | ORD | MVP |
 | 3 | Correo | `email` / `person.email` | email, normalizado, único | Sí. Ya existe (`normalize_email`). Demo: solo `@example.test` | Persona | P | ORD | MVP (existe) |
 | 4 | Teléfono | `phone` / `person.phone` | E.164 (`+34600000000`) `str` ≤16 | Sí (real) — necesario para AS-IS (recordatorios) | Persona | P | ORD | MVP |
-| 5 | Año de nacimiento | `birth_year` / `person.birth_year` | `int`, año calendario plausible | Sí (observado). **No usar** `birth_year <= año actual − 18` como prueba definitiva: quien cumplirá 18 más tarde este año aún es menor. Valorar elegibilidad de forma humana con información suficiente, según necesidad y proporcionalidad | Persona | P + instantánea si se usa en evaluación | ORD | MVP |
+| 5 | Año de nacimiento | `birth_year` / `person.birth_year` | `int`, año calendario plausible | Sí (observado). **Umbral de 18 años = respuesta del equipo, pendiente de ratificación por la PO/Fundación.** **No usar** `birth_year <= año actual − 18` como prueba definitiva: quien cumplirá 18 más tarde este año aún es menor. Valorar elegibilidad de forma humana con información suficiente, según necesidad y proporcionalidad | Persona | P + instantánea si se usa en evaluación | ORD | MVP |
 | 6 | País de nacimiento | `birth_country` / `person.birth_country` | ISO 3166-1 alfa-2 `str(2)` **propuesto**; cotejar opciones reales | **Sí observado** en el bootcamp; **obligación contractual pendiente Melissa** | Persona | P + instantánea limitada si interviene en revisión | ORD* | MVP sintético; protegido G3 |
 | 7 | Nacionalidad | `nationality` / `person.nationality` | ISO 3166-1 alfa-2 `str(2)` **propuesto**; cotejar opciones reales | **Sí observado** en el bootcamp; **obligación contractual pendiente Melissa** | Persona | P + instantánea limitada si interviene en revisión | ORD* | MVP sintético; protegido G3 |
 | 8 | Género | `gender` / `person.gender` | **Opciones reales no capturadas por Anas**; IDs propuestos solo como ejemplos, no enum aprobado | **Sí observado** en bootcamp; decidir opciones/alternativas antes de implementar. **No se autorizan cuotas** | Persona (autodeclarado) | P + instantánea limitada si se usa en revisión | ORD* / evaluar contexto | PENDIENTE OPCIONES; protegido G3 |
-| 9 | Provincia/distrito de residencia | `residence_region` / `application.answers` | código de provincia (INE) o distrito (PT) | Sí. El requisito de residencia **depende de la convocatoria** (Madrid, Barcelona, online = sin requisito); lo confirma una persona al revisar, no hay exclusión automática | Persona | A | ORD | MVP |
+| 9 | Provincia/distrito de residencia | `residence_region` / `application.answers` | código de provincia (INE) o distrito (PT) | Sí (observado). El requisito de residencia **depende de la convocatoria**; lo confirma una persona al revisar, sin exclusión automática. **Justificación en convocatorias sin requisito territorial (p. ej. online):** el equipo decidió pedirlo siempre; solo se sostiene si hay finalidad documentada (logística presencial o estadística agregada). **Propuesta pendiente de PO:** `required` por versión de formulario; si la convocatoria no tiene requisito territorial ni finalidad documentada, no se incluye el campo (minimización). Ver §2.1b | Persona | A | ORD | MVP |
 | 10 | Experiencia en programación | `programming_experience` / `application.answers` | texto 1–1500 | Sí (real). No pedir datos sensibles (aviso en UI) | Persona | A | ORD | MVP |
 | 11 | Situación actual (varias) | `current_situation` / `application.answers` | lista de IDs por versión | Sí observado, ≥1. `none` excluyente. **Todo el grupo se protege como G6** si incluye discapacidad; sin exposición parcial accidental | Persona (autodeclarado) | A | **ESP?** (p. ej. discapacidad) / ORD* | MVP sintético, acceso explícito |
-| 12 | ¿Cómo nos conociste? (varias) | `referral_source` / `application.answers` | lista de IDs | **Opcional**, con opción `other` (decisión del equipo 17/11; pendiente de contrastar con la captura del formulario real) | Persona | A | ORD | MVP |
+| 12 | ¿Cómo nos conociste? (varias) | `referral_source` / `application.answers` | lista de IDs | **Observado: obligatorio** (inventario #15). **Decidido para el MVP: opcional**, con opción `other` (respuesta del equipo 17/11; pendiente de contrastar con la captura del formulario real). Ver §2.1b | Persona | A | ORD | MVP |
 | 13 | Comunicaciones de Somos F5 | `marketing_opt_in` | `bool` | No | Persona | P (con fecha y versión de texto) | ORD | POSTERIOR |
 | 14 | Información/consentimiento de tratamiento | `privacy_notice_version`, `privacy_notice_ack_at` / `application` | `str` + `datetime` | Sí. **Es acuse de información (art. 13), no se presume base jurídica** (H12) | Persona | A | TEC | MVP |
+
+### 2.1b Obligatoriedad campo por campo: observado frente a decidido
+
+Separa lo **OBSERVADO** en el formulario real (inventario de Anas, PR #15) de lo **DECIDIDO/PROPUESTO** para el MVP. Donde difieren, queda dicho por qué y quién debe ratificarlo. La tabla 2.1 resume; esta tabla manda en caso de duda.
+
+| # | Campo | Observado (real) | MVP propuesto | ¿Difiere? | Justificación / estado |
+|---|---|---|---|---|---|
+| 1–2 | Nombre, apellidos | Obligatorio | Obligatorio | No | Separar en `first_name`/`last_name` (decisión PO) |
+| 3 | Correo | Obligatorio | Obligatorio | No | Ya existe |
+| 4 | Teléfono | Obligatorio | Obligatorio | No | Recordatorios y llamadas (AS-IS) |
+| 5 | Año de nacimiento | Obligatorio | Obligatorio | No | Umbral 18 **pendiente de ratificación**; el año no es prueba definitiva de edad; revisión humana |
+| 6–8 | País de nacimiento, nacionalidad, género | Obligatorio | Obligatorio (sintético) | No | Decisión PO de mantenerlos; exigencia del financiador **no documentada** (pendiente Melissa); acceso G3 protegido; sin cuotas |
+| 9 | Residencia | Obligatorio | Obligatorio con requisito territorial; **propuesta:** no incluir o hacer opcional sin él | **Propuesta** | Respuesta del equipo: se pide siempre. Sin requisito territorial solo se justifica con finalidad documentada. **Pendiente PO** |
+| 10 | Experiencia en programación | Obligatorio | Obligatorio | No | Sustituye a la motivación como pregunta principal |
+| 11 | Situación actual | Obligatorio (≥1) | Obligatorio (≥1) | No | G6 protegido; opciones por convocatoria |
+| 12 | ¿Cómo nos conociste? | **Obligatorio** | **Opcional** | **Sí** | Decisión del equipo 17/11: métrica de canal no necesaria para decidir (minimización). **Pendiente de ratificar PO/Anas** |
+| 13 | Comunicaciones | Opcional | Fuera de MVP | — | La demo no envía comunicaciones |
+| 14 | Información/tratamiento | Obligatorio | Obligatorio (acuse art. 13) | No | No se presume base jurídica |
+| — | `motivacion` | No existe en el real | **Hoy obligatoria en el contrato**; propuesta: opcional | **Sí** | Cambio incompatible; **requiere confirmación PO**; sigue obligatoria hasta entonces |
+| — | `disponibilidad` | No existe en el real | Opcional | Sí | Decisión PO 17/11; cambio incompatible H9 |
 
 ### 2.2 Campos propios de EduGest
 
@@ -123,7 +143,7 @@ Convenciones: **Entidad** = `P` Person · `A` Application (instantánea) · `C` 
 | Convocatoria | `call_id` (existe) | `str(30)` FK | Sí | A | TEC | MVP (existe) |
 | Versión del formulario aplicada | `form_version_id` (nuevo) | FK `form_version.id` | Sí en altas nuevas | A | TEC | MVP (Entregable 2) |
 | Disponibilidad | `disponibilidad` (existe) | `Mañana\|Tarde\|Flexible` | **No** (PO 17/11) | A | ORD | MVP (cambio incompatible H9) |
-| Motivación | `motivacion` (existe) | texto 10–2000 | **Opcional / heredado**: el equipo mantiene `programming_experience` (#10) como pregunta del formulario; `motivacion` no se amplía ni se exige (interpretación pendiente de confirmar) | A | ORD | Sin cambios hasta confirmar |
+| Motivación | `motivacion` (existe) | texto 10–2000 | **Hoy OBLIGATORIO en el contrato actual** (`ApplicationCreate.motivacion` 10–2000, columna `NOT NULL`, tanto en `feat/gistar-foundation` como en `dev`). **Propuesta V2:** volverlo opcional/heredado porque el equipo mantiene `programming_experience` (#10) como pregunta del formulario. Es un cambio incompatible (§4) que **requiere confirmación de la PO**; hasta entonces sigue siendo obligatorio | A | ORD | Obligatorio hoy; opcional solo si la PO lo confirma |
 | Aviso de datos sintéticos | `acepta_datos_sinteticos` (existe) | `Literal[True]` | Sí mientras haya demo | A | TEC | Retirar en producción real |
 | Código de candidatura | `codigo` (existe) | `str(20)` único | Auto | A | TEC | MVP (existe) |
 | Etapa | `stage` (existe) | enum de 9 valores | Auto | A | TEC | Existe; las decisiones de admisión son **humanas** |
@@ -198,16 +218,33 @@ Criterio de reparto: **ficha actual de la persona → `Person`; declaraciones y 
 | `nombre` → `first_name` + `last_name` | `ApplicationCreate`, `Person.display_name`, `Aspirant.tsx`, `seed.json`, tests | Fase A: añadir columnas *nullable* y aceptar **ambos** formatos; Fase B: migrar frontend; Fase C: hacer obligatorios y retirar `nombre`. |
 | `disponibilidad` opcional | BD `NOT NULL`, `Literal` obligatorio, `ApplicationDetail.disponibilidad: str` | `ALTER COLUMN DROP NOT NULL` (reversible) + tipo `str \| None`. Cambio **compatible hacia atrás** en lectura. |
 | Nuevos campos obligatorios | Clientes antiguos que no los envían | Obligatorios solo para `form_version` nuevas; las candidaturas previas se rellenan con versión 0 ("legado"). |
+| `motivacion` obligatoria → opcional (si la PO lo confirma) | `ApplicationCreate` (`min_length=10`), columna `NOT NULL`, `ApplicationDetail.motivacion: str`, `Aspirant.tsx`, seed y tests | Mismo patrón que `disponibilidad`: `DROP NOT NULL` + `str \| None` + regenerar cliente; compatible hacia atrás en lectura. No ejecutar sin decisión de la PO. |
 | `answers` JSONB | Consultas SQL por campo | Campos usados en filtros/estadísticas se materializan como columna solo si se demuestra necesidad (no anticipar). |
 
 ## 5. Trazabilidad fuente → diccionario
 
 | Fuente | Estado de acceso | Qué se usó |
 |---|---|---|
-| `docs/producto/diccionario-campos-candidatura.md` (PR #15) | **Leído** vía `refs/pull/15/head`; no integrado en `dev` | Filas `#1–#14`, preguntas a la PO |
+| `docs/producto/diccionario-campos-candidatura.md` (PR #15, commit `f1d7ac6eb2e541eb36e952723931c0f313bb796f`) | **Leído** vía `refs/pull/15/head`; no integrado en `dev` | Filas `#1–#14`, preguntas a la PO |
 | `schemas.py`, `models.py` (`admissions`, `identity`, `catalog`) | **Leído** en `dev` | §1.1 |
 | `contracts/openapi.json` | **Leído** (esquemas `ApplicationCreate`, etc.) | §1.1 |
 | `docs/reports/RBAC_MATRIX_2026-11-13.md` | **Leído** (no versionado aún en `dev`, estado `CODE_PRESENT_NOT_RUN`) | Accesos |
 | [KAN-92](https://anasfady87-1789923749606.atlassian.net/browse/KAN-92), [KAN-93](https://anasfady87-1789923749606.atlassian.net/browse/KAN-93), [KAN-107](https://anasfady87-1789923749606.atlassian.net/browse/KAN-107), [KAN-112](https://anasfady87-1789923749606.atlassian.net/browse/KAN-112) | **Contrastados por revisor el 17/11/2026** | KAN-93 contiene decisiones PO sobre campos y obligatoriedad; no hay aprobación de cuotas ni requisitos contractuales |
 | AS-IS y aclaraciones de Melissa (Drive) | **No accesible** | **Bloqueo B2**: se cita lo que recoge el documento de Anas (06 y 08/11/2026) |
 | Formulario real Somos F5 | **No re-consultado**; se usa la captura de Anas del 17/11/2026 | — |
+
+## English edition (equivalent sections, KAN-107 V2)
+
+**Status:** design review in [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (open, not merged). The source inventory is Anas's `docs/producto/diccionario-campos-candidatura.md` in PR #15 (commit `f1d7ac6eb2e541eb36e952723931c0f313bb796f`), not yet in `dev`. This document references it by row (`#1`–`#14`) and does not copy it.
+
+**§0 How to read.** OBSERVED = field seen in the real form (does not imply a funder requirement); PO DECISION = functional instruction in KAN-93 (not legal validation); Proposal = this analysis, pending approval; Pending = depends on Melissa/Foundation/DPO. All data is synthetic.
+
+**PO decisions already reflected.** Keep nationality, country of birth and gender in the synthetic design; per-call configurable options for "current situation"; availability optional (breaking change); split first and last name (breaking change). Team answers (not Melissa's) are working assumptions: minimum age 18 (pending ratification), residence depends on the call and is confirmed by a person, referral source optional, experience kept over motivation, rectification/erasure and legal review out of project scope. No quotas, priorities or scoring are approved.
+
+**15-hour course form.** It is a contact/lead request (name, surname, email, city, phone, comments, consents), not an application. It never creates an `Application` and `city` is not part of the application definition.
+
+**§1 Audit.** Findings H1–H15 list gaps between the real form and today's API/DB (missing fields, person vs. application snapshot, `disponibilidad` and `nombre` incompatibilities, `acepta_datos_sinteticos` is not GDPR consent, protected groups must stay out of listings). `motivacion` is **currently mandatory** in the contract (`ApplicationCreate`, `NOT NULL`); making it optional is a breaking change that needs PO confirmation.
+
+**§2 Field dictionary.** §2.1 maps each of the 14 real fields to a technical name, type, entity (Person/Application), GDPR category (proposed) and status. **§2.1b separates what was observed from what is decided for the MVP** and names who must ratify each difference: "How did you hear about us" is observed mandatory and proposed optional; residence is required only with a territorial requirement (proposal: omit or make optional otherwise); age uses year of birth and never as definitive proof of age. §2.2 lists EduGest-only fields. §2.3 groups fields G1–G9 by risk; G3 (origin, gender) and G6 (personal situation, incl. disability) are denied by default and need a per-call explicit grant on top of `applications.read`. §2.4 retention/rectification/erasure are pending the Foundation. §2.5 is the access policy by group, role and call.
+
+**§3–§5.** Target entities summary, breaking changes with incremental mitigations (including `motivacion`), and source traceability. Nothing here changes code, models, contract or migrations.

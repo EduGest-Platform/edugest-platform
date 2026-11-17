@@ -118,3 +118,17 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión; la ma
 7. **Integridad/versionado:** actualizar un permiso no cambia la versión del formulario ni respuestas históricas; una versión de otra convocatoria es rechazada.
 
 **No declarar estas pruebas PASS hasta que haya implementación y ejecución verificadas.**
+
+## English edition (equivalent sections, KAN-107 V2)
+
+**Rule.** This task does not authorise creating, editing, numbering, running or proposing Alembic migrations. Backend (Elizabeth) owns the single migration chain under KAN-42 and coordinates with David (RAG) and the team; the planned order is admissions → RAG documents → academic → alerts. Only `0001_f1_cimientos.py` exists in `dev` today.
+
+**§1 Order.** Step 0 approve design and access policy (PO + Anas; Melissa for real requirements); A `Person` fields and optional availability; B `form_version` integration design; C public form API and server-side validation; D G3/G6 protection with temporary per-call grants, revocation and audit (no self-grant); E React form from the definition + `pnpm gen:api` (Anas); F tighten required fields and retire `nombre`.
+
+**§2–§4.** Per-file changes (with `api/alembic/versions/` explicitly "do not create or edit from KAN-107"), migration-conflict resolution (single ownership, no reserved IDs, validate real `alembic heads`), and tests.
+
+**§5 Acceptance of KAN-107 (design task).** Dictionary with traceability ✅; versioning proposal ✅; privacy assessment ✅ (legal analysis pending); implementation plan ✅; PO summary ✅; PO human review ⏳; Melissa ratification ⏳ (does not block the MVP).
+
+**§6 Blockers.** AS-IS/Melissa Drive documents not accessible; legal interpretation for real data pending; PR #15 not in `dev` (this PR references it); no code tests were run for this documentation PR.
+
+**§7 Acceptance cases for dynamic access (not implemented, none is PASS).** Grant, immediate revocation, expiry and wrong `call_id`, no self-grant, audit without values, no leakage through lists/exports/logs, form version unchanged by permission changes.

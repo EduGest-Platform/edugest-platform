@@ -1,6 +1,6 @@
 # docs/producto — EduGest / Gistar (KAN-107 revisión V2)
 
-**Estado:** documentos de diseño para revisión PO + Anas, sin cambios de código, OpenAPI, PostgreSQL, Jira ni GitHub. Solo datos sintéticos.
+**Estado:** documentos de diseño en revisión en el [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (hacia `dev`, abierto, sin fusionar), para revisión de Anas y aceptación de la PO. Sin cambios de código, OpenAPI, PostgreSQL ni migraciones. Solo datos sintéticos.
 
 ## Entregables
 
@@ -13,9 +13,9 @@
 
 ## Origen y trazabilidad
 
-- [Inventario de Anas (KAN-92/93), en PR #15](https://github.com/EduGest-Platform/edugest-platform/pull/15) — su documento `diccionario-campos-candidatura.md` sigue en una rama diferente de `dev` al momento de esta revisión. No duplicar ni fusionar automáticamente.
+- [Inventario de Anas (KAN-92/93), en PR #15](https://github.com/EduGest-Platform/edugest-platform/pull/15) — su documento `diccionario-campos-candidatura.md` sigue en la rama del PR #15 y no en `dev`. Referencia fijada: commit `f1d7ac6eb2e541eb36e952723931c0f313bb796f` (17/11/2026). No duplicar ni fusionar automáticamente.
 - [KAN-107](https://anasfady87-1789923749606.atlassian.net/browse/KAN-107) = **diseño**, [KAN-42](https://anasfady87-1789923749606.atlassian.net/browse/KAN-42) = **implementación**.
-- La rama documental mencionada en el borrador original **no está verificada en GitHub**. Este paquete local no es un PR.
+- Rama documental: `docs/KAN-107-data-governance` → `dev`, en el PR #24 (abierto, pendiente de revisión).
 
 ## Decisión de migraciones (NO ejecutar todavía)
 
@@ -32,3 +32,11 @@ Quedan **pendientes de la Fundación** antes de tratar datos reales: identificac
 ### English review note
 
 KAN-107 is design-only. The MVP application intake is modelled after the bootcamp registration form; the 15-hour course's contact form is a separate lead process. Protected groups G3/G6 require an additional, explicit, time-limited grant **and** an existing role/scope. Access may change during an active call, but no permission-management interface is implemented yet. Any future database change is owned by backend under KAN-42; never produce independent or pre-numbered Alembic revisions from these documents. Legal requirements and actual funder selection rules must be confirmed by the Foundation before real data processing.
+
+### Edición en español / Spanish edition note
+
+Los documentos 1–6 son canónicos en español y cada uno incluye ahora una sección **English edition** con las secciones equivalentes (resumen fiel de decisiones, pendientes y límites, no una traducción palabra por palabra), conforme a la Constitución («secciones emparejadas dentro de un archivo»). Si hay discrepancia, prevalece la versión en español de las tablas y la decisión funcional aprobada.
+
+### English edition (index)
+
+KAN-107 V2 documents (design only, under review in PR #24, not merged): (1) consolidated data dictionary incl. field-by-field observed-vs-decided obligations; (2) per-call form versioning incl. version-change-during-filling rule; (3) preliminary privacy assessment; (4) implementation plan; (5) PO summary; (6) dynamic scoped access annex. Source inventory: PR #15, commit `f1d7ac6eb2e541eb36e952723931c0f313bb796f`. Each document 1–6 ends with an "English edition" section.

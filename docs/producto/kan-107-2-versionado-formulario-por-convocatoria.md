@@ -55,6 +55,10 @@ Reglas:
 4. Candidaturas ya presentadas conservan el ID de versión y **sus respuestas declaradas**. Una rectificación se tramita con trazabilidad y límites de retención; no se reescribe silenciosamente el pasado.
 5. Candidaturas previas: versión `legacy` identificada por convocatoria **solo si existe un plan de backfill aprobado**, sin inventar respuestas. La implementación y su migración se negocian con la propietaria del backend; KAN-107 no genera archivos de Alembic.
 6. Integridad: además de la FK a `form_version.id`, validar que `form_version.call_id = application.call_id`, idealmente reforzado con integridad compuesta. Rechazar versiones de otra convocatoria, retiradas o no publicadas con 409/422 y tests negativos.
+7. **Cambio de versión mientras la persona rellena el formulario (propuesta, pendiente de aprobación PO):** el formulario carga la versión vigente y envía el `form_version_id` recibido. Al enviar, el servidor compara con la versión vigente:
+   - **Misma versión** → se acepta.
+   - **Hay una versión más nueva y la anterior es compatible** (la nueva solo añade campos opcionales u opciones, sin cambiar campos obligatorios ni el significado de opciones; se declara al aprobarla) **y está dentro de la ventana de gracia** (propuesta: 24 h desde `effective_from` de la nueva, a confirmar) → se acepta con la versión anterior, que queda registrada.
+   - **En cualquier otro caso** (cambio incompatible, ventana vencida, versión retirada) → `409 form_version_changed` con la definición nueva. La persona **revisa y confirma** la nueva versión; se conservan en el cliente las respuestas de campos con el mismo `field.id`. Nunca se reasignan respuestas a otra versión en silencio.
 
 ## 4. Ejemplo sintético
 
@@ -121,7 +125,7 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 **Diseño acordado para revisión:** actualizar concesiones de lectura G3/G6 durante una convocatoria **no** cambia `form_version`, `answers`, ni la definición publicada. Se usa el permiso RBAC vigente (`role_assignment`) más la autorización granular y temporal indicada en [Entregable 6](kan-107-6-control-acceso-dinamico.md).
 
 - **El esquema es propuesta, no implementación:** el sistema actual no tiene endpoints ni UI para conceder/revocar permisos por categoría. No afirmar que ya funciona.
-- Admin autorizado aprueba/ejecuta una concesión por usuario, ámbito de convocatoria, grupo de campos, finalidad y periodo; no se permite auto-concesión.
+- **Separación de papeles** (idéntica al [Entregable 6, §3](kan-107-6-control-acceso-dinamico.md)): el **responsable funcional/Data Owner designado aprueba** la concesión (usuario, ámbito de convocatoria, grupo de campos, finalidad y periodo) y el **administrador autorizado (`data_access.manage`) la ejecuta**. Ninguno puede concederse acceso a sí mismo y el administrador no recibe por ello lectura.
 - La API aplica el cambio desde el siguiente acceso, incluso si el frontend conserva una sesión; no basta ocultar componentes React.
 - El acceso y la revocación quedan auditados sin valores de campos; la Fundación deberá definir quién tiene autoridad para aprobar los accesos a datos reales.
 
@@ -130,3 +134,19 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 ## 9. Norma obligatoria de integración de esquema
 
 **KAN-107 ES SOLO DISEÑO Y NO DEBE GENERAR, COMMITAR NI NUMERAR MIGRACIONES.** La única persona propietaria de la cadena Alembic del módulo de admisión es backend (Elizabeth) bajo el alcance de KAN-42 y coordinación con David y el equipo. Si el cambio entra en un trabajo de admisión ya abierto y no integrado, se agrega allí con revisión; si ya está fusionado, se crea una revisión **únicamente en la fase de implementación**, partiendo de `alembic heads` y `down_revision` reales. **No reservar IDs, ni crear una rama independiente con su propio HEAD.** Ver Entregable 4.
+
+## English edition (equivalent sections, KAN-107 V2)
+
+**Decision.** One new table `form_version` stores an immutable, approved JSON definition per call (option C). Applications keep `form_version_id` and store answers as stable option IDs. Alternatives rejected: YAML in the repo (no FK, needs a deploy per change) and a fully relational field/option model (over-engineering).
+
+**§1 Requirements.** Identifiable version per call; the application keeps its version; later changes never alter answers; stable field/option IDs (never reused, only retired); approval trail (`approved_by/at`, `effective_from`). The 15-hour contact form is a separate lead flow and is out of scope.
+
+**§3 Rules.** The backend resolves the published, effective version for the same `call_id`. Approved definitions are immutable; retirement is a separate, audited state. Submitted applications keep their version and declared answers. Legacy versions only with an approved backfill plan. The API validates that version and application belong to the same call.
+
+**Rule 7 — version changes while a person is filling the form (proposal, PO to approve).** Same version: accept. Newer version published meanwhile: accept the previous one only if it is declared backward-compatible (new version only adds optional fields/options) and within a grace window (proposed 24 h, to be confirmed). Otherwise answer `409 form_version_changed` with the new definition; the person reviews and re-confirms, keeping answers for unchanged field IDs. Answers are never silently remapped.
+
+**§6–§7.** Contract consequences (public read-only `GET /calls/{id}/form`, server-side validation on `POST /applications`, group-filtered `GET /applications/{id}`) and risks (schema-less JSON, client trust, JSONB statistics).
+
+**§8 Dynamic permissions.** Independent from form versions. The **responsible functional owner approves** a grant (user, call, field group, purpose, period) and the **authorised administrator executes** it; nobody can self-grant and administering grants does not give read access. Enforced by the API from the next request; audited without field values. Proposal only, not implemented.
+
+**§9 Schema integration.** KAN-107 is design-only and must not create, number or reserve Alembic migrations; backend owns the single chain under KAN-42.

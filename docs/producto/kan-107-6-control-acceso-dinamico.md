@@ -105,3 +105,19 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 **Alembic:** ninguna revisión nueva en esta entrega; coordinación de backend con la cadena única y el HEAD real, según el [Entregable 4](kan-107-4-plan-implementacion.md). No reservar IDs ni crear HEADs paralelos.
 
 **EN acceptance summary:** Access grant/revoke must be authorised, scoped to one call, time-bounded, effective on the next API request, audited without field values, non-self-service and independent from form version. This is a **planned implementation** only; the project must not claim it works until tested.
+
+## English edition (equivalent sections, KAN-107 V2)
+
+**Status.** Proposed design, **not implemented**; it authorises no migrations, endpoints, permission changes or deployments. Implementation belongs to KAN-42 and the shared Alembic chain.
+
+**§1 Question solved.** Staff working on intake, selection or review can change during a call, so access must be grantable and revocable by functional need. That does not allow arbitrary changes to the form, answers, admission rules or lawful basis.
+
+**§2 Policy (deny by default).** G1/G2 identity and age, G4/G5/G7 residence, experience and channel: base role and scope. G3 (origin, gender) and G6 (personal situation, incl. disability): `applications.read` is necessary but insufficient; an explicit, active grant for that `call_id` is also required. G8/G9 follow the action; audit needs `audit.read`. Read rule: valid session AND `applications.read` in scope AND active, non-expired, non-revoked grant for that call and group AND approved purpose.
+
+**§3 Who can change permissions during a call.** (1) Authorised internal requester asks; (2) the **responsible functional owner / Data Owner approves** (not the DPO; identity pending with the Foundation); (3) the **authorised administrator (`data_access.manage`) executes** the grant or revocation and cannot approve or self-grant; (4) FastAPI enforces role, scope, approval and limits from the next request; (5) grants expire and are reviewed.
+
+**§4–§6.** Conceptual `FieldAccessGrant` (no tables or Alembic from KAN-107), conceptual contracts (not approved routes), synthetic two-call example.
+
+**§7 Negative tests (all pending, none PASS).** Valid grant, expiry, immediate revocation, different `call_id`, revoked base role, self-grant, operator without `data_access.manage`, no leakage via API/list/notes/logs/exports/errors, unchanged form version and answers, `current_situation` protected as a single group when it includes `disability`.
+
+**§8 Scope.** KAN-107 = proposal and documentation; KAN-42 = implementation and tests; Alembic = no new revision here.

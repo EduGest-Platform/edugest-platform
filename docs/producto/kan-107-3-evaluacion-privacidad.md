@@ -67,10 +67,10 @@ Probabilidad (P) e impacto (I): B/M/A. Estado: ABIERTO · MITIGADO EN DISEÑO ·
 | D2 | ¿El financiador exige nacionalidad, país y género? | **OBSERVADO en bootcamp + DECISIÓN PO de mantener en demo**; **exigencia contractual no confirmada**. Solicitar fundamento a Melissa |
 | D3 | Opciones de situación actual por financiador | **Simuladas en seed** para el MVP; la lista real la aporta la Fundación después |
 | D4 | Plazos de conservación | **Pendiente**, fuera de alcance |
-| D5 | Edad mínima | **18 años** (equipo) |
+| D5 | Edad mínima | **18 años** (respuesta del equipo; **pendiente de ratificación** PO/Fundación; el año de nacimiento no es prueba definitiva) |
 | D6 | Quién ve datos sensibles | **Refinada a política configurable**: solo personal con rol y ámbito autorizado **y concesión G3/G6** activa por convocatoria. Admin gestiona, pero no obtiene lectura G3/G6 automáticamente. El aspirante tiene derechos de protección de datos, independientes del acceso a notas internas |
 | D7 | EIPD | **Pendiente**, la valora la Fundación antes de usar datos reales |
-| D8 | `motivacion` | Se mantiene la experiencia; `motivacion` queda opcional/heredada |
+| D8 | `motivacion` | Se mantiene la experiencia. `motivacion` es **obligatoria hoy** en el contrato (`NOT NULL`); pasarla a opcional es una **propuesta pendiente de la PO** |
 | D9 | Residencia: revisión o elegibilidad | **Depende de la convocatoria**; la confirma una persona; se pide siempre |
 | D10 | Rectificación y borrado (por correo) | Proceso **pendiente**, fuera de alcance |
 
@@ -86,3 +86,17 @@ Probabilidad (P) e impacto (I): B/M/A. Estado: ABIERTO · MITIGADO EN DISEÑO ·
 **Principio:** los accesos pueden cambiar mientras la convocatoria esté abierta, **pero no cualquier usuario puede modificarlos**. La persona responsable de la Fundación define quién aprueba; un administrador autorizado los ejecuta. La categoría protegida requiere concesión adicional, aun para personal admin que consulte datos. Los datos siguen sujetos a principios RGPD incluso cuando exista acceso técnicamente concedido.
 
 **EN:** Access to protected field groups is denied by default, time-bound and call-scoped, with grant/revoke operations separated from read permission and audited. Existing RBAC alone does not implement this capability. Human review is not a blanket lawful basis for selection criteria.
+
+## English edition (equivalent sections, KAN-107 V2)
+
+**Scope.** Free proof of concept with synthetic data. Legal validation (lawful basis, DPIA, retention, controller, DPO) is outside the project and belongs to the Foundation before any real data. Official GDPR (EUR-Lex) and AEPD guidance were consulted on 17/11/2026; this is **not** a compliance validation.
+
+**§2 Data nature.** Ordinary: name, email, phone, year of birth, province, availability, experience, channel. Nationality/country of birth: ordinary but a proxy risk for ethnic origin. Gender: risky depending on context; real option set not captured. Disability: probable health data (art. 9). Other "current situation" options: to be assessed case by case.
+
+**§3 Risk matrix and §4 DPIA.** Risks R1–R18 with preventive controls; whether a DPIA is needed is for the Foundation to assess before real data.
+
+**§5 Legal requirements vs. recommendations vs. project policy.** Legal items (art. 5, 6, 9.2, 13, 22, 25, 32) must be verified with the DPO. Design recommendations: optional by default, `prefer_not_to_say`, sensitive data only in detail views, immutable form versions, human review of every admission. Project policy: synthetic data only, RBAC by role and scope, append-only audit. Human review alone is not a lawful basis for selection criteria.
+
+**§6 Decisions (17/11/2026).** D1 controller/basis pending; D2 funder requirement for nationality/country/gender not confirmed (kept by PO decision in the demo); D5 minimum age 18 is a team answer pending ratification; D6 sensitive access = role + scope + active G3/G6 grant per call; D8 `motivacion` is mandatory today, optional is a pending PO proposal; D9 residence depends on the call and is confirmed by a person.
+
+**§7 Dynamic privileges (R15–R18).** Self-grant, stale access after revocation, leakage through summaries/CRM/exports/logs, and ungrounded grants are mitigated by design (not implemented): `data_access.manage`, no self-grant, per-request checks, DTO allow-lists and audit without values.
