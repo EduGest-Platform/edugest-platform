@@ -91,6 +91,7 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 - **Columnas en `person`**: datos estables (`first_name`, `last_name`, `phone`, `birth_year`, `birth_country`, `nationality`, `gender`).
 - **`application.answers`**: lo configurable o dependiente de convocatoria (`residence_region`, `programming_experience`, `current_situation`, `referral_source`, `disponibilidad`).
 - Los campos sensibles no están en `Summary` ni en listados (Entregable 4).
+- El requisito de residencia, la cuota de género y las prioridades **por convocatoria** pueden declararse en `definition.review_hints` (texto informativo para quien revisa, p. ej. `{"residence": "Madrid"}` o `"online"`). Son avisos, no filtros automáticos. En el MVP la situación actual se simula con seed sintético.
 
 ## 6. Consecuencias sobre contratos
 
@@ -98,7 +99,7 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 |---|---|
 | `GET /calls/{id}/form` (nuevo, **público**, solo lectura) | Devuelve la versión vigente (sin datos personales) para que React pinte el formulario |
 | `POST /applications` | `ApplicationCreate` incluye `form_version` (int, opcional → por defecto la vigente) y `answers: dict[str, Any]`; el servidor valida contra la versión (campos requeridos, IDs de opción válidos, exclusiones). Responde 422 con el ID de campo fallido |
-| `GET /applications/{id}` | Añade `form_version` y `answers` solo si `applications.read_sensitive` para los campos marcados |
+| `GET /applications/{id}` | Añade `form_version` y `answers` (mismo permiso `applications.read`; listados nunca) |
 | `POST/PATCH` de administración de formularios | **Fuera de MVP**: la versión se carga por seed/migración con PR revisado; después endpoint con permiso `forms.manage` |
 | Cliente TS | `pnpm gen:api` regenera tipos; el formulario React se pinta desde `definition` (campos `text/select/multi_select`) |
 

@@ -22,6 +22,25 @@
 | Disponibilidad no obligatoria en la inscripción inicial | `disponibilidad` pasa a opcional (cambio **incompatible** en API y BD, ver §4). |
 | Separar nombre y apellidos | `#1` y `#2` → `first_name`, `last_name`. Cambio incompatible (ver §4). |
 
+### Respuestas del equipo (17/11/2026) a las preguntas para Melissa
+
+Dadas por el equipo, **no por Melissa**; quedan como supuestos de trabajo a ratificar por la Fundación.
+
+| Tema | Respuesta |
+|---|---|
+| Nacionalidad, país de nacimiento, género | El financiador los exige (figura en la web de Somos F5). Se piden como en el formulario real |
+| Uso | No se usa nacionalidad para admitir o no. Género y vulnerabilidad pueden pesar en la revisión (p. ej. 70–80 % de mujeres en una convocatoria; prioridad por nacionalidad extranjera unida a otras vulnerabilidades). Siempre decide una persona |
+| Situación actual por convocatoria | En el MVP se **simula** con datos sintéticos de seed; la Fundación no la va a implementar ahora (prueba de concepto) |
+| "Joven <30" | Autodeclaración si el formulario no pide fecha de nacimiento |
+| Experiencia vs. motivación | Se mantiene la experiencia en programación |
+| "Cómo nos has conocido" | Opcional, con "otros". Pendiente de revisar con la captura del formulario real |
+| Edad mínima | 18 años |
+| Residencia | Depende de la convocatoria (Madrid, Barcelona, online). Se pide siempre; lo confirma una persona |
+| Quién ve los datos | Selección, preselección y administración (todo el personal que gestiona candidaturas). No coder, alumno ni aspirante |
+| Rectificación/borrado | Llegan por correo. Proceso **pendiente** (fuera del alcance de la prueba de concepto) |
+| Responsable del tratamiento y DPO | **Pendiente**; se deja anotado en el README, no se resuelve ahora |
+| Revisión legal (RGPD/LOPDGDD/AEPD) | **Fuera del alcance** del proyecto (gratuito, datos sintéticos); corresponde a la Fundación en una fase posterior |
+
 ## 1. Auditoría del inventario (qué falta, qué se duplica, qué choca)
 
 ### 1.1 Estado real en `dev` (evidencia)
@@ -52,7 +71,7 @@
 | H11 | Pendiente | `motivacion` **no existe en el formulario real** (el real pide experiencia, `#10`). | Marcar PENDIENTE: no pedir dos textos largos sin justificar necesidad (minimización). Decide la PO. |
 | H12 | Técnico | `acepta_datos_sinteticos` es un aviso de entorno de demo, no un consentimiento RGPD. | Mantener solo mientras haya datos sintéticos; **no** reutilizarlo como base jurídica ni como `#14`. |
 | H13 | Pendiente | `#13` (comunicaciones) y `#14` (tratamiento): el real los mezcla en el mismo bloque. | Separar finalidades; `#13` fuera de MVP (la demo no envía comunicaciones). |
-| H14 | Exposición | `PersonOut`/`ApplicationSummary` (listados) llegan a todo el que tenga `applications.read`. | Los nuevos datos sensibles **no** entran en listados ni en `Summary`; solo en detalle, con permiso específico (§2.3, Entregable 4). |
+| H14 | Exposición | `PersonOut`/`ApplicationSummary` (listados) llegan a todo el que tenga `applications.read`. | Los nuevos datos sensibles **no** entran en listados ni en `Summary`; solo en detalle y con el mismo permiso `applications.read` (decisión del equipo 17/11: no hace falta permiso nuevo en el MVP). |
 | H15 | Consistencia | El prototipo web (`src/gistar/views/Aspirant.tsx`, `seed.json`) usa `nombre_ficticio`, `motivacion`, `disponibilidad`. | Migrar al cliente generado (`src/shared/api/schema.gen.ts`) en el paso de frontend. |
 
 ## 2. Diccionario por campo
@@ -69,14 +88,14 @@ Convenciones: **Entidad** = `P` Person · `A` Application (instantánea) · `C` 
 | 2 | Apellidos | `last_name` / `person.last_name` | `str` 1–120 | Sí (real: obligatorio) | Persona | P | ORD | MVP |
 | 3 | Correo | `email` / `person.email` | email, normalizado, único | Sí. Ya existe (`normalize_email`). Demo: solo `@example.test` | Persona | P | ORD | MVP (existe) |
 | 4 | Teléfono | `phone` / `person.phone` | E.164 (`+34600000000`) `str` ≤16 | Sí (real) — necesario para AS-IS (recordatorios) | Persona | P | ORD | MVP |
-| 5 | Año de nacimiento | `birth_year` / `person.birth_year` | `int` 1900–año actual−14 (rango a confirmar) | Sí (real). Solo año (minimización) | Persona | P | ORD | MVP |
-| 6 | País de nacimiento | `birth_country` / `person.birth_country` | ISO 3166-1 alfa-2 `str(2)` | Real: sí. **Propuesta: opcional** hasta que la Fundación acredite necesidad (ver Entregable 3 R3) | Persona | P | ORD* | **PENDIENTE** (PO: mantener) |
-| 7 | Nacionalidad | `nationality` / `person.nationality` | ISO 3166-1 alfa-2 `str(2)` | Ídem #6 | Persona | P | ORD* | **PENDIENTE** (PO: mantener) |
-| 8 | Género | `gender` / `person.gender` | opciones estables: `woman, man, non_binary, other, prefer_not_to_say` | Real: sí. **Propuesta: opcional con `prefer_not_to_say`**; uso solo estadístico (Matriz de Evaluación Ética) | Persona (autodeclarado) | P | ORD* | **PENDIENTE** (PO: mantener) |
-| 9 | Provincia/distrito de residencia | `residence_region` / `application.answers` | código de provincia (INE) o distrito (PT) | Sí. Regla de convocatoria (Madrid) = **revisión**, no exclusión automática | Persona | A | ORD | MVP |
+| 5 | Año de nacimiento | `birth_year` / `person.birth_year` | `int`; `birth_year <= año actual − 18` (edad mínima 18, dato del equipo 17/11) | Sí (real). Solo año (minimización). Con solo el año no se prueba la mayoría de edad exacta: lo comprueba la persona que revisa | Persona | P | ORD | MVP |
+| 6 | País de nacimiento | `birth_country` / `person.birth_country` | ISO 3166-1 alfa-2 `str(2)` | **Sí** (el equipo indica que el financiador lo exige y figura en la web de Somos F5) | Persona | P | ORD* | MVP (uso restringido, ver G3) |
+| 7 | Nacionalidad | `nationality` / `person.nationality` | ISO 3166-1 alfa-2 `str(2)` | **Sí** (ídem #6) | Persona | P | ORD* | MVP (uso restringido, ver G3) |
+| 8 | Género | `gender` / `person.gender` | opciones estables: `woman, man, non_binary, other, prefer_not_to_say` | **Sí** (ídem #6). Se mantiene `prefer_not_to_say` como opción válida. Uso: cuotas/estadística de la convocatoria (ver G3) | Persona (autodeclarado) | P | ORD* | MVP (uso restringido, ver G3) |
+| 9 | Provincia/distrito de residencia | `residence_region` / `application.answers` | código de provincia (INE) o distrito (PT) | Sí. El requisito de residencia **depende de la convocatoria** (Madrid, Barcelona, online = sin requisito); lo confirma una persona al revisar, no hay exclusión automática | Persona | A | ORD | MVP |
 | 10 | Experiencia en programación | `programming_experience` / `application.answers` | texto 1–1500 | Sí (real). No pedir datos sensibles (aviso en UI) | Persona | A | ORD | MVP |
 | 11 | Situación actual (varias) | `current_situation` / `application.answers` | lista de IDs de opción de la versión de formulario | Sí, ≥1. `none` excluyente (H5). Opciones por convocatoria (PO) | Persona (autodeclarado) | A | **ESP?** (p. ej. discapacidad) / ORD* | MVP con cuidado |
-| 12 | ¿Cómo nos conociste? (varias) | `referral_source` / `application.answers` | lista de IDs | Real: sí. **Propuesta: opcional** (solo métricas de captación) | Persona | A | ORD | MVP |
+| 12 | ¿Cómo nos conociste? (varias) | `referral_source` / `application.answers` | lista de IDs | **Opcional**, con opción `other` (decisión del equipo 17/11; pendiente de contrastar con la captura del formulario real) | Persona | A | ORD | MVP |
 | 13 | Comunicaciones de Somos F5 | `marketing_opt_in` | `bool` | No | Persona | P (con fecha y versión de texto) | ORD | POSTERIOR |
 | 14 | Información/consentimiento de tratamiento | `privacy_notice_version`, `privacy_notice_ack_at` / `application` | `str` + `datetime` | Sí. **Es acuse de información (art. 13), no se presume base jurídica** (H12) | Persona | A | TEC | MVP |
 
@@ -87,7 +106,7 @@ Convenciones: **Entidad** = `P` Person · `A` Application (instantánea) · `C` 
 | Convocatoria | `call_id` (existe) | `str(30)` FK | Sí | A | TEC | MVP (existe) |
 | Versión del formulario aplicada | `form_version_id` (nuevo) | FK `form_version.id` | Sí en altas nuevas | A | TEC | MVP (Entregable 2) |
 | Disponibilidad | `disponibilidad` (existe) | `Mañana\|Tarde\|Flexible` | **No** (PO 17/11) | A | ORD | MVP (cambio incompatible H9) |
-| Motivación | `motivacion` (existe) | texto 10–2000 | **PENDIENTE** (H11) | A | ORD | No ampliar hasta decisión PO |
+| Motivación | `motivacion` (existe) | texto 10–2000 | **Opcional / heredado**: el equipo mantiene `programming_experience` (#10) como pregunta del formulario; `motivacion` no se amplía ni se exige (interpretación pendiente de confirmar) | A | ORD | Sin cambios hasta confirmar |
 | Aviso de datos sintéticos | `acepta_datos_sinteticos` (existe) | `Literal[True]` | Sí mientras haya demo | A | TEC | Retirar en producción real |
 | Código de candidatura | `codigo` (existe) | `str(20)` único | Auto | A | TEC | MVP (existe) |
 | Etapa | `stage` (existe) | enum de 9 valores | Auto | A | TEC | Existe; las decisiones de admisión son **humanas** |
@@ -103,10 +122,10 @@ Agrupado por perfil de riesgo para no repetir 24 filas idénticas; cada campo he
 |---|---|---|---|---|---|---|
 | G1 Identificación y contacto | `#1–#4`, `email` | Captación (PO decide) | Art. 6.1 (b ó f ó e según naturaleza de la Fundación) — **confirmar** | Necesario para contactar y gestionar la candidatura | `applications.read`: admin global · captación programa · selección convocatoria. Coordinación y docente: **no** | Contacto; no entra en estadísticas nominales |
 | G2 Edad | `#5` | Selección | Ídem G1 | Año, no fecha completa; sirve a criterio "<30" del financiador | Igual G1 | Preselección **informativa**; estadística agregada |
-| G3 Origen y género | `#6, #7, #8` | PO / Fundación | **Sin confirmar**; si el financiador exige informe → obligación o interés asociado a la financiación — **no asumir** | **No acreditada aún**; la PO decide mantener → documentar finalidad y limitarla a estadística/equidad | Solo en detalle, permiso específico propuesto `applications.read_sensitive`; **nunca** en listados | **No** debe entrar en preselección; solo estadísticas agregadas con supresión (`min_group_size=5`) |
+| G3 Origen y género | `#6, #7, #8` | PO / Fundación | **Sin confirmar** (queda para la Fundación/DPO) | Exigido por el financiador (dato del equipo, figura en la web de Somos F5) | Solo en detalle, mismo ámbito que `applications.read` (selección, preselección/captación, administración); **nunca** en listados; fuera de coder, alumno y aspirante | **Sí influye en la selección de forma documentada, siempre con revisión humana**: p. ej. cuota de mujeres de la convocatoria o prioridad por vulnerabilidad combinada con nacionalidad. **Nunca** como criterio único ni automático. Estadísticas agregadas con supresión |
 | G4 Residencia | `#9` | Selección | Ídem G1 | Requisito de la convocatoria (Madrid) | Igual G1 | Señal para revisión humana; **sin exclusión automática** |
 | G5 Perfil técnico | `#10`, `motivacion` | Selección | Ídem G1 | Valoración humana de itinerario | Igual G1 | Apoya revisión humana |
-| G6 Situación personal | `#11` | PO / Fundación / DPO | **Posible art. 9**: si trata discapacidad u otra categoría especial hace falta además una excepción del art. 9.2 — **pendiente DPO** | Opciones definidas por financiador/convocatoria; justificar cada opción | Solo detalle, `applications.read_sensitive`; agregados con supresión | Criterio de elegibilidad para **revisión humana**; sin decisión automatizada (art. 22) |
+| G6 Situación personal | `#11` | PO / Fundación / DPO | **Posible art. 9**: si trata discapacidad u otra categoría especial hace falta además una excepción del art. 9.2 — **pendiente DPO** | Opciones definidas por financiador/convocatoria; justificar cada opción | Solo detalle, mismo ámbito que `applications.read`; agregados con supresión | Criterio de elegibilidad para **revisión humana**; sin decisión automatizada (art. 22) |
 | G7 Captación | `#12` | Captación | Ídem G1 | Métrica de canal; no necesaria para decidir | Igual G1 | Solo estadística |
 | G8 Información/consentimientos | `#13, #14` | DPO/Fundación | Texto de información art. 13; consentimiento solo donde sea base válida (p. ej. comunicaciones) | — | Registro de versión y fecha; lectura por admin | No |
 | G9 Técnicos | `codigo`, `stage`, `form_version_id`, … | Equipo técnico | n/a | n/a | Según endpoint | No |
