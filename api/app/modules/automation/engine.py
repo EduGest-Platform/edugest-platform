@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import StrEnum
+from hashlib import sha256
+import json
 
 
 class TaskKind(StrEnum):
@@ -12,6 +14,26 @@ class TaskKind(StrEnum):
     INTERVIEW = "interview"
     REQUIREMENTS = "requirements"
     RESPONSE = "response"
+
+
+class Action(StrEnum):
+    HUMAN_REVIEW = "human_review"
+    SIMULATED_REMINDER = "simulated_reminder"
+
+
+class Reason(StrEnum):
+    MISSING_REQUIREMENTS = "missing_requirements"
+    RESPONSE_WINDOW_ELAPSED = "response_window_elapsed"
+    INFORMATION_SESSION = "information_session"
+    EXERCISES = "exercises"
+    DOCUMENTATION = "documentation"
+    INTERVIEW = "interview"
+
+
+def identifier(value: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("Identifiers must be non-empty strings")
+    return value.strip()
 
 
 @dataclass(frozen=True)
@@ -25,8 +47,14 @@ class Task:
     missing_requirements: tuple[str, ...] = ()
 
     def __post_init__(self):
-        if not all((self.call_id.strip(), self.application_id.strip(), self.task_id.strip())):
-            raise ValueError("Call, application and task identifiers are required")
+        for name in ("call_id", "application_id", "task_id"):
+            object.__setattr__(self, name, identifier(getattr(self, name)))
+        if type(self.completed) is not bool:
+            raise ValueError("Completed must be a boolean")
+        if not isinstance(self.missing_requirements, tuple):
+            raise ValueError("Missing requirements must be a tuple of identifiers")
+        requirements = tuple(sorted({identifier(value) for value in self.missing_requirements}))
+        object.__setattr__(self, "missing_requirements", requirements)
         if not isinstance(self.kind, TaskKind):
             raise ValueError("Unknown task kind")
         require_timezone(self.due_at)
@@ -36,13 +64,17 @@ class Task:
 class Policy:
     call_id: str
     version: str
+    response_grace: timedelta
     enabled: bool = False
     reminder_delay: timedelta = timedelta(0)
-    response_grace: timedelta = timedelta(days=7)
 
     def __post_init__(self):
-        if not self.call_id.strip() or not self.version.strip():
-            raise ValueError("Call and policy version are required")
+        for name in ("call_id", "version"):
+            object.__setattr__(self, name, identifier(getattr(self, name)))
+        if type(self.enabled) is not bool:
+            raise ValueError("Enabled must be a boolean")
+        if not isinstance(self.reminder_delay, timedelta) or not isinstance(self.response_grace, timedelta):
+            raise ValueError("Delays must be timedeltas")
         if self.reminder_delay < timedelta(0) or self.response_grace < timedelta(0):
             raise ValueError("Delays cannot be negative")
 
@@ -50,14 +82,14 @@ class Policy:
 @dataclass(frozen=True)
 class Proposal:
     # This tuple is also the proposed database uniqueness key, never a delivery receipt.
-    key: tuple[str, str, str, str, str]
-    action: str
-    reason: str
+    key: tuple[str, str, str, str, str, str]
+    action: Action
+    reason: Reason
     proposed_at: datetime
 
 
 def require_timezone(value: datetime) -> None:
-    if value.tzinfo is None or value.utcoffset() is None:
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("Timezone-aware timestamps are required")
 
 
@@ -83,15 +115,16 @@ def propose(tasks: list[Task], policy: Policy, now: datetime) -> tuple[Proposal,
         if task.kind == TaskKind.REQUIREMENTS:
             if not task.missing_requirements:
                 continue
-            action, reason = "human_review", "missing_requirements"
+            action, reason = Action.HUMAN_REVIEW, Reason.MISSING_REQUIREMENTS
         elif task.kind == TaskKind.RESPONSE:
             if now < task.due_at + policy.response_grace:
                 continue
-            action, reason = "human_review", "response_window_elapsed"
+            action, reason = Action.HUMAN_REVIEW, Reason.RESPONSE_WINDOW_ELAPSED
         else:
             if now < task.due_at + policy.reminder_delay:
                 continue
-            action, reason = "simulated_reminder", task.kind.value
-        key = (task.call_id, task.application_id, task.task_id, policy.version, action)
+            action, reason = Action.SIMULATED_REMINDER, Reason(task.kind.value)
+        revision = sha256(json.dumps([task.kind.value, task.missing_requirements], separators=(",", ":")).encode()).hexdigest()
+        key = (task.call_id, task.application_id, task.task_id, policy.version, action.value, revision)
         proposals.append(Proposal(key, action, reason, now))
     return tuple(proposals)
