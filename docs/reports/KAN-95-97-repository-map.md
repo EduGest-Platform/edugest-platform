@@ -1,6 +1,6 @@
 # Repository map / Mapa del repositorio — KAN-95, KAN-97
 
-**Inspected / Inspeccionado:** 2026-11-17, `dev` at `d60f61a546438a1ee67089c8ffa7294c0dc84277` (151 tracked files / archivos versionados).
+**Inspected / Inspeccionado:** 2026-11-17, `dev` at `8c3b869692eff4a5116f7514fd258d41d8b256bd` (156 tracked files / archivos versionados).
 Foundation reference / referencia inicial: `441772b5421a44d9f1733c6a738f4f844aba60b3` (PR #3).
 Owner / responsable: Yohanna. Reviewer / revisión: Elizabeth; Anas for import boundaries / para límites de importación (KAN-96, review still pending / pendiente).
 
@@ -14,18 +14,18 @@ Mapa estático del árbol Git y de las configuraciones, **CODE_PRESENT_NOT_RUN**
 | `src/gistar/` | Vistas, componentes, dominio y seed de demo local; datos locales no equivalen a API persistida. |
 | `src/shared/api/` | Cliente HTTP, sesión y conmutador de vistas; `schema.gen.ts` se genera desde OpenAPI. |
 | `api/app/core/` | Configuración, DB, sesiones, autorización y auditoría; Elizabeth. Cambios de permisos requieren revisión cruzada. |
-| `api/app/modules/` | En esta base: admissions, audit, catalog, identity, learning. `learning` solo tiene Enrollment; no implica F3 terminado. |
+| `api/app/modules/` | En esta base: admissions, audit, automation, catalog, identity, learning. `learning` solo tiene Enrollment; no implica F3 terminado. `automation` es el motor offline de reglas (PR #10). |
 | `api/app/seed.py` | Carga sintética del servidor; Elizabeth. La entrada semilla compartida es `src/gistar/seed.json`. |
 | `api/alembic/versions/` | Solo `0001_f1_cimientos.py` en este commit. No reservar nuevos números sin coordinar con Elizabeth/David. |
 | `contracts/openapi.json` | Contrato generado; se actualiza con el cambio de API, sin resolver divergencias a mano. |
-| `api/tests/`, `src/gistar/__tests__/` | Pruebas API/PostgreSQL y Vitest respectivamente; presencia no certifica ejecución. |
+| `api/tests/`, `src/gistar/__tests__/`, `evals/automation/` | Pruebas API/PostgreSQL, Vitest y evaluador offline de automatización (`unittest`); presencia no certifica ejecución. |
 | `e2e/` | Scripts actuales CDP (`cdp.mjs`, `f1-api-mode.mjs`, `local-mode.mjs`); no es una suite Playwright ya integrada. Yohanna. |
 | `infra/`, Dockerfiles, `render.yaml` | Compose, PostgreSQL/initdb, web nginx, MLflow y preparación Render; Yohanna. Publicar requiere aprobación. |
-| `.github/workflows/ci.yml` | Jobs web, API, secrets y compose en esta base; revisar Checks por commit. Yohanna. |
+| `.github/workflows/ci.yml` | Jobs automation, web, API, secrets y compose en esta base; revisar Checks por commit. Yohanna. |
 | `.figma/`, `vite.config.ts`, `.mise.toml` | Compatibilidad de Make y herramientas; conservar estructura y plugins existentes. |
 | `docs/` | Diagnóstico, arquitectura, decisiones, despliegue e informes con estados de evidencia. |
 
-En el commit inspeccionado no hay `ml/`, `evals/`, módulos `knowledge`, `agents`, `automation`, `risk` o `integrations`. Pueden existir propuestas en otras ramas: no duplicarlas ni describirlas como integradas en `dev`. PR #7 y #10 contienen trabajo independiente de este mapa y necesitan su propia revisión.
+En el commit inspeccionado no hay `ml/` ni módulos `knowledge`, `agents`, `risk` o `integrations`. `evals/` solo contiene `automation/` (PR #10, ya fusionado). Pueden existir propuestas en otras ramas: no duplicarlas ni describirlas como integradas en `dev`. El PR #7 contiene trabajo independiente de este mapa y necesita su propia revisión.
 
 ## EN — verified layout and boundaries
 
@@ -33,11 +33,11 @@ This is a static Git/configuration map, **CODE_PRESENT_NOT_RUN** for the listed 
 
 React/Tailwind starts at `src/main.tsx`, `src/App.tsx` and `src/index.css`; Anas owns frontend integration. `src/gistar/` contains the local demo/domain/seed, while `src/shared/api/` contains HTTP/session/view switching and the generated client. Local data is not persisted API data.
 
-Elizabeth owns `api/app/core/`, backend modules and server seed. Current modules are admissions, audit, catalog, identity and learning; learning only contains Enrollment, not completed F3. Only migration 0001 exists at this snapshot. Coordinate future migration numbers with Elizabeth/David. Regenerate OpenAPI and its TypeScript client together.
+Elizabeth owns `api/app/core/`, backend modules and server seed. Current modules are admissions, audit, automation, catalog, identity and learning; learning only contains Enrollment, not completed F3. Only migration 0001 exists at this snapshot. Coordinate future migration numbers with Elizabeth/David. Regenerate OpenAPI and its TypeScript client together.
 
-Yohanna owns infrastructure, E2E and CI integration. Current E2E scripts use CDP, not an already integrated Playwright suite. CI defines web/API/secrets/compose jobs; inspect actual Checks per commit. Render files prepare deployment, which still needs explicit approval.
+Yohanna owns infrastructure, E2E and CI integration. Current E2E scripts use CDP, not an already integrated Playwright suite. CI defines automation/web/API/secrets/compose jobs; inspect actual Checks per commit. Render files prepare deployment, which still needs explicit approval.
 
-No `ml/`, `evals/`, knowledge/agents/automation/risk/integrations modules exist in this inspected commit; other branches may propose them. Do not duplicate PR #7/#10 or describe their contents as merged. Documentation and code presence alone do not establish working features.
+No `ml/` or knowledge/agents/risk/integrations modules exist in this inspected commit, and `evals/` only holds `automation/` (PR #10, merged); other branches may propose more. Do not duplicate PR #7 or describe its contents as merged. Documentation and code presence alone do not establish working features.
 
 ## Import/configuration guardrails / Límites de configuración
 
@@ -49,7 +49,7 @@ No `ml/`, `evals/`, knowledge/agents/automation/risk/integrations modules exist 
 
 ## Evidence / Evidencia
 
-- `git ls-tree -r --name-only <commit>`: 151 tracked paths; checked listed modules, migration and entry points / 151 rutas, comprobados módulos, migración y entradas.
+- `git ls-tree -r --name-only <commit>`: 156 tracked paths; checked listed modules, migration and entry points / 156 rutas, comprobados módulos, migración y entradas.
 - Read / lectura: `vite.config.ts`, `tsconfig.json`, `package.json`, `AGENTS.md`, `CLAUDE.md`, `CONSTITUTION.md` and API/test entry points.
 - Local Markdown links and path/configuration checks: PASS / enlaces locales y comprobaciones de rutas/configuración correctos (commands recorded in PR / comandos resumidos en PR).
 - No runtime tests for this documentation-only change / sin pruebas de ejecución para este cambio documental.
