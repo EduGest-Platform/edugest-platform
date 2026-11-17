@@ -41,6 +41,22 @@ Dadas por el equipo, **no por Melissa**; quedan como supuestos de trabajo a rati
 | Responsable del tratamiento y DPO | **Pendiente**; se deja anotado en el README, no se resuelve ahora |
 | Revisión legal (RGPD/LOPDGDD/AEPD) | **Fuera del alcance** del proyecto (gratuito, datos sintéticos); corresponde a la Fundación en una fase posterior |
 
+### Evidencia adicional: formulario del curso de 15 h (captura del equipo, 17/11/2026)
+
+Fuente: captura de `landings.somosf5.org/proyecto-ai4inclusion-curso15h` aportada por el equipo (PDF y capturas; el PDF no se pudo procesar en esta sesión, se usó la imagen, de baja resolución: **confirmar los textos exactos**).
+
+| Aspecto | Formulario bootcamp (inventario de Anas) | Formulario curso 15 h (captura) |
+|---|---|---|
+| Encabezado | Inscripción | "¿Quieres saber más? Déjanos tus datos para ponernos en contacto contigo" (solicitud de contacto) |
+| Campos visibles | 14 campos (§2.1) | Nombre\*, Apellidos\*, Correo\*, **Ciudad\*** (texto), Teléfono, comentarios, "acepto comunicaciones", "acepto tratamiento de datos"\*, reCAPTCHA |
+| Nacionalidad, país de nacimiento, género, situación, año de nacimiento | Sí | **No aparecen** |
+
+Consecuencias:
+1. **Cada oferta formativa tiene su propio formulario**, con campos distintos: refuerza el versionado por convocatoria (Entregable 2). La respuesta del equipo sobre "el financiador exige nacionalidad, país y género" se refiere al formulario de **bootcamp**; no debe extenderse a otros cursos.
+2. Aparece un campo **`city`** (texto libre, "Ciudad") que el inventario no tenía. En el bootcamp la residencia es un desplegable de provincia/distrito (#9). Propuesta: ambos son configurables por versión (`residence_region` select o `city` texto).
+3. Hay que **confirmar con Anas/PO qué formulario es la referencia del MVP** (bootcamp de 1250 h o curso de 15 h). El diccionario documenta el bootcamp, que es el más completo; el del curso de 15 h cabe como una segunda definición con menos campos.
+4. En el curso de 15 h "teléfono" y los comentarios no parecen obligatorios (confirmar).
+
 ## 1. Auditoría del inventario (qué falta, qué se duplica, qué choca)
 
 ### 1.1 Estado real en `dev` (evidencia)

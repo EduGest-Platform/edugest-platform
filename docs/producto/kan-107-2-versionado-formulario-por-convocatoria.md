@@ -14,6 +14,8 @@
 | Quién aprueba y cuándo entra en vigor | `approved_by` (FK `app_user`), `approved_at`, `effective_from` |
 | Sin duplicar estructuras | 1 tabla nueva + 1 FK + 1 columna JSONB |
 
+**Evidencia real:** el formulario del curso de 15 h (captura 17/11) tiene solo ~6 campos y el del bootcamp 14; la diferencia entre ofertas ya existe hoy y justifica una definición por convocatoria (ver Entregable 1).
+
 ## 2. Comparativa breve
 
 | Criterio | A. JSON/YAML versionado **en el repositorio** | B. Tablas relacionales (`form_field`, `form_option`, `form_version`…) | **C. Recomendada: 1 tabla `form_version` con definición JSON en BD** |
