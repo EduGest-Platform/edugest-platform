@@ -4,6 +4,18 @@ from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
 
+from app.modules.automation.engine import TaskKind
+
+
+# Explicit scope, not catalogue membership: minutes never authorize a new task type.
+PRESELECTION_TASK_TYPES = frozenset({
+    TaskKind.INFORMATION_SESSION.value,
+    TaskKind.EXERCISES.value,
+    TaskKind.DOCUMENTATION.value,
+    TaskKind.REQUIREMENTS.value,
+    TaskKind.RESPONSE.value,
+})
+
 
 def identifier(value: str) -> str:
     if not isinstance(value, str) or not value.strip():
@@ -29,8 +41,8 @@ class Occurrence:
             object.__setattr__(self, 'evidence_id', identifier(self.evidence_id))
         if self.automated and (not self.eligible or self.evidence_id is None):
             raise ValueError('Automated occurrences require eligibility and execution evidence')
-        if self.eligible and self.task_type == 'interview':
-            raise ValueError('Selection interviews are outside the preselection metric')
+        if self.eligible and self.task_type not in PRESELECTION_TASK_TYPES:
+            raise ValueError('Eligible task type must be an allowed preselection TaskKind')
 
 
 def evaluate(rows: list[Occurrence], *, manual_minutes: dict[str, float], catalogue_version: str) -> dict:
