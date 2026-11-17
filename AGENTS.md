@@ -63,7 +63,7 @@ Use explicit status labels: `VERIFIED_RUNNING`, `CODE_PRESENT_NOT_RUN`, `MOCK`, 
 
 Two distinct data sources through the **backend**: (a) RAG documents with source citations, abstention and corpus scopes; (b) **allowlisted read-only backend functions** on PostgreSQL (`get_attendance_summary`, later `get_pending_submissions`, `get_competency_progress`). The LLM **never executes arbitrary SQL**, never receives a database URL/credential and never chooses its own authorised scope. Authorization and cohort binding are enforced in FastAPI before data retrieval. Answer with period, data freshness and units (0.5/1). No data: abstain, do not fabricate zeros. Log minimum necessary; no personal data in model prompts/logs unless lawful and approved (demo synthetic only).
 
-Risk ML: baseline trained on documented synthetic data, model card and limitations, never automatic adverse decisions. AI feedback: draft only, teacher approval before publishing. The 70% administrative target must have an approved denominator, count eligible tasks (first proposed metric) or time savings if agreed; **never claim measured success without evidence**.
+Risk ML: baseline trained on documented synthetic data, model card and limitations, never automatic adverse decisions. AI feedback: draft only, teacher approval before publishing. The 70% administrative target uses estimated time saved with task counts (PO confirmation 2026-11-17; see `evals/automation/README.md`). Melissa approval, minute catalogue and person/batch units remain pending; **never claim measured success without evidence**.
 
 ## 6. Guardrails for every contributor or AI agent
 
@@ -103,3 +103,6 @@ The confirmed team assignment is in section V3 above. Yohanna facilitates Scrum;
 Report: (1) inspected files/branch, (2) current status `VERIFIED_RUNNING/CODE_PRESENT_NOT_RUN/MOCK`, (3) approach and trade-offs, (4) changed paths, (5) actual commands/tests/results, (6) new risks and reviewer/PO decisions. Never claim tests pass if they were not run. Do not infer the presence of `.git` from `.github`.
 
 **ES (resumen):** Inspeccionar, no inventar estado real, hacer cambios mínimos en inglés, documentar en ES/EN, probar RBAC y datos sintéticos, respetar fuentes, guardarraíles y decisiones del PO. Consultar [CONSTITUTION.md](CONSTITUTION.md), [commands.md](commands.md), [contribution.md](contribution.md), [projectplan.md](projectplan.md) y [CLAUDE.md](CLAUDE.md).
+
+
+> ES (17/11/2026): La PO confirmó medir el 70 % como ahorro de tiempo estimado, con número de tareas; aprobación formal de Melissa, catálogo y unidad persona/lote pendientes. EN: PO confirmed estimated time saved plus task counts; formal client approval, catalogue and person/batch units remain pending. Canonical formula and limits: `evals/automation/README.md` (repository root).
