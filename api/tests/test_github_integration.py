@@ -2,6 +2,7 @@
 
 import json
 import threading
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
@@ -336,6 +337,47 @@ def test_malformed_profile_payloads_raise_github_api_error():
     client, _ = client_for({"/users/coder-01": (200, {"html_url": "https://github.com/coder-01"}, {}), "/users/coder-01/repos": (200, [], {})})
     with pytest.raises(GithubApiError):
         fetch_portfolio_snapshot("https://github.com/coder-01", client)
+
+
+def test_public_exports_are_available():
+    import app.modules.integrations.github as github
+
+    assert github.InvalidGithubUrl is InvalidGithubUrl
+    assert all(hasattr(github, name) for name in github.__all__)
+
+
+@pytest.mark.parametrize(
+    "status, headers, error_type, code",
+    [
+        (301, {"location": "https://example.test"}, GithubRedirected, "redirected"),
+        (404, {}, GithubNotFound, "not_found"),
+        (429, {}, GithubRateLimited, "rate_limited"),
+        (401, {}, GithubAuthError, "auth_error"),
+        (500, {}, GithubApiError, "api_error"),
+    ],
+)
+def test_api_errors_expose_stable_codes(status, headers, error_type, code):
+    client, _ = client_for({"/repos/o/r": (status, {}, headers)})
+    with pytest.raises(error_type) as caught:
+        fetch_portfolio_snapshot("https://github.com/o/r", client)
+    assert caught.value.code == code
+
+
+def test_invalid_url_exposes_stable_code_without_network():
+    client, fake = client_for({})
+    with pytest.raises(InvalidGithubUrl) as caught:
+        fetch_portfolio_snapshot("https://example.test/o/r", client)
+    assert caught.value.code == "invalid_url"
+    assert fake.requests == []
+
+
+def test_demo_password_template_is_empty():
+    template = Path(__file__).resolve().parents[1] / ".env.example"
+    values = dict(line.split("=", 1) for line in template.read_text().splitlines() if line and not line.startswith("#"))
+    assert values["GISTAR_DEMO_PASSWORD"] == ""
+
+
+def test_profile_repository_without_name_raises_api_error():
     client, _ = client_for(
         {
             "/users/coder-01": (200, {"login": "coder-01", "html_url": "https://github.com/coder-01", "public_repos": 1}, {}),

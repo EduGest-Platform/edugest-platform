@@ -12,6 +12,8 @@ _REPO_RE = re.compile(r"^[A-Za-z0-9._-]{1,100}$")
 class InvalidGithubUrl(ValueError):
     """The link is not a GitHub profile or repository URL."""
 
+    code = "invalid_url"
+
 
 @dataclass(frozen=True)
 class GithubTarget:

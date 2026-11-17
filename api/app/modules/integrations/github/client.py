@@ -21,16 +21,24 @@ _ALLOWED_PREFIXES = ("/repos/", "/users/")
 class GithubError(Exception):
     """Base class for every GitHub consumer error."""
 
+    code = "github_error"
+
 
 class GithubNotFound(GithubError):
     """The repository or user does not exist (or is private)."""
+
+    code = "not_found"
 
 
 class GithubAuthError(GithubError):
     """The token was rejected."""
 
+    code = "auth_error"
+
 
 class GithubRateLimited(GithubError):
+    code = "rate_limited"
+
     def __init__(self, reset_at: int | None = None):
         super().__init__("GitHub rate limit reached")
         self.reset_at = reset_at  # Unix timestamp when the limit resets, if GitHub said so
@@ -39,13 +47,19 @@ class GithubRateLimited(GithubError):
 class GithubApiError(GithubError):
     """Unexpected status or payload."""
 
+    code = "api_error"
+
 
 class GithubConflict(GithubApiError):
     """HTTP 409. For the commits endpoint it means the repository is empty."""
 
+    code = "conflict"
+
 
 class GithubRedirected(GithubApiError):
     """The repository or user moved (3xx). Redirects are never followed; the link must be updated."""
+
+    code = "redirected"
 
     def __init__(self, location: str | None = None):
         super().__init__("GitHub says this resource moved; update the portfolio link")
@@ -54,6 +68,8 @@ class GithubRedirected(GithubApiError):
 
 class GithubUnavailable(GithubError):
     """Network failure or timeout."""
+
+    code = "unavailable"
 
 
 @dataclass(frozen=True)
