@@ -19,7 +19,8 @@ def test_bad_credentials_are_generic(client):
     a = client.post("/api/v1/auth/login", json={"email": ADMIN, "password": "x"})
     b = client.post("/api/v1/auth/login", json={"email": "nadie@example.test", "password": "x"})
     assert a.status_code == b.status_code == 401
-    assert a.json() == b.json()
+    # request_id is unique per request by design; everything else must be identical (no user enumeration)
+    assert {**a.json(), "request_id": None} == {**b.json(), "request_id": None}
 
 
 def test_me_requires_token(client):
