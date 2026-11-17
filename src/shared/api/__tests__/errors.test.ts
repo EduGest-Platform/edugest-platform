@@ -40,6 +40,13 @@ describe('describeApiError', () => {
     expect(p.hint).toBe('email: value is not a valid email')
   })
 
+  it('does not talk about editing at the same time when the 409 is a duplicate application', () => {
+    const p = describeApiError(409, { detail: 'Ya existe una candidatura para esta persona en la convocatoria' })
+    expect(p.kind).toBe('conflict')
+    expect(problemText(p)).not.toMatch(/editabas|mientras/)
+    expect(p.hint).toBe('Ya existe una candidatura para esta persona en la convocatoria')
+  })
+
   it('falls back to a friendly hint when the server sends no detail', () => {
     expect(describeApiError(500).hint).toMatch(/minutos/)
     expect(describeApiError(undefined).kind).toBe('network')

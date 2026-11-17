@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Role } from '../../gistar/types'
-import { api, errorMessage, setUnauthorizedHandler, tokenStore, type Schemas } from './client'
+import { api, errorMessage, markSessionOpen, setUnauthorizedHandler, tokenStore, type Schemas } from './client'
 import { API_MODE } from './config'
 import { describeApiError, problemText } from './errors'
 
@@ -60,6 +60,7 @@ export function ApiSessionProvider({ children }: { children: ReactNode }) {
     }
     try {
       const { data } = await api.GET('/api/v1/auth/me')
+      if (data) markSessionOpen()
       setMe(data ?? null)
       setApiDown(false)
     } catch {

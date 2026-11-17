@@ -27,7 +27,7 @@ const PROBLEMS: Record<ApiProblemKind, Omit<ApiProblem, 'kind'>> = {
   unauthorized: { title: 'Tu sesión ha caducado o se ha cerrado.', hint: 'Vuelve a iniciar sesión para continuar.' },
   forbidden: { title: 'No tienes permiso para ver esta información.', hint: 'Si crees que deberías tener acceso, pídeselo a coordinación.' },
   not_found: { title: 'No hemos encontrado lo que buscas.', hint: 'Puede que se haya borrado o que el enlace no sea correcto.' },
-  conflict: { title: 'Alguien ha cambiado estos datos mientras los editabas.', hint: 'Recarga la página y vuelve a intentarlo.' },
+  conflict: { title: 'No se ha podido guardar porque choca con datos que ya existen.', hint: 'Revisa los datos. Si otra persona los ha cambiado, recarga la página.' },
   invalid: { title: 'Hay datos que no son válidos.', hint: 'Revisa los campos marcados y vuelve a enviar.' },
   rate_limited: { title: 'Has hecho demasiadas peticiones seguidas.', hint: 'Espera un minuto y vuelve a intentarlo.' },
   server: { title: 'El servidor ha tenido un problema.', hint: 'Inténtalo de nuevo en unos minutos.' },
