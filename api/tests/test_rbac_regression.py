@@ -9,7 +9,7 @@ from app.core.db import utcnow
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.audit.models import AuditEvent
 from app.modules.identity.models import RoleAssignment, User
-from tests.conftest import ADMIN, ASPIRANTE, CAPT_DATA, CAPT_IA, CODER, COORD, DOCENTE, SEL_IA, login
+from tests.conftest import ADMIN, ASPIRANTE, CAPT_DATA, CAPT_IA, CODER, COORD, DOCENTE, SEL_IA, login, new_application
 from tests.test_rbac import an_app
 
 
@@ -109,6 +109,9 @@ def test_crm_actor_is_server_derived_even_with_forged_payload(client, db):
 def test_self_view_cannot_be_redirected_to_another_person_or_leak_notes(client, db):
     headers = login(client, ASPIRANTE)
     user = db.scalar(select(User).where(User.email == ASPIRANTE))
+    # A-001 is a browser-only draft in the seed; submit it through the public API.
+    created = client.post("/api/v1/applications", headers=headers, json=new_application(email=user.email))
+    assert created.status_code == 201
     own = list(db.scalars(select(Application).where(Application.person_id == user.person_id)))
     assert own
     application = own[0]
