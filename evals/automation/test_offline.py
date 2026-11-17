@@ -22,7 +22,7 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(propose([self.task], Policy("synthetic-call", "v1", timedelta(days=7)), self.now), ())
 
     def test_all_reminders_are_simulated(self):
-        for kind in (TaskKind.INTERVIEW, TaskKind.DOCUMENTATION, TaskKind.EXERCISES, TaskKind.INFORMATION_SESSION):
+        for kind in (TaskKind.INTERVIEW, TaskKind.DOCUMENTATION, TaskKind.EXERCISES):
             with self.subTest(kind=kind):
                 result = propose([replace(self.task, kind=kind)], self.policy, self.now)
                 self.assertEqual(result[0].action, "simulated_reminder")
@@ -95,6 +95,32 @@ class RuleTests(unittest.TestCase):
         task = replace(self.task, due_at=self.now + timedelta(hours=1))
         self.assertEqual(propose([task], self.policy, self.now), ())
         self.assertEqual(len(propose([task], self.policy, task.due_at)), 1)
+
+    def test_information_session_pre_reminder_window(self):
+        policy = replace(self.policy, reminder_lead=timedelta(hours=48))
+        task = replace(self.task, kind=TaskKind.INFORMATION_SESSION, due_at=self.now + timedelta(days=3))
+        start = task.due_at - policy.reminder_lead
+        self.assertEqual(propose([task], policy, start - timedelta(seconds=1)), ())
+        first = propose([task], policy, start)[0]
+        retry = propose([task], policy, start + timedelta(hours=1))[0]
+        self.assertEqual(first.action, "simulated_reminder")
+        self.assertEqual(first.key, retry.key)
+        self.assertEqual(propose([task], policy, task.due_at), ())
+        self.assertEqual(propose([task], policy, task.due_at + timedelta(days=1)), ())
+
+    def test_pre_reminders_require_configured_lead(self):
+        task = replace(self.task, kind=TaskKind.INFORMATION_SESSION, due_at=self.now + timedelta(hours=1))
+        self.assertEqual(propose([task], self.policy, self.now), ())
+        with self.assertRaises(ValueError):
+            replace(self.policy, reminder_lead=timedelta(seconds=-1))
+
+    def test_lead_does_not_trigger_documentation_or_exercises_early(self):
+        policy = replace(self.policy, reminder_lead=timedelta(hours=48), reminder_delay=timedelta(hours=2))
+        for kind in (TaskKind.DOCUMENTATION, TaskKind.EXERCISES):
+            task = replace(self.task, kind=kind, due_at=self.now + timedelta(hours=1))
+            self.assertEqual(propose([task], policy, self.now), ())
+            self.assertEqual(propose([task], policy, task.due_at), ())
+            self.assertEqual(len(propose([task], policy, task.due_at + timedelta(hours=2))), 1)
 
 
 class CoverageTests(unittest.TestCase):

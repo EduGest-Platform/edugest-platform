@@ -67,15 +67,16 @@ class Policy:
     response_grace: timedelta
     enabled: bool = False
     reminder_delay: timedelta = timedelta(0)
+    reminder_lead: timedelta = timedelta(0)
 
     def __post_init__(self):
         for name in ("call_id", "version"):
             object.__setattr__(self, name, identifier(getattr(self, name)))
         if type(self.enabled) is not bool:
             raise ValueError("Enabled must be a boolean")
-        if not isinstance(self.reminder_delay, timedelta) or not isinstance(self.response_grace, timedelta):
+        if not all(isinstance(value, timedelta) for value in (self.reminder_delay, self.response_grace, self.reminder_lead)):
             raise ValueError("Delays must be timedeltas")
-        if self.reminder_delay < timedelta(0) or self.response_grace < timedelta(0):
+        if min(self.reminder_delay, self.response_grace, self.reminder_lead) < timedelta(0):
             raise ValueError("Delays cannot be negative")
 
 
@@ -120,6 +121,11 @@ def propose(tasks: list[Task], policy: Policy, now: datetime) -> tuple[Proposal,
             if now < task.due_at + policy.response_grace:
                 continue
             action, reason = Action.HUMAN_REVIEW, Reason.RESPONSE_WINDOW_ELAPSED
+        elif task.kind == TaskKind.INFORMATION_SESSION:
+            # Pre-session window only; no stale invitation reminder after the appointment.
+            if not task.due_at - policy.reminder_lead <= now < task.due_at:
+                continue
+            action, reason = Action.SIMULATED_REMINDER, Reason.INFORMATION_SESSION
         else:
             if now < task.due_at + policy.reminder_delay:
                 continue
