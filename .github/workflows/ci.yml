@@ -14,6 +14,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  rag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Banco de preguntas del RAG válido (KAN-108)
+        # Solo biblioteca estándar: no llama a Gemini ni necesita claves.
+        run: python evals/rag/validate_bank.py
+      - name: Linter (ruff) de evals/rag · solo reglas de errores reales
+        run: pip install ruff==0.17.5 && ruff check evals/rag --select E4,E7,E9,F
+
+  automation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s evals/automation -v
+
   web:
     runs-on: ubuntu-latest
     steps:
