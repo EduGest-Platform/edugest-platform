@@ -5,7 +5,9 @@ Rules:
 - Error bodies keep the legacy ``detail`` field and add ``request_id``.
 - 422 bodies never echo what the user sent (no ``input``, no ``ctx``).
 - 500 bodies are generic. Logs hold the exception class only, never its message or traceback,
-  because database errors can quote personal data.
+  because database errors can quote personal data. The middleware answers the 500 itself, inside CORS, so the
+  exception never reaches Starlette's ServerErrorMiddleware or uvicorn (which would print the traceback).
+- The server must run uvicorn with ``--no-access-log``: its own access log prints the raw path and query string.
 - Logs hold method, parametrised route (``/applications/{application_id}``), status and duration. Never the raw path,
   query string, headers or body.
 """
@@ -25,6 +27,15 @@ UNMATCHED_ROUTE = "<unmatched>"
 INTERNAL_ERROR_DETAIL = "Error interno del servidor"
 
 logger = logging.getLogger("app.access")
+
+
+def _configure_access_logger() -> None:
+    """Makes the safe access lines visible: uvicorn only configures its own loggers, so ours would stay silent."""
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+        logger.addHandler(handler)
 
 
 def _request_id(scope: Scope) -> str:
@@ -64,8 +75,27 @@ class RequestContextMiddleware:
                 message = {**message, "headers": headers}
             await send(message)
 
+        response_started = False
+
+        async def send_tracking_start(message: Message) -> None:
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send_with_request_id(message)
+
         try:
-            await self.app(scope, receive, send_with_request_id)
+            await self.app(scope, receive, send_tracking_start)
+        except Exception as exc:
+            logger.error(
+                "unhandled %s on %s %s request_id=%s",
+                type(exc).__name__,
+                scope["method"],
+                _route_template(scope),
+                request_id,
+            )
+            if response_started:
+                raise  # Too late for a clean 500; the connection is already streaming.
+            await _error_response(request_id, 500, INTERNAL_ERROR_DETAIL)(scope, receive, send_with_request_id)
         finally:
             logger.info(
                 "%s %s -> %s %.1fms request_id=%s",
@@ -77,35 +107,23 @@ class RequestContextMiddleware:
             )
 
 
-def _error_response(request: Request, status_code: int, detail, headers: dict[str, str] | None = None) -> JSONResponse:
-    request_id = _request_id(request.scope)
+def _error_response(request_id: str, status_code: int, detail, headers: dict[str, str] | None = None) -> JSONResponse:
     response_headers = {**(headers or {}), REQUEST_ID_HEADER: request_id}
     return JSONResponse({"detail": detail, "request_id": request_id}, status_code=status_code, headers=response_headers)
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
-    return _error_response(request, exc.status_code, exc.detail, dict(exc.headers or {}))
+    return _error_response(_request_id(request.scope), exc.status_code, exc.detail, dict(exc.headers or {}))
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     safe_errors = [{"loc": list(e["loc"]), "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
-    return _error_response(request, 422, safe_errors)
-
-
-async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.error(
-        "unhandled %s on %s %s request_id=%s",
-        type(exc).__name__,
-        request.method,
-        _route_template(request.scope),
-        _request_id(request.scope),
-    )
-    return _error_response(request, 500, INTERNAL_ERROR_DETAIL)
+    return _error_response(_request_id(request.scope), 422, safe_errors)
 
 
 def install_error_handling(app: FastAPI) -> None:
-    """Registers handlers and the request-context middleware. Call before adding CORS so CORS stays outermost."""
+    """Registers handlers, the request-context middleware (which also turns unexpected errors into a generic 500) and access logging. Call before adding CORS so CORS stays outermost."""
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(Exception, unhandled_exception_handler)
     app.add_middleware(RequestContextMiddleware)
+    _configure_access_logger()

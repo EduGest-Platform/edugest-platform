@@ -1,9 +1,11 @@
 """KAN-105: uniform errors, server-side request IDs, no data leakage in bodies or logs."""
 
 import logging
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -140,6 +142,33 @@ def test_500_is_generic_correlated_and_logs_only_the_error_class(boom_client, ca
     assert request_id in logged
     assert SENSITIVE not in logged and "abc-123" not in logged
     assert all(rec.exc_info is None for rec in caplog.records if rec.name == "app.access")
+    assert "GET /boom/{secret_id} -> 500" in logged  # the access line is still written for failures
+
+
+def test_500_keeps_cors_headers_so_browsers_can_read_the_request_id(caplog):
+    app = FastAPI()
+    install_error_handling(app)
+    app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], expose_headers=[REQUEST_ID_HEADER])
+
+    @app.get("/boom")
+    def boom():
+        raise RuntimeError(SENSITIVE)
+
+    with TestClient(app, raise_server_exceptions=False) as c:
+        r = c.get("/boom", headers={"Origin": "http://localhost:5173"})
+    assert r.status_code == 500
+    assert r.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert_correlated(r)
+
+
+def test_access_logger_emits_info_without_extra_logging_setup():
+    assert logging.getLogger("app.access").getEffectiveLevel() <= logging.INFO
+    assert logging.getLogger("app.access").handlers
+
+
+def test_entrypoint_disables_uvicorn_access_log():
+    entrypoint = Path(__file__).resolve().parents[1] / "docker-entrypoint.sh"
+    assert "--no-access-log" in entrypoint.read_text(encoding="utf-8")
 
 
 def test_422_never_echoes_input_even_on_type_errors(boom_client):

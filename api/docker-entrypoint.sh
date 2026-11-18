@@ -10,4 +10,6 @@ fi
 
 alembic upgrade head
 python -m app.seed
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+# --no-access-log: el log de acceso de uvicorn imprime la ruta cruda y la query string (datos personales). La API
+# escribe su propio log seguro (app.access).
+exec uvicorn app.main:app --no-access-log --host 0.0.0.0 --port "${PORT:-8000}"
