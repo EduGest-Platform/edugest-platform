@@ -18,7 +18,7 @@
 2. **Adaptar detrás del conmutador de datos** (`src/shared/api/config.ts`): `Aspirant.tsx` y `Applications.tsx` → API (**hecho en F1** con vistas paralelas, sin borrar las locales); `Shell.tsx` → sesión y roles reales en modo servidor (**hecho**).
 3. **Sustituir la lógica, no la vista:** `Assistant.tsx` → RAG; `applyAbsenceRule` se conserva como señal explicable junto al modelo.
 4. **Corregir:** firmante de admisión (F2), etiquetas «IA» engañosas (F4), agregados de Coordinación en servidor (F5).
-5. **No hacer:** migración a Next.js, microservicios, agentes, Qdrant/Chroma, HubSpot en vivo, ejecución de código arbitrario.
+5. **No hacer:** migración a Next.js, microservicios, agentes autónomos que actúan sin revisión humana, Qdrant/Chroma, HubSpot en vivo, ejecución de código arbitrario.
 
 
 > ES (17/11/2026): La PO confirmó medir el 70 % como ahorro de tiempo estimado, con número de tareas; aprobación formal de Melissa, catálogo y unidad persona/lote pendientes. EN: PO confirmed estimated time saved plus task counts; formal client approval, catalogue and person/batch units remain pending. Canonical formula and limits: `evals/automation/README.md` (repository root).

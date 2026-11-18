@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { CircleCheck, RefreshCw, Search, Send, ShieldAlert } from 'lucide-react'
-import { api, errorMessage, type Schemas } from '../../../shared/api/client'
+import { CircleCheck, RefreshCw, Search, Send } from 'lucide-react'
+import { api, type Schemas } from '../../../shared/api/client'
+import { describeApiError, problemText } from '../../../shared/api/errors'
 import { useApiSession } from '../../../shared/api/session'
 import { humanize } from '../../config'
 import { useGistar } from '../../store'
+import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { Button, Card, Empty, Field, Notice, PageTitle, Status, Table, inputCls } from '../../ui'
 
@@ -39,11 +41,11 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const { data, error: err } = await api.POST('/api/v1/applications', {
+    const { data, error: err, response } = await api.POST('/api/v1/applications', {
       body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: true },
     })
     setBusy(false)
-    if (err || !data) return setError(errorMessage(err))
+    if (err || !data) return setError(problemText(describeApiError(response.status, err)))
     setReceipt(data)
     await refresh()
     onDone?.(data.codigo)
@@ -103,7 +105,11 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
         <input type="checkbox" className="mt-0.5 size-4 accent-teal" required checked={f.acepta} onChange={(e) => setF({ ...f, acepta: e.target.checked })} />
         Entiendo que esta plataforma utiliza exclusivamente datos sintéticos
       </label>
-      {error && <Notice tone="warning">{error}</Notice>}
+      {error && (
+        <Notice tone="warning" live="assertive">
+          {error}
+        </Notice>
+      )}
       <div>
         <Button type="submit" disabled={busy || !callId}>
           <Send className="size-4" aria-hidden /> {busy ? 'Enviando…' : 'Enviar candidatura'}
@@ -171,15 +177,15 @@ export function ApiApplications() {
   const [stage, setStage] = useState<Stage | ''>('')
   const [q, setQ] = useState('')
   const [res, setRes] = useState<{ items: Schemas['ApplicationSummary'][]; total: number } | null>(null)
-  const [denied, setDenied] = useState<string | null>(null)
+  const [denied, setDenied] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    const { data, error, response } = await api.GET('/api/v1/applications', {
+    const { data, response } = await api.GET('/api/v1/applications', {
       params: { query: { call_id: callId || undefined, stage: stage || undefined, q: q.trim() || undefined, limit: 200 } },
     })
-    if (response.status === 403) return setDenied(errorMessage(error))
-    setDenied(null)
+    if (response.status === 403) return setDenied(true)
+    setDenied(false)
     setRes(data ?? null)
   }, [callId, stage, q])
 
@@ -196,10 +202,7 @@ export function ApiApplications() {
     return (
       <>
         <PageTitle title="Candidaturas" sub="Expedientes de preselección y selección." />
-        <Notice tone="warning">
-          <ShieldAlert className="mr-1 inline size-4 align-[-3px]" aria-hidden />
-          {denied}. La API ha denegado el acceso (HTTP 403): tu rol no incluye expedientes de admisión en ningún ámbito.
-        </Notice>
+        <AccessDenied reason="Los expedientes de admisión solo están disponibles para algunos perfiles." />
       </>
     )
 
@@ -279,8 +282,8 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
-    const { data, error: err } = await api.GET('/api/v1/applications/{application_id}', { params: { path: { application_id: id } } })
-    if (err) setError(errorMessage(err))
+    const { data, error: err, response } = await api.GET('/api/v1/applications/{application_id}', { params: { path: { application_id: id } } })
+    if (err) setError(problemText(describeApiError(response.status, err)))
     setD(data ?? null)
   }, [id])
   useEffect(() => {
@@ -289,12 +292,12 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
 
   const add = async () => {
     setBusy(true)
-    const { error: err } = await api.POST('/api/v1/applications/{application_id}/events', {
+    const { error: err, response } = await api.POST('/api/v1/applications/{application_id}/events', {
       params: { path: { application_id: id } },
       body: { tipo: ev.tipo, canal: ev.canal || null, resumen: ev.resumen },
     })
     setBusy(false)
-    if (err) return toast(errorMessage(err))
+    if (err) return toast(problemText(describeApiError(response.status, err)))
     setEv({ ...ev, resumen: '' })
     toast('Evento registrado en el historial')
     await load()
@@ -311,7 +314,11 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
       subtitle={d ? `${d.call_id} · ${d.person.email}` : undefined}
       footer={<Button onClick={onClose}>Cerrar</Button>}
     >
-      {error && <Notice tone="warning">{error}</Notice>}
+      {error && (
+        <Notice tone="warning" live="assertive">
+          {error}
+        </Notice>
+      )}
       {!d ? (
         !error && <p className="text-sm text-muted">Cargando…</p>
       ) : (
@@ -381,10 +388,10 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
 
 export function ApiAudit() {
   const [rows, setRows] = useState<Schemas['AuditEventOut'][] | null>(null)
-  const [denied, setDenied] = useState<string | null>(null)
+  const [denied, setDenied] = useState(false)
   const load = useCallback(async () => {
-    const { data, error, response } = await api.GET('/api/v1/audit-events', { params: { query: { limit: 200 } } })
-    if (response.status === 403) return setDenied(errorMessage(error))
+    const { data, response } = await api.GET('/api/v1/audit-events', { params: { query: { limit: 200 } } })
+    if (response.status === 403) return setDenied(true)
     setRows(data ?? [])
   }, [])
   useEffect(() => {
@@ -394,7 +401,7 @@ export function ApiAudit() {
     <>
       <PageTitle title="Auditoría del servidor" sub="Registro de solo inserción (lo impide un trigger de PostgreSQL). Contiene identificadores y acciones, nunca datos personales ni texto libre." />
       {denied ? (
-        <Notice tone="warning">{denied}</Notice>
+        <AccessDenied reason="El registro de auditoría solo está disponible para algunos perfiles." />
       ) : (
         <Card
           title="Eventos recientes"
