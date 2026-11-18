@@ -35,3 +35,8 @@ Local versions: fastapi 0.165.0, pydantic 2.14.3, starlette 1.10.0, sqlalchemy 2
 To repeat it: `cd api && python scripts/export_openapi.py` and `pnpm gen:api`; if `git diff` shows nothing, contract and client are in sync.
 
 **Finding (PROPOSED, not applied):** `api/pyproject.toml` declares dependencies with `>=` and there is no lock file. A new FastAPI or Pydantic release can change the generated contract and break CI without any code change. Options: a constraints file with pinned versions, or a lock. The team has to decide.
+
+## Notas tras la revisión / Notes after review
+
+- **ES:** las «12 operaciones» y el SHA son la fotografía de `dev` en la fecha de este informe, no un número permanente: cada PR que añade endpoints (por ejemplo KAN-128 y KAN-153) cambia el contrato. Tras integrarlos hay que regenerar `contracts/openapi.json` y `src/shared/api/schema.gen.ts` y repetir `test_contract.py` y `pnpm gen:api`; el CI ya lo exige en cada PR. La decisión de bloquear versiones de dependencias queda para una tarea independiente.
+- **EN:** the "12 operations" and the SHA are a snapshot of `dev` at the date of this report, not a permanent number: every PR that adds endpoints (for example KAN-128 and KAN-153) changes the contract. After merging them, regenerate `contracts/openapi.json` and `src/shared/api/schema.gen.ts` and rerun `test_contract.py` and `pnpm gen:api`; CI already enforces this on every PR. Pinning dependency versions is left to a separate task.
