@@ -2,9 +2,12 @@
 
 import pytest
 from sqlalchemy import event, func, select
+from sqlalchemy.exc import IntegrityError
 
 from app.core.db import SessionLocal
 from app.modules.admissions.models import Application
+from app.modules.admissions.schemas import ApplicationCreate
+from app.modules.admissions.service import _find_or_create_person
 from app.modules.identity.models import Person
 from tests.conftest import ADMIN, login, new_application
 
@@ -37,6 +40,22 @@ def test_same_new_email_created_concurrently_reuses_the_person_instead_of_failin
     assert db.scalar(select(func.count()).select_from(Person).where(Person.email == email)) == 1
     application = db.scalar(select(Application).where(Application.id == response.json()["id"]))
     assert application.person_id == db.scalar(select(Person.id).where(Person.email == email))
+
+
+def test_an_integrity_error_that_is_not_an_email_race_is_not_disguised_as_one(db):
+    """If no Person with the email exists after the failed insert, the original error must surface (not a None person)."""
+    email = "otra.violacion@example.test"
+
+    def fail_unrelated(mapper, connection, target):
+        raise IntegrityError("INSERT INTO person", {}, Exception("unrelated constraint"))
+
+    event.listen(Person, "before_insert", fail_unrelated)
+    try:
+        with SessionLocal() as session, pytest.raises(IntegrityError):
+            _find_or_create_person(session, ApplicationCreate(**new_application(email=email)))
+    finally:
+        event.remove(Person, "before_insert", fail_unrelated)
+    assert db.scalar(select(func.count()).select_from(Person).where(Person.email == email)) == 0
 
 
 @pytest.mark.parametrize("wildcard_query", ["%", "_", "\\", "50%"])

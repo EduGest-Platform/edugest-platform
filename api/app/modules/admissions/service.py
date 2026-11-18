@@ -21,8 +21,12 @@ def _find_or_create_person(db: Session, body: ApplicationCreate) -> tuple[Person
             person = Person(display_name=body.nombre, email=body.email, is_synthetic=True)
             db.add(person)
     except IntegrityError:
-        # Another request, for a different call, created the same Person after our lookup: reuse it.
-        return db.scalar(select(Person).where(Person.email == body.email)), True
+        # Another request may have created the same Person after our lookup: reuse it. If no Person with this email
+        # exists, the violation was something else and must surface, not be disguised as a race.
+        existing = db.scalar(select(Person).where(Person.email == body.email))
+        if existing is None:
+            raise
+        return existing, True
     return person, False
 
 
