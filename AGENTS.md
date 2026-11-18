@@ -80,11 +80,11 @@ Risk ML: baseline trained on documented synthetic data, model card and limitatio
    | Commit subject and body | EN | with ticket: `type(KAN-x): summary` or `type(area): summary (KAN-x)`; without ticket: `type(area): summary` (`feat`, `fix`, `test`, `docs`, `chore`, `ci`) |
    | PR title | EN | recommended (not enforced): same formats as the commit, e.g. `docs(KAN-120): …` or `fix(api): … (KAN-105)` |
    | PR body | ES + EN | `.github/PULL_REQUEST_TEMPLATE.md` |
-   | PR / issue comments and reviews | **PROPOSED:** EN, pending team agreement | until agreed, ES or EN are both accepted |
+   | PR / issue comments and reviews | EN | always, even when the PR body is ES/EN |
    | Repository documentation | ES + EN | paired sections, or canonical `NAME.md` + `NAME.es.md`, cross-linked; new folders/file names in English |
    | User-facing UI copy | product language | — |
 
-   **ES:** Commits y títulos de PR en inglés; cuerpo del PR y documentación en ES/EN. Comentarios en GitHub en inglés: **propuesta pendiente de acuerdo del equipo**.
+   **ES:** Commits y títulos de PR en inglés; cuerpo del PR y documentación en ES/EN. Comentarios y revisiones en GitHub siempre en inglés.
 5. **Backend RBAC, deny-by-default** by action + role + programme/call/cohort; check 401/403 and horizontal IDOR. Hiding UI does not confer security. Every admission signature, staff access change, attendance correction and privileged comment is auditable.
 6. **Human supervision** for eligibility exceptions, admissions, waitlist, non-admission, interventions and feedback. No scoring threshold that automatically excludes vulnerable applicants.
 7. **Privacy & prompt-injection**: verify doc origin; filter retrieval by scope before searching; never trust retrieved text as instructions; do not leak data in chat transcripts or comments; sanitize/render user comments safely, enforce length/size/rate limits.
