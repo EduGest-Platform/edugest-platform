@@ -1,8 +1,8 @@
 # KAN-121 / KAN-160 — Task and rule inventory / Catálogo de tareas y reglas
 
-Prepared / fecha: 2026-11-17. Owner / responsable: Yohanna. Reviewer / revisión: Elizabeth; David for rule traceability / trazabilidad del motor.
+Prepared / fecha: 2026-11-17; revised / revisado: 2026-11-18. Owner / responsable: Yohanna. Reviewer / revisión: Elizabeth; David for rule traceability / trazabilidad del motor.
 Deadlines in Jira / vencimientos: KAN-121 **19/11/2026**; KAN-160 **17/11/2026**.
-Inspected / base: `dev` `8c3b869692eff4a5116f7514fd258d41d8b256bd` (merged PR #10).
+Inspected / base: `dev` `774ef52` (merged PRs #10 and [#26](https://github.com/EduGest-Platform/edugest-platform/pull/26) / PRs fusionados).
 **PROPOSED** business catalogue; offline behavior tested separately. No client acceptance, real minute values or production savings are claimed. / Catálogo de negocio propuesto, sin aprobación cliente, minutos reales ni ahorro en producción acreditados.
 
 ## 1. ES — unidad, límites y fuentes
@@ -36,12 +36,14 @@ La lista técnica `PRESELECTION_TASK_TYPES` permite representaciones, **no aprue
 |---|---|---|---|
 | R-01 Política por convocatoria | `enabled=True`, convocatoria coincidente | Desactivada por defecto; convocatoria ajena o tareas duplicadas se rechazan | Núcleo offline |
 | R-02 Faltantes | `requirements` con tupla no vacía | Solo `human_review`; conjunto vacío no dispara; no valida el requisito ni excluye | Núcleo offline |
-| R-03 Silencio | `now >= due_at + response_grace` | Margen obligatorio por convocatoria; tarea completada no dispara; resolución humana | Núcleo offline |
+| R-03 Silencio | `now >= due_at + response_grace` (instantes UTC) | Campo obligatorio por convocatoria; admite cero: dispara exactamente al vencimiento, sin espera adicional. Tarea completada no dispara; resolución humana | Núcleo offline |
 | R-04 Jornada informativa | `due_at - reminder_lead <= now < due_at` | Margen cero desactiva; después del inicio no propone aviso | Núcleo offline |
 | R-05 Seguimiento | Documentación/ejercicios desde `due_at + reminder_delay` | Tarea completada o aún en plazo no dispara | Núcleo offline |
 | R-06 Entrevista | Seguimiento simulado en selección | No elegible para métrica; también se rechazan tipos desconocidos elegibles | Núcleo offline, fuera del 70 % |
 | R-07 Duplicación | Clave por convocatoria/candidatura/tarea/versión/acción/huella | Reintentos y orden de faltantes conservan clave; cambios de conjunto/versión crean nueva propuesta | Una propuesta no garantiza unicidad concurrente |
 | R-08 Puntuación/excepción/admisión | No implementadas por este núcleo | Sin umbrales de exclusión; revisión y firma humanas con contrato F2 pendiente | Bloqueado para inventario definitivo por reglas F2 |
+
+Desde la integración del [PR #26](https://github.com/EduGest-Platform/edugest-platform/pull/26), R-03, R-04 y R-05 calculan sus duraciones como **tiempo transcurrido**, normalizando `now` y `due_at` a UTC antes de operar y comparar: 24 horas son 24 horas reales incluso durante cambios de hora, no un día de calendario local. Las fórmulas de la tabla usan esos instantes; el margen cero de R-04 desactiva el recordatorio, mientras que el margen cero de R-03 permite revisar el silencio al vencimiento. La presencia de este comportamiento en código no sustituye la aceptación PO de la política ni aprueba minutos/catálogo.
 
 La cardinalidad aceptada por David en PR #10 es un recordatorio por tarea/versión/contenido. No aumentar versiones por ejecución para eludir deduplicación. La revisión por silencio es una tarea independiente. Conservar el caso de entrevista individual sin penalización y requisitos en estudio como escenarios pendientes de F2, no inventar su algoritmo aquí.
 
@@ -66,6 +68,8 @@ An occurrence represents an actual activity for one synthetic application, not o
 The evaluator assigns minutes per technical task type. Distinct business activities sharing a type cannot carry different timings without an approved one-to-one mapping or future contract change. Do not introduce arbitrary aliases to bypass the guard or reuse initial-request time for a follow-up. No real minute catalogue is provided by this PR.
 
 The rules table records existing behavior: disabled-by-default call policies, missing-list human review, required call-specific silence grace, pre-session information reminders, post-deadline documentation/exercise follow-up, no action for completed tasks, selection-interview exclusion and stable version/content keys. One reminder per task/version/content was accepted for this increment by David. Changed versions/missing sets create a new proposal; concurrent uniqueness still needs database/outbox integration. No scoring/exception/admission algorithm is implemented; F2 rules need Elizabeth's definition before KAN-160 can be final.
+
+R-03's `response_grace` is a required field but may be zero: silence is then flagged exactly at the deadline, with no additional waiting period. This differs from R-04's zero `reminder_lead`, which disables the pre-session reminder. Following merged [PR #26](https://github.com/EduGest-Platform/edugest-platform/pull/26), R-03/R-04/R-05 use elapsed durations: `now` and `due_at` are normalized to UTC before arithmetic/comparison. Twenty-four hours remain 24 real hours across daylight-saving changes, rather than one local calendar day. This documents code behavior; PO policy acceptance and business catalogue/minutes approval remain separate and pending.
 
 Required occurrence evidence includes scoped application/stage, unique task/activity and execution reference, catalogue/policy versions, timestamp/result and minimal audit. No sensitive notes. Authentication of evidence, backend RBAC/stage checks and persistence are not delivered here. Agree batch units before applicant-level calculation, report unknown for zero denominator, require 100 eligible applications, and disclose assumptions, below-target results and residual human work. This is not production time measurement or automatic exclusion.
 
