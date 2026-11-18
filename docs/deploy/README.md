@@ -39,6 +39,31 @@ Límites del plan gratuito: los servicios se duermen sin tráfico (primera petic
 - MLflow no se despliega en Render; solo existe en el compose local.
 - El frontend está en la raíz del repo, por eso `render.yaml` no usa `rootDir`.
 
+## ES · Staging (entorno de pruebas del equipo)
+
+Estado: PROPOSED; no se ha creado en Render. Es un segundo despliegue, con su propia base de datos y sus propios secretos, que sigue la rama `dev`. Sirve para que el equipo vea y pruebe los cambios ya integrados antes de pasarlos a `main`.
+
+| Entorno | Rama | Blueprint | `GISTAR_ENVIRONMENT` | Despliegue |
+|---|---|---|---|---|
+| local | rama de trabajo | `infra/compose.yaml` | `local` | manual, en tu PC |
+| staging | `dev` | `render.staging.yaml` | `staging` | automático si el CI de GitHub pasa (`checksPass`) |
+| producción | `main` | `render.yaml` | `production` | manual y autorizado |
+
+Flujo: PR de la rama de trabajo a `dev`, CI y revisión, fusión, staging se despliega solo, el equipo lo prueba, PR de `dev` a `main` y despliegue manual de producción.
+
+Crearlo (solo con autorización del PO):
+
+1. En Render: **New → Blueprint**, selecciona el repositorio, rama `dev` y **Blueprint Path** `render.staging.yaml`.
+2. Render crea `edugest-db-staging`, `edugest-api-staging` y `edugest-web-staging`. Rellena los valores manuales: `VITE_GISTAR_API_URL` (URL pública de `edugest-api-staging`) y `GISTAR_CORS_ORIGINS` (por ejemplo `["https://edugest-web-staging.onrender.com"]`).
+3. Vuelve a desplegar `edugest-web-staging` tras fijar `VITE_GISTAR_API_URL`.
+4. Comprueba `/health` y entra con una cuenta sintética. La contraseña es `GISTAR_DEMO_PASSWORD` de staging, en su panel de Render, y es distinta de la de producción.
+
+Límites y decisiones pendientes:
+
+- La base gratuita de Render es una por workspace (KAN-142). Si producción ya la usa, staging necesita otro workspace o un plan de pago. Los dos entornos comparten las 750 horas gratuitas mensuales.
+- La base gratuita caduca a los 30 días.
+- ADR-0008 dice que ningún push despliega solo. Staging sí lo hace (`checksPass`); producción sigue manual. Requiere aceptación del PO y, después, una nota en ADR-0008.
+
 ## EN · Local with Docker Compose
 
 1. `cp infra/.env.example infra/.env` and set a long random value for both `GISTAR_DB_PASSWORD` and `GISTAR_DEMO_PASSWORD` (the password of the synthetic accounts; it has no default).
@@ -66,3 +91,28 @@ Free-plan limits: services sleep without traffic (slow first request) and the da
 - They are safe to repeat: Alembic applies only what is pending and the seed does nothing when data already exists (it prints "datos ya presentes"). To check it locally: `docker compose -f infra/compose.yaml restart api`, then `docker compose -f infra/compose.yaml logs --no-color api`.
 - MLflow is not deployed to Render; it only exists in the local compose.
 - The frontend is at the repo root, which is why `render.yaml` has no `rootDir`.
+
+## EN · Staging (the team's test environment)
+
+Status: PROPOSED; not created on Render. It is a second deployment, with its own database and secrets, that follows the `dev` branch. It lets the team see and test integrated changes before they move to `main`.
+
+| Environment | Branch | Blueprint | `GISTAR_ENVIRONMENT` | Deploy |
+|---|---|---|---|---|
+| local | working branch | `infra/compose.yaml` | `local` | manual, on your PC |
+| staging | `dev` | `render.staging.yaml` | `staging` | automatic when GitHub CI passes (`checksPass`) |
+| production | `main` | `render.yaml` | `production` | manual and authorised |
+
+Flow: PR from the working branch to `dev`, CI and review, merge, staging deploys by itself, the team tests it, PR from `dev` to `main`, then a manual production deploy.
+
+Create it (only with PO authorisation):
+
+1. In Render: **New → Blueprint**, pick the repository, branch `dev` and **Blueprint Path** `render.staging.yaml`.
+2. Render creates `edugest-db-staging`, `edugest-api-staging` and `edugest-web-staging`. Fill the manual values: `VITE_GISTAR_API_URL` (public URL of `edugest-api-staging`) and `GISTAR_CORS_ORIGINS` (for example `["https://edugest-web-staging.onrender.com"]`).
+3. Redeploy `edugest-web-staging` after setting `VITE_GISTAR_API_URL`.
+4. Check `/health` and sign in with a synthetic account. The password is staging's `GISTAR_DEMO_PASSWORD` in its Render dashboard, and differs from production's.
+
+Limits and pending decisions:
+
+- Render's free database is one per workspace (KAN-142). If production already uses it, staging needs another workspace or a paid plan. Both environments share the 750 free monthly hours.
+- The free database expires after 30 days.
+- ADR-0008 says no push deploys by itself. Staging does (`checksPass`); production stays manual. This needs PO acceptance and, afterwards, a note in ADR-0008.
