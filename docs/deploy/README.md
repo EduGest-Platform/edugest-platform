@@ -60,8 +60,8 @@ Crearlo (solo con autorización del PO):
 
 Límites y decisiones pendientes:
 
-- La base gratuita de Render es una por workspace (KAN-142). Si producción ya la usa, staging necesita otro workspace o un plan de pago. Los dos entornos comparten las 750 horas gratuitas mensuales.
-- La base gratuita caduca a los 30 días.
+- La base gratuita de Render es una por workspace (KAN-142). Decisión del PO (18/11/2026): staging va en el workspace de Elizabeth (PO) y producción en el de Yohanna (SM). Cada workspace tiene su base gratuita y sus 750 horas mensuales, y cada persona conecta su cuenta de Render con el repositorio de GitHub.
+- La base gratuita caduca a los 30 días: apuntar la fecha de creación de cada una.
 - ADR-0008 dice que ningún push despliega solo. Staging sí lo hace (`checksPass`); producción sigue manual. Requiere aceptación del PO y, después, una nota en ADR-0008.
 
 ## EN · Local with Docker Compose
@@ -113,6 +113,6 @@ Create it (only with PO authorisation):
 
 Limits and pending decisions:
 
-- Render's free database is one per workspace (KAN-142). If production already uses it, staging needs another workspace or a paid plan. Both environments share the 750 free monthly hours.
-- The free database expires after 30 days.
+- Render's free database is one per workspace (KAN-142). PO decision (18/11/2026): staging lives in Elizabeth's workspace (PO) and production in Yohanna's (SM). Each workspace has its own free database and its own 750 monthly hours, and each person connects their Render account to the GitHub repository.
+- The free database expires after 30 days: note the creation date of each one.
 - ADR-0008 says no push deploys by itself. Staging does (`checksPass`); production stays manual. This needs PO acceptance and, afterwards, a note in ADR-0008.

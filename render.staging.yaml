@@ -8,8 +8,8 @@ databases:
     user: gistar
     region: frankfurt # Misma región que la API: la conexión interna solo funciona dentro de una región.
     postgresMajorVersion: "16"
-    # El plan gratuito permite una sola base activa por workspace (KAN-142): si producción ya la usa,
-    # crear este Blueprint en otro workspace o subir de plan. Además caduca a los 30 días.
+    # El plan gratuito permite una sola base activa por workspace (KAN-142): staging va en el workspace
+    # de Elizabeth (PO) y producción en el de Yohanna (SM). Además caduca a los 30 días.
     plan: free
     ipAllowList: [] # Sin conexiones desde internet: solo accede edugest-api-staging por la red interna.
 
