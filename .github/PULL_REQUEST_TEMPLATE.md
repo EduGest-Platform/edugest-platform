@@ -1,4 +1,5 @@
-<!-- Título / Title (EN), recomendado / recommended: type(KAN-x): short summary — e.g. fix(api): keep 500s inside CORS (KAN-105).
+<!-- Título / Title (EN), recomendado / recommended: type(KAN-x): summary  ·  type(area): summary (KAN-x)  ·  sin ticket / no ticket: type(area): summary
+     e.g. docs(KAN-120): define CRM event policy  ·  fix(api): keep 500s inside CORS (KAN-105)
      Edita el título que GitHub genera desde la rama. / Replace the title GitHub generates from the branch. -->
 
 ## Qué cambia / What changes

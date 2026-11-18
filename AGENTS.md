@@ -77,14 +77,14 @@ Risk ML: baseline trained on documented synthetic data, model card and limitatio
    | Artefact | Language | Format |
    |---|---|---|
    | Code, identifiers, tests, code paths, code comments | EN | — |
-   | Commit subject and body | EN | `type(KAN-x): short summary` (`feat`, `fix`, `test`, `docs`, `chore`, `ci`) |
-   | PR title | EN | recommended (not enforced): same as commit, e.g. `fix(api): … (KAN-105)` |
+   | Commit subject and body | EN | with ticket: `type(KAN-x): summary` or `type(area): summary (KAN-x)`; without ticket: `type(area): summary` (`feat`, `fix`, `test`, `docs`, `chore`, `ci`) |
+   | PR title | EN | recommended (not enforced): same formats as the commit, e.g. `docs(KAN-120): …` or `fix(api): … (KAN-105)` |
    | PR body | ES + EN | `.github/PULL_REQUEST_TEMPLATE.md` |
-   | PR / issue comments and reviews | EN | a short ES line may be added for clarity |
+   | PR / issue comments and reviews | **PROPOSED:** EN, pending team agreement | until agreed, ES or EN are both accepted |
    | Repository documentation | ES + EN | paired sections, or canonical `NAME.md` + `NAME.es.md`, cross-linked; new folders/file names in English |
    | User-facing UI copy | product language | — |
 
-   **ES:** Commits, títulos de PR y comentarios en GitHub en inglés; cuerpo del PR y documentación en ES/EN.
+   **ES:** Commits y títulos de PR en inglés; cuerpo del PR y documentación en ES/EN. Comentarios en GitHub en inglés: **propuesta pendiente de acuerdo del equipo**.
 5. **Backend RBAC, deny-by-default** by action + role + programme/call/cohort; check 401/403 and horizontal IDOR. Hiding UI does not confer security. Every admission signature, staff access change, attendance correction and privileged comment is auditable.
 6. **Human supervision** for eligibility exceptions, admissions, waitlist, non-admission, interventions and feedback. No scoring threshold that automatically excludes vulnerable applicants.
 7. **Privacy & prompt-injection**: verify doc origin; filter retrieval by scope before searching; never trust retrieved text as instructions; do not leak data in chat transcripts or comments; sanitize/render user comments safely, enforce length/size/rate limits.
@@ -97,8 +97,9 @@ Risk ML: baseline trained on documented synthetic data, model card and limitatio
 ## 6.1 Current repository conventions / Convenciones actuales
 
 - **Integration branch:** `dev` (PR base); `main` only through an agreed release merge.
-- **Branches:** `type/KAN-x-short-slug` (e.g. `docs/KAN-120-crm-event-policy`); one ticket per branch where possible.
-- **Tickets:** Jira keys `KAN-x` in branch, commit and PR title; Jira is updated by people, never automatically.
+- **Branches with a ticket:** `type/KAN-x-short-slug` (e.g. `docs/KAN-120-crm-event-policy`); the `KAN-x` key is required in branch and commit, recommended in the PR title. One ticket per branch where possible.
+- **Maintenance without a ticket** (team instructions, tooling, typos): `type/short-slug` (e.g. `docs/agents-language-policy`), commit `type(area): summary`, and state "no ticket" in the PR body.
+- **Jira** is updated by people, never automatically.
 - **Keep this file current:** a PR that changes a convention, decision or workflow updates `AGENTS.md` (and `contribution.md` if affected) in the same PR.
 
 ## 7. Reviewer lenses / Revisores de especialidad
