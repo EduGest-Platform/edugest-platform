@@ -6,8 +6,8 @@
 
 1. El PO (Elizabeth) ordena el Product Backlog, valida requisitos y acepta historias. La Scrum Master (Yohanna) facilita Sprint Planning, Daily Scrum, Review, Retro y elimina impedimentos.
 2. Cada cambio parte de un ticket con historia, criterios de aceptación, dependencias, owner, revisor diferente, datos sintéticos y evidencia. Nadie mueve un ticket a Done solo por existir código.
-3. Ramas cortas `feat/`, `fix/`, `test/`, `docs/`; PRs de alcance limitado, revisar diff, pruebas, API y migraciones. No hacer merges directos en `main` sin acuerdo del equipo.
-4. **Código y identificadores en inglés**; READMEs, manuales y documentación de entrega a GitHub en español e inglés. No bifurcar la misma regla en archivos contradictorios.
+3. Ramas cortas con base `dev`: con ticket `tipo/KAN-x-descripcion` (clave `KAN-x` obligatoria en rama y commit); mantenimiento sin ticket `tipo/descripcion`, indicando «sin ticket» en el PR. Tipos: `feat/`, `fix/`, `test/`, `docs/`, `chore/`; PRs de alcance limitado, revisar diff, pruebas, API y migraciones. Sin push directo a `dev` ni a `main`.
+4. **Código, identificadores, commits y títulos de PR en inglés**; cuerpo del PR, READMEs, manuales y documentación de entrega en español e inglés. Comentarios y revisiones en GitHub siempre en inglés. Tabla en [`AGENTS.md` §6, rule 4](AGENTS.md#6-guardrails-for-every-contributor-or-ai-agent). No bifurcar la misma regla en archivos contradictorios.
 5. Revisor por dominio: Elizabeth (API/datos/permisos); Anas (frontend/UX); David (RAG y feedback IA); Abdur (solo modelos de abandono); Yohanna (automatización, QA y proceso).
 6. Evitar 2 historias de integración crítica a la vez; preferir un caso E2E antes que cinco pantallas de demo sin backend. Dejar constancia de bloqueos, tests no ejecutados y límites.
 7. Autorización en **FastAPI por rol y ámbito**; datos sintéticos; cambios de acceso aprobados por personas autorizadas; no confiar en selector «Ver como» o `localStorage`.
@@ -23,7 +23,7 @@
 
 - PO Elizabeth prioritises and accepts stories; SM Yohanna facilitates Scrum events and resolves blockers.
 - Each small PR has one owner, different reviewer, task description, acceptance, related API/schema and evidence of tests.
-- Use short branches and no direct merge without review; code identifiers are English, deliverable docs ES/EN.
+- Use short branches based on `dev` (`type/KAN-x-slug` with a ticket, `type/slug` for maintenance without one), no direct merge without review; code, commits and PR titles in English; PR body and deliverable docs ES/EN; GitHub comments and reviews always in English (see [`AGENTS.md` §6, rule 4](AGENTS.md#6-guardrails-for-every-contributor-or-ai-agent)).
 - Synthetic data only, least privilege in backend, human decisions for admissions, secure read-only assistant tools; ML results not real-world validated.
 - Abdur exclusively owns dropout ML and model evaluation; David owns RAG, not the dropout model; Anas owns UI, Elizabeth data/API, Yohanna automations/QA process.
 - Deadline for new feature development: 04 Dec; rehearsal 09 Dec; defence 10 Dec. No Jira edits or external deployments without explicit approval.
