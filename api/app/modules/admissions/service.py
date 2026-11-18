@@ -11,6 +11,21 @@ from app.modules.catalog.models import Call
 from app.modules.identity.models import Person
 
 
+def _find_or_create_person(db: Session, body: ApplicationCreate) -> tuple[Person, bool]:
+    """Return the Person for this email and whether it already existed (one expediente per human being)."""
+    person = db.scalar(select(Person).where(Person.email == body.email))
+    if person is not None:
+        return person, True
+    try:
+        with db.begin_nested():  # savepoint: a lost race must not undo the call lock or the transaction
+            person = Person(display_name=body.nombre, email=body.email, is_synthetic=True)
+            db.add(person)
+    except IntegrityError:
+        # Another request, for a different call, created the same Person after our lookup: reuse it.
+        return db.scalar(select(Person).where(Person.email == body.email)), True
+    return person, False
+
+
 def create_application(db: Session, body: ApplicationCreate, actor: Principal | None) -> Application:
     # Row lock on the call: serialises the per-call code counter.
     call = db.scalar(select(Call).where(Call.id == body.call_id).with_for_update())
@@ -19,13 +34,8 @@ def create_application(db: Session, body: ApplicationCreate, actor: Principal | 
     if call.estado != "abierta":
         raise HTTPException(status.HTTP_409_CONFLICT, "La convocatoria no admite inscripciones")
 
-    person = db.scalar(select(Person).where(Person.email == body.email))
-    reused = person is not None
-    if person is None:
-        person = Person(display_name=body.nombre, email=body.email, is_synthetic=True)
-        db.add(person)
-        db.flush()
-    elif db.scalar(select(Application.id).where(Application.person_id == person.id, Application.call_id == call.id)):
+    person, reused = _find_or_create_person(db, body)
+    if reused and db.scalar(select(Application.id).where(Application.person_id == person.id, Application.call_id == call.id)):
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una candidatura con este correo en esta convocatoria")
 
     app = Application(
