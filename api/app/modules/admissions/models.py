@@ -20,6 +20,8 @@ STAGES = (
 )
 EVENT_TYPES = ("creada", "contacto", "nota", "recordatorio", "cambio_etapa")
 CHANNELS = ("email", "telefono", "presencial", "videollamada")
+# Outcome of a contact attempt: only «sin_respuesta» attempts count towards a silence review.
+CONTACT_RESULTS = ("respondida", "sin_respuesta")
 
 
 class Application(Base):
@@ -50,11 +52,13 @@ class ApplicationEvent(Base):
     __table_args__ = (
         CheckConstraint(f"tipo IN {EVENT_TYPES}", name="ck_application_event_tipo"),
         CheckConstraint(f"canal IS NULL OR canal IN {CHANNELS}", name="ck_application_event_canal"),
+        CheckConstraint(f"resultado IS NULL OR (tipo = 'contacto' AND resultado IN {CONTACT_RESULTS})", name="ck_application_event_resultado"),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), index=True)
     tipo: Mapped[str] = mapped_column(String(20))
     canal: Mapped[str | None] = mapped_column(String(20))
+    resultado: Mapped[str | None] = mapped_column(String(20))
     resumen: Mapped[str] = mapped_column(String(500))
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

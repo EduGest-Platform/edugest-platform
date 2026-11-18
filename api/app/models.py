@@ -6,4 +6,5 @@ from app.modules.catalog.models import Call, Cohort, Program  # noqa: F401
 from app.modules.identity.models import AuthSession, Person, RoleAssignment, User  # noqa: F401
 from app.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument  # noqa: F401
 from app.modules.learning.models import Enrollment  # noqa: F401
+from app.modules.preselection.models import PreselectionDecision  # noqa: F401
 from app.modules.requirements.models import RequirementReview, RequirementReviewRevision  # noqa: F401

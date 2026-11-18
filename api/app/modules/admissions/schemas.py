@@ -63,10 +63,12 @@ class ApplicationList(BaseModel):
 
 EventType = Literal["contacto", "nota", "recordatorio"]
 Channel = Literal["email", "telefono", "presencial", "videollamada"]
+ContactResult = Literal["respondida", "sin_respuesta"]
 
 
 class EventCreate(BaseModel):
     tipo: EventType
+    resultado: ContactResult | None = Field(None, description="Solo para contactos: «sin_respuesta» cuenta para la revisión de silencio.")
     canal: Channel | None = None
     resumen: str = Field(min_length=1, max_length=500, description="Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.")
 
@@ -75,6 +77,7 @@ class EventOut(BaseModel):
     id: uuid.UUID
     tipo: str
     canal: str | None
+    resultado: str | None
     resumen: str
     actor: str | None
     occurred_at: datetime

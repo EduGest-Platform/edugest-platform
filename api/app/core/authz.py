@@ -9,17 +9,19 @@ from app.modules.identity.models import RoleAssignment, User
 # Exceptions are visible to, and can be recorded by, every role below; only admissions staff also record met / not met.
 REQUIREMENT_EXCEPTION_PERMISSIONS = {"requirements.read", "requirements.exception"}
 REQUIREMENT_REVIEW_PERMISSIONS = {*REQUIREMENT_EXCEPTION_PERMISSIONS, "requirements.review"}
+# End of pre-selection (KAN-153): the five internal profiles may read and decide, each only inside its own scope.
+PRESELECTION_PERMISSIONS = {"preselection.read", "preselection.decide"}
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
     # Fundación / captación: expedientes and CRM of pre-selection, requirement reviews and exceptions.
-    "captacion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS},
+    "captacion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS},
     # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
-    "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS},
+    "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS},
     # Coordinación: aggregated indicators, plus reading and recording requirement exceptions (KAN-128).
-    "coordinacion": {"calls.aggregate", *REQUIREMENT_EXCEPTION_PERMISSIONS},
+    "coordinacion": {"calls.aggregate", *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
     # Docente: no access to admissions, except reading and recording requirement exceptions (KAN-128).
-    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS},
+    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
 }
 
 

@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Date, ForeignKey, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -19,7 +19,11 @@ class Call(Base):
     """Convocatoria: the scope of pre-selection and selection."""
 
     __tablename__ = "call"
-    __table_args__ = (CheckConstraint("estado IN ('abierta','cerrada')", name="ck_call_estado"),)
+    __table_args__ = (
+        CheckConstraint("estado IN ('abierta','cerrada')", name="ck_call_estado"),
+        CheckConstraint("silence_days BETWEEN 1 AND 365", name="ck_call_silence_days"),
+        CheckConstraint("silence_max_contacts BETWEEN 1 AND 20", name="ck_call_silence_max_contacts"),
+    )
     id: Mapped[str] = mapped_column(String(30), primary_key=True)
     program_id: Mapped[str] = mapped_column(ForeignKey("program.id"), index=True)
     nombre: Mapped[str] = mapped_column(String(160))
@@ -30,6 +34,9 @@ class Call(Base):
     estado: Mapped[str] = mapped_column(String(10), default="abierta")
     # Per-call counter for human-readable application codes (incremented under row lock).
     next_seq: Mapped[int] = mapped_column(Integer, default=1)
+    # Pre-selection silence policy (KAN-153). Editable per call; a decision stores the values it used.
+    silence_days: Mapped[int] = mapped_column(Integer, default=30, server_default=text("30"))
+    silence_max_contacts: Mapped[int] = mapped_column(Integer, default=4, server_default=text("4"))
 
 
 class Cohort(Base):

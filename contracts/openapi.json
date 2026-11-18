@@ -542,6 +542,22 @@
             ],
             "title": "Canal"
           },
+          "resultado": {
+            "anyOf": [
+              {
+                "enum": [
+                  "respondida",
+                  "sin_respuesta"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo para contactos: «sin_respuesta» cuenta para la revisión de silencio.",
+            "title": "Resultado"
+          },
           "resumen": {
             "description": "Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.",
             "maxLength": 500,
@@ -600,6 +616,17 @@
             "title": "Occurred At",
             "type": "string"
           },
+          "resultado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultado"
+          },
           "resumen": {
             "title": "Resumen",
             "type": "string"
@@ -613,6 +640,7 @@
           "id",
           "tipo",
           "canal",
+          "resultado",
           "resumen",
           "actor",
           "occurred_at"
@@ -766,6 +794,151 @@
           "email"
         ],
         "title": "PersonOut",
+        "type": "object"
+      },
+      "PreselectionDecisionList": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PreselectionDecisionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "items"
+        ],
+        "title": "PreselectionDecisionList",
+        "type": "object"
+      },
+      "PreselectionDecisionOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "decision": {
+            "enum": [
+              "convocada",
+              "retirada_expresa",
+              "silencio_confirmado",
+              "silencio_reprogramado"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "title": "Evidence",
+            "type": "object"
+          },
+          "from_stage": {
+            "title": "From Stage",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "to_stage": {
+            "title": "To Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "decision",
+          "from_stage",
+          "to_stage",
+          "reason",
+          "actor",
+          "occurred_at",
+          "evidence"
+        ],
+        "title": "PreselectionDecisionOut",
+        "type": "object"
+      },
+      "PreselectionDecisionWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "convocada",
+              "retirada_expresa",
+              "silencio_confirmado",
+              "silencio_reprogramado"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Motivo operativo. No incluir datos de salud ni situación personal.",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "title": "PreselectionDecisionWrite",
+        "type": "object"
+      },
+      "PreselectionPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "silence_days": {
+            "description": "Días sin respuesta tras el último intento antes de proponer revisión de silencio",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Silence Days",
+            "type": "integer"
+          },
+          "silence_max_contacts": {
+            "description": "Intentos de contacto sin respuesta registrados antes de proponer revisión de silencio",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Silence Max Contacts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "silence_days",
+          "silence_max_contacts"
+        ],
+        "title": "PreselectionPolicy",
         "type": "object"
       },
       "RequirementReviewHistory": {
@@ -1015,6 +1188,109 @@
           "scope_id"
         ],
         "title": "RoleAssignmentOut",
+        "type": "object"
+      },
+      "SilenceEvidence": {
+        "description": "Why an application is (or is not) pending a silence review. Computed from CRM contacts, never stored as a state.",
+        "properties": {
+          "days_without_response": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Without Response"
+          },
+          "last_attempt_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attempt At"
+          },
+          "silence_days": {
+            "title": "Silence Days",
+            "type": "integer"
+          },
+          "silence_max_contacts": {
+            "title": "Silence Max Contacts",
+            "type": "integer"
+          },
+          "threshold_met": {
+            "title": "Threshold Met",
+            "type": "boolean"
+          },
+          "unanswered_attempts": {
+            "title": "Unanswered Attempts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unanswered_attempts",
+          "last_attempt_at",
+          "days_without_response",
+          "silence_days",
+          "silence_max_contacts",
+          "threshold_met"
+        ],
+        "title": "SilenceEvidence",
+        "type": "object"
+      },
+      "SilenceReviewItem": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/SilenceEvidence"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "codigo",
+          "stage",
+          "evidence"
+        ],
+        "title": "SilenceReviewItem",
+        "type": "object"
+      },
+      "SilenceReviewList": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SilenceReviewItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "call_id",
+          "items"
+        ],
+        "title": "SilenceReviewList",
         "type": "object"
       },
       "StageCount": {
@@ -1373,6 +1649,125 @@
         "summary": "Registrar contacto, nota o recordatorio en el CRM",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/preselection-decisions": {
+      "get": {
+        "operationId": "list_preselection_decisions_api_v1_applications__application_id__preselection_decisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreselectionDecisionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial de decisiones de fin de preselección de una candidatura",
+        "tags": [
+          "preselection"
+        ]
+      },
+      "post": {
+        "operationId": "post_preselection_decision_api_v1_applications__application_id__preselection_decisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreselectionDecisionWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreselectionDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La preselección ya terminó o no se cumple el umbral de silencio"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Terminar la preselección: convocar a selección, retirada expresa o silencio confirmado por una persona",
+        "tags": [
+          "preselection"
         ]
       }
     },
@@ -1827,6 +2222,176 @@
         "summary": "Convocatorias (público: solo datos de la oferta)",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/preselection-policy": {
+      "get": {
+        "operationId": "get_preselection_policy_api_v1_calls__call_id__preselection_policy_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 30,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreselectionPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Política de silencio de la convocatoria (por defecto 30 días y 4 intentos de contacto)",
+        "tags": [
+          "preselection"
+        ]
+      },
+      "put": {
+        "operationId": "put_preselection_policy_api_v1_calls__call_id__preselection_policy_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 30,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreselectionPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreselectionPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Editar la política de silencio de una convocatoria. No cambia decisiones ya tomadas",
+        "tags": [
+          "preselection"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/silence-review": {
+      "get": {
+        "operationId": "silence_review_api_v1_calls__call_id__silence_review_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 30,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SilenceReviewList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Candidaturas en preselección que han cumplido el umbral de silencio y esperan revisión humana (no se cierra nada solo)",
+        "tags": [
+          "preselection"
         ]
       }
     },
