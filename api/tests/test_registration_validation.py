@@ -19,6 +19,18 @@ def snapshot(db):
     return counts, counters
 
 
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="whitespace-only text passes length check; backend validation follow-up",
+)
+@pytest.mark.parametrize("field,value", [("nombre", "  "), ("motivacion", " " * 10)])
+def test_whitespace_only_text_is_rejected_before_persistence(client, field, value):
+    # Assert the desired contract, not today's accepted-and-trimmed empty value.
+    response = client.post("/api/v1/applications", json=new_application(**{field: value}))
+    assert response.status_code == 422
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

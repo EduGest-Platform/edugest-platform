@@ -17,7 +17,7 @@ python -m pytest tests/test_registration_validation.py -q
 
 CI API lo descubre con su `pytest` normal. Validación local: sintaxis y diff; no se ejecutó PostgreSQL/pytest local por falta de acceso Docker. La ejecución real se informa en Checks del PR. Permisos detallados y navegador siguen en PR #17/#19; este archivo complementa esas pruebas.
 
-Limitación conocida fuera de este cambio: `nombre`/`motivacion` aplican longitud antes del recorte; un texto de espacios puede pasar la primera validación y quedar vacío. No se añade una prueba que trate ese comportamiento como correcto ni se cambia silenciosamente el contrato del backend; requiere corrección revisada por Elizabeth. No se da KAN-124 por terminada solo por este incremento.
+Limitación conocida fuera de este cambio: `nombre`/`motivacion` aplican longitud antes del recorte; un texto de espacios puede pasar la primera validación y quedar vacío. Dos casos `xfail(strict=True)` exigen HTTP 422 como comportamiento deseado y mantienen visible el fallo; cuando el backend lo corrija, XPASS hará fallar la suite hasta retirar la marca. No se cambia el contrato del backend; requiere una corrección única revisada por Elizabeth junto con `EventCreate.resumen` del #18. No se da KAN-124 por terminada solo por este incremento.
 
 ## EN
 
@@ -25,4 +25,4 @@ F1 API test increment, not a frontend/contract change or browser certification. 
 
 Existing fixtures migrate/reset disposable synthetic PostgreSQL. Run the command above only with a dedicated local test database, never shared/production. Existing API CI discovers this file automatically. Local validation covers syntax/diff; local PostgreSQL/pytest was not run because Docker is unavailable. See PR Checks for actual execution. PR #17/#19 retain detailed authorization/browser coverage.
 
-Known follow-up: name/motivation length checks precede trimming, so whitespace-only input needs a backend contract correction reviewed by Elizabeth. This change neither blesses that gap nor silently fixes another owner's contract; the ticket still needs cross-review and any remaining criteria before closure. No Jira, schema, seed, permission or dependency changes.
+Known follow-up: name/motivation length checks precede trimming. Two `xfail(strict=True)` cases assert the desired HTTP 422 contract; once fixed, XPASS fails the suite until the marker is removed. Elizabeth should review one backend correction covering these fields and #18's `EventCreate.resumen`. This change neither blesses that gap nor silently fixes another owner's contract; the ticket still needs cross-review and any remaining criteria before closure. No Jira, schema, seed, permission or dependency changes.
