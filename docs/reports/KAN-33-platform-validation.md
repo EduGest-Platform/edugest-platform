@@ -47,3 +47,8 @@ Base: `dev` 8481d08. Local: Linux, Python 3.12, PostgreSQL 16.2 + pgvector 0.6.2
 **Story criteria:** (1) API and PostgreSQL start with synthetic data, with health and migration evidence: met locally and in CI. (2) A created application persists and is visible from another authorised session: met locally (API restart) and in the CI e2e. "Reloading the browser" was not tested locally: the e2e covers it in a real browser.
 
 **Commands** (in `api/`, with `GISTAR_DATABASE_URL` pointing to an empty test database): `alembic upgrade head`, `python -m app.seed`, `uvicorn app.main:app --no-access-log --port 8765`, `curl /health`, `POST /api/v1/applications`, `GET /api/v1/applications?q=<code>` with another account's session, restart uvicorn and repeat the query, `alembic downgrade base` and `alembic upgrade head`. The synthetic accounts' password comes from `GISTAR_DEMO_PASSWORD`; it is not copied into any report.
+
+## Notas tras la revisión / Notes after review
+
+- **ES:** `alembic downgrade base` **borra todas las tablas**: solo se ejecutó en una base vacía y desechable; no usarlo en staging, producción ni en una base con datos que importen. Este informe prueba la cadena `0001 → 0003` sobre `dev` 8481d08. Al integrar KAN-128 (`0004`) y KAN-153 (`0005`), hay que repetir la comprobación de la cadena Alembic y documentarla en un informe aparte, sin reescribir este.
+- **EN:** `alembic downgrade base` **drops every table**: it was only run on an empty, disposable database; do not use it on staging, production or any database whose data matters. This report covers the `0001 → 0003` chain on `dev` 8481d08. When KAN-128 (`0004`) and KAN-153 (`0005`) are merged, repeat the Alembic chain check and document it in a separate report, without rewriting this one.
