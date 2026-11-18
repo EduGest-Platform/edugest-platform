@@ -51,12 +51,22 @@ Estado: PROPOSED; no se ha creado en Render. Es un segundo despliegue, con su pr
 
 Flujo: PR de la rama de trabajo a `dev`, CI y revisión, fusión, staging se despliega solo, el equipo lo prueba, PR de `dev` a `main` y despliegue manual de producción.
 
+Antes de crearlo: la PR de KAN-101 (#37) debe estar integrada en `dev`. Esa PR es la que hace que staging **rechace** la contraseña y la base de datos de demo; sin ella, `GISTAR_ENVIRONMENT=staging` no protege nada y no hay que desplegar.
+
 Crearlo (solo con autorización del PO):
 
 1. En Render: **New → Blueprint**, selecciona el repositorio, rama `dev` y **Blueprint Path** `render.staging.yaml`.
 2. Render crea `edugest-db-staging`, `edugest-api-staging` y `edugest-web-staging`. Rellena los valores manuales: `VITE_GISTAR_API_URL` (URL pública de `edugest-api-staging`) y `GISTAR_CORS_ORIGINS` (por ejemplo `["https://edugest-web-staging.onrender.com"]`).
 3. Vuelve a desplegar `edugest-web-staging` tras fijar `VITE_GISTAR_API_URL`.
 4. Comprueba `/health` y entra con una cuenta sintética. La contraseña es `GISTAR_DEMO_PASSWORD` de staging, en su panel de Render, y es distinta de la de producción.
+
+Comprobaciones tras el primer despliegue (ninguna se ha ejecutado; el CI solo valida el YAML, no que el entorno exista en Render):
+
+- [ ] La API arranca: `/health` devuelve `database: ok`, es decir, conecta con `edugest-db-staging`.
+- [ ] Alembic llegó a la última revisión (`alembic current` en el shell de Render) y los datos sintéticos están cargados.
+- [ ] El login funciona con la contraseña generada de staging, y la de producción **no** entra.
+- [ ] La web de staging llama a la API desde su origen sin error CORS (incluidas las operaciones `PUT`).
+- [ ] Staging y producción no comparten base de datos ni secretos: URLs de base distintas y valores de `GISTAR_DEMO_PASSWORD` distintos (comparar sin copiar los valores en ningún texto).
 
 Límites y decisiones pendientes:
 
@@ -104,12 +114,22 @@ Status: PROPOSED; not created on Render. It is a second deployment, with its own
 
 Flow: PR from the working branch to `dev`, CI and review, merge, staging deploys by itself, the team tests it, PR from `dev` to `main`, then a manual production deploy.
 
+Before creating it: the KAN-101 PR (#37) must be merged into `dev`. That PR is what makes staging **reject** the demo password and database; without it `GISTAR_ENVIRONMENT=staging` protects nothing and it must not be deployed.
+
 Create it (only with PO authorisation):
 
 1. In Render: **New → Blueprint**, pick the repository, branch `dev` and **Blueprint Path** `render.staging.yaml`.
 2. Render creates `edugest-db-staging`, `edugest-api-staging` and `edugest-web-staging`. Fill the manual values: `VITE_GISTAR_API_URL` (public URL of `edugest-api-staging`) and `GISTAR_CORS_ORIGINS` (for example `["https://edugest-web-staging.onrender.com"]`).
 3. Redeploy `edugest-web-staging` after setting `VITE_GISTAR_API_URL`.
 4. Check `/health` and sign in with a synthetic account. The password is staging's `GISTAR_DEMO_PASSWORD` in its Render dashboard, and differs from production's.
+
+Checks after the first deploy (none has been run; CI only validates the YAML, not that the environment exists on Render):
+
+- [ ] The API starts: `/health` returns `database: ok`, i.e. it reaches `edugest-db-staging`.
+- [ ] Alembic reached the latest revision (`alembic current` in the Render shell) and the synthetic data is loaded.
+- [ ] Login works with staging's generated password, and production's password does **not** work.
+- [ ] The staging web calls the API from its origin with no CORS error (including `PUT` operations).
+- [ ] Staging and production share no database or secrets: different database URLs and different `GISTAR_DEMO_PASSWORD` values (compare without copying the values into any text).
 
 Limits and pending decisions:
 
