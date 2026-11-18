@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app import models  # noqa: F401  (registers metadata)
 from app.core.config import settings
 from app.core.deps import DB
+from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
 from app.modules.admissions.router import router as admissions_router
 from app.modules.audit.router import router as audit_router
 from app.modules.catalog.router import router as catalog_router
@@ -19,12 +20,14 @@ app = FastAPI(
         "La plataforma no toma decisiones automáticas de admisión, exclusión ni baja."
     ),
 )
+install_error_handling(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
+    expose_headers=[REQUEST_ID_HEADER],
 )
 
 API = "/api/v1"
