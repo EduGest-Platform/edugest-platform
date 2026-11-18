@@ -1,0 +1,53 @@
+name: F1 registration E2E
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - '!api/**/*.md'
+      - 'infra/**'
+      - 'e2e/**'
+      - '!e2e/**/*.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'vite.config.ts'
+      - '.github/workflows/e2e-f1.yml'
+  push:
+    branches: [dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: e2e-f1-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  registration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Disposable synthetic environment
+        run: |
+          DB_PASS=$(openssl rand -hex 24)
+          DEMO_PASS=$(openssl rand -hex 24)
+          echo "::add-mask::$DB_PASS"
+          echo "::add-mask::$DEMO_PASS"
+          printf 'GISTAR_DB_PASSWORD=%s\nGISTAR_DEMO_PASSWORD=%s\n' "$DB_PASS" "$DEMO_PASS" > infra/.env
+          echo "GISTAR_DEMO_PASSWORD=$DEMO_PASS" >> "$GITHUB_ENV"
+          echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
+      - name: Start local database, API and web
+        run: docker compose -f infra/compose.yaml up -d --build --wait db api web
+      - name: Browser journey and repeat-run idempotency
+        env:
+          WEB_URL: http://localhost:8443/
+          GISTAR_API: http://localhost:8000
+          E2E_FIXTURE_ID: ci-f1-registration
+        run: |
+          node e2e/f1-registration.mjs
+          node e2e/f1-registration.mjs
+      - name: Remove disposable data
+        if: always()
+        run: docker compose -f infra/compose.yaml down -v
