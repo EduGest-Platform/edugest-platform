@@ -216,7 +216,7 @@ export const EVENT_TYPES: Record<CalItem['tipo'], { label: string; dot: string; 
   taller: { label: 'Taller', dot: 'bg-teal', chip: 'bg-teal-50 text-teal-900 border-teal-200' },
   tutoria: { label: 'Tutoría', dot: 'bg-violet-500', chip: 'bg-violet-50 text-violet-900 border-violet-200' },
   revision: { label: 'Revisión / evaluación', dot: 'bg-amber-500', chip: 'bg-amber-50 text-amber-900 border-amber-200' },
-  jornada: { label: 'Jornada informativa', dot: 'bg-gold', chip: 'bg-[#fff6df] text-[#6d5014] border-[#f3dca2]' },
+  jornada: { label: 'Jornada informativa', dot: 'bg-gold', chip: 'bg-[#e9e5ff] text-ink border-[#d2caff]' },
   hito: { label: 'Hito administrativo', dot: 'bg-slate-500', chip: 'bg-slate-100 text-slate-800 border-slate-200' },
 }
 

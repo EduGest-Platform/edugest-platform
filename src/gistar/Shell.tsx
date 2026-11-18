@@ -84,7 +84,7 @@ export function Shell() {
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
         </div>
-        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8fb0c6] md:block">Menú · {ROLES[role]}</p>
+        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">Menú · {ROLES[role]}</p>
         <nav aria-label="Navegación principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
           {MENUS[role].map((v) => {
             const { label, icon: Icon } = VIEWS[v]
@@ -96,16 +96,16 @@ export function Shell() {
                 onClick={() => navigate(v)}
                 aria-current={active ? 'page' : undefined}
                 className={`flex shrink-0 cursor-pointer items-center gap-3 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors ${
-                  active ? 'bg-white/12 text-white' : 'text-[#c4d8e5] hover:bg-white/6 hover:text-white'
+                  active ? 'bg-white/12 text-white' : 'text-[#e9e5ff] hover:bg-white/6 hover:text-white'
                 }`}
               >
-                <Icon className={`size-4 ${active ? 'text-gold' : 'text-[#8fb0c6]'}`} aria-hidden />
+                <Icon className={`size-4 ${active ? 'text-gold' : 'text-[#d2caff]'}`} aria-hidden />
                 {label}
               </button>
             )
           })}
         </nav>
-        <footer className="mt-auto hidden px-6 text-xs leading-relaxed text-[#8fb0c6] md:block">
+        <footer className="mt-auto hidden px-6 text-xs leading-relaxed text-[#d2caff] md:block">
           Gistar v1 · Datos ficticios
           <br />
           Proyecto 2 · Somos F5
@@ -116,7 +116,7 @@ export function Shell() {
         <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-[15px] font-semibold text-ink">Acompañamos cada trayectoria de aprendizaje</span>
-            <span className="rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#6d5014]">DEMO · Datos sintéticos</span>
+            <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">DEMO · Datos sintéticos</span>
           </div>
           <div className="flex items-center gap-2">
             {allowedRoles && session.me && (

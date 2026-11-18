@@ -224,7 +224,7 @@ export function DotTimeline({
       {markers.map((m) =>
         m.date >= from && m.date <= to ? (
           <g key={m.date + m.label}>
-            <line x1={x(m.date)} x2={x(m.date)} y1={pad.t - 4} y2={H - pad.b} stroke="#e6b348" strokeDasharray="3 3" />
+            <line x1={x(m.date)} x2={x(m.date)} y1={pad.t - 4} y2={H - pad.b} stroke="#6854e8" strokeDasharray="3 3" />
             <title>{m.label}</title>
           </g>
         ) : null,

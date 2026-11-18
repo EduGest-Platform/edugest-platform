@@ -42,7 +42,7 @@ export function LoginScreen() {
             </svg>
           </span>
           <span className="text-2xl font-extrabold tracking-tight text-navy">Gistar</span>
-          <span className="ml-auto rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold text-[#6d5014]">DEMO · Datos sintéticos</span>
+          <span className="ml-auto rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold text-[#09152b]">DEMO · Datos sintéticos</span>
         </div>
         {apiDown && <Notice tone="warning">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
         <div className="mb-4">

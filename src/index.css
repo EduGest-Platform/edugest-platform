@@ -1,17 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+/*
+ * Colours inspired by the Somos F5 palette (their violets and navys), as projectplan.md allows:
+ * the palette may inspire us, but we do not use their logo or name as our brand.
+ * Teal (success) and rose (error) stay because their colour carries meaning.
+ */
 @theme {
   --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --color-navy: #173b5d;
-  --color-blue: #246a92;
+  --color-navy: #15295a;
+  --color-blue: #4f38e0;
   --color-teal: #138c83;
-  --color-gold: #f3be5c;
-  --color-ink: #142536;
-  --color-muted: #657587;
-  --color-line: #dce5ed;
-  --color-mist: #edf3f7;
-  --color-canvas: #f6f8fa;
+  --color-gold: #d2caff;
+  --color-ink: #09152b;
+  --color-muted: #5b6b80; /* a bit darker than before, so small grey text passes WCAG AA (5.2:1) */
+  --color-line: #d3dae4;
+  --color-mist: #f4f2ff;
+  --color-canvas: #f7f9fc;
+
+  /* Somos F5 has no orange, so the "amber" warning colours use its violets. */
+  --color-amber-50: #f4f2ff;
+  --color-amber-100: #e9e5ff;
+  --color-amber-200: #d2caff;
+  --color-amber-300: #b8acf6;
+  --color-amber-400: #8f7fee;
+  --color-amber-500: #6854e8;
+  --color-amber-600: #4f38e0;
+  --color-amber-700: #4a36ca;
+  --color-amber-800: #4a36ca;
+  --color-amber-900: #09152b;
+  --color-amber-950: #09152b;
 }
 
 @layer base {
@@ -24,7 +42,7 @@
     -webkit-font-smoothing: antialiased;
   }
   :focus-visible {
-    outline: 3px solid #e6b348;
+    outline: 3px solid #4f38e0;
     outline-offset: 2px;
   }
 }
