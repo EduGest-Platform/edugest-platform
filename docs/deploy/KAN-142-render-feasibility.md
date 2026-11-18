@@ -67,7 +67,7 @@ No changes to blueprint, permissions, billing, Jira or deployment / no se cambia
 
 ## RAG follow-up / Seguimiento RAG — 18/11/2026
 
-Source / fuente: [David's review](https://github.com/EduGest-Platform/edugest-platform/pull/21#pullrequestreview-5954259538), ADR-0005 / PR #12. **PROPOSED architecture and author estimates, not a deployed benchmark / arquitectura propuesta y estimaciones del autor, no mediciones de despliegue.**
+Source / fuente: [David's review](https://github.com/EduGest-Platform/edugest-platform/pull/21#pullrequestreview-5954254418), ADR-0005 / PR #12. **PROPOSED architecture and author estimates, not a deployed benchmark / arquitectura propuesta y estimaciones del autor, no mediciones de despliegue.**
 
 - ES: Gemini genera embeddings y Groq respuestas mediante HTTP; el diseño no ejecuta un modelo dentro de la API. Un vector de 768 dimensiones ocupa unos 3 KB; David estima unos 3 MB de vectores para 1.000 fragmentos y menos de 10 MB con sus textos. No incluye mediciones de tablas, índices ni sobrecarga PostgreSQL. Propone búsqueda exacta sin HNSW para el corpus inicial; latencia y capacidad siguen sin verificar.
 - EN: Embeddings use Gemini and answers use Groq over HTTP; no model is planned inside the API. A 768-dimensional vector is about 3 KB; David estimates about 3 MB of vectors for 1,000 chunks and under 10 MB including text. PostgreSQL table/index/overhead size is not measured. Initial exact search without HNSW is proposed; latency and capacity remain unverified.
