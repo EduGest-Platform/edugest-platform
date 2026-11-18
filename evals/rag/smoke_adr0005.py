@@ -1,21 +1,25 @@
 """Smoke test for ADR-0005 (KAN-113).
 
 Checks that the pieces chosen in the ADR fit together, using the synthetic corpus of the
-question bank (evals/rag/corpus, KAN-108):
-  1. Gemini Embedding turns each corpus document into a normalised 768-dimension vector.
-  2. PostgreSQL + pgvector stores them and finds the closest one (cosine distance, exact search).
-  3. The cohort filter and the freshness filter are applied in the same query, so no document
-     from another cohort and no obsolete document is ever returned.
-  4. Negative control: the same query WITHOUT filters does return the forbidden document,
-     which proves that the filter, and not luck, is what keeps it out.
-  5. PostgreSQL keyword search (Spanish) works as a fallback.
+question bank (evals/rag/corpus, KAN-108). It has two separate parts:
 
-Everything runs in a TEMPORARY table of the local test database (gistar_test), so nothing is
-left behind. Freshness uses a fixed reference date, so the test does not expire.
+Access control (deterministic, no ranking involved):
+  Each restriction (cohort, status, validity dates) is checked on its own. For every case the
+  forbidden document must be eligible when only that restriction is removed, and must be
+  excluded when the full filter is applied. Two synthetic variants are added for this:
+  an expired document still marked current, and an obsolete document with current dates.
+
+Retrieval quality (depends on Gemini Embedding):
+  The filtered semantic search returns the expected document first, and PostgreSQL keyword
+  search (Spanish) works as a fallback.
+
+Everything runs in a TEMPORARY table, and freshness uses a fixed reference date, so the test
+does not expire. CREATE EXTENSION vector, however, is a persistent change to the database, so
+the script refuses to run unless the database name ends in "_test" (the Compose test database
+is gistar_test). The database user must be allowed to create extensions (the Compose user is).
 
 Requirements: the Docker database running and the API dev extra installed
-(`pip install -e "api[dev]"`, which provides httpx and psycopg). The database user must be
-allowed to run CREATE EXTENSION (the Compose user is).
+(`pip install -e "api[dev]"`, which provides httpx and psycopg).
 
 Usage, from the repository root (Linux, macOS or Windows):
     python evals/rag/smoke_adr0005.py
@@ -44,12 +48,33 @@ EMBED_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{EMBED_MOD
 EVAL_DATE = date(2026, 12, 1)  # same reference date as evals/rag/validate_bank.py
 RETRY_STATUS = {429, 500, 503}
 
-# (question id in questions.jsonl, asker cohort, expected document or None, forbidden document)
-CASES = [
-    ("q01", "A", "A1", "B1"),  # answerable: project deadline
-    ("q05", "A", "A2", "A3"),  # answerable: current calendar, never the obsolete one
-    ("q19", "A", None, "B1"),  # other cohort: cohort B's project must not leak to A
-    ("q02", "B", None, "A1"),  # other cohort, opposite direction
+# Filter parts. Each one can be removed on its own to prove that it is the one doing the work.
+FILTERS = {
+    "cohort": "cohort = %(cohort)s",
+    "status": "status = 'vigente'",
+    "dates": "valid_from <= %(eval_date)s AND (valid_until IS NULL OR valid_until >= %(eval_date)s)",
+}
+
+# Synthetic variants of A2, only in the temporary table: each breaks exactly one freshness rule.
+VARIANTS = [
+    ("X-EXPIRED", "vigente", date(2026, 9, 1), date(2026, 11, 15)),   # current status, expired dates
+    ("X-OBSOLETE", "obsoleto", date(2026, 11, 1), date(2026, 12, 22)),  # obsolete status, current dates
+]
+
+# (description, asker cohort, forbidden document, restriction that must exclude it)
+ACCESS_CASES = [
+    ("cohort B document never reaches cohort A", "A", "B1", "cohort"),
+    ("cohort A document never reaches cohort B", "B", "A1", "cohort"),
+    ("obsolete document with current dates is excluded", "A", "X-OBSOLETE", "status"),
+    ("expired document still marked current is excluded", "A", "X-EXPIRED", "dates"),
+]
+
+# (question id in questions.jsonl, asker cohort, expected first document or None)
+RETRIEVAL_CASES = [
+    ("q01", "A", "A1"),  # project deadline
+    ("q05", "A", "A2"),  # current calendar, never the obsolete one
+    ("q19", "A", None),  # other cohort's project: information only
+    ("q02", "B", None),  # other cohort, opposite direction: information only
 ]
 KEYWORD_QUERY, KEYWORD_COHORT, KEYWORD_EXPECTED = "clases presenciales", "A", ["A2"]
 
@@ -92,6 +117,18 @@ def as_vector(values: list[float]) -> str:
     return "[" + ",".join(f"{v:.7f}" for v in values) + "]"
 
 
+def where(parts: list[str]) -> str:
+    return " AND ".join(FILTERS[p] for p in parts) or "TRUE"
+
+
+def eligible(conn: psycopg.Connection, parts: list[str], cohort: str) -> set[str]:
+    rows = conn.execute(
+        f"SELECT doc_id FROM smoke_chunk WHERE {where(parts)}",
+        {"cohort": cohort, "eval_date": EVAL_DATE},
+    ).fetchall()
+    return {r[0] for r in rows}
+
+
 def main() -> int:
     settings = read_settings()
     if not all(settings.values()):
@@ -109,6 +146,9 @@ def main() -> int:
     try:
         with httpx.Client(timeout=30, headers={"x-goog-api-key": settings["GEMINI_API_KEY"]}) as client, \
                 psycopg.connect(db_url) as conn:
+            if not conn.info.dbname.endswith("_test"):
+                print("Refusing to run: the database name must end in '_test' (CREATE EXTENSION is persistent).")
+                return 2
             conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             conn.execute(
                 f"""
@@ -127,52 +167,60 @@ def main() -> int:
                     (doc["id"], doc["cohort"], doc["title"], doc["version"], doc["valid_from"],
                      doc["valid_until"], doc["status"], body, EMBED_MODEL, vector),
                 )
-            print(f"Indexed {len(corpus)} synthetic documents with {EMBED_MODEL} ({EMBED_DIM} dims, normalised).")
-            print(f"Reference date for freshness: {EVAL_DATE}\n")
+            for doc_id, status, valid_from, valid_until in VARIANTS:
+                conn.execute(
+                    """
+                    INSERT INTO smoke_chunk
+                    SELECT %s, cohort, title, 'variant', %s, %s, %s, body, embedding_model, embedding
+                    FROM smoke_chunk WHERE doc_id = 'A2'
+                    """,
+                    (doc_id, valid_from, valid_until, status),
+                )
+            print(f"Indexed {len(corpus)} synthetic documents with {EMBED_MODEL} ({EMBED_DIM} dims, normalised)")
+            print(f"plus {len(VARIANTS)} freshness variants. Reference date: {EVAL_DATE}\n")
 
-            # Scope and freshness go in the WHERE clause of the same query as the ranking.
-            scope_sql = (
-                "cohort = %s AND status = 'vigente' AND valid_from <= %s "
-                "AND (valid_until IS NULL OR valid_until >= %s)"
-            )
-            for qid, cohort, expected, forbidden in CASES:
+            print("Access control (deterministic)")
+            all_parts = list(FILTERS)
+            for description, cohort, forbidden, restriction in ACCESS_CASES:
+                relaxed = [p for p in all_parts if p != restriction]
+                without = forbidden in eligible(conn, relaxed, cohort)
+                with_filter = forbidden in eligible(conn, all_parts, cohort)
+                ok = without and not with_filter
+                failures += 0 if ok else 1
+                print(f"[{'PASS' if ok else 'FAIL'}] {description}")
+                print(f"       without the {restriction} filter {forbidden} is eligible: {'yes' if without else 'NO'}; "
+                      f"with the full filter it is excluded: {'yes' if not with_filter else 'NO'}")
+            print()
+
+            print("Retrieval quality (Gemini Embedding)")
+            scope = where(all_parts)
+            for qid, cohort, expected in RETRIEVAL_CASES:
                 question = questions[qid]["question"]
                 qvec = as_vector(embed(client, question, "RETRIEVAL_QUERY"))
                 rows = conn.execute(
                     f"""
-                    SELECT doc_id, 1 - (embedding <=> %s::vector) AS similarity FROM smoke_chunk
-                    WHERE {scope_sql} ORDER BY embedding <=> %s::vector LIMIT 3
+                    SELECT doc_id, 1 - (embedding <=> %(q)s::vector) AS similarity FROM smoke_chunk
+                    WHERE {scope} ORDER BY embedding <=> %(q)s::vector LIMIT 3
                     """,
-                    (qvec, cohort, EVAL_DATE, EVAL_DATE, qvec),
+                    {"q": qvec, "cohort": cohort, "eval_date": EVAL_DATE},
                 ).fetchall()
-                control = conn.execute(
-                    "SELECT doc_id FROM smoke_chunk ORDER BY embedding <=> %s::vector LIMIT 3", (qvec,)
-                ).fetchall()
-                returned = [r[0] for r in rows]
-                ok_filter = forbidden not in returned
-                ok_control = forbidden in [r[0] for r in control]
-                ok_expected = expected is None or (returned[:1] == [expected])
-                ok = ok_filter and ok_control and ok_expected
+                ranking = "  ".join(f"{doc_id} {similarity:.3f}" for doc_id, similarity in rows)
+                if expected is None:
+                    print(f"[INFO] {qid} (cohort {cohort}): {question}")
+                    print(f"       {ranking}  (no expected document; abstention is measured in DA6)")
+                    continue
+                ok = bool(rows) and rows[0][0] == expected
                 failures += 0 if ok else 1
                 print(f"[{'PASS' if ok else 'FAIL'}] {qid} (cohort {cohort}): {question}")
-                for doc_id, similarity in rows:
-                    print(f"       {similarity:.3f}  {doc_id}")
-                print(f"       filter keeps {forbidden} out: {'yes' if ok_filter else 'NO'}")
-                print(f"       negative control, without filters {forbidden} is in the top 3: "
-                      f"{'yes' if ok_control else 'NO (control too weak)'}")
-                if expected is None:
-                    top = f"{rows[0][1]:.3f}" if rows else "none"
-                    print(f"       [INFO] no expected document; best allowed similarity {top}. "
-                          "Abstention is measured with the threshold in DA6, not here.")
-                print()
+                print(f"       {ranking}  (expected first: {expected})")
 
             rows = conn.execute(
                 f"""
                 SELECT doc_id FROM smoke_chunk
-                WHERE {scope_sql} AND to_tsvector('spanish', body) @@ plainto_tsquery('spanish', %s)
+                WHERE {scope} AND to_tsvector('spanish', body) @@ plainto_tsquery('spanish', %(text)s)
                 ORDER BY doc_id
                 """,
-                (KEYWORD_COHORT, EVAL_DATE, EVAL_DATE, KEYWORD_QUERY),
+                {"cohort": KEYWORD_COHORT, "eval_date": EVAL_DATE, "text": KEYWORD_QUERY},
             ).fetchall()
             found = [r[0] for r in rows]
             keyword_ok = found == KEYWORD_EXPECTED
