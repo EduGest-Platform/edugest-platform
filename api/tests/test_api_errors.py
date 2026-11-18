@@ -1,11 +1,13 @@
 """KAN-105: uniform errors, server-side request IDs, no data leakage in bodies or logs."""
 
+import asyncio
 import logging
 from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -176,3 +178,50 @@ def test_422_never_echoes_input_even_on_type_errors(boom_client):
     assert r.status_code == 422
     assert SENSITIVE not in r.text
     assert_correlated(r)
+
+
+def test_error_after_response_started_logs_only_the_class_and_is_not_reraised(caplog):
+    """A 500 is impossible once headers are sent. The server must not print a traceback with the exception message."""
+    app = FastAPI()
+    install_error_handling(app)
+
+    @app.get("/stream/{secret_id}")
+    def stream(secret_id: str):
+        def chunks():
+            yield b"first-chunk"
+            raise RuntimeError(f"fallo con dato personal {SENSITIVE} {secret_id}")
+
+        return StreamingResponse(chunks())
+
+    sent: list[dict] = []
+
+    request_delivered = False
+
+    async def receive():
+        nonlocal request_delivered
+        if not request_delivered:
+            request_delivered = True
+            return {"type": "http.request", "body": b"", "more_body": False}
+        await asyncio.sleep(3600)  # StreamingResponse listens for a disconnect; an idle client never sends one
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {
+        "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": "GET", "scheme": "http",
+        "path": "/stream/abc-123", "raw_path": b"/stream/abc-123", "query_string": f"email={SENSITIVE}".encode(),
+        "root_path": "", "headers": [], "client": ("testclient", 50000), "server": ("testserver", 80),
+    }
+    with caplog.at_level(logging.INFO, logger="app.access"):
+        asyncio.run(app(scope, receive, send))  # must not raise: re-raising would make the server log the traceback
+
+    assert sent[0]["type"] == "http.response.start" and sent[0]["status"] == 200
+    assert any(m["type"] == "http.response.body" and m["body"] == b"first-chunk" for m in sent)
+    # No final empty body: the connection must look truncated, not completed.
+    assert not any(m["type"] == "http.response.body" and not m.get("more_body", False) for m in sent)
+    request_id = dict(sent[0]["headers"])[REQUEST_ID_HEADER.lower().encode()].decode()
+    logged = "\n".join(rec.getMessage() for rec in caplog.records if rec.name == "app.access")
+    assert "unhandled RuntimeError on GET /stream/{secret_id}" in logged
+    assert request_id in logged
+    assert SENSITIVE not in logged and "abc-123" not in logged and "fallo con dato personal" not in logged
+    assert all(rec.exc_info is None for rec in caplog.records if rec.name == "app.access")
