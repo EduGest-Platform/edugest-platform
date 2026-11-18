@@ -9,18 +9,22 @@ import {
   type ReviewState,
 } from '../requirements'
 
-/** Colour and icon for each status. The text label is always shown too, so colour is never the only signal. */
+/**
+ * Colour and icon for each status. Same colour families as `Status` in ui.tsx, so the panel looks like the rest of the app.
+ * The text label is always shown too, so colour is never the only signal.
+ */
 const STATUS_LOOK: Record<RequirementStatus, { icon: LucideIcon; cls: string }> = {
-  pendiente: { icon: CircleDashed, cls: 'bg-slate-100 text-slate-700 ring-slate-300' },
+  pendiente: { icon: CircleDashed, cls: 'bg-slate-100 text-slate-700 ring-slate-500/20' },
   cumple: { icon: CircleCheck, cls: 'bg-teal-50 text-teal-800 ring-teal-600/20' },
-  no_cumple: { icon: CircleX, cls: 'bg-amber-50 text-amber-900 ring-amber-600/25' },
+  no_cumple: { icon: CircleX, cls: 'bg-amber-50 text-amber-800 ring-amber-600/25' },
   excepcion_en_revision: { icon: CircleHelp, cls: 'bg-violet-50 text-violet-800 ring-violet-600/20' },
   excepcion_aprobada: { icon: CircleCheck, cls: 'bg-teal-50 text-teal-800 ring-teal-600/20' },
 }
 
+/** Same boxes as `Notice` in ui.tsx (warning and info), plus the app's neutral mist for states with nothing to act on yet. */
 const STATE_LOOK: Record<ReviewState, string> = {
-  sin_revisar: 'border-slate-200 bg-slate-50 text-slate-800',
-  en_revision: 'border-sky-200 bg-sky-50/70 text-sky-950',
+  sin_revisar: 'border-line bg-mist/60 text-navy',
+  en_revision: 'border-line bg-mist/60 text-navy',
   necesita_decision_humana: 'border-amber-200 bg-amber-50/70 text-amber-950',
   cumple: 'border-teal-200 bg-teal-50/60 text-teal-950',
 }
@@ -33,7 +37,7 @@ const STATE_LOOK: Record<ReviewState, string> = {
 export function RequirementReviewPanel({ checks, source }: { checks: readonly RequirementCheck[] | null; source: 'server' | 'demo' }) {
   if (checks === null) {
     return (
-      <section aria-labelledby="req-title" className="rounded-xl border border-dashed border-line px-4 py-3 text-sm">
+      <section aria-labelledby="req-title" className="rounded-xl border border-dashed border-line bg-[#fafcfd] px-4 py-3 text-sm">
         <h3 id="req-title" className="font-semibold">
           Revisión de requisitos
         </h3>
