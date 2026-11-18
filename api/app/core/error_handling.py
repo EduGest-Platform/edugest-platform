@@ -7,6 +7,8 @@ Rules:
 - 500 bodies are generic. Logs hold the exception class only, never its message or traceback,
   because database errors can quote personal data. The middleware answers the 500 itself, inside CORS, so the
   exception never reaches Starlette's ServerErrorMiddleware or uvicorn (which would print the traceback).
+  If the error happens after the response has started (for example a streaming body), a 500 is impossible: the
+  exception is logged by class only, not re-raised, and the connection is dropped so the client sees a truncated body.
 - The server must run uvicorn with ``--no-access-log``: its own access log prints the raw path and query string.
 - Logs hold method, parametrised route (``/applications/{application_id}``), status and duration. Never the raw path,
   query string, headers or body.
@@ -94,7 +96,10 @@ class RequestContextMiddleware:
                 request_id,
             )
             if response_started:
-                raise  # Too late for a clean 500; the connection is already streaming.
+                # Too late for a clean 500: the status line is already sent. Do not re-raise, because the server would
+                # print the traceback and the exception message. Returning without a final body message makes the
+                # server drop the connection, so the client sees a truncated response, not a complete one.
+                return
             await _error_response(request_id, 500, INTERNAL_ERROR_DETAIL)(scope, receive, send_with_request_id)
         finally:
             logger.info(
