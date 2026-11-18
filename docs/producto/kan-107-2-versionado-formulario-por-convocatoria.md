@@ -13,8 +13,9 @@
 | IDs estables de campos y opciones | `field.id` y `option.id` en snake_case, nunca reutilizados ni renombrados; solo se añaden o se marcan `retired` |
 | Quién aprueba y cuándo entra en vigor | `approved_by` (FK `app_user`), `approved_at`, `effective_from` |
 | Sin duplicar estructuras | 1 tabla nueva + 1 FK + 1 columna JSONB |
+| Requisito de edad por convocatoria | `definition.age_requirement`: años, operador (`gte`/`gt`), fecha de referencia y revisión humana; configuración aceptada PO 18/11 para diseño, fecha exacta pendiente |
 
-**Evidencia de alcance:** el formulario **de inscripción** del bootcamp contiene 14 campos (inventario de Anas). El curso de 15 h usa un **formulario de contacto**, no una candidatura: un futuro flujo `Lead/ContactRequest` debe permanecer separado y **no** crea `Application`. El versionado de este documento se limita a formularios de **candidatura**.
+**Evidencia de alcance:** el inventario canónico KAN-92/93 en `dev` (#27) describe A (bootcamp) y B (curso 15 h) como formularios de una etapa con diferencias por convocatoria; B añade curso/fecha y acceso a ordenador, y no pregunta experiencia en programación. La captura histórica de contacto no permite imponer un flujo `Lead/ContactRequest`. **Pendiente PO:** confirmar coexistencia y destino de cursos concretos, organización de cursos y avisos de fechas; solo los destinos aprobados como candidatura usarán `Application`/`call_id`. C sigue sin fuente verificada. El versionado se aplica a candidaturas, no convierte automáticamente cualquier contacto en candidatura.
 
 ## 2. Comparativa breve
 
@@ -60,12 +61,19 @@ Reglas:
    - **Hay una versión más nueva y la anterior es compatible** (la nueva solo añade campos opcionales u opciones, sin cambiar campos obligatorios ni el significado de opciones; se declara al aprobarla) **y está dentro de la ventana de gracia** (propuesta: 24 h desde `effective_from` de la nueva, a confirmar) → se acepta con la versión anterior, que queda registrada.
    - **En cualquier otro caso** (cambio incompatible, ventana vencida, versión retirada) → `409 form_version_changed` con la definición nueva. La persona **revisa y confirma** la nueva versión; se conservan en el cliente las respuestas de campos con el mismo `field.id`. Nunca se reasignan respuestas a otra versión en silencio.
 
+### 3.1 Requisito de edad versionado — diseño aceptado PO 18/11, no implementado
+
+Guardar en `form_version.definition.age_requirement` el umbral en años, operador, fecha de referencia aprobada y modo `human_review`. A publica mayoría de edad (ejemplo: `gte`, 18); B publica **más de 16** (ejemplo: `gt`, 16), sin sustituirlo por ≥16. La fecha relevante (envío/inicio del curso/otra) y la interpretación exacta siguen pendientes; la configuración por convocatoria y mayoría de edad del bootcamp 1.250 h están aceptadas por PO para diseño sintético. No existe un valor global predeterminado de 18.
+
+El año de nacimiento es aproximado para cualquiera de los umbrales. No aceptar ni excluir automáticamente: una persona revisa con información suficiente y proporcionada. No añadir fecha completa o documentación por defecto. El requisito aplicado se conserva con la versión; cambiar umbral, operador o fecha de referencia es **incompatible** con la ventana de gracia, y obliga a revisar/confirmar una nueva versión sin reinterpretar candidaturas previas.
+
 ## 4. Ejemplo sintético
 
 ```json
 {
   "form_version": 2,
   "call_id": "CALL-IA-2027-1",
+  "age_requirement": {"years": 18, "operator": "gte", "reference_date": "2027-01-11", "verification": "human_review"},
   "fields": [
     {"id": "residence_region", "type": "select", "required": true, "source": "catalog:es_provinces"},
     {"id": "programming_experience", "type": "text", "required": true, "max_length": 1500},
@@ -86,6 +94,8 @@ Reglas:
 }
 ```
 
+Ejemplo ficticio de una convocatoria que propone ≥18 a fecha de inicio; no representa el requisito de B ni una política aprobada. Campos/opciones se seleccionan por versión; no copiar la lista de A a B/C automáticamente.
+
 Respuesta almacenada (candidatura sintética):
 
 ```json
@@ -97,7 +107,7 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 ## 5. Qué va en columnas y qué en `answers`
 
 - **Columnas en `person`**: datos personales **vigentes** (`first_name`, `last_name`, `phone`, `birth_year`, `birth_country`, `nationality`, `gender`), no necesariamente inmutables.
-- **`application.answers`**: lo declarado por la persona en esa convocatoria (`residence_region`, `programming_experience`, `current_situation`, `referral_source`, `disponibilidad`) y, si es necesario para justificar la revisión, una **instantánea mínima y protegida** de los atributos actuales de `Person` que se tuvieron en cuenta. No duplicar por inercia todo el expediente.
+- **`application.answers`**: lo declarado por la persona en esa convocatoria (`residence_region`, `programming_experience`, `current_situation`, `referral_source`, `disponibilidad`; si PO aprueba B/C, `computer_access`, `disability_certificate_status`, `referring_entity`) y, si es necesario para justificar la revisión, una **instantánea mínima y protegida** de los atributos actuales de `Person` que se tuvieron en cuenta. No duplicar por inercia todo el expediente.
 - Los campos sensibles no están en `Summary` ni en listados (Entregable 4).
 - La definición **pública** de formulario no incorpora cuotas, prioridades, listas internas de evaluación ni `review_hints` del equipo. Esos criterios requieren validación formal separada y solo podrían residir en una política de revisión **interna y autorizada**, nunca en `GET /calls/{id}/form` público. En el MVP no se implementan cuotas o prioridades no verificadas.
 
@@ -116,7 +126,7 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 | Riesgo | Mitigación |
 |---|---|
 | JSON sin esquema → definiciones erróneas | Validar `definition` con un modelo Pydantic al aprobar |
-| Confianza en datos del cliente | El servidor valida siempre; el frontend solo guía |
+| Confianza en datos del cliente | El servidor valida siempre; **trim antes de comprobar longitud**, rechazo de solo espacios; casos límite de KAN-124/#22. El frontend solo guía |
 | Estadísticas sobre JSONB | Agregados por convocatoria con supresión (ya existe `min_group_size`); materializar columnas solo si se demuestra necesidad |
 | Versión inexistente / cerrada | 409/422 y mensaje claro (patrón ya usado en `create_application`) |
 
@@ -139,13 +149,15 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 
 **Decision.** One new table `form_version` stores an immutable, approved JSON definition per call (option C). Applications keep `form_version_id` and store answers as stable option IDs. Alternatives rejected: YAML in the repo (no FK, needs a deploy per change) and a fully relational field/option model (over-engineering).
 
-**§1 Requirements.** Identifiable version per call; the application keeps its version; later changes never alter answers; stable field/option IDs (never reused, only retired); approval trail (`approved_by/at`, `effective_from`). The 15-hour contact form is a separate lead flow and is out of scope.
+**§1 Requirements.** Identifiable version per call; the application keeps its version; later changes never alter answers; stable field/option IDs (never reused, only retired); approval trail (`approved_by/at`, `effective_from`). The live-captured B inventory describes single-stage intake with course/date selection. PO must settle application/contact routing and coexistence with the older screenshot; no separate lead model is settled. C remains unverified.
+
+**§3.1 Age (per-call design accepted by PO 18/11, not implemented).** Store years, `gte`/`gt`, approved reference date and `human_review` in the immutable version. A: adulthood (example ≥18); B: strictly >16. No global default; exact interpretation/date pending PO/Foundation. Birth year alone cannot prove either threshold; no automatic acceptance/exclusion. Changing the requirement is incompatible with the grace window and never reinterprets submitted answers. The JSON example is synthetic, not B or an approved policy.
 
 **§3 Rules.** The backend resolves the published, effective version for the same `call_id`. Approved definitions are immutable; retirement is a separate, audited state. Submitted applications keep their version and declared answers. Legacy versions only with an approved backfill plan. The API validates that version and application belong to the same call.
 
 **Rule 7 — version changes while a person is filling the form (proposal, PO to approve).** Same version: accept. Newer version published meanwhile: accept the previous one only if it is declared backward-compatible (new version only adds optional fields/options) and within a grace window (proposed 24 h, to be confirmed). Otherwise answer `409 form_version_changed` with the new definition; the person reviews and re-confirms, keeping answers for unchanged field IDs. Answers are never silently remapped.
 
-**§6–§7.** Contract consequences (public read-only `GET /calls/{id}/form`, server-side validation on `POST /applications`, group-filtered `GET /applications/{id}`) and risks (schema-less JSON, client trust, JSONB statistics).
+**§6–§7.** Contract consequences (public read-only `GET /calls/{id}/form`, server-side validation on `POST /applications`, group-filtered `GET /applications/{id}`) and risks (schema-less JSON, client trust, JSONB statistics). Trim before length checks and reject whitespace-only text (KAN-124/#22). B/C fields and option sets must be approved per version, with certificate status and referring entity protected as G6.
 
 **§8 Dynamic permissions.** Independent from form versions. The **responsible functional owner approves** a grant (user, call, field group, purpose, period) and the **authorised administrator executes** it; nobody can self-grant and administering grants does not give read access. Enforced by the API from the next request; audited without field values. Proposal only, not implemented.
 

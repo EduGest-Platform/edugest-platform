@@ -7,7 +7,7 @@
 
 | Paso | Qué | Responsable propuesto | Depende de | ¿Reversible? |
 |---|---|---|---|---|
-| **0** | Aprobar diseño de inscripción del bootcamp, política de acceso y diferencias con el flujo de contacto 15 h. Acordar qué asuntos legales no bloquean la **demo sintética** pero sí un uso real | PO + Anas; Melissa para requisitos reales | — | — |
+| **0** | Aprobar diseño de inscripción del bootcamp, política de acceso y clasificación pendiente del curso 15 h (candidatura/contacto por opción, según inventario B) y requisito de edad por convocatoria. Acordar qué asuntos legales no bloquean la **demo sintética** pero sí un uso real | PO + Anas; Melissa para requisitos reales | — | — |
 | **A** | `Person`: `first_name`, `last_name` (nullable), `phone`, `birth_year`; `disponibilidad` opcional; `display_name` derivado | Backend | 0 | Sí (migración `downgrade`) |
 | **B** | Diseñar integración de `form_version`, `form_version_id`, instantánea mínima y estado de publicación, sin crear migraciones desde KAN-107 | Backend / KAN-42 | A + coordinación de Alembic | Reversible según diseño real |
 | **C** | API pública de formulario **sin reglas internas**; POST valida versión, convocatoria y vigencia, y admite solo respuestas permitidas | Backend / KAN-42 | B | Sí, con control de compatibilidad |
@@ -66,8 +66,9 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión; la ma
 | 1 | Requeridos/opcionales | Alta mínima válida (`test_applications.py::test_public_inscription_creates_person_application_event_and_audit`) | ✅ (formato actual) |
 | 1 | | Falta `last_name`/`phone` → 422 con el campo; falta `disponibilidad` → 201 | 🆕 |
 | 2 | Tipos y opciones | `test_validation_and_closed_calls` (formato actual) | ✅ |
+| 2 | | Trim antes de longitud, solo espacios y límites tras normalización (KAN-124/#22); cambios de edad incompatibles y versionados | 🆕 |
 | 2 | | Opción inexistente, `none` + otra, `short_term`+`long_term`, `min_selected=0` → 422 | 🆕 (tests unitarios de `forms.py`) |
-| 2 | | Año de nacimiento en el umbral de 18 no implica elegibilidad automática; teléfono y catálogo de países se validan según decisión de producto (E.164 / ISO son **propuestas**) | 🆕 |
+| 2 | | Dos convocatorias con requisitos ≥18 y >16, operadores/fechas explícitos; año insuficiente en ambos; revisión humana sin aceptación/rechazo automático; teléfono y catálogo de países se validan según decisión de producto (E.164 / ISO son **propuestas**) | 🆕 |
 | 3 | Versionado/conservación | Crear alta v1 → publicar v2 → leer alta: sigue `form_version=1` y mismas respuestas | 🆕 |
 | 3 | | `UPDATE` de una versión `approved` falla (trigger), como `test_audit_trail_is_append_only` para auditoría | ✅ patrón / 🆕 prueba |
 | 3 | | Persona reutilizada en dos convocatorias: Person no se sobrescribe; cada Application conserva sus `answers` (H8) | 🆕 (parcial: `test_same_person_reused_across_calls`) |
@@ -76,6 +77,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión; la ma
 | 5 | | Roles sin `applications.read` no leen expedientes ajenos; **con** `applications.read` G3/G6 siguen ocultos sin concesión del grupo y de la convocatoria; admin no hereda acceso sensible automáticamente | 🆕 |
 | 5 | | `GET /applications/{id}` de otro ámbito → 403; aspirante: `/me/applications` no devuelve `answers` | ✅ parcial / 🆕 |
 | 6 | Minimización y logs | `audit_event.meta` sin PII (`test_failed_login_is_audited_without_identifiers`, `test_crm_event_is_recorded_with_author_and_audited`) | ✅ |
+| 6 | | Política por conjunto (auditoría, acceso/error, CRM, sesiones, exports y copias), inicio/plazo, destino y mecanismo aprobados con KAN-209/#25; ninguna purga o retención de proveedor verificada aquí | 🆕 |
 | 6 | | Tras un alta con valores centinela (`__SENTINEL_NAT__`), `audit_event.meta` y salida de logs capturada **no contienen** los centinelas | 🆕 |
 | 6 | | Agregados con grupos <5 suprimidos para campos sensibles | ✅ para etapas (`test_small_groups_are_fully_suppressed`) / 🆕 para `answers` |
 | 7 | Frontend ↔ contrato | `test_committed_contract_matches_api` | ✅ |
@@ -103,7 +105,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión; la ma
 | B1 | **Resuelto en auditoría documental V2:** KAN-92/93/107/112 consultados el 17/11; decisiones PO en KAN-93 contrastadas | Persisten solicitudes de ratificación a Melissa, **no** inaccesibilidad de Jira | PO |
 | B2 | AS-IS y aclaraciones de Melissa (Drive) no accesibles | Se usó lo citado por Anas | PO |
 | B3 | **Verificación documental parcial realizada:** fuentes oficiales EUR-Lex/AEPD consultadas 17/11; sigue pendiente interpretación jurídica para datos reales | No bloquea el análisis sintético, sí cualquier declaración de cumplimiento real | Fundación / DPO |
-| B4 | PR #15 no integrado en `dev` | El diccionario de Anas solo existe en esa rama; este PR lo **referencia** | Anas / PO |
+| B4 | **Resuelto 18/11:** inventario integrado por #27 en `dev` (`d59ee8c`); #15 retiró su copia | Mantener KAN-92/93 como inventario observado canónico y KAN-107 como gobierno; acordar mínimo común y clasificación de B/C con Anas/PO | Anas / PO |
 | B5 | Respuestas del equipo (17/11) pendientes de ratificar por Melissa; D1, D4, D7, D10 fuera de alcance | No bloquea el MVP | Fundación |
 | B6 | Pruebas no ejecutadas en esta revisión | Las marcadas ✅ solo prueban que el código existe | Backend |
 
@@ -114,7 +116,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión; la ma
 3. **Temporalidad:** concesión expirada o por `call_id` diferente no autoriza lectura; usuario que pierde el rol base tampoco puede leer aunque su concesión G6 no haya expirado.
 4. **No auto-concesión:** una persona no puede otorgarse G3/G6 ni gestionar permisos fuera de su autoridad/ámbito; probar respuestas negativas y ausencia de side-effects.
 5. **Auditoría:** alta/revocación/lectura protegida registra actor, objetivo, grupo, convocatoria, operación, instante y razón codificada, sin valores personales del formulario.
-6. **Serialización:** ni listados, ni `GET /calls/{id}/form`, ni exportaciones, ni logs muestran G3/G6 sin concesión; `current_situation` se trata como grupo protegido completo.
+6. **Serialización:** ni listados, ni `GET /calls/{id}/form`, ni exportaciones, ni logs muestran G3/G6 sin concesión; `current_situation` se trata como grupo protegido completo, junto con certificado de discapacidad y entidad de derivación de C si se aprueban; probar ausencia de filtraciones en cada superficie.
 7. **Integridad/versionado:** actualizar un permiso no cambia la versión del formulario ni respuestas históricas; una versión de otra convocatoria es rechazada.
 
 **No declarar estas pruebas PASS hasta que haya implementación y ejecución verificadas.**
@@ -125,10 +127,12 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión; la ma
 
 **§1 Order.** Step 0 approve design and access policy (PO + Anas; Melissa for real requirements); A `Person` fields and optional availability; B `form_version` integration design; C public form API and server-side validation; D G3/G6 protection with temporary per-call grants, revocation and audit (no self-grant); E React form from the definition + `pnpm gen:api` (Anas); F tighten required fields and retire `nombre`.
 
+**Reconciled acceptance.** Test ≥18 and >16 requirements with explicit operators/reference dates and human review; no year-only decisions. Trim before length validation (KAN-124/#22). Protect all G6 fields including proposed C certificate status/referring entity. Align each retention class with KAN-209/#25; periods, purge and provider retention remain unverified/unapproved.
+
 **§2–§4.** Per-file changes (with `api/alembic/versions/` explicitly "do not create or edit from KAN-107"), migration-conflict resolution (single ownership, no reserved IDs, validate real `alembic heads`), and tests.
 
 **§5 Acceptance of KAN-107 (design task).** Dictionary with traceability ✅; versioning proposal ✅; privacy assessment ✅ (legal analysis pending); implementation plan ✅; PO summary ✅; PO human review ⏳; Melissa ratification ⏳ (does not block the MVP).
 
-**§6 Blockers.** AS-IS/Melissa Drive documents not accessible; legal interpretation for real data pending; PR #15 not in `dev` (this PR references it); no code tests were run for this documentation PR.
+**§6 Blockers.** AS-IS/Melissa Drive documents not accessible; legal interpretation for real data pending; B4 resolved: PR #27 merged the canonical inventory into `dev`; #15 removed its copy. PO/Anas still need to agree B/C scope and routing; no code tests were run for this documentation PR.
 
 **§7 Acceptance cases for dynamic access (not implemented, none is PASS).** Grant, immediate revocation, expiry and wrong `call_id`, no self-grant, audit without values, no leakage through lists/exports/logs, form version unchanged by permission changes.

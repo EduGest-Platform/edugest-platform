@@ -39,6 +39,8 @@ Ningún permiso `admin:*` puede **sustituir** por sí solo la comprobación expl
 
 **No reutilizar** un permiso de la convocatoria A para la B. Los permisos de `program` existentes siguen controlando el expediente base; las concesiones sensibles se concretan siempre en `call_id`.
 
+**Ampliación G6 propuesta (inventario C, sin URL/verificación):** estado del certificado de discapacidad (dato de salud; no se propone subir documento) y entidad de derivación (posible proxy sensible). Heredan denegación por defecto, concesión explícita por convocatoria y límites de exposición de G6; inclusión y finalidad pendientes PO/Fundación. No confundir la entidad concreta con el canal genérico G7.
+
 ## 3. ¿Quién puede cambiar permisos mientras está abierta la convocatoria?
 
 1. **Solicitante interno autorizado**: pide dar acceso G3 o G6 a un integrante para una finalidad concreta, por un período y una convocatoria determinada.
@@ -93,7 +95,7 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 - Lectura sin G3/G6 no revela ni un valor en API, lista, notas, logs, auditoría, exportaciones o errores.
 - El administrador gestiona sin acceder automáticamente al dato; personal con acceso operativo puede consultar sin modificar privilegios.
 - Misma candidatura, versión y respuestas antes/después de otorgar/revocar.
-- Comprobar que `current_situation` se protege como un solo grupo de sensibilidad máxima si incluye `disability`.
+- Comprobar que `current_situation` se protege como un solo grupo de sensibilidad máxima si incluye `disability`; si se aprueban campos de C, `disability_certificate_status` (salud) y `referring_entity` (proxy potencial) heredan G6. Probar omisión también en listas, errores y exportaciones.
 - Pruebas con PostgreSQL sintético, contrato OpenAPI/TS sincronizados, CI y revisión por otra persona. **Todas estas pruebas están pendientes; ninguna es PASS.**
 
 ## 8. Alcance y migraciones
@@ -112,7 +114,7 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 
 **§1 Question solved.** Staff working on intake, selection or review can change during a call, so access must be grantable and revocable by functional need. That does not allow arbitrary changes to the form, answers, admission rules or lawful basis.
 
-**§2 Policy (deny by default).** G1/G2 identity and age, G4/G5/G7 residence, experience and channel: base role and scope. G3 (origin, gender) and G6 (personal situation, incl. disability): `applications.read` is necessary but insufficient; an explicit, active grant for that `call_id` is also required. G8/G9 follow the action; audit needs `audit.read`. Read rule: valid session AND `applications.read` in scope AND active, non-expired, non-revoked grant for that call and group AND approved purpose.
+**§2 Policy (deny by default).** G1/G2 identity and age, G4/G5/G7 residence, experience and channel: base role and scope. G3 (origin, gender) and G6 (personal situation, incl. disability certificate status and referring entity (unverified C, proposed scope)): `applications.read` is necessary but insufficient; an explicit, active grant for that `call_id` is also required. G8/G9 follow the action; audit needs `audit.read`. Read rule: valid session AND `applications.read` in scope AND active, non-expired, non-revoked grant for that call and group AND approved purpose.
 
 **§3 Who can change permissions during a call.** (1) Authorised internal requester asks; (2) the **responsible functional owner / Data Owner approves** (not the DPO; identity pending with the Foundation); (3) the **authorised administrator (`data_access.manage`) executes** the grant or revocation and cannot approve or self-grant; (4) FastAPI enforces role, scope, approval and limits from the next request; (5) grants expire and are reviewed.
 
