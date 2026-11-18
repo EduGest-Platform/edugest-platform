@@ -42,8 +42,11 @@ Simplificaciones recomendadas: autenticación demo sin OAuth ni recuperación de
 
 ## Revisión crítica
 
-- **Product Owner.** El valor del 18/11 es el recorrido aspirante → coder; F1 resuelve identidad única y CRM mínimo, no la decisión. No ampliar vistas académicas hasta conectar la admisión. POR VALIDAR: definición del 70 % (A8) y quién firma la decisión conjunta.
+- **Product Owner.** El valor del 18/11 es el recorrido aspirante → coder; F1 resuelve identidad única y CRM mínimo, no la decisión. No ampliar vistas académicas hasta conectar la admisión. La PO confirmó ahorro de tiempo como definición del 70 % el 17/11/2026 (PR #10), con número de tareas. Pendientes: aprobación de Melissa, catálogo y unidad persona/lote. La definición de firmantes sigue pendiente de validar.
 - **Arquitectura.** Se desvía de v1.2 en dos puntos: la web permanece en la raíz (Make) y `Call` es entidad de primer nivel (ámbito de preselección). El conmutador local/API introduce dos fuentes durante la transición: cada vista debe migrarse completa, nunca mezclar datos de ambas.
 - **Seguridad.** RBAC y auditoría ya están en servidor. Pendiente: limitación de intentos de login, cabeceras de seguridad y HTTPS en despliegue, rotación de la contraseña demo, retención de sesiones. El modo local sigue siendo inseguro por diseño y no debe desplegarse como producto.
 - **Ingeniería de IA.** Nada de F1 es IA. Retirar etiquetas «IA» de contenido semilla en F4; el modelo de riesgo con etiquetas sintéticas solo demuestra el pipeline; el RAG necesita banco de pruebas antes de interfaz.
 - **QA.** F1 versiona por primera vez las pruebas de navegador. Siguen faltando: E2E en CI (requiere servicios), pruebas de accesibilidad automáticas y Playwright.
+
+
+> ES (17/11/2026): La PO confirmó medir el 70 % como ahorro de tiempo estimado, con número de tareas; aprobación formal de Melissa, catálogo y unidad persona/lote pendientes. EN: PO confirmed estimated time saved plus task counts; formal client approval, catalogue and person/batch units remain pending. Canonical formula and limits: `evals/automation/README.md` (repository root).

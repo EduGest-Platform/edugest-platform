@@ -48,7 +48,7 @@
 | EDU | cohorts, attendance 0.5/1, submissions, competency versions | Elizabeth (DB/API), Anas (UI), Yohanna (workflow/tests) |
 | AST | bounded RAG and authorised attendance query | David (RAG/tools), Elizabeth (read-only API), Anas (chat UI) |
 | AI | dropout baseline, alerts, feedback | Abdur (ML only), Elizabeth (alert API), Anas (alert UI), David (feedback) |
-| MET | 70% task coverage, dashboards, ethics | Yohanna (measurement), Anas (dashboard), Elizabeth (ethics/PO) |
+| MET | 70% estimated time saved, task counts, dashboards, ethics | Yohanna (measurement), Anas (dashboard), Elizabeth (ethics/PO) |
 | REL | CI/E2E, privacy, docs, demo, deployment | Yohanna (SM/CI), Elizabeth (API/security), Anas (UI), David (RAG), Abdur (ML) |
 
 ## 6. Cross-cutting guardrails / Guardarraíles
@@ -60,7 +60,7 @@
 - Invitations to staff create staff record and separate privileged access approval; no invitation privileges granted to coders/aspirants/alumni.
 - Candidate dossier/general board comments include replies and audit; no promise of live co-editing Google Docs-style without evidence.
 - RAG retrieves authorised documents with citations/abstentions; operational questions use allowlisted backend tools, read-only and scope filtered; never arbitrary model-generated SQL.
-- 70% first measured as eligible automatable task types; time saved is alternate metric. Show numerator, denominator, evidence and limitations.
+- 70% uses estimated time saved (PO confirmation, 2026-11-17), with task counts. See `evals/automation/README.md`. Melissa approval, minute catalogue and person/batch units remain pending; report assumptions and evidence.
 - Retain current folder layout: `src/`, `api/`, `contracts/`, `e2e/`, `infra/`, `.github/`, `.figma/`; restructure only with ADR and passing tests.
 
 ## 7. Backlog source / Fuente del backlog
@@ -75,3 +75,6 @@
 - If admission/enrolment is not operational by 27 Nov, freeze secondary UI features.
 - All five briefing objectives remain visible, but narrower demos must be clearly labelled and validated; no false claims about 70%, ML or RAG.
 - 04 Dec code freeze; 09 Dec rehearsal; 10 Dec defence. No deployments/accounts or Jira edits without separate authorisation.
+
+
+> ES (17/11/2026): La PO confirmó medir el 70 % como ahorro de tiempo estimado, con número de tareas; aprobación formal de Melissa, catálogo y unidad persona/lote pendientes. EN: PO confirmed estimated time saved plus task counts; formal client approval, catalogue and person/batch units remain pending. Canonical formula and limits: `evals/automation/README.md` (repository root).
