@@ -1827,6 +1827,7 @@
     },
     "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
       "put": {
+        "description": "`requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`.",
         "operationId": "put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put",
         "parameters": [
           {

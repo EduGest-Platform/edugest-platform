@@ -69,6 +69,10 @@ def list_requirement_reviews(application_id: uuid.UUID, p: CurrentPrincipal, db:
         409: {"description": "Versión desfasada o cambio de resultado no permitido"},
     },
     summary="Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura",
+    description=(
+        "`requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la "
+        "convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`."
+    ),
 )
 def put_requirement_review(
     application_id: uuid.UUID, requirement_ref: str = RequirementRef, *, body: RequirementReviewWrite, response: Response, p: CurrentPrincipal, db: DB

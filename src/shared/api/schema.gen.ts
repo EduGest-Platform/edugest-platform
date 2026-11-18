@@ -99,7 +99,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura */
+        /**
+         * Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura
+         * @description `requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`.
+         */
         put: operations["put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put"];
         post?: never;
         delete?: never;
