@@ -14,9 +14,21 @@ const TOKEN_KEY = 'gistar-api-token'
  */
 let sessionOpen = false
 
+/**
+ * Goes up by one every time a session starts or ends.
+ * Each request remembers the number it was sent with, so a late 401 from an old session
+ * can never close a newer one.
+ */
+let sessionGeneration = 0
+
 /** Call this when the API confirms the session is valid (after login, or after reloading the page). */
 export function markSessionOpen() {
   sessionOpen = true
+}
+
+function endSession() {
+  sessionOpen = false
+  sessionGeneration += 1
 }
 
 /** sessionStorage: one session per tab, so two tabs can act as two different users. */
@@ -25,10 +37,11 @@ export const tokenStore = {
   set: (t: string) => {
     sessionStorage.setItem(TOKEN_KEY, t)
     sessionOpen = true
+    sessionGeneration += 1
   },
   clear: () => {
     sessionStorage.removeItem(TOKEN_KEY)
-    sessionOpen = false
+    endSession()
   },
 }
 
@@ -37,26 +50,37 @@ export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn
 }
 
+/** What we know about a request at the moment it was sent. */
+interface SentWith {
+  /** A session was open, or a token was sent. */
+  hadSession: boolean
+  /** The session number when the request was sent. */
+  generation: number
+}
+
+const sentWith = new WeakMap<Request, SentWith>()
+
 /**
  * Decides if a 401 answer means "your session has ended".
  * - On the login call, 401 only means a wrong password: never end the session.
- * - If the request sent a token, or a session was open in this tab, the session has ended.
- * - A public request from someone who never logged in (for example the inscription form): nothing to end.
+ * - A public request from someone who was not logged in: nothing to end.
+ * - A request sent during an older session: that session is already over, so ignore it.
  */
-export function endsSession(status: number, url: string, sentToken: boolean): boolean {
-  if (status !== 401 || url.endsWith('/auth/login')) return false
-  return sentToken || sessionOpen
+export function endsSession(status: number, url: string, request: SentWith | undefined): boolean {
+  if (status !== 401 || url.endsWith('/auth/login') || !request) return false
+  return request.hadSession && request.generation === sessionGeneration
 }
 
 export const authMiddleware: Middleware = {
   onRequest({ request }) {
     const t = tokenStore.get()
     if (t) request.headers.set('Authorization', `Bearer ${t}`)
+    sentWith.set(request, { hadSession: sessionOpen || !!t, generation: sessionGeneration })
     return request
   },
   onResponse({ response, request }) {
-    if (endsSession(response.status, request.url, request.headers.has('Authorization'))) {
-      sessionOpen = false
+    if (endsSession(response.status, request.url, sentWith.get(request))) {
+      endSession()
       onUnauthorized?.()
     }
     return response

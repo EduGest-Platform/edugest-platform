@@ -13,10 +13,19 @@ const { describeApiError, problemText } = await import('../errors')
 
 const API = 'http://api.test/api/v1'
 
-/** Sends one fake request through the same middleware the app uses, and gets a fake answer back. */
-async function call(path: string, status: number) {
-  const request = (await authMiddleware.onRequest!({ request: new Request(`${API}${path}`) } as never)) as Request
+/** Sends one fake request through the same middleware the app uses. The answer comes later, with `answer`. */
+async function send(path: string) {
+  return (await authMiddleware.onRequest!({ request: new Request(`${API}${path}`) } as never)) as Request
+}
+
+/** Delivers the answer for a request that was sent before. */
+async function answer(request: Request, status: number) {
   await authMiddleware.onResponse!({ request, response: new Response(null, { status }) } as never)
+}
+
+async function call(path: string, status: number) {
+  const request = await send(path)
+  await answer(request, status)
   return request
 }
 
@@ -55,11 +64,32 @@ describe('when the session ends, the app goes back to the login screen with a no
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
 
-  it('ends the session only once, even if several requests fail together', async () => {
+  it('ends the session only once when several requests fail at the same time', async () => {
     tokenStore.set('token-123')
-    await call('/applications', 401)
-    await call('/audit-events', 401)
+    const a = await send('/applications') // both leave before any answer arrives
+    const b = await send('/audit-events')
+    await answer(a, 401)
+    await answer(b, 401)
     expect(onUnauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it('a late 401 from the old session does not close the new session', async () => {
+    tokenStore.set('token-A')
+    const a1 = await send('/applications') // two requests with token A
+    const a2 = await send('/audit-events')
+
+    await answer(a1, 401) // session A ends -> login screen
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+
+    tokenStore.set('token-B') // the person logs in again
+    await answer(a2, 401) // the second answer of session A arrives late
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+    expect(tokenStore.get()).toBe('token-B')
+
+    // The new session still ends normally if its own request gets a 401.
+    await call('/applications', 401)
+    expect(onUnauthorized).toHaveBeenCalledTimes(2)
   })
 
   it('a wrong password on login is not a session end', async () => {
