@@ -768,6 +768,225 @@
         "title": "PersonOut",
         "type": "object"
       },
+      "RequirementReviewHistory": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementRevisionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "requirement_ref": {
+            "title": "Requirement Ref",
+            "type": "string"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "review_id",
+          "requirement_ref",
+          "items"
+        ],
+        "title": "RequirementReviewHistory",
+        "type": "object"
+      },
+      "RequirementReviewList": {
+        "description": "An empty list means «not reviewed yet», never «all requirements met».",
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementReviewOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "items"
+        ],
+        "title": "RequirementReviewList",
+        "type": "object"
+      },
+      "RequirementReviewOut": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "requirement_ref": {
+            "title": "Requirement Ref",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pending",
+              "met",
+              "not_met",
+              "exception_under_review",
+              "exception_approved"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "requirement_ref",
+          "result",
+          "reviewer",
+          "reviewed_at",
+          "reason",
+          "version"
+        ],
+        "title": "RequirementReviewOut",
+        "type": "object"
+      },
+      "RequirementReviewWrite": {
+        "additionalProperties": false,
+        "description": "Body to record or revise a review. Author and date are never accepted from the client.",
+        "properties": {
+          "expected_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versión que la persona vio al abrir la revisión. Se omite solo al crear la primera.",
+            "title": "Expected Version"
+          },
+          "reason": {
+            "description": "Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "met",
+              "not_met",
+              "exception_under_review",
+              "exception_approved"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result",
+          "reason"
+        ],
+        "title": "RequirementReviewWrite",
+        "type": "object"
+      },
+      "RequirementRevisionOut": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pending",
+              "met",
+              "not_met",
+              "exception_under_review",
+              "exception_approved"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "title": "Reviewed At",
+            "type": "string"
+          },
+          "reviewer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "result",
+          "reviewer",
+          "reviewed_at",
+          "reason"
+        ],
+        "title": "RequirementRevisionOut",
+        "type": "object"
+      },
       "RoleAssignmentOut": {
         "properties": {
           "role": {
@@ -1154,6 +1373,215 @@
         "summary": "Registrar contacto, nota o recordatorio en el CRM",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/requirement-reviews": {
+      "get": {
+        "operationId": "list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementReviewList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "Candidatura no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revisiones de requisitos de una candidatura (lista vacía = sin revisar, no «todo cumplido»)",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
+      "put": {
+        "operationId": "put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Identificador del requisito dentro de la convocatoria",
+            "in": "path",
+            "name": "requirement_ref",
+            "required": true,
+            "schema": {
+              "description": "Identificador del requisito dentro de la convocatoria",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+              "title": "Requirement Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementReviewWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementReviewOut"
+                }
+              }
+            },
+            "description": "Primera revisión creada"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "Candidatura no encontrada"
+          },
+          "409": {
+            "description": "Versión desfasada o cambio de resultado no permitido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}/history": {
+      "get": {
+        "operationId": "get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Identificador del requisito dentro de la convocatoria",
+            "in": "path",
+            "name": "requirement_ref",
+            "required": true,
+            "schema": {
+              "description": "Identificador del requisito dentro de la convocatoria",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+              "title": "Requirement Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementReviewHistory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "Candidatura no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión",
+        "tags": [
+          "requirements"
         ]
       }
     },

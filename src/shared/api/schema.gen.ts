@@ -56,6 +56,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/requirement-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisiones de requisitos de una candidatura (lista vacía = sin revisar, no «todo cumplido») */
+        get: operations["list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura */
+        put: operations["put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión */
+        get: operations["get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -519,6 +570,99 @@ export interface components {
              */
             id: string;
         };
+        /** RequirementReviewHistory */
+        RequirementReviewHistory: {
+            /** Items */
+            items: components["schemas"]["RequirementRevisionOut"][];
+            /** Requirement Ref */
+            requirement_ref: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+        };
+        /**
+         * RequirementReviewList
+         * @description An empty list means «not reviewed yet», never «all requirements met».
+         */
+        RequirementReviewList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["RequirementReviewOut"][];
+        };
+        /** RequirementReviewOut */
+        RequirementReviewOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string | null;
+            /** Requirement Ref */
+            requirement_ref: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Reviewer */
+            reviewer: string | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * RequirementReviewWrite
+         * @description Body to record or revise a review. Author and date are never accepted from the client.
+         */
+        RequirementReviewWrite: {
+            /**
+             * Expected Version
+             * @description Versión que la persona vio al abrir la revisión. Se omite solo al crear la primera.
+             */
+            expected_version?: number | null;
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
+             */
+            reason: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "met" | "not_met" | "exception_under_review" | "exception_approved";
+        };
+        /** RequirementRevisionOut */
+        RequirementRevisionOut: {
+            /** Reason */
+            reason: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+            /** Reviewer */
+            reviewer: string | null;
+            /** Revision */
+            revision: number;
+        };
         /** RoleAssignmentOut */
         RoleAssignmentOut: {
             /** Role */
@@ -682,6 +826,165 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EventOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                /** @description Identificador del requisito dentro de la convocatoria */
+                requirement_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequirementReviewWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewOut"];
+                };
+            };
+            /** @description Primera revisión creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Versión desfasada o cambio de resultado no permitido */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                /** @description Identificador del requisito dentro de la convocatoria */
+                requirement_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewHistory"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
