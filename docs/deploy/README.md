@@ -3,6 +3,8 @@
 > Estado / Status: PROPOSED. Nada de esto se ha ejecutado. El despliegue real requiere autorización del equipo.
 > Solo datos sintéticos / Synthetic data only.
 
+Estudio de límites, viabilidad y condiciones pendientes / Limits, feasibility and pending gates: [KAN-142 (17/11/2026)](KAN-142-render-feasibility.md). No autoriza despliegue / Does not authorize deployment.
+
 ## ES · Local con Docker Compose
 
 1. `cp infra/.env.example infra/.env` y pon un valor aleatorio largo en `GISTAR_DB_PASSWORD` y otro en `GISTAR_DEMO_PASSWORD` (la contraseña de las cuentas sintéticas; no tiene valor por defecto).
