@@ -62,3 +62,20 @@ Elizabeth must approve the recommendation, zero-budget boundaries, resource date
 - [ ] Real trial evidence before KAN-142 is treated as runtime-validated hosting / ensayo antes de afirmar viabilidad ejecutada.
 
 No changes to blueprint, permissions, billing, Jira or deployment / no se cambia blueprint, permisos, facturación, Jira ni despliegue.
+
+## RAG follow-up / Seguimiento RAG — 18/11/2026
+
+Source / fuente: [David's review](https://github.com/EduGest-Platform/edugest-platform/pull/21), ADR-0005 / PR #12. **PROPOSED architecture and author estimates, not a deployed benchmark / arquitectura propuesta y estimaciones del autor, no mediciones de despliegue.**
+
+- ES: Gemini genera embeddings y Groq respuestas mediante HTTP; el diseño no ejecuta un modelo dentro de la API. Un vector de 768 dimensiones ocupa unos 3 KB; David estima unos 3 MB de vectores para 1.000 fragmentos y menos de 10 MB con sus textos. No incluye mediciones de tablas, índices ni sobrecarga PostgreSQL. Propone búsqueda exacta sin HNSW para el corpus inicial; latencia y capacidad siguen sin verificar.
+- EN: Embeddings use Gemini and answers use Groq over HTTP; no model is planned inside the API. A 768-dimensional vector is about 3 KB; David estimates about 3 MB of vectors for 1,000 chunks and under 10 MB including text. PostgreSQL table/index/overhead size is not measured. Initial exact search without HNSW is proposed; latency and capacity remain unverified.
+- ES: Con `ipAllowList: []`, planificar ingesta dentro del servicio API mediante conexión interna autorizada, sin abrir la BD a portátiles. David prevé idempotencia por hash de contenido; verificar que reinicios no regeneran embeddings ni consumen cuota innecesaria.
+- EN: With `ipAllowList: []`, plan ingestion inside the API service over its authorized internal connection, without opening laptop access. David plans content-hash idempotency; verify restarts do not re-embed unchanged content or unnecessarily spend quota.
+- ES: Antes del ensayo RAG, revisar la incorporación de `GEMINI_API_KEY` y `GROQ_API_KEY` con `sync: false` al blueprint, sin valores en Git; verificar la migración prevista 0003 y `CREATE EXTENSION IF NOT EXISTS vector` en el destino. Son requisitos futuros, no cambios implementados por este documento.
+- EN: Before the RAG trial, review adding `GEMINI_API_KEY` and `GROQ_API_KEY` with `sync: false`, without committing values; verify planned migration 0003 and `CREATE EXTENSION IF NOT EXISTS vector` on the target. These are future requirements, not implementation in this document.
+- ES: **Dependencia David, DA6, 25/11:** aportar memoria medida de la API con asistente habilitado, método y versión. Mantener pendiente el dimensionamiento hasta recibirla.
+- EN: **David dependency, DA6, 25/11:** provide measured API memory with the assistant enabled, method and version. Capacity sign-off stays pending.
+- ES: David retira su propuesta de Neon del ADR-0005. Una BD creada el 20/11 caducaría teóricamente el 20/12 y cubriría la defensa del 10/12; verificar el instante real y margen. La continuidad posterior sigue pendiente de respuesta A11 y decisión PO; no se aprueba otro proveedor.
+- EN: David withdraws his Neon proposal from ADR-0005. A DB created on 20/11 would theoretically expire on 20/12 and cover the 10/12 defence; verify the actual timestamp and margin. Post-defence availability remains pending A11 and PO decision; no alternate provider is approved.
+
+Validation / validación: documentation diff and attribution reviewed; no provider calls, ingestion, migration or memory measurement executed / revisión documental y de atribución, sin operaciones remotas ni mediciones.
