@@ -5,7 +5,7 @@
 | Objetivo | Existe (antes de F1) | Falta para el 4/12 | Fase |
 |---|---|---|---|
 | O1 Centralización / CRM | Ficha local de candidatura | `Person` único, `Application` por convocatoria, CRM con autor y fecha, deduplicación, auditoría servidor | **F1** (base) · F2 |
-| O2 Automatización 70 % | Nada | Inventario AS-IS etiquetado, tareas elegibles automatizadas (validación, faltantes, convocatoria/recordatorio), eventos medibles, ≥100 casos sintéticos, informe reproducible | F2 · F5 |
+| O2 Automatización 70 % | Nada | Inventario AS-IS etiquetado, tareas elegibles automatizadas (validación, faltantes, convocatoria/recordatorio), eventos medibles, ≥100 casos sintéticos elegibles, ahorro de tiempo estimado y número de tareas, informe reproducible | F2 · F5 |
 | O3 Competencias / portfolios | Catálogo, rúbricas, evaluaciones, analítica locales | Persistencia por cohorte, `Enrollment` desde decisión, `PortfolioLink`, permisos por cohorte | F3 |
 | O4 Asistente RAG | 3 Q/A fijas | Corpus autorizado por ámbito, chunking, pgvector, filtro por permiso previo a la recuperación, citas, abstención, banco de 20–30 preguntas y métricas | F4 |
 | O5 Riesgo de abandono | Regla + planes de apoyo | Dataset sintético, Dummy + LogisticRegression, model card, señales explicables, alerta → intervención revisada | F4 |
@@ -19,3 +19,6 @@
 3. **Sustituir la lógica, no la vista:** `Assistant.tsx` → RAG; `applyAbsenceRule` se conserva como señal explicable junto al modelo.
 4. **Corregir:** firmante de admisión (F2), etiquetas «IA» engañosas (F4), agregados de Coordinación en servidor (F5).
 5. **No hacer:** migración a Next.js, microservicios, agentes autónomos que actúan sin revisión humana, Qdrant/Chroma, HubSpot en vivo, ejecución de código arbitrario.
+
+
+> ES (17/11/2026): La PO confirmó medir el 70 % como ahorro de tiempo estimado, con número de tareas; aprobación formal de Melissa, catálogo y unidad persona/lote pendientes. EN: PO confirmed estimated time saved plus task counts; formal client approval, catalogue and person/batch units remain pending. Canonical formula and limits: `evals/automation/README.md` (repository root).
