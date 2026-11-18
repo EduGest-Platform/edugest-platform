@@ -6,6 +6,14 @@ KAN-53 / KAN-69; owner Yohanna; review Elizabeth (metric/contract), David (rules
 python -m unittest discover -s evals/automation -v
 ```
 
+## Elapsed durations and DST / Duraciones y cambio de hora
+
+ES: `response_grace`, `reminder_delay` y `reminder_lead` representan tiempo transcurrido: un día en `timedelta` son 24 horas, no «la misma hora local mañana». El motor convierte `now` y `due_at` a UTC antes de aritmética/comparaciones, respetando los instantes de la hora repetida (`fold`). Conserva la zona original en `Proposal.proposed_at` y no cambia claves. El adaptador debe resolver la hora local ambigua/inexistente al crear la cita; aquí se esperan instantes conscientes de zona, no una nueva política de calendario civil.
+
+EN: policy durations are elapsed time; a timedelta day is 24 hours, not the same local time tomorrow. Normalize now/due to UTC before arithmetic/comparison, including repeated-hour folds. Proposal timestamps retain their input zone and keys are unchanged. The adapter must resolve ambiguous/nonexistent local appointment times; this fix does not introduce calendar-day scheduling.
+
+The regression suite uses `zoneinfo.ZoneInfo("Europe/Madrid")` and needs IANA data. Linux CI uses its system timezone database; Windows can install the API's `[dev]` extra, which now includes the test-only `tzdata` fallback. No runtime dependency is added. / La suite requiere datos IANA; Linux usa los del sistema y `[dev]` incorpora `tzdata` para pruebas Windows, sin dependencia nueva de ejecución.
+
 ## ES — métrica y evidencia
 
 La PO Elizabeth confirmó el **ahorro de tiempo** como definición del 70 % en la revisión del PR #10 del 17/11/2026. La aprobación formal de Melissa, el catálogo vigente y si cada tiempo corresponde a persona o lote siguen pendientes. No hay un catálogo por defecto.
