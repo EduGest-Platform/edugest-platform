@@ -9,7 +9,7 @@ from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Call
 from app.modules.identity.models import Person
-from tests.conftest import new_application
+from tests.conftest import CAPT_IA, login, new_application
 
 
 def snapshot(db):
@@ -28,6 +28,24 @@ def snapshot(db):
 def test_whitespace_only_text_is_rejected_before_persistence(client, field, value):
     # Assert the desired contract, not today's accepted-and-trimmed empty value.
     response = client.post("/api/v1/applications", json=new_application(**{field: value}))
+    assert response.status_code == 422
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="whitespace-only CRM summary passes length check; backend validation follow-up",
+)
+def test_whitespace_only_crm_summary_is_rejected(client):
+    headers = login(client, CAPT_IA)
+    applications = client.get("/api/v1/applications", headers=headers)
+    applications.raise_for_status()
+    application_id = applications.json()["items"][0]["id"]
+    response = client.post(
+        f"/api/v1/applications/{application_id}/events",
+        headers=headers,
+        json={"tipo": "nota", "resumen": " "},
+    )
     assert response.status_code == 422
 
 
