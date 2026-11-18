@@ -316,6 +316,19 @@ def test_audit_events_carry_no_free_text_or_personal_data(client, db):
     assert events[1].meta["from_result"] == "met" and events[1].meta["revision"] == 2
 
 
+def test_reason_free_text_is_only_returned_by_the_requirement_endpoints(client, db):
+    """KAN-128 review R3: the reason must not leak into the dossier, CRM events, lists or the audit log."""
+    target, secret_reason = application_in(db, IA_CALL), "Motivo-reservado-5521"
+    admin = login(client, ADMIN)
+    assert put_review(client, admin, target, "not_met", reason=secret_reason).status_code == 201
+    for url in ("/api/v1/applications", f"/api/v1/applications/{target.id}", "/api/v1/audit-events"):
+        r = client.get(url, headers=admin)
+        assert r.status_code == 200, url
+        assert secret_reason not in r.text, url
+    assert secret_reason in client.get(reviews_url(target), headers=admin).text
+    assert secret_reason not in client.get(f"/api/v1/applications/{target.id}", headers=login(client, SEL_IA)).text
+
+
 BAD_ROWS = {
     "completed without author, date or reason": lambda author: {"result": "met"},
     "pending with a reason": lambda author: {"result": "pending", "reason": "No debe tener motivo"},
