@@ -1,6 +1,19 @@
 name: F1 registration E2E
 on:
   pull_request:
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - '!api/**/*.md'
+      - 'infra/**'
+      - 'e2e/**'
+      - '!e2e/**/*.md'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'vite.config.ts'
+      - '.github/workflows/e2e-f1.yml'
+  push:
+    branches: [dev]
   workflow_dispatch:
 permissions:
   contents: read

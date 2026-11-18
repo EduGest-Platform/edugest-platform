@@ -39,6 +39,7 @@ try {
   await staff.goto(web)
   requireCheck('API login screen', await staff.waitText('Iniciar sesión'))
   await staff.login('captacion.ia@gistar.example')
+  requireCheck('Staff login succeeded', await waitFor(staff, "!!document.querySelector('nav') && !document.querySelector('#lg-email')"))
   requireCheck('Staff navigation', await staff.nav('Candidaturas'))
   requireCheck('Staff application list loaded', await staff.waitText('en tu ámbito'))
 
@@ -59,7 +60,7 @@ try {
 
   await staff.set('[aria-label="Buscar expedientes"]', email)
   requireCheck('Exactly one shared dossier visible', await waitFor(staff, `document.querySelectorAll('main tbody tr').length === 1 && document.querySelector('main tbody tr').innerText.includes(${JSON.stringify(email)})`))
-  requireCheck('Dossier belongs to IA call', (await staff.text()).includes('CONV-IA-2027A'))
+  requireCheck('Dossier belongs to IA call', await staff.ev("document.querySelector('main tbody tr')?.innerText.includes('CONV-IA-2027A')"))
   await staff.ev(`document.querySelector('main tbody tr button').click()`)
   requireCheck('Persisted dossier opens', await staff.waitText('Historial CRM'))
   requireCheck('Dossier contains synthetic registration', (await staff.text()).includes(email))
@@ -68,12 +69,16 @@ try {
   const foreign = await newBrowser()
   await foreign.goto(web)
   await foreign.login('captacion.data@gistar.example')
+  requireCheck('Foreign staff login succeeded', await waitFor(foreign, "!!document.querySelector('nav') && !document.querySelector('#lg-email')"))
   requireCheck('Foreign staff list available', await foreign.nav('Candidaturas'))
-  await foreign.waitText('en tu ámbito')
+  requireCheck('Foreign staff list loaded', await foreign.waitText('en tu ámbito'))
   await foreign.set('[aria-label="Buscar expedientes"]', email)
   requireCheck('Foreign scope cannot discover dossier', await foreign.waitText('No hay expedientes con estos filtros'))
   requireCheck('No browser runtime exceptions', errors.length === 0)
-} catch {
+} catch (error) {
+  // Fixed allowlist: never print arbitrary messages, names, bodies or tokens.
+  const kind = error instanceof TypeError ? 'TypeError' : error instanceof Error ? 'Error' : 'Unknown'
+  console.error(`Journey failure category: ${kind}`)
   check('Journey aborted: inspect preceding failed assertion (no request bodies or tokens logged)', false)
 }
 finish()
