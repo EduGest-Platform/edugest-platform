@@ -24,6 +24,7 @@
 - Formulario **HubSpot** incrustado en la landing (`forms-eu1.hsforms.com`), con reCAPTCHA invisible.
 - **Una sola etapa** (una página), sin pasos.
 - Aviso visible: *esta edición está abierta a personas que residen en la provincia de Madrid*.
+- Requisitos publicados en la landing (18/11/2026): ser mayor de edad, residir en la Comunidad de Madrid, tener permiso de trabajo en España, estar en situación de desempleo y tener conocimientos previos en programación.
 - Botón de envío: **Enviar**.
 
 ## 3. Campos del Formulario A (capturado el 17/11/2026)
@@ -49,12 +50,16 @@ Leyenda de alcance (propuesta): **MVP** = lo construimos ahora · **PO** = decid
 
 ## 4. Formulario B: curso de IA de 15 h (capturado el 18/11/2026)
 
-Una sola etapa, botón **Enviar**. Mismos campos que el Formulario A salvo estas diferencias:
+Una sola etapa, botón **Enviar**.
+
+**Requisitos publicados en la landing (18/11/2026):** tener **más de 16 años**, residir en España (provincias de Madrid, Zaragoza o Pontevedra) o en Portugal (distritos de Lisboa o Viseo), estar en desempleo, tener motivación para aprender y competencias digitales básicas. No se requieren conocimientos previos en IA.
+
+Mismos campos que el Formulario A salvo estas diferencias:
 
 | Campo | Formulario B | Alcance propuesto | Nota |
 |---|---|---|---|
 | **Elige tu Curso de IA para la empleabilidad de 15h** (nuevo, obligatorio) | Desplegable: Curso IA (15h) 23–27 nov 2026, Zaragoza (reservado Fund. Ozanam) · Curso IA (15h) 11–15 ene 2027, Zaragoza (reservado Fund. Ozanam) · Quiero organizar un curso para beneficiarios/as de mi entidad · Avísame de próximas fechas | MVP | En EduGest es nuestra **Convocatoria** (`call_id`) |
-| Año de nacimiento (#5) | Desplegable de 1953 a 2020 | MVP | Permite elegir años de menores; el requisito es ser mayor de edad. Proponemos validarlo |
+| Año de nacimiento (#5) | Desplegable de 1953 a 2020 | MVP | El requisito de este curso es **más de 16 años** (no mayoría de edad). La lista llega a 2020, así que permite años que no cumplen el requisito. Solo con el año no se puede saber la edad exacta: la comprobación debe ser revisión humana, no exclusión automática |
 | País de nacimiento / Nacionalidad (#6/#7) | Lista de países + "No encuentro mi país…" | MVP | |
 | Género (#8) | Mujer · Hombre · Otro (No binario) · Prefiero no identificarme | MVP | |
 | Residencia (#9) | España - provincia de Madrid · España - provincia de Zaragoza · España - provincia de Pontevedra · Portugal - distrito de Lisboa · Portugal - distrito de Viseu · Ninguno de los anteriores (otro) | MVP | Lista corta según el proyecto, no todas las provincias |
@@ -103,7 +108,7 @@ Para no repetirlas en el nuestro:
 **Sigue abierto:**
 - URL del Formulario C y confirmación de sus puntos "por confirmar".
 - Conjunto mínimo común de campos para todos los formularios (KAN-42), ya que cada formación tiene el suyo: A y B ya difieren en curso, ordenador y experiencia en programación.
-- Validar mayoría de edad a partir del año de nacimiento (el Formulario B permite años de menores).
+- **La edad mínima depende de la convocatoria:** mayoría de edad en el bootcamp (A), más de 16 años en el curso de 15 h (B). Debe ser un requisito configurable por convocatoria (KAN-42/KAN-107), no una regla fija. Con solo el año de nacimiento la edad es aproximada: marcar para revisión humana, sin excluir automáticamente.
 
 ## 9. Siguiente paso
 
