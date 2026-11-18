@@ -123,3 +123,21 @@ def test_successful_login_checks_the_password_once_and_creates_one_session(clien
     login(client, ADMIN)
     assert len(password_checks) == 1 and password_checks[0] != identity_router.DUMMY_PASSWORD_HASH
     assert db.scalar(select(func.count()).select_from(AuthSession)) == sessions_before + 1
+
+
+def scrypt_cost(stored: str) -> tuple:
+    """Everything that sets the cost of verifying a hash: algorithm, N, r, p and the salt and key lengths."""
+    algo, n, r, p, salt, key = stored.split("$")
+    return algo, n, r, p, len(salt), len(key)
+
+
+def test_dummy_hash_costs_the_same_as_the_hashes_stored_for_real_accounts(db):
+    stored = db.scalar(select(User.password_hash).where(User.email == ADMIN))
+    assert scrypt_cost(identity_router.DUMMY_PASSWORD_HASH) == scrypt_cost(stored)
+
+
+def test_wrong_password_for_a_real_account_checks_that_account_hash_not_the_dummy(client, db, password_checks):
+    stored = db.scalar(select(User.password_hash).where(User.email == ADMIN))
+    response = client.post("/api/v1/auth/login", json={"email": ADMIN, "password": "synthetic-wrong"})
+    assert response.status_code == 401
+    assert password_checks == [stored]
