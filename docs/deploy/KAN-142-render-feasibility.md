@@ -2,7 +2,7 @@
 
 **Reviewed / consultado:** 2026-11-17. **Owner / responsable:** Yohanna. **Reviewer / revisión:** Elizabeth.
 **Jira deadline / vencimiento:** 27/11/2026; task title requests a decision by 20/11 / el título pide decisión el 20/11. Preserve both; PO must reconcile / conservar ambas hasta aclaración PO.
-**Repository snapshot / base:** `dev` `8c3b869692eff4a5116f7514fd258d41d8b256bd`.
+**Repository snapshot / base:** `dev` `019ab38515f49b2f640df6ebaec09939a203293b`, rechecked / revisado 18/11/2026 after / tras #23. Official provider consultation remains dated 17/11 / consulta del proveedor conserva fecha 17/11.
 **Status:** documentary spike completed, recommendation **PROPOSED**; deployment **NOT RUN / BLOCKED by G-ENV and explicit authorization**. / Estudio documental preparado; recomendación propuesta, sin despliegue ni aceptación final.
 
 ## Official facts / Hechos oficiales
@@ -32,7 +32,7 @@ Inferencia de viabilidad: **demo F1 pequeña potencialmente viable**, sujeta a p
 
 El arranque incluye migración y seed: un tiempo de disponibilidad observado deberá separar provisión/compilación, primera inicialización y reactivación posterior. No presentar la estimación publicada por Render como medición de EduGest. El seed idempotente no es una copia de seguridad ni prueba de recuperación del estado de la demo. Cambiar una contraseña de entorno no rota automáticamente contraseñas de cuentas ya sembradas.
 
-La API actual aún declara contraseña demo fallback y no acredita endurecimiento completo de rate limiting, sesiones, TLS/CORS o protección de logs. Aunque el blueprint genere contraseña, **G-ENV sigue pendiente de evidencias y aprobación**. Este estudio no abre el gate ni autoriza uso de datos reales.
+La API actual aún declara contraseña demo fallback y no acredita endurecimiento completo de rate limiting, sesiones o TLS/CORS. Tras #23, el entrypoint usa `--no-access-log` y `core/error_handling.py` añade logs de acceso mínimos, request IDs y respuestas 500 genéricas antes de iniciar la respuesta. Esto es evidencia estática, no certificación de todos los sinks: excepciones después de iniciar la respuesta se relanzan; logger de errores Uvicorn y proxies necesitan comprobación. Aunque el blueprint genere contraseña, **G-ENV sigue pendiente de evidencias y aprobación**. Este estudio no abre el gate ni autoriza uso de datos reales.
 
 ## ES — propuesta de ensayo posterior, sin ejecutar
 
@@ -48,6 +48,8 @@ La API actual aún declara contraseña demo fallback y no acredita endurecimient
 The existing blueprint proposes Docker API, static frontend and Postgres 16 in Frankfurt, restricted DB ingress and manual deploys. The entrypoint converts the DB URL, migrates/seeds and binds to the platform port. The frontend embeds the API URL at build time; coordinate rebuilds and exact CORS origins. MLflow remains local. These are inspected files, not deployed resources.
 
 Inference: a small F1 demo is a potential fit, not measured capacity. RAG embeddings/ingestion, model training and growing indexes require separate size/resource evidence from David/Abdur. Distinguish provisioning, initial migration/seed and later reactivation in measurements. A repeatable seed is not a backup; environment-secret changes do not rotate already seeded account passwords. Current backend security hardening remains unverified; generating a blueprint password alone does not satisfy G-ENV.
+
+Rechecked against `dev` `019ab38` on 18/11: merged #23 disables Uvicorn access logging in the entrypoint and adds minimal access logs, server request IDs and generic pre-response 500 handling. This is static evidence, not all-sink runtime certification. Exceptions after response start are re-raised; Uvicorn error logging and proxies remain to be checked. No deployment/security gate is opened.
 
 Elizabeth must approve the recommendation, zero-budget boundaries, resource dates and the conflicting planning dates. After explicit deployment/security authorization, validate the Blueprint, verify health/login/denials, measure five reactivations and record method/median/maximum, then test agreed concurrency and inspect resource usage against actual plan quotas. Recreate/restore only into separately authorized synthetic targets; never reset shared data or open DB ingress implicitly. Rehearse before defence; avoid artificial keep-alive traffic. Compose remains a contingency, not a substitute for the accessible hosted deliverable. Any paid plan or alternate provider requires a fresh approved decision.
 
@@ -65,7 +67,7 @@ No changes to blueprint, permissions, billing, Jira or deployment / no se cambia
 
 ## RAG follow-up / Seguimiento RAG — 18/11/2026
 
-Source / fuente: [David's review](https://github.com/EduGest-Platform/edugest-platform/pull/21), ADR-0005 / PR #12. **PROPOSED architecture and author estimates, not a deployed benchmark / arquitectura propuesta y estimaciones del autor, no mediciones de despliegue.**
+Source / fuente: [David's review](https://github.com/EduGest-Platform/edugest-platform/pull/21#pullrequestreview-5954259538), ADR-0005 / PR #12. **PROPOSED architecture and author estimates, not a deployed benchmark / arquitectura propuesta y estimaciones del autor, no mediciones de despliegue.**
 
 - ES: Gemini genera embeddings y Groq respuestas mediante HTTP; el diseño no ejecuta un modelo dentro de la API. Un vector de 768 dimensiones ocupa unos 3 KB; David estima unos 3 MB de vectores para 1.000 fragmentos y menos de 10 MB con sus textos. No incluye mediciones de tablas, índices ni sobrecarga PostgreSQL. Propone búsqueda exacta sin HNSW para el corpus inicial; latencia y capacidad siguen sin verificar.
 - EN: Embeddings use Gemini and answers use Groq over HTTP; no model is planned inside the API. A 768-dimensional vector is about 3 KB; David estimates about 3 MB of vectors for 1,000 chunks and under 10 MB including text. PostgreSQL table/index/overhead size is not measured. Initial exact search without HNSW is proposed; latency and capacity remain unverified.
