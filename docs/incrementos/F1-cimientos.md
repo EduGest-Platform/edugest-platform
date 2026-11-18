@@ -75,7 +75,7 @@ la sesión de una pestaña no se ve afectada por los inicios y cierres de la otr
 cd api && python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
 export GISTAR_DATABASE_URL=postgresql+psycopg://gistar:gistar@localhost:5432/gistar
 alembic upgrade head && python -m app.seed --reset
-GISTAR_CORS_ORIGINS='["http://127.0.0.1:4173"]' uvicorn app.main:app --port 8000 &
+GISTAR_CORS_ORIGINS='["http://127.0.0.1:4173"]' uvicorn app.main:app --no-access-log --port 8000 &
 GISTAR_TEST_DATABASE_URL=postgresql+psycopg://gistar:gistar@localhost:5432/gistar_test pytest
 # Web en modo servidor + E2E
 cd .. && VITE_GISTAR_API_URL=http://127.0.0.1:8000 pnpm exec vite build --outDir /tmp/webdist

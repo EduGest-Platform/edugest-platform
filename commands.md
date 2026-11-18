@@ -43,7 +43,7 @@ python -m venv .venv
 pip install -e ".[dev]"      # check pyproject and consent to install
 alembic upgrade head         # LOCAL SYNTHETIC DB ONLY
 python -m pytest
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --no-access-log
 ```
 
 **ES:** Confirmar `api/README.md` y `infra/compose.yaml` (servicios, puertos y nombres) antes de arrancar; no ejecutar Alembic contra BD externa/producción. **EN:** Never copy demo passwords/URL into public docs; use `.env.example` without secrets.

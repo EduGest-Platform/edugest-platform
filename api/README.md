@@ -14,7 +14,7 @@ cp .env.example .env              # pon la contraseña de infra/.env en GISTAR_D
 # In .env, set GISTAR_DEMO_PASSWORD to a strong, non-empty, environment-specific value before continuing.
 alembic upgrade head
 python -m app.seed                # carga ../src/gistar/seed.json (idempotente; --reset para recargar)
-uvicorn app.main:app --reload     # http://localhost:8000/docs
+uvicorn app.main:app --reload --no-access-log   # http://localhost:8000/docs (sin log de acceso de uvicorn: imprime ruta y query; la API escribe su log seguro)
 ```
 
 Web contra la API (desde la raíz): `VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev`.
