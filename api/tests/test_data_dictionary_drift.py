@@ -1,8 +1,9 @@
-"""KAN-107: the data dictionary (PR #24, section 1.1 "Estado en dev") must not silently drift from the code.
+"""KAN-107: regression guard for the declared schema. It does NOT read or parse the Markdown dictionary.
 
-When one of these assertions fails, the schema changed on purpose or by accident. Either way, update the
-dictionary (docs/producto/kan-107-1-diccionario-datos-consolidado.md) and the privacy assessment in the same PR,
-then update the expected sets below. No database access: only the declared metadata and Pydantic schemas.
+The expected sets below are written in Python and mirror the dictionary (PR #24, section 1.1 "Estado en dev"; until
+#24 is merged, the canonical document in dev is docs/producto/diccionario-campos-candidatura.md). The test only fails
+when the tables and Pydantic schemas stop matching those sets. When that happens the schema changed on purpose or by
+accident: in the same change, update the dictionary, the privacy assessment and the expected sets. No database access.
 """
 
 import app.models  # noqa: F401  (registers every table in Base.metadata)
