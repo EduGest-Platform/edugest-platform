@@ -83,7 +83,7 @@ export interface paths {
         get?: never;
         /**
          * Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura
-         * @description `requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`.
+         * @description `requirement_ref` debe existir en el catálogo de la convocatoria. Cada referencia identifica una definición inmutable; el resultado conserva su vínculo aunque se publiquen versiones nuevas. No incluir datos sensibles en `reason`.
          */
         put: operations["put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put"];
         post?: never;
@@ -189,6 +189,24 @@ export interface paths {
         get: operations["list_calls_api_v1_calls_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{call_id}/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo de requisitos y sus versiones inmutables dentro del ámbito autorizado */
+        get: operations["list_call_requirements_api_v1_calls__call_id__requirements_get"];
+        put?: never;
+        /** Publicar una definición inmutable; solo administración. Nunca decide admisión */
+        post: operations["create_call_requirement_api_v1_calls__call_id__requirements_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -455,6 +473,68 @@ export interface components {
             /** Program Nombre */
             program_nombre: string;
         };
+        /** CallRequirementList */
+        CallRequirementList: {
+            /** Call Id */
+            call_id: string;
+            /** Items */
+            items: components["schemas"]["CallRequirementOut"][];
+        };
+        /** CallRequirementOut */
+        CallRequirementOut: {
+            /** Call Id */
+            call_id: string;
+            /** Code */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Funder */
+            funder: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Label */
+            label: string;
+            /** Ref */
+            ref: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * CallRequirementWrite
+         * @description A fresh immutable reference, or the next version of the same logical code.
+         */
+        CallRequirementWrite: {
+            /** Code */
+            code: string;
+            /**
+             * Expected Version
+             * @description 0 para un código nuevo; versión anterior al publicar su sucesora
+             * @default 0
+             */
+            expected_version: number;
+            /** Funder */
+            funder?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Label */
+            label: string;
+            /** Ref */
+            ref: string;
+        };
         /** CallSummaryOut */
         CallSummaryOut: {
             /** By Stage */
@@ -612,6 +692,8 @@ export interface components {
             id: string;
             /** Reason */
             reason: string | null;
+            /** Requirement Definition Id */
+            requirement_definition_id?: string | null;
             /** Requirement Ref */
             requirement_ref: string;
             /**
@@ -651,6 +733,8 @@ export interface components {
         RequirementRevisionOut: {
             /** Reason */
             reason: string;
+            /** Requirement Definition Id */
+            requirement_definition_id?: string | null;
             /**
              * Result
              * @enum {string}
@@ -1124,6 +1208,86 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CallOut"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_call_requirements_api_v1_calls__call_id__requirements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallRequirementList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_call_requirement_api_v1_calls__call_id__requirements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallRequirementWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallRequirementOut"];
+                };
+            };
+            /** @description Solo administración */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Referencia o versión en conflicto */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

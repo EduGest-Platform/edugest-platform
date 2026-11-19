@@ -11,6 +11,36 @@ WritableResult = Literal["met", "not_met", "exception_under_review", "exception_
 REQUIREMENT_REF_PATTERN = r"^[a-z0-9][a-z0-9_-]{0,59}$"
 
 
+class CallRequirementWrite(BaseModel):
+    """A fresh immutable reference, or the next version of the same logical code."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    ref: str = Field(pattern=REQUIREMENT_REF_PATTERN)
+    code: str = Field(pattern=REQUIREMENT_REF_PATTERN)
+    label: str = Field(min_length=1, max_length=200)
+    kind: Literal["required", "recommended"]
+    funder: str | None = Field(None, min_length=1, max_length=120)
+    expected_version: int = Field(0, ge=0, description="0 para un código nuevo; versión anterior al publicar su sucesora")
+
+
+class CallRequirementOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    call_id: str
+    ref: str
+    code: str
+    version: int
+    label: str
+    kind: Literal["required", "recommended"]
+    funder: str | None
+    created_at: datetime
+
+
+class CallRequirementList(BaseModel):
+    call_id: str
+    items: list[CallRequirementOut]
+
+
 class RequirementReviewWrite(BaseModel):
     """Body to record or revise a review. Author and date are never accepted from the client."""
 
@@ -36,6 +66,7 @@ class RequirementReviewOut(BaseModel):
     id: uuid.UUID
     application_id: uuid.UUID
     requirement_ref: str
+    requirement_definition_id: uuid.UUID | None = None
     result: ReviewResult
     reviewer: str | None
     reviewed_at: datetime | None
@@ -52,6 +83,7 @@ class RequirementReviewList(BaseModel):
 
 class RequirementRevisionOut(BaseModel):
     revision: int
+    requirement_definition_id: uuid.UUID | None = None
     result: ReviewResult
     reviewer: str | None
     reviewed_at: datetime
