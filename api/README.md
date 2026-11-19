@@ -36,6 +36,12 @@ La base de pruebas se migra de `base` a `head` en cada sesión y se vacía y re-
 `python scripts/export_openapi.py` → `contracts/openapi.json`; después `pnpm gen:api` en la raíz para regenerar
 `src/shared/api/schema.gen.ts`. `tests/test_contract.py` falla si el contrato versionado no coincide con la API.
 
+## Configuración de despliegue / Deployment configuration
+
+**ES:** Sin `GISTAR_ENVIRONMENT`, la API asume `production` y falla si faltan secretos. `GISTAR_ENVIRONMENT=local` es solo para desarrollo en localhost. Antes de exponer la API, configura `staging` o `production`, una `GISTAR_DEMO_PASSWORD` única de al menos 20 caracteres y `GISTAR_DATABASE_URL` para la base de ese entorno. La API rechaza el arranque si se conserva la contraseña demo o la URL de base de datos por defecto. Guarda los valores reales en los secretos del proveedor, nunca en Git.
+
+**EN:** Without `GISTAR_ENVIRONMENT`, the API assumes `production` and fails when secrets are missing. `GISTAR_ENVIRONMENT=local` is for localhost development only. Before exposing the API, set `staging` or `production`, a unique `GISTAR_DEMO_PASSWORD` of at least 20 characters, and the environment's `GISTAR_DATABASE_URL`. The API refuses to start with the default demo password or database URL. Keep real values in the provider's secret store, never in Git.
+
 ## Cuentas sintéticas (contraseña: `GISTAR_DEMO_PASSWORD` configurada en `.env`)
 
 La plantilla deja `GISTAR_DEMO_PASSWORD` vacía: debes definirla **antes del seed y del arranque**. Una variable vacía no usa el valor por defecto del código; generaría cuentas con contraseña vacía que el login no acepta. No publiques la contraseña ni el archivo `.env`. Si ya cargaste el seed con un valor vacío, cambiar `.env` no actualiza las cuentas existentes: coordina la corrección del seed local sintético antes de continuar.
