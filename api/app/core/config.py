@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     scrypt_n: int = 2**14
     # Single source of synthetic data, shared with the web prototype.
     seed_path: str = str(REPO_ROOT / "src" / "gistar" / "seed.json")
+    # Synthetic course documents for the RAG knowledge ingest (KAN-130): corpus.json plus one Markdown file per document.
+    corpus_path: str = str(REPO_ROOT / "evals" / "rag" / "corpus")
     # Aggregates for coordination are suppressed below these sizes.
     min_group_size: int = 5
     min_cell_size: int = 3

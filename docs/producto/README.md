@@ -38,13 +38,13 @@ No crear ni numerar archivos Alembic aquí. La secuencia planificada por el equi
 
 El formulario del **bootcamp** es la referencia de inscripción del MVP; el inventario vigente describe el curso de **15 h** como formulario de una etapa con selector de curso/fecha, mapeado a `call_id`. La captura anterior de contacto es evidencia histórica insuficiente: **decisión PO 19/11:** cada fecha concreta crea candidatura y las opciones «organizar curso» / «avísame» crean solicitud de contacto ([decisiones del 19/11](kan-107-1-diccionario-datos-consolidado.md#decisiones-po-del-19112026--po-decisions-of-19112026)). Se mantienen ciertos campos como diseño sintético por decisión funcional PO, **sin afirmar un requisito contractual del financiador ni autorizar cuotas/prioridades**.
 
-G3 (origen/género) y G6 (situación personal) requieren permiso base **más** concesión explícita limitada por usuario, convocatoria, categoría y duración. La gestión dinámica de esas concesiones **no existe en la API actual**. Los roles actuales ya tienen ámbito, pero no lectura granular por grupo. No mostrar G3/G6 a todo usuario con `applications.read` ni a todo administrador por defecto.
+Administración y selección: acceso por defecto dentro del ámbito autorizado. Otros perfiles: permiso base más concesión G3/G6 vigente por usuario y convocatoria, concedida/revocada por administración y auditada. Solo detalle, nunca listas ni logs. Decisión PO 19/11; no implementada.
 
 Quedan **pendientes de la Fundación** antes de tratar datos reales: identificación y competencias del responsable, base jurídica y condición art. 9 si procede, información art. 13, plazos de retención, derechos de rectificación/supresión, justificación de eventuales criterios de selección y análisis de necesidad de EIPD. No asumir que la designación formal de DPO sea obligatoria en cualquier supuesto.
 
 ### English review note
 
-KAN-107 is design-only. The MVP application intake is modelled after the bootcamp registration form; the current inventory describes the 15-hour form as single-stage intake with a course/date selector mapped to `call_id`. PO must settle its application/contact routing; the older contact screenshot does not establish a separate lead model. Protected groups G3/G6 require an additional, explicit, time-limited grant **and** an existing role/scope. Access may change during an active call, but no permission-management interface is implemented yet. Any future database change is owned by backend under KAN-42; never produce independent or pre-numbered Alembic revisions from these documents. Legal requirements and actual funder selection rules must be confirmed by the Foundation before real data processing.
+KAN-107 is design-only. The bootcamp is the MVP intake reference. The PO settled B routing on 19 November: concrete course/date → application; organise/notify → contact request. Admin and selection have default access within their authorised scope. Other profiles need the base permission plus an active user/call/group grant managed by admin and audited. Detail only, never lists or logs. PO decision of 19 November; not implemented. Form C is outside the MVP. KAN-42 owns implementation and the shared Alembic chain. Foundation validation remains a condition for real-data use.
 
 ### Edición en español / Spanish edition note
 
@@ -53,3 +53,11 @@ Los documentos 1–6 son canónicos en español y cada uno incluye ahora una sec
 ### English edition (index)
 
 KAN-107 V2 documents (design only; KAN-107 design, documentation branch `docs/KAN-107-data-governance` into `dev`): (1) consolidated data dictionary incl. field-by-field observed-vs-decided obligations; (2) per-call form versioning incl. version-change-during-filling rule; (3) preliminary privacy assessment; (4) implementation plan; (5) PO summary; (6) dynamic scoped access annex. Canonical observed inventory: `docs/producto/diccionario-campos-candidatura.md`, merged by PR #27, checked at `origin/dev` `d59ee8c` on 18/11/2026; PR #15 removed its copy. KAN-107 adds governance without duplicating that inventory. Each document 1–6 ends with an "English edition" section.
+
+## Reconciliación técnica final / Final technical reconciliation — 19/11/2026
+
+En `dev@c59d201` (19/11/2026), la cadena integrada es `0001 → 0003 → 0004 → 0006 → 0007 → 0005`, cabeza única `0005`. KAN-128, KAN-135, KAN-183 y KAN-153 están integrados. No existe `0002`; Alembic sigue `down_revision`, no el orden numérico. Asistencia y alertas aún no tienen migraciones integradas. / At this pinned dev snapshot the single head is `0005`; no academic or alert migration is integrated.
+
+ES: Las decisiones del 19/11 son la referencia vigente en ambos idiomas; se han retirado contradicciones sobre edad, canal, ventana de gracia y acceso G3/G6. Las nuevas decisiones de acceso/tablero de la PO (19/11, rama `ccr-e218aef4-6l29zo@cb62c93`) amplían coordinación y eliminan acceso del aspirante; su implementación y la matriz completa pertenecen a las tareas de acceso/tablero, no a este PR documental.
+
+EN: The 19 November decisions govern both language sections. The subsequent access/board decisions widen coordination and remove applicant access; implementing and testing that permission matrix belongs to the access/board tickets, outside this documentation PR. This package grants no live permission.

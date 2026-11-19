@@ -1,0 +1,5 @@
+-r requirements.txt
+# Matches the repository's MLflow 3.1.1 demo stack; local tracking/registry only.
+mlflow-skinny==3.1.1
+sqlalchemy==2.0.41
+alembic==1.16.1

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -94,3 +94,36 @@ class RequirementReviewHistory(BaseModel):
     review_id: uuid.UUID
     requirement_ref: str
     items: list[RequirementRevisionOut]
+
+
+Reference = Annotated[str, Field(pattern=REQUIREMENT_REF_PATTERN)]
+
+
+class PrefilterRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    requirement_refs: list[Reference] = Field(min_length=1, max_length=100)
+
+
+class PrefilterItem(BaseModel):
+    ref: str
+    code: str
+    definition_id: uuid.UUID
+    definition_version: int
+    kind: Literal["required", "recommended"]
+    result: ReviewResult
+    verified_review: bool
+    review_version: int | None = None
+
+
+class PrefilterResult(BaseModel):
+    application_id: uuid.UUID
+    call_id: str
+    evaluation_only: Literal[True] = True
+    scope: Literal["explicit_versions"] = "explicit_versions"
+    items: list[PrefilterItem]
+    unselected_codes: list[str]
+    unresolved_required_refs: list[str]
+    advisory_refs: list[str]
+    human_review_required: bool
+    proposed_action: Literal["human_review"] | None
+    proposal_key: tuple[str, ...] | None

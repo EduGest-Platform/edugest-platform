@@ -29,7 +29,7 @@ Los campos G3/G6 permanecen en la **demo sintética**, pero su divulgación requ
 | `api/app/modules/catalog/schemas.py` + `router.py` | `FormDefinitionOut` y `GET /calls/{call_id}/form` (público, solo definición) | C |
 | `api/app/modules/admissions/forms.py` (**nuevo, pequeño**) | `validate_answers(definition, answers)`: requeridos, tipos, IDs de opción, `min_selected`, `exclusive`, `excludes`. Función pura y testeable | C |
 | `api/app/modules/admissions/service.py` | `create_application`: elegir versión vigente, validar con `forms.py`, **no** sobrescribir `Person` existente (H8), registrar `form_version` en `audit.record` (solo IDs) | C |
-| `api/app/core/authz.py`, capa de permisos de detalle (ubicación a decidir) | El RBAC por rol+ámbito **ya existe**. Añadir en la implementación autorización por grupo G3/G6 y concesiones activas por usuario/convocatoria, **sin añadir roles nuevos** | D |
+| `api/app/core/authz.py`, capa de permisos de detalle (ubicación a decidir) | El RBAC por rol+ámbito **ya existe**. Añadir en la implementación política G3/G6 PO 19/11 y concesiones adicionales activas por usuario/convocatoria, **sin añadir roles nuevos** | D |
 | `api/app/modules/admissions/router.py` | `get_application` devuelve `answers` **filtradas** por grupo/ámbito; `Summary` y listados carecen de G3/G6; toda lectura protegida queda auditada | D |
 | `api/app/seed.py` | `form_version` v1 sintética por convocatoria + candidaturas sintéticas con `answers` | B/C |
 | `contracts/openapi.json` | Regenerar con `api/scripts/export_openapi.py` (lo comprueba `test_contract.py`) | cada paso |
@@ -43,7 +43,7 @@ Los campos G3/G6 permanecen en la **demo sintética**, pero su divulgación requ
 
 **Decisión operativa de esta revisión:** KAN-107 es una **tarea documental**. **Bajo KAN-107 nadie del equipo (persona o agente de IA) genera revisiones Alembic, propone nombres de archivo ni reserva números.** Los cambios de esquema del formulario y, si procede, de las concesiones de acceso se prepararán **exclusivamente dentro del desarrollo backend coordinado de KAN-42**, por Elizabeth o la persona designada por el equipo.
 
-**Contexto comprobado:** Jira/PR #12 prevén una secuencia compartida **admisión → documentos RAG de David → académico → alertas**. En `dev` (19/11/2026, `c4e385c`) la cadena Alembic integrada es `0001_f1_cimientos` → `0003_rag_knowledge` → `0004_requirement_reviews_and_revision_history` → `0006_call_requirements`, con una sola cabeza (`0006`). No existe `0002`; la `0005` de KAN-153 está en revisión y se encadena tras `0006`. Los números no son un orden cronológico: Alembic sigue `down_revision`. Las etapas académico y alertas siguen siendo **planificación, no migraciones fusionadas**.
+**Contexto comprobado:** En `dev@c59d201` (19/11/2026), la cadena integrada es `0001 → 0003 → 0004 → 0006 → 0007 → 0005`, cabeza única `0005`. KAN-128, KAN-135, KAN-183 y KAN-153 están integrados. No existe `0002`; Alembic sigue `down_revision`, no el orden numérico. Asistencia y alertas aún no tienen migraciones integradas. / At this pinned dev snapshot the single head is `0005`; no academic or alert migration is integrated.
 
 **Procedimiento obligatorio del backend al empezar KAN-42** (no ejecutarlo ahora):
 
@@ -69,13 +69,13 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión docume
 | 2 | | Trim antes de longitud, solo espacios y límites tras normalización en los campos actuales (`nombre`, `motivacion`, `resumen`): `api/tests/test_admissions_text.py`, integrado en `dev` con KAN-124 (ver [`docs/reports/KAN-124-text-validation-fix.md`](../reports/KAN-124-text-validation-fix.md)); el informe deja revisión cruzada y aceptación de KAN-124 pendientes | ✅ (campos actuales) |
 | 2 | | La misma regla para los campos del formulario versionado; cambios de edad incompatibles y versionados | 🆕 |
 | 2 | | Opción inexistente, `none` + otra, `short_term`+`long_term`, `min_selected=0` → 422 | 🆕 (tests unitarios de `forms.py`) |
-| 2 | | Dos convocatorias con requisitos ≥18 y >16, operadores/fechas explícitos; año insuficiente en ambos; revisión humana sin aceptación/rechazo automático; teléfono y catálogo de países se validan según decisión de producto (E.164 / ISO son **propuestas**) | 🆕 |
+| 2 | | Bootcamp `gte` 18 y B `gte` 16 al inicio del curso (PO 19/11); año insuficiente → revisión humana. Validadores técnicos E.164/ISO siguen propuestas | 🆕 |
 | 3 | Versionado/conservación | Crear alta v1 → publicar v2 → leer alta: sigue `form_version=1` y mismas respuestas | 🆕 |
 | 3 | | `UPDATE` de una versión `approved` falla (trigger), como `test_audit_trail_is_append_only` para auditoría | ✅ patrón / 🆕 prueba |
 | 3 | | Persona reutilizada en dos convocatorias: Person no se sobrescribe; cada Application conserva sus `answers` (H8) | 🆕 (parcial: `test_same_person_reused_across_calls`) |
 | 4 | Config por convocatoria | Dos convocatorias con opciones distintas de `current_situation`; opción de la A en la B → 422 | 🆕 |
 | 5 | Autorización y horizontal | Captación del programa A no ve candidatura del programa B; selección limitada a su convocatoria | ✅ (`test_rbac.py::test_captacion_is_limited_to_its_program`, `test_seleccion_is_limited_to_its_call`, `test_docente_has_no_access_to_admissions`) |
-| 5 | | Roles sin `applications.read` no leen expedientes ajenos; **con** `applications.read` G3/G6 siguen ocultos sin concesión del grupo y de la convocatoria; admin no hereda acceso sensible automáticamente | 🆕 |
+| 5 | | Sin permiso base, denegar; admin/selección acceden por defecto en ámbito; otros sin concesión no ven G3/G6; revocación, caducidad e IDOR | 🆕 |
 | 5 | | `GET /applications/{id}` de otro ámbito → 403; aspirante: `/me/applications` no devuelve `answers` | ✅ parcial / 🆕 |
 | 6 | Minimización y logs | `audit_event.meta` sin PII (`test_failed_login_is_audited_without_identifiers`, `test_crm_event_is_recorded_with_author_and_audited`) | ✅ |
 | 6 | | Política por conjunto (auditoría, acceso/error, CRM, sesiones, exports y copias), inicio/plazo, destino y mecanismo aprobados con KAN-209/#25; ninguna purga o retención de proveedor verificada aquí | 🆕 |
@@ -124,7 +124,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión docume
 
 ## English edition (equivalent sections, KAN-107 V2)
 
-**Rule.** This task does not authorise creating, editing, numbering, running or proposing Alembic migrations. Backend (Elizabeth) owns the single migration chain under KAN-42 and coordinates with David (RAG) and the team; the planned order is admissions → RAG documents → academic → alerts. Integrated in `dev` on 19/11/2026 (`c4e385c`): `0001_f1_cimientos` → `0003_rag_knowledge` → `0004_requirement_reviews_and_revision_history` → `0006_call_requirements`, single head `0006`. There is no `0002`; KAN-153's `0005` is under review and chains after `0006`. Numbers are not chronological: Alembic follows `down_revision`.
+**Rule.** KAN-107 creates, edits and reserves no Alembic revisions. Backend coordinates KAN-42 from the current shared head. At `dev@c59d201` (19 November), the integrated chain is `0001 → 0003 → 0004 → 0006 → 0007 → 0005`, single head `0005`; KAN-153 is merged. There is no `0002`, academic or alert migration. Follow `down_revision`, preserve applied revisions and test future schema changes only on authorised disposable synthetic PostgreSQL.
 
 **§1 Order.** Step 0 approve design and access policy (PO + Anas; Melissa for real requirements); A `Person` fields and optional availability; B `form_version` integration design; C public form API and server-side validation; D G3/G6 protection with temporary per-call grants, revocation and audit (no self-grant); E React form from the definition + `pnpm gen:api` (Anas); F tighten required fields and retire `nombre`.
 

@@ -2,7 +2,7 @@
 
 **Estado:** diseño V2 sujeto a validación PO y revisión técnica de Anas/backend. **No implementado**. Este documento **NO autoriza nuevas migraciones, endpoints, cambios de permisos o despliegues**. La implementación debe planificarse con la historia KAN-42 y la cadena Alembic compartida.
 
-> **EN:** Role-based, call-scoped access already exists in FastAPI. Fine-grained field-group grants do not. The design below permits authorised administrators to grant or revoke temporary access to protected groups during an active call, without changing form versions or historical application data. All sensitive access requires both an existing base permission and an explicit, active per-call grant; self-grants are forbidden.
+> **EN:** Role-based, call-scoped access already exists in FastAPI. Fine-grained field-group grants do not. The design below permits authorised administrators to grant or revoke temporary access to protected groups during an active call, without changing form versions or historical application data. Admin and selection have default access within their authorised scope. Other profiles need the base permission plus an active user/call/group grant managed by admin and audited. Detail only, never lists or logs. PO decision of 19 November; not implemented. Additional grants cannot be self-issued.
 
 ## 1. Qué pregunta resuelve
 
@@ -20,22 +20,22 @@ Hay tres conceptos independientes:
 |---|---|---|---|---|
 | `G1/G2` | Identidad, correo, teléfono, año de nacimiento | Captación y selección según tareas; administración con necesidad acreditada | No, pero con RBAC y ámbito | Pantallas de contacto y detalle autorizadas; nunca público |
 | `G4/G5/G7` | Residencia, experiencia, procedencia del contacto | Captación/selección si necesario | No, pero ámbito + finalidad | Detalle y solo campos mínimos en listado |
-| `G3` | País de nacimiento, nacionalidad, género | Solo personas con permiso base de expediente | **SÍ: autorización G3 vigente y por `call_id`** | Únicamente detalle autorizado; no listados, exportaciones genéricas o logs |
-| `G6` | Situación personal, incluida discapacidad | Solo personas con permiso base de expediente | **SÍ: autorización G6 vigente y por `call_id`** | Únicamente detalle autorizado; proteger el campo completo si contiene respuestas especiales |
+| `G3` | País de nacimiento, nacionalidad, género | Solo personas con permiso base de expediente | Admin/selección por defecto en ámbito; otros con concesión G3 vigente | Únicamente detalle autorizado; no listados, exportaciones genéricas o logs |
+| `G6` | Situación personal, incluida discapacidad | Solo personas con permiso base de expediente | Admin/selección por defecto en ámbito; otros con concesión G6 vigente | Únicamente detalle autorizado; proteger el campo completo si contiene respuestas especiales |
 | `G8/G9` | Acuse de información, referencia de auditoría | Personal autorizado según acción; auditoría solo `audit.read` | Según acción | No publicar datos de auditoría ni notas CRM |
 
 **Regla de lectura G3/G6:**
 
 ```text
-permitir_lectura(usuario, candidatura, grupo) SI Y SOLO SI
-  sesion_vigente
-  AND usuario_tiene_permiso('applications.read', scope_de_la_candidatura)
-  AND existe_concesion_activa(usuario.id, candidatura.call_id, grupo, 'read')
-  AND concesion.no_expirada AND concesion.no_revocada
-  AND finalidad_aprobada_para_esa_convocatoria
+allow_read(user, application, group) if and only if
+  active_session
+  AND user.can('applications.read', application.scope)
+  AND approved_purpose_for_call
+  AND (active_default_group_policy(user, application.call_id, group)
+       OR active_unexpired_unrevoked_grant(user, application.call_id, group))
 ```
 
-Ningún permiso `admin:*` puede **sustituir** por sí solo la comprobación explícita del grupo protegido. El administrador que **gestiona** las concesiones no recibe por ello acceso de **lectura**. Las decisiones de quién puede aprobarlas en la Fundación deben registrarse; en la demo se usan únicamente sujetos ficticios.
+**PO 19/11:** la política de grupo por defecto incluye administración y selección, dentro de su ámbito; los demás perfiles necesitan concesión adicional. No basta con `admin:*` para omitir las comprobaciones de grupo/ámbito. La configuración dinámica y sus pruebas se implementan en KAN-42 y tareas de acceso; este anexo no concede permisos live. La posterior ampliación de coordinación se recoge en las tareas de acceso/tablero, sin sustituir esta política por un wildcard sin pruebas.
 
 **No reutilizar** un permiso de la convocatoria A para la B. Los permisos de `program` existentes siguen controlando el expediente base; las concesiones sensibles se concretan siempre en `call_id`.
 
@@ -82,7 +82,7 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 
 ## 6. Ejemplo sintético (dos convocatorias)
 
-- Un miembro de `seleccion` tiene `applications.read` para **CONV-IA-A**. Sin G6 ve datos de contacto y estado, pero no situación personal.
+- Un miembro de `captacion` tiene `applications.read` para **CONV-IA-A**. Sin G6 ve datos de contacto y estado, pero no situación personal.
 - El administrador autorizado tramita una concesión **G6/CONV-IA-A**, aprobada por la función competente y válida tres días. A partir de entonces el integrante ve esa sección solo en expedientes de CONV-IA-A.
 - En **CONV-DATA-B**, aunque tenga otra asignación general, **no ve G6** sin concesión separada.
 - Si la revocan antes de los tres días, el siguiente GET deja de devolver G6. Los datos de la candidatura y el formulario permanecen intactos.
@@ -93,7 +93,7 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 - Concesión válida, expiración, revocación inmediata, diferente `call_id` y rol base revocado.
 - Intento de auto-concederse acceso; intentos por operador sin `data_access.manage`; aprobación inválida.
 - Lectura sin G3/G6 no revela ni un valor en API, lista, notas, logs, auditoría, exportaciones o errores.
-- El administrador gestiona sin acceder automáticamente al dato; personal con acceso operativo puede consultar sin modificar privilegios.
+- Administración/selección con permiso base leen G3/G6 por defecto en su ámbito; un gestor no puede omitir ámbito/finalidad. Probar perfiles adicionales con/sin concesión.
 - Misma candidatura, versión y respuestas antes/después de otorgar/revocar.
 - Comprobar que `current_situation` se protege como un solo grupo de sensibilidad máxima si incluye `disability`; si se aprueban campos de C, `disability_certificate_status` (salud) y `referring_entity` (proxy potencial) heredan G6. Probar omisión también en listas, errores y exportaciones.
 - Pruebas con PostgreSQL sintético, contrato OpenAPI/TS sincronizados, CI y revisión por otra persona. **Todas estas pruebas están pendientes; ninguna es PASS.**
@@ -114,7 +114,7 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 
 **§1 Question solved.** Staff working on intake, selection or review can change during a call, so access must be grantable and revocable by functional need. That does not allow arbitrary changes to the form, answers, admission rules or lawful basis.
 
-**§2 Policy (deny by default).** G1/G2 identity and age, G4/G5/G7 residence, experience and channel: base role and scope. G3 (origin, gender) and G6 (personal situation, incl. disability certificate status and referring entity (unverified C, proposed scope)): `applications.read` is necessary but insufficient; an explicit, active grant for that `call_id` is also required. G8/G9 follow the action; audit needs `audit.read`. Read rule: valid session AND `applications.read` in scope AND active, non-expired, non-revoked grant for that call and group AND approved purpose.
+**§2 Policy.** Admin and selection have default access within their authorised scope. Other profiles need the base permission plus an active user/call/group grant managed by admin and audited. Detail only, never lists or logs. PO decision of 19 November; not implemented. A valid session, scoped base permission and approved purpose are always required. Unknown groups and out-of-scope access are denied.
 
 **§3 Who can change permissions during a call.** (1) Authorised internal requester asks; (2) the **responsible functional owner / Data Owner approves** (not the DPO; identity pending with the Foundation); (3) the **authorised administrator (`data_access.manage`) executes** the grant or revocation and cannot approve or self-grant; (4) FastAPI enforces role, scope, approval and limits from the next request; (5) grants expire and are reviewed.
 
@@ -129,4 +129,3 @@ No se permite asignar `data_access.manage` desde la propia interfaz sin un proce
 **ES — contrastado con KAN-128, integrado en `dev` (`5387a0b`, migración `0004`; revisado de nuevo el 19/11/2026).** Al estar ya fusionado, la decisión sobre el texto libre es más urgente. Las reglas G3/G6 de este anexo protegen **campos** de la persona (origen, género, situación personal). La API de KAN-128 guarda por requisito un resultado y un `reason` de **texto libre** (máx. 500 caracteres) que devuelve a todo perfil con `requirements.read` en su ámbito (administración, captación, selección, coordinación y docente de la cohorte). No hay contradicción entre ambos: KAN-128 no lee ni expone campos G3/G6. Pero el texto libre **podría contener** información que G3/G6 protegen (por ejemplo, una excepción por discapacidad) y hoy solo se pide por texto no incluirla. **Decisión de la PO (19/11/2026):** motivo codificado de una lista cerrada visible para todos los perfiles con acceso, más una nota libre opcional que solo ven admisión y administración. Pendiente de implementar en KAN-128; hasta entonces, KAN-128 solo puede usarse con datos sintéticos. Sobre G3/G6: administración y selección tienen acceso por defecto y administración lo concede o retira a otros perfiles.
 
 **EN — checked against KAN-128, merged into `dev` (`5387a0b`, migration `0004`; rechecked on 19/11/2026).** Because it is already merged, the free-text decision is now more pressing. The G3/G6 rules in this annex protect **fields** of the person (origin, gender, personal situation). KAN-128's API stores, per requirement, a result and a **free-text** `reason` (max 500 characters) that it returns to every profile with `requirements.read` in scope (administration, intake, selection, coordination and the cohort's teacher). The two do not contradict each other: KAN-128 neither reads nor exposes G3/G6 fields. But free text **could contain** what G3/G6 protect (for example an exception for a disability) and today the only safeguard is a request not to include it. **PO decision (19/11/2026):** a closed coded reason visible to every in-scope profile, plus an optional free-text note visible only to admissions staff and admin. To be implemented in KAN-128; until then KAN-128 may only be used with synthetic data. On G3/G6: admin and selection have access by default and admin grants or revokes it for other profiles.
-

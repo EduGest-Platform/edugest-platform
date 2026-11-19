@@ -14,6 +14,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dropout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r ml/requirements-tracking.txt ruff==0.17.5
+      - run: ruff check ml --select E4,E7,E9,F
+      - run: python -m unittest discover -s ml/dropout/tests -v
+      - run: python -m ml.dropout.train --out "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.evaluate --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.score --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.model_card --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.tracking --artifacts "$RUNNER_TEMP/dropout" --store "$RUNNER_TEMP/dropout-tracking"
+
   rag:
     runs-on: ubuntu-latest
     steps:
@@ -123,6 +139,18 @@ jobs:
           assert d['databases'][0]['postgresMajorVersion'] == '16'
           assert all(s['autoDeployTrigger'] == 'off' for s in d['services']), 'auto-deploy must stay off'
           print('render.yaml ok')
+          st = yaml.safe_load(open('render.staging.yaml'))
+          staging = {s['name']: s for s in st['services']}
+          assert set(staging) == {'edugest-api-staging', 'edugest-web-staging'}, set(staging)
+          assert not set(staging) & names, 'staging and production must not share service names'
+          assert st['databases'][0]['name'] != d['databases'][0]['name'], 'staging needs its own database'
+          assert st['databases'][0]['postgresMajorVersion'] == '16'
+          # ADR-0008 exception (PO, 2026-11-19): staging deploys from dev only after GitHub checks pass; production stays off.
+          assert all(s['branch'] == 'dev' and s['autoDeployTrigger'] == 'checksPass' for s in staging.values()), 'staging must deploy only after checks pass'
+          api_env = {e['key']: e for e in staging['edugest-api-staging']['envVars']}
+          assert api_env['GISTAR_ENVIRONMENT']['value'] == 'staging'
+          assert api_env['GISTAR_DEMO_PASSWORD']['generateValue'] is True
+          print('render.staging.yaml ok')
           PY
       - name: Variables de entorno de CI (contraseñas aleatorias, solo datos sintéticos)
         run: |
