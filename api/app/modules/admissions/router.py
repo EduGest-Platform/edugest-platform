@@ -6,6 +6,7 @@ from sqlalchemy import func, or_, select
 from app.core import audit
 from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal, OptionalPrincipal
+from app.core.text import LIKE_ESCAPE, escape_like
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.admissions.schemas import (
     ApplicationCreate,
@@ -68,8 +69,14 @@ def list_applications(
     if stage:
         base = base.where(Application.stage == stage)
     if q:
-        like = f"%{q.strip().lower()}%"
-        base = base.where(or_(func.lower(Person.display_name).like(like), Person.email.like(like), func.lower(Application.codigo).like(like)))
+        like = f"%{escape_like(q.strip().lower())}%"
+        base = base.where(
+            or_(
+                func.lower(Person.display_name).like(like, escape=LIKE_ESCAPE),
+                Person.email.like(like, escape=LIKE_ESCAPE),
+                func.lower(Application.codigo).like(like, escape=LIKE_ESCAPE),
+            )
+        )
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
     rows = db.execute(base.order_by(Application.created_at.desc(), Application.codigo.desc()).limit(limit).offset(offset)).all()
     return ApplicationList(items=[_summary(*r) for r in rows], total=total)

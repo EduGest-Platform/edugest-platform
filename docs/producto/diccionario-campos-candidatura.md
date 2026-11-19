@@ -89,6 +89,18 @@ Solo se listan los campos que cambian respecto al Formulario A. **Pendiente:** U
 | Convocatoria (`call_id`) | Una persona puede aplicar a varias convocatorias con un único expediente |
 | Disponibilidad (Mañana / Tarde / Flexible) | Se mantiene, pero **opcional** en la inscripción inicial (decisión PO, 17/11) |
 
+### 6.1 Configuración por convocatoria y registro de contacto (KAN-153) / Per-call configuration and contact log
+
+No son campos del formulario de inscripción: los configura administración o los registra el equipo durante la preselección. / Not inscription form fields: set by administration or recorded by staff during pre-selection.
+
+| Columna EduGest / EduGest column | Tabla / Table | Valor / Value | Motivo / Purpose |
+|---|---|---|---|
+| `silence_days` | `call` | Entero 1–365, por defecto 30 / integer 1–365, default 30 | Días sin respuesta tras el último intento antes de proponer revisión humana por silencio / days without answer after the last attempt before proposing a human silence review |
+| `silence_max_contacts` | `call` | Entero 1–20, por defecto 4 / integer 1–20, default 4 | Intentos de contacto sin respuesta necesarios / unanswered contact attempts required |
+| `resultado` | `application_event` | `respondida` · `sin_respuesta` · vacío; solo en eventos `contacto` / only on `contacto` events | Un intento sin resultado registrado nunca cuenta como silencio / an attempt without a recorded result never counts as silence |
+
+El silencio solo genera una alerta; la decisión la toma una persona y queda en `preselection_decision` (append-only). La prueba `api/tests/test_data_dictionary_drift.py` vigila las columnas de `call`. / Silence only raises an alert; a person decides and the decision is stored in `preselection_decision` (append-only). `api/tests/test_data_dictionary_drift.py` guards the `call` columns.
+
 ## 7. Observaciones de accesibilidad (Formularios A y B)
 
 Para no repetirlas en el nuestro:

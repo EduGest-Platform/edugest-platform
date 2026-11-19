@@ -28,6 +28,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      GISTAR_ENVIRONMENT: local
       GISTAR_DATABASE_URL: postgresql+psycopg://gistar:${GISTAR_DB_PASSWORD:?Set GISTAR_DB_PASSWORD in infra/.env}@db:5432/gistar
       GISTAR_CORS_ORIGINS: '["http://localhost:5173","http://localhost:8443"]'
       # La contraseña de las cuentas sintéticas no tiene valor por defecto: se define en infra/.env.

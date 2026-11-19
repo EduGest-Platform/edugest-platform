@@ -51,6 +51,9 @@ def test_foreign_origin_is_still_rejected_for_put(client):
 def test_real_put_from_an_allowed_origin_is_readable_by_the_browser(client):
     headers = login(client, ADMIN)
     application = client.get("/api/v1/applications", headers=headers).json()["items"][0]
+    configured = client.post(f"/api/v1/calls/{application['call_id']}/requirements", headers=headers,
+                             json={"ref": "identity-document", "code": "identity-document", "label": "Synthetic test", "kind": "required"})
+    assert configured.status_code == 201, configured.text
     url = f"/api/v1/applications/{application['id']}/requirement-reviews/identity-document"
     r = client.put(url, json={"result": "met", "reason": "Documento comprobado"}, headers={**headers, "Origin": ALLOWED_ORIGIN})
     assert r.status_code == 201, r.text

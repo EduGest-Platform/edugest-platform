@@ -26,6 +26,8 @@ services:
         fromDatabase:
           name: edugest-db
           property: connectionString
+      - key: GISTAR_ENVIRONMENT
+        value: production # Fail closed: refuses to start with default credentials.
       - key: GISTAR_DEMO_PASSWORD
         generateValue: true # Contraseña de las cuentas sintéticas; consultarla en el panel de Render.
       - key: GISTAR_CORS_ORIGINS

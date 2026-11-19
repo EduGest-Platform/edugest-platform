@@ -1,4 +1,7 @@
 import uuid
+from collections import defaultdict
+from collections.abc import Iterable
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Path, status
 from sqlalchemy import select
@@ -74,6 +77,36 @@ def list_preselection_decisions(application_id: uuid.UUID, p: CurrentPrincipal, 
     return PreselectionDecisionList(application_id=application.id, items=[_out(d, names.get(d.actor_user_id)) for d in decisions])
 
 
+def group_by_application(rows: Iterable[ApplicationEvent | PreselectionDecision]) -> dict[uuid.UUID, list]:
+    """Groups contact events or decisions by application in a single pass."""
+    grouped: dict[uuid.UUID, list] = defaultdict(list)
+    for row in rows:
+        grouped[row.application_id].append(row)
+    return grouped
+
+
+def silence_review_items(
+    call: Call,
+    applications: list[Application],
+    events: Iterable[ApplicationEvent],
+    decisions: Iterable[PreselectionDecision],
+    now: datetime,
+) -> list[SilenceReviewItem]:
+    """Applications whose silence threshold is met. Each one only sees its own contacts and decisions.
+
+    Events and decisions are grouped once, so the cost grows linearly with the call instead of
+    re-scanning every record for every application.
+    """
+    events_by_application = group_by_application(events)
+    decisions_by_application = group_by_application(decisions)
+    items = []
+    for application in applications:
+        evidence = silence_evidence(call, events_by_application.get(application.id, []), decisions_by_application.get(application.id, []), now)
+        if evidence.threshold_met:
+            items.append(SilenceReviewItem(application_id=application.id, codigo=application.codigo, stage=application.stage, evidence=evidence))
+    return items
+
+
 @router.get(
     "/calls/{call_id}/silence-review",
     response_model=SilenceReviewList,
@@ -87,12 +120,7 @@ def silence_review(p: CurrentPrincipal, db: DB, call_id: str = CallId) -> Silenc
     ids = [a.id for a in applications]
     events = list(db.scalars(select(ApplicationEvent).where(ApplicationEvent.application_id.in_(ids), ApplicationEvent.tipo == "contacto"))) if ids else []
     decisions = list(db.scalars(select(PreselectionDecision).where(PreselectionDecision.application_id.in_(ids)))) if ids else []
-    now = utcnow()
-    items = []
-    for application in applications:
-        evidence = silence_evidence(call, [e for e in events if e.application_id == application.id], [d for d in decisions if d.application_id == application.id], now)
-        if evidence.threshold_met:
-            items.append(SilenceReviewItem(application_id=application.id, codigo=application.codigo, stage=application.stage, evidence=evidence))
+    items = silence_review_items(call, applications, events, decisions, utcnow())
     audit.record(db, p, "preselection.silence_review_viewed", "call", call.id, pending=len(items))
     db.commit()
     return SilenceReviewList(call_id=call.id, items=items)

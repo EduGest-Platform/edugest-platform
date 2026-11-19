@@ -457,6 +457,151 @@
         "title": "CallOut",
         "type": "object"
       },
+      "CallRequirementList": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CallRequirementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "call_id",
+          "items"
+        ],
+        "title": "CallRequirementList",
+        "type": "object"
+      },
+      "CallRequirementOut": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "funder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funder"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "required",
+              "recommended"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "ref",
+          "code",
+          "version",
+          "label",
+          "kind",
+          "funder",
+          "created_at"
+        ],
+        "title": "CallRequirementOut",
+        "type": "object"
+      },
+      "CallRequirementWrite": {
+        "additionalProperties": false,
+        "description": "A fresh immutable reference, or the next version of the same logical code.",
+        "properties": {
+          "code": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "expected_version": {
+            "default": 0,
+            "description": "0 para un código nuevo; versión anterior al publicar su sucesora",
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "funder": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funder"
+          },
+          "kind": {
+            "enum": [
+              "required",
+              "recommended"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "ref": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "code",
+          "label",
+          "kind"
+        ],
+        "title": "CallRequirementWrite",
+        "type": "object"
+      },
       "CallSummaryOut": {
         "properties": {
           "by_stage": {
@@ -796,6 +941,177 @@
         "title": "PersonOut",
         "type": "object"
       },
+      "PrefilterItem": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "definition_id": {
+            "format": "uuid",
+            "title": "Definition Id",
+            "type": "string"
+          },
+          "definition_version": {
+            "title": "Definition Version",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "required",
+              "recommended"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pending",
+              "met",
+              "not_met",
+              "exception_under_review",
+              "exception_approved"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "verified_review": {
+            "title": "Verified Review",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "code",
+          "definition_id",
+          "definition_version",
+          "kind",
+          "result",
+          "verified_review"
+        ],
+        "title": "PrefilterItem",
+        "type": "object"
+      },
+      "PrefilterRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requirement_refs": {
+            "items": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Requirement Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requirement_refs"
+        ],
+        "title": "PrefilterRequest",
+        "type": "object"
+      },
+      "PrefilterResult": {
+        "properties": {
+          "advisory_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Advisory Refs",
+            "type": "array"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "evaluation_only": {
+            "const": true,
+            "default": true,
+            "title": "Evaluation Only",
+            "type": "boolean"
+          },
+          "human_review_required": {
+            "title": "Human Review Required",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PrefilterItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "proposal_key": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Key"
+          },
+          "proposed_action": {
+            "anyOf": [
+              {
+                "const": "human_review",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Action"
+          },
+          "scope": {
+            "const": "explicit_versions",
+            "default": "explicit_versions",
+            "title": "Scope",
+            "type": "string"
+          },
+          "unresolved_required_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Required Refs",
+            "type": "array"
+          },
+          "unselected_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unselected Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "call_id",
+          "items",
+          "unselected_codes",
+          "unresolved_required_refs",
+          "advisory_refs",
+          "human_review_required",
+          "proposed_action",
+          "proposal_key"
+        ],
+        "title": "PrefilterResult",
+        "type": "object"
+      },
       "PreselectionDecisionList": {
         "properties": {
           "application_id": {
@@ -1014,6 +1330,18 @@
             ],
             "title": "Reason"
           },
+          "requirement_definition_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Definition Id"
+          },
           "requirement_ref": {
             "title": "Requirement Ref",
             "type": "string"
@@ -1117,6 +1445,18 @@
           "reason": {
             "title": "Reason",
             "type": "string"
+          },
+          "requirement_definition_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Definition Id"
           },
           "result": {
             "enum": [
@@ -1771,6 +2111,64 @@
         ]
       }
     },
+    "/api/v1/applications/{application_id}/requirement-prefilter": {
+      "post": {
+        "description": "Selección explícita de versiones, no catálogo activo. Códigos omitidos exigen revisión humana. No escribe tareas ni cambia etapas.",
+        "operationId": "evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrefilterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrefilterResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito"
+          },
+          "404": {
+            "description": "Candidatura o requisito no encontrado en su convocatoria"
+          },
+          "422": {
+            "description": "Selección vacía, duplicada o con varias versiones de un código"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Evaluar requisitos seleccionados y proponer revisión humana, nunca decidir admisión",
+        "tags": [
+          "requirements"
+        ]
+      }
+    },
     "/api/v1/applications/{application_id}/requirement-reviews": {
       "get": {
         "operationId": "list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get",
@@ -1827,7 +2225,7 @@
     },
     "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
       "put": {
-        "description": "`requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`.",
+        "description": "`requirement_ref` debe existir en el catálogo de la convocatoria. Cada referencia identifica una definición inmutable; el resultado conserva su vínculo aunque se publiquen versiones nuevas. No incluir datos sensibles en `reason`.",
         "operationId": "put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put",
         "parameters": [
           {
@@ -2339,6 +2737,114 @@
         "summary": "Editar la política de silencio de una convocatoria. No cambia decisiones ya tomadas",
         "tags": [
           "preselection"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/requirements": {
+      "get": {
+        "operationId": "list_call_requirements_api_v1_calls__call_id__requirements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallRequirementList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Catálogo de requisitos y sus versiones inmutables dentro del ámbito autorizado",
+        "tags": [
+          "requirements"
+        ]
+      },
+      "post": {
+        "operationId": "create_call_requirement_api_v1_calls__call_id__requirements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallRequirementWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallRequirementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Solo administración"
+          },
+          "409": {
+            "description": "Referencia o versión en conflicto"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publicar una definición inmutable; solo administración. Nunca decide admisión",
+        "tags": [
+          "requirements"
         ]
       }
     },

@@ -1,7 +1,7 @@
 # KAN-153 — End of pre-selection with audit / Fin de preselección con auditoría
 
 Owner / responsable: Elizabeth. Reviewer / revisión: Yohanna. Prepared / fecha: 2026-11-18.
-Status / estado: **implemented and tested locally; not merged** / implementado y probado en local; sin fusionar. Stacked on PR #40 (KAN-128) because both use migration chain 0004 → 0005 and the same scope check / apilada sobre #40 por la cadena de migraciones y el mismo control de ámbito.
+Status / estado: **implemented and tested locally; not merged** / implementado y probado en local; sin fusionar. Based on `dev` after KAN-128 and KAN-135 were integrated; migration chain 0004 → 0006 → 0005 / basada en `dev` tras integrar KAN-128 y KAN-135; cadena de migraciones 0004 → 0006 → 0005.
 
 ## ES — Qué implementa
 
@@ -43,7 +43,7 @@ Cambio aditivo en `POST /applications/{id}/events`: campo opcional `resultado`, 
 
 ## ES — Datos y migración
 
-Migración `0005` (aditiva y reversible; encadenada tras `0004` porque `0002`, de F2, no existe): añade `call.silence_days`, `call.silence_max_contacts`, `application_event.resultado` y la tabla `preselection_decision`, con restricciones CHECK. No toca tablas de RAG ni de requisitos.
+Migración `0005` (aditiva y reversible; encadenada tras `0006` de KAN-135, que a su vez depende de `0004`; una sola cabeza Alembic; `0002`, de F2, no existe): añade `call.silence_days`, `call.silence_max_contacts`, `application_event.resultado` y la tabla `preselection_decision`, con restricciones CHECK. No toca tablas de RAG ni de requisitos.
 
 ## ES — Evidencia
 
@@ -57,6 +57,13 @@ Entorno: Linux, Python 3.12, PostgreSQL 16.2 + pgvector local y desechable, dato
 | `alembic upgrade head` / `alembic check` / `downgrade base` / `upgrade head` en base vacía | head `0005`, «No new upgrade operations detected», ciclo correcto |
 | `ruff check . --select E4,E7,E9,F` | Sin errores |
 | Contrato `contracts/openapi.json` y cliente `schema.gen.ts` | Regenerados (solo adiciones) |
+
+### Actualización 19/11/2026 tras integrar `dev` / Update after merging `dev`
+
+- Revisión de silencio: contactos y decisiones se agrupan una vez por `application_id` (`defaultdict(list)`); coste lineal en lugar de recorrer todos los registros por cada candidatura. Mismas reglas y mismo control de acceso. Pruebas nuevas: varias candidaturas con evidencias separadas y una guarda que falla si las listas se recorren más de una vez. / Silence review groups contacts and decisions once per application (linear instead of quadratic); same rules and access control; new regression tests.
+- Cadena `0004 → 0006 → 0005`, `alembic heads` = `0005` (una cabeza); la prueba de downgrade baja a `0006` y comprueba que `call_requirement` se conserva. / Single head; downgrade test goes to `0006` and keeps `call_requirement`.
+- Conflictos con KAN-135/KAN-148 resueltos (`models.py`, `main.py` con `prefilter_router` y `preselection_router`); contrato y cliente regenerados. `EXPECTED_CALL_COLUMNS` y el diccionario incluyen `silence_days` y `silence_max_contacts`. / Conflicts resolved, contract and client regenerated, drift test and dictionary updated.
+- Evidencia local (PostgreSQL 16 + pgvector desechable, datos sintéticos): `pytest` 427 passed; `alembic upgrade head && alembic check && alembic downgrade base` OK; `ruff` OK; `tsc`, `pnpm test` (48), `pnpm build` y `pnpm gen:api` sin diferencias OK. / Local evidence as listed.
 
 **NOT_RUN:** Docker/Compose, E2E de navegador, typecheck y tests web (no hay cambios de código web; el cliente regenerado solo añade tipos), despliegue.
 
@@ -80,6 +87,6 @@ It implements the PO's TO-BE decisions recorded on 2026-11-18 in KAN-119 and KAN
 
 Interpretations to confirm (not in the PO decisions): (1) threshold = at least *N* unanswered attempts since the last answer or postponement **and** at least *D* days since the last of them; an attempt without a recorded result never counts; (2) postponing restarts the count and keeps the stage; (3) confirming silence requires the threshold (otherwise 409; use express withdrawal if the person said so); (4) a confirmed silence also ends in stage `retirada`, distinguished by decision and evidence — a dedicated stage would change the contract vocabulary and is left to the KAN-119 state machine; (5) express withdrawal is limited to pre-selection stages here; (6) only admin edits the policy; (7) teachers reach only calls that feed their cohort; (8) the alert list shows no name or email.
 
-Migration `0005` is additive and reversible and chains after `0004` (`0002`, F2, does not exist). Evidence: local disposable PostgreSQL 16, synthetic data: 297 passed / 3 xfailed (93 new tests), all four manual mutants caught, `alembic check` clean, upgrade/downgrade cycle OK, CI-rules ruff clean, contract and client regenerated (additions only). **Not run:** Docker/Compose, browser E2E, web typecheck/tests, deployment, and the PR's CI at the time of writing.
+Migration `0005` is additive and reversible and chains after `0006` (KAN-135, which revises `0004`), keeping a single Alembic head (`0002`, F2, does not exist). Evidence: local disposable PostgreSQL 16, synthetic data: 297 passed / 3 xfailed (93 new tests), all four manual mutants caught, `alembic check` clean, upgrade/downgrade cycle OK, CI-rules ruff clean, contract and client regenerated (additions only). **Not run:** Docker/Compose, browser E2E, web typecheck/tests, deployment, and the PR's CI at the time of writing.
 
 Pending: UI (Anas), alert reminders (Yohanna), RBAC matrix update (KAN-90/#38), PO decisions above, Melissa's validation of whatever the PO attributes to the AS-IS, rate limiting.

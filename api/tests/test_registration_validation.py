@@ -19,34 +19,29 @@ def snapshot(db):
     return counts, counters
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="whitespace-only text passes length check; backend validation follow-up",
-)
 @pytest.mark.parametrize("field,value", [("nombre", "  "), ("motivacion", " " * 10)])
-def test_whitespace_only_text_is_rejected_before_persistence(client, field, value):
-    # Assert the desired contract, not today's accepted-and-trimmed empty value.
+def test_whitespace_only_text_is_rejected_before_persistence(client, db, field, value):
+    before = snapshot(db)
     response = client.post("/api/v1/applications", json=new_application(**{field: value}))
     assert response.status_code == 422
+    assert any(item["loc"][-1] == field for item in response.json()["detail"])
+    assert snapshot(db) == before
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="whitespace-only CRM summary passes length check; backend validation follow-up",
-)
-def test_whitespace_only_crm_summary_is_rejected(client):
+def test_whitespace_only_crm_summary_is_rejected(client, db):
     headers = login(client, CAPT_IA)
     applications = client.get("/api/v1/applications", headers=headers)
     applications.raise_for_status()
     application_id = applications.json()["items"][0]["id"]
+    before = snapshot(db)
     response = client.post(
         f"/api/v1/applications/{application_id}/events",
         headers=headers,
         json={"tipo": "nota", "resumen": " "},
     )
     assert response.status_code == 422
+    assert any(item["loc"][-1] == "resumen" for item in response.json()["detail"])
+    assert snapshot(db) == before
 
 
 @pytest.mark.parametrize(

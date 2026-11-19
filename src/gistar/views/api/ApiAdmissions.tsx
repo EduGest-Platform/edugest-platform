@@ -7,6 +7,7 @@ import { humanize } from '../../config'
 import { useGistar } from '../../store'
 import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
+import { RequirementReviewPanel } from '../../components/RequirementReviewPanel'
 import { Button, Card, Empty, Field, Notice, PageTitle, Status, Table, inputCls } from '../../ui'
 
 type Call = Schemas['CallOut']
@@ -335,6 +336,8 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
             <p>
               <span className="text-muted">Disponibilidad:</span> {d.disponibilidad}
             </p>
+            {/* The API does not send requirement reviews yet (KAN-128). Until then the panel says so instead of inventing data. */}
+            <RequirementReviewPanel checks={null} source="server" />
             <Notice>Los cambios de etapa, la valoración y la decisión se registrarán con revisión humana en el siguiente incremento (F2).</Notice>
           </section>
           <section>

@@ -20,7 +20,7 @@ from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Call
 from app.modules.identity.models import Person, User
 from app.modules.preselection.models import PreselectionDecision
-from app.modules.requirements.models import RequirementReview
+from app.modules.requirements.models import CallRequirement, RequirementReview
 from tests.conftest import ADMIN, API_DIR, ASPIRANTE, CAPT_DATA, CAPT_IA, CODER, COORD, DOCENTE, SEL_IA, login
 
 IA_CALL, DATA_CALL, IA_CLOSED_CALL = "CONV-IA-2027A", "CONV-DATA-2027A", "CONV-IA-2026B"
@@ -47,6 +47,14 @@ def add_contacts(db, application, *attempts) -> None:
     """attempts: (days ago, result) pairs recorded as contact events."""
     for days_ago, result in attempts:
         db.add(ApplicationEvent(application_id=application.id, tipo="contacto", canal="telefono", resultado=result, resumen="Contacto sintético", occurred_at=utcnow() - timedelta(days=days_ago)))
+    db.commit()
+
+
+def configure_requirements(db, call_id, *refs) -> None:
+    """KAN-135: a review needs a configured call requirement. Test-only catalogue, never in the product seed."""
+    author_id = db.scalar(select(User.id).where(User.email == ADMIN))
+    for ref in refs:
+        db.add(CallRequirement(call_id=call_id, ref=ref, code=ref, version=1, label="Synthetic test requirement", kind="required", created_by=author_id))
     db.commit()
 
 
@@ -149,6 +157,7 @@ def test_call_to_selection_ends_preselection_from_both_open_stages(client, db, s
 
 def test_open_requirements_do_not_block_the_call_and_are_recorded_as_evidence(client, db):
     target = make_application(db)
+    configure_requirements(db, IA_CALL, "identity-document", "residence")
     admin = login(client, ADMIN)
     assert client.put(f"/api/v1/applications/{target.id}/requirement-reviews/identity-document", json={"result": "not_met", "reason": "Falta el documento"}, headers=admin).status_code == 201
     assert client.put(f"/api/v1/applications/{target.id}/requirement-reviews/residence", json={"result": "met", "reason": "Comprobado"}, headers=admin).status_code == 201
@@ -287,6 +296,53 @@ def test_postponing_a_silence_review_restarts_the_count_and_keeps_the_stage(clie
     assert kinds.count("nota") == 1 and "cambio_etapa" not in kinds
 
 
+def test_silence_review_with_several_applications_keeps_each_evidence_separate(client, db):
+    silent_a, silent_b, postponed, answered, few = (make_application(db) for _ in range(5))
+    silent_for(db, silent_a, attempts=4)
+    silent_for(db, silent_b, attempts=6, days=40)
+    silent_for(db, postponed)
+    add_contacts(db, answered, *NOT_YET_SILENCE["the person answered after the unanswered attempts"])
+    add_contacts(db, few, *NOT_YET_SILENCE["fewer attempts than the call requires"])
+    admin = login(client, ADMIN)
+    # A postponement restarts only its own application's count, never another one's.
+    assert decide(client, admin, postponed.id, "silencio_reprogramado", reason="La persona pidió más tiempo").status_code == 201
+    items = client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"]
+    by_code = {i["codigo"]: i["evidence"] for i in items}
+    assert set(by_code) == {silent_a.codigo, silent_b.codigo}
+    assert by_code[silent_a.codigo]["unanswered_attempts"] == 4
+    assert by_code[silent_b.codigo]["unanswered_attempts"] == 6
+    assert by_code[silent_b.codigo]["days_without_response"] >= 40
+
+
+class CountingRows(list):
+    """A list that counts how many times it is iterated."""
+
+    def __init__(self, rows):
+        super().__init__(rows)
+        self.iterations = 0
+
+    def __iter__(self):
+        self.iterations += 1
+        return super().__iter__()
+
+
+def test_silence_review_reads_contacts_and_decisions_once_whatever_the_number_of_applications(db):
+    """Regression guard: re-filtering every record per application (quadratic) iterates the lists N times."""
+    from app.modules.preselection.router import silence_review_items
+
+    call = db.get(Call, IA_CALL)
+    applications = [make_application(db) for _ in range(5)]
+    for application in applications:
+        silent_for(db, application)
+    ids = [a.id for a in applications]
+    events = CountingRows(db.scalars(select(ApplicationEvent).where(ApplicationEvent.application_id.in_(ids))))
+    decisions = CountingRows([])
+    items = silence_review_items(call, applications, events, decisions, utcnow())
+    assert {i.application_id for i in items} == set(ids)
+    assert all(i.evidence.unanswered_attempts == 4 for i in items)
+    assert (events.iterations, decisions.iterations) == (1, 1)
+
+
 # ---------- per-call policy ----------
 
 
@@ -401,16 +457,17 @@ def test_database_rejects_out_of_range_policies(db, column, value):
     db.rollback()
 
 
-def test_migration_0005_downgrades_to_0004_and_upgrades_again():
+def test_migration_0005_downgrades_to_0006_and_upgrades_again():
     cfg = Config(os.path.join(API_DIR, "alembic.ini"))
     cfg.set_main_option("script_location", os.path.join(API_DIR, "alembic"))
     try:
-        command.downgrade(cfg, "0004")
+        command.downgrade(cfg, "0006")
         tables = set(inspect(engine).get_table_names())
-        assert "preselection_decision" not in tables and {"requirement_review", "knowledge_document"} <= tables
+        assert "preselection_decision" not in tables
+        assert {"call_requirement", "requirement_review", "knowledge_document"} <= tables
         assert {"silence_days", "silence_max_contacts"}.isdisjoint(c["name"] for c in inspect(engine).get_columns("call"))
         assert "resultado" not in {c["name"] for c in inspect(engine).get_columns("application_event")}
     finally:
         command.upgrade(cfg, "head")
-    assert "preselection_decision" in inspect(engine).get_table_names()
+    assert {"preselection_decision", "call_requirement"} <= set(inspect(engine).get_table_names())
     assert {"silence_days", "silence_max_contacts"} <= {c["name"] for c in inspect(engine).get_columns("call")}
