@@ -11,7 +11,7 @@ from app.core.authz import Principal
 from app.core.config import settings
 from app.core.db import utcnow
 from app.core.deps import DB, CurrentPrincipal, bearer
-from app.core.security import new_token, token_hash, verify_password
+from app.core.security import hash_password, new_token, token_hash, verify_password
 from app.core.text import normalize_email
 from app.modules.admissions.models import Application
 from app.modules.identity.models import AuthSession, RoleAssignment, User
@@ -19,6 +19,15 @@ from app.modules.identity.schemas import EnrollmentOut, LoginIn, LoginOut, MeOut
 from app.modules.learning.models import Enrollment
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Hash of a throwaway password: it is checked when the account does not exist so failed logins cost the same.
+DUMMY_PASSWORD_HASH = hash_password("not-a-real-password")
+
+
+def credentials_are_valid(user: User | None, password: str) -> bool:
+    """Always run one password check, so unknown, inactive and wrong-password logins take the same time."""
+    password_matches = verify_password(password, user.password_hash if user else DUMMY_PASSWORD_HASH)
+    return bool(user and user.is_active and password_matches)
 
 
 def me_out(db: Session, p: Principal) -> MeOut:
@@ -43,7 +52,7 @@ def login(body: LoginIn, db: DB) -> LoginOut:
     except ValueError:
         email = ""
     user = db.scalar(select(User).where(User.email == email)) if email else None
-    if not user or not user.is_active or not verify_password(body.password, user.password_hash):
+    if not credentials_are_valid(user, body.password):
         audit.record(db, None, "auth.login_failed", "user", None)
         db.commit()
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenciales no válidas")

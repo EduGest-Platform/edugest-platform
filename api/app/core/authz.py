@@ -6,16 +6,20 @@ from fastapi import HTTPException, status
 
 from app.modules.identity.models import RoleAssignment, User
 
+# Exceptions are visible to, and can be recorded by, every role below; only admissions staff also record met / not met.
+REQUIREMENT_EXCEPTION_PERMISSIONS = {"requirements.read", "requirements.exception"}
+REQUIREMENT_REVIEW_PERMISSIONS = {*REQUIREMENT_EXCEPTION_PERMISSIONS, "requirements.review"}
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
-    # Fundación / captación: expedientes and CRM of pre-selection.
-    "captacion": {"applications.read", "applications.crm", "calls.aggregate"},
-    # Colaborador de selección: reads and annotates applications in its call.
-    "seleccion": {"applications.read", "applications.crm", "calls.aggregate"},
-    # Coordinación: aggregated indicators only, never nominal records.
-    "coordinacion": {"calls.aggregate"},
-    # Docente: academic permissions arrive in F3 (cohort scope). No access to admissions.
-    "docente": set(),
+    # Fundación / captación: expedientes and CRM of pre-selection, requirement reviews and exceptions.
+    "captacion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS},
+    # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
+    "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS},
+    # Coordinación: aggregated indicators, plus reading and recording requirement exceptions (KAN-128).
+    "coordinacion": {"calls.aggregate", *REQUIREMENT_EXCEPTION_PERMISSIONS},
+    # Docente: no access to admissions, except reading and recording requirement exceptions (KAN-128).
+    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS},
 }
 
 

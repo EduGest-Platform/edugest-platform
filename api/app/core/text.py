@@ -8,3 +8,11 @@ def normalize_email(v: str) -> str:
     if len(v) > 254 or not EMAIL_RE.match(v):
         raise ValueError("Correo electrónico no válido")
     return v
+
+
+LIKE_ESCAPE = "\\"
+
+
+def escape_like(value: str) -> str:
+    """Make %, _ and the escape character match themselves in a SQL LIKE pattern (pass escape=LIKE_ESCAPE)."""
+    return value.replace(LIKE_ESCAPE, LIKE_ESCAPE * 2).replace("%", LIKE_ESCAPE + "%").replace("_", LIKE_ESCAPE + "_")

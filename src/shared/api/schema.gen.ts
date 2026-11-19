@@ -56,6 +56,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/requirement-prefilter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evaluar requisitos seleccionados y proponer revisión humana, nunca decidir admisión
+         * @description Selección explícita de versiones, no catálogo activo. Códigos omitidos exigen revisión humana. No escribe tareas ni cambia etapas.
+         */
+        post: operations["evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisiones de requisitos de una candidatura (lista vacía = sin revisar, no «todo cumplido») */
+        get: operations["list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura
+         * @description `requirement_ref` debe existir en el catálogo de la convocatoria. Cada referencia identifica una definición inmutable; el resultado conserva su vínculo aunque se publiquen versiones nuevas. No incluir datos sensibles en `reason`.
+         */
+        put: operations["put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión */
+        get: operations["get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -135,6 +209,24 @@ export interface paths {
         get: operations["list_calls_api_v1_calls_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{call_id}/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo de requisitos y sus versiones inmutables dentro del ámbito autorizado */
+        get: operations["list_call_requirements_api_v1_calls__call_id__requirements_get"];
+        put?: never;
+        /** Publicar una definición inmutable; solo administración. Nunca decide admisión */
+        post: operations["create_call_requirement_api_v1_calls__call_id__requirements_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -401,6 +493,68 @@ export interface components {
             /** Program Nombre */
             program_nombre: string;
         };
+        /** CallRequirementList */
+        CallRequirementList: {
+            /** Call Id */
+            call_id: string;
+            /** Items */
+            items: components["schemas"]["CallRequirementOut"][];
+        };
+        /** CallRequirementOut */
+        CallRequirementOut: {
+            /** Call Id */
+            call_id: string;
+            /** Code */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Funder */
+            funder: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Label */
+            label: string;
+            /** Ref */
+            ref: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * CallRequirementWrite
+         * @description A fresh immutable reference, or the next version of the same logical code.
+         */
+        CallRequirementWrite: {
+            /** Code */
+            code: string;
+            /**
+             * Expected Version
+             * @description 0 para un código nuevo; versión anterior al publicar su sucesora
+             * @default 0
+             */
+            expected_version: number;
+            /** Funder */
+            funder?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Label */
+            label: string;
+            /** Ref */
+            ref: string;
+        };
         /** CallSummaryOut */
         CallSummaryOut: {
             /** By Stage */
@@ -518,6 +672,170 @@ export interface components {
              * Format: uuid
              */
             id: string;
+        };
+        /** PrefilterItem */
+        PrefilterItem: {
+            /** Code */
+            code: string;
+            /**
+             * Definition Id
+             * Format: uuid
+             */
+            definition_id: string;
+            /** Definition Version */
+            definition_version: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Ref */
+            ref: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Verified Review */
+            verified_review: boolean;
+        };
+        /** PrefilterRequest */
+        PrefilterRequest: {
+            /** Requirement Refs */
+            requirement_refs: string[];
+        };
+        /** PrefilterResult */
+        PrefilterResult: {
+            /** Advisory Refs */
+            advisory_refs: string[];
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Evaluation Only
+             * @default true
+             * @constant
+             */
+            evaluation_only: true;
+            /** Human Review Required */
+            human_review_required: boolean;
+            /** Items */
+            items: components["schemas"]["PrefilterItem"][];
+            /** Proposal Key */
+            proposal_key: string[] | null;
+            /** Proposed Action */
+            proposed_action: "human_review" | null;
+            /**
+             * Scope
+             * @default explicit_versions
+             * @constant
+             */
+            scope: "explicit_versions";
+            /** Unresolved Required Refs */
+            unresolved_required_refs: string[];
+            /** Unselected Codes */
+            unselected_codes: string[];
+        };
+        /** RequirementReviewHistory */
+        RequirementReviewHistory: {
+            /** Items */
+            items: components["schemas"]["RequirementRevisionOut"][];
+            /** Requirement Ref */
+            requirement_ref: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+        };
+        /**
+         * RequirementReviewList
+         * @description An empty list means «not reviewed yet», never «all requirements met».
+         */
+        RequirementReviewList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["RequirementReviewOut"][];
+        };
+        /** RequirementReviewOut */
+        RequirementReviewOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string | null;
+            /** Requirement Definition Id */
+            requirement_definition_id?: string | null;
+            /** Requirement Ref */
+            requirement_ref: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Reviewer */
+            reviewer: string | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * RequirementReviewWrite
+         * @description Body to record or revise a review. Author and date are never accepted from the client.
+         */
+        RequirementReviewWrite: {
+            /**
+             * Expected Version
+             * @description Versión que la persona vio al abrir la revisión. Se omite solo al crear la primera.
+             */
+            expected_version?: number | null;
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
+             */
+            reason: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "met" | "not_met" | "exception_under_review" | "exception_approved";
+        };
+        /** RequirementRevisionOut */
+        RequirementRevisionOut: {
+            /** Reason */
+            reason: string;
+            /** Requirement Definition Id */
+            requirement_definition_id?: string | null;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+            /** Reviewer */
+            reviewer: string | null;
+            /** Revision */
+            revision: number;
         };
         /** RoleAssignmentOut */
         RoleAssignmentOut: {
@@ -694,6 +1012,212 @@ export interface operations {
             };
         };
     };
+    evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrefilterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrefilterResult"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito no encontrado en su convocatoria */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Selección vacía, duplicada o con varias versiones de un código */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                /** @description Identificador del requisito dentro de la convocatoria */
+                requirement_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequirementReviewWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewOut"];
+                };
+            };
+            /** @description Primera revisión creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Versión desfasada o cambio de resultado no permitido */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                /** @description Identificador del requisito dentro de la convocatoria */
+                requirement_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewHistory"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_audit_api_v1_audit_events_get: {
         parameters: {
             query?: {
@@ -818,6 +1342,86 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CallOut"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_call_requirements_api_v1_calls__call_id__requirements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallRequirementList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_call_requirement_api_v1_calls__call_id__requirements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallRequirementWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallRequirementOut"];
+                };
+            };
+            /** @description Solo administración */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Referencia o versión en conflicto */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
