@@ -1,5 +1,7 @@
 # KAN-148 — Requirement prefilter / Prefiltro de requisitos
 
+**KAN-183 follow-up / Seguimiento:** the preview endpoint below still records only its access audit. A separate explicit endpoint now records immutable evaluation evidence; see [KAN-183](KAN-183-automation-executions.md). / La vista previa descrita conserva solo su auditoría; un endpoint explícito separado registra evidencia inmutable de evaluación. No equivale a entrega ni tarea resuelta.
+
 ## ES
 
 Incremento sobre KAN-135/#49 integrado en `dev` `cf8d69a`, 19/11/2026. `POST /api/v1/applications/{id}/requirement-prefilter` evalúa una selección explícita de referencias inmutables (1–100), con `requirements.read` y el ámbito existente de la candidatura. El cliente no aporta resultados, faltantes ni actor. Referencias desconocidas/ajenas: 404; duplicadas o dos versiones del mismo código: 422.

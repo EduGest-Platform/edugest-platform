@@ -407,6 +407,103 @@
         "title": "AuditEventOut",
         "type": "object"
       },
+      "AutomationExecutionList": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AutomationExecutionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "application_id",
+          "items",
+          "total",
+          "limit"
+        ],
+        "title": "AutomationExecutionList",
+        "type": "object"
+      },
+      "AutomationExecutionOut": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "evaluated_at": {
+            "format": "date-time",
+            "title": "Evaluated At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "kind": {
+            "const": "requirement_prefilter",
+            "title": "Kind",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "human_review",
+              "no_action"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "rule_version": {
+            "title": "Rule Version",
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/PrefilterResult"
+          },
+          "stage_at_evaluation": {
+            "title": "Stage At Evaluation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "call_id",
+          "kind",
+          "rule_version",
+          "idempotency_key",
+          "outcome",
+          "stage_at_evaluation",
+          "snapshot",
+          "evaluated_at"
+        ],
+        "title": "AutomationExecutionOut",
+        "type": "object"
+      },
       "CallOut": {
         "properties": {
           "closes_on": {
@@ -950,6 +1047,17 @@
             ],
             "title": "Result",
             "type": "string"
+          },
+          "review_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Version"
           },
           "verified_review": {
             "title": "Verified Review",
@@ -1655,6 +1763,147 @@
         "summary": "Ficha del expediente con historial CRM",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/automation-executions": {
+      "get": {
+        "operationId": "list_executions_api_v1_applications__application_id__automation_executions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationExecutionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito"
+          },
+          "404": {
+            "description": "Candidatura o requisito desconocido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial de evaluaciones del ámbito; total explícito si el límite trunca la lista",
+        "tags": [
+          "automation"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/automation-executions/requirement-prefilter": {
+      "post": {
+        "description": "Solo personal con requirements.review. Resultado y clave calculados por el servidor. Un registro es evidencia de evaluación, no tarea completada ni ahorro.",
+        "operationId": "record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrefilterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationExecutionOut"
+                }
+              }
+            },
+            "description": "Evaluación ya registrada: reintento sin duplicado"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutomationExecutionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito"
+          },
+          "404": {
+            "description": "Candidatura o requisito desconocido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios",
+        "tags": [
+          "automation"
         ]
       }
     },

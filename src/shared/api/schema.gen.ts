@@ -39,6 +39,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/automation-executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de evaluaciones del ámbito; total explícito si el límite trunca la lista */
+        get: operations["list_executions_api_v1_applications__application_id__automation_executions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/automation-executions/requirement-prefilter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios
+         * @description Solo personal con requirements.review. Resultado y clave calculados por el servidor. Un registro es evidencia de evaluación, no tarea completada ni ahorro.
+         */
+        post: operations["record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/events": {
         parameters: {
             query?: never;
@@ -468,6 +505,57 @@ export interface components {
             /** Target Type */
             target_type: string;
         };
+        /** AutomationExecutionList */
+        AutomationExecutionList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["AutomationExecutionOut"][];
+            /** Limit */
+            limit: number;
+            /** Total */
+            total: number;
+        };
+        /** AutomationExecutionOut */
+        AutomationExecutionOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Evaluated At
+             * Format: date-time
+             */
+            evaluated_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "requirement_prefilter";
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "human_review" | "no_action";
+            /** Rule Version */
+            rule_version: string;
+            snapshot: components["schemas"]["PrefilterResult"];
+            /** Stage At Evaluation */
+            stage_at_evaluation: string;
+        };
         /** CallOut */
         CallOut: {
             /**
@@ -696,6 +784,8 @@ export interface components {
              * @enum {string}
              */
             result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Review Version */
+            review_version?: number | null;
             /** Verified Review */
             verified_review: boolean;
         };
@@ -965,6 +1055,111 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApplicationDetail"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_executions_api_v1_applications__application_id__automation_executions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationExecutionList"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito desconocido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrefilterRequest"];
+            };
+        };
+        responses: {
+            /** @description Evaluación ya registrada: reintento sin duplicado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationExecutionOut"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationExecutionOut"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito desconocido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
