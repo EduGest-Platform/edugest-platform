@@ -43,3 +43,7 @@ API y PostgreSQL: ver [`api/README.md`](api/README.md); requieren `infra/.env` y
 | [`projectplan.md`](projectplan.md) | Plan de producto y entrega / Product and delivery plan |
 
 **EN summary:** EduGest is the Somos F5 Final Project 2 platform covering application, preselection, human-decided selection, enrolment and academic follow-up, with a scoped RAG assistant and advisory dropout ML. Synthetic data only; code in English; repository docs in Spanish and English. Start with the constitution, then `AGENTS.md` (agents) or `contribution.md` (humans).
+
+## Licencia / License
+
+MIT, con atribución obligatoria al equipo EduGest y al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026). Ver [LICENSE](LICENSE). / MIT, with mandatory attribution to the EduGest team and Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026). See [LICENSE](LICENSE).

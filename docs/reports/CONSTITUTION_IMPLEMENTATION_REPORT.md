@@ -114,7 +114,7 @@ Decisiones de la Product Owner (Elizabeth) del 19/11/2026 y estado real del repo
 | Pendiente | Estado |
 |---|---|
 | B1. Repositorio Git | **Resuelto**: el proyecto vive en GitHub (`EduGest-Platform/edugest-platform`) con PR y revisión |
-| P1. Licencia | **Pendiente de decisión final** (ver la PR de cierre): la PO quiere atribución obligatoria al equipo y al bootcamp; falta confirmar si se permite o no el uso comercial. La constitución exige también la aprobación de Somos F5 |
+| P1. Licencia | **Resuelto por la PO**: MIT con atribución al equipo EduGest y al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026) en el aviso de copyright (`LICENSE`). Permite uso comercial. **Pendiente:** confirmación de Somos F5, que la constitución exige |
 | P2. Nombre | **Resuelto**: EduGest. Textos visibles, títulos y constitución actualizados; los identificadores técnicos `gistar` se mantienen |
 | P3. Inglés canónico + traducción al español | **Resuelto**: confirmado y añadido a la sección H de la constitución |
 | N1/P4. Entorno virtual `src/gistar/env/` | **Resuelto**: ya no existe |
@@ -124,4 +124,4 @@ Decisiones de la Product Owner (Elizabeth) del 19/11/2026 y estado real del repo
 | M2. Comprobación de enlaces Markdown en CI | Mejora opcional, sin cambios |
 | M3. Constitución en la plantilla de PR | **Resuelto**: la plantilla cita `CONSTITUTION.md §E.6` |
 
-**EN:** As of 19/11/2026 the only open item is the licence (P1); everything else is resolved or optional.
+**EN:** As of 19/11/2026 the licence is MIT with team and bootcamp attribution (PO decision). The only open item is Somos F5's confirmation of the licence; everything else is resolved or optional.

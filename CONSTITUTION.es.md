@@ -74,7 +74,7 @@ Guardarraíles explícitos para Claude, Codex y cualquier otro agente (detalle o
 
 - Nombre del producto: **EduGest** (confirmado por la Product Owner el 19/11/2026; sustituye al nombre provisional «Gistar»). Los identificadores técnicos que aún dicen `gistar` (carpeta `src/gistar/`, prefijo `GISTAR_` de las variables, paquete Python y nombres de base de datos) se mantienen para no romper nada; los textos visibles dicen EduGest.
 - Nombre y material gráfico propios. **No usar el nombre ni el logotipo de Somos F5 como marca del producto**; solo inspiración cromática. Sin material con licencia ni capturas propietarias.
-- Este repositorio **no declara licencia** hasta que la Product Owner y Somos F5 aprueben una; la ausencia de licencia implica todos los derechos reservados.
+- Licencia: **MIT** ([LICENSE](LICENSE)), elegida por la Product Owner el 19/11/2026. El aviso de copyright reconoce al equipo EduGest e indica que es el proyecto final del Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026); esa atribución debe mantenerse en todas las copias. La MIT permite reutilizarlo, también con fines comerciales. La licencia no da derecho a usar el nombre ni el logotipo de Somos F5. La aprobación de Somos F5, que esta sección exigía, consta como pendiente hasta que se confirme.
 
 ## H. Documentación y política de idiomas
 
