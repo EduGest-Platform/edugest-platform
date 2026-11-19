@@ -1,7 +1,7 @@
 """Deterministic proposals only: no email, database writes or admission decisions."""
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from hashlib import sha256
 import json
@@ -101,6 +101,9 @@ def propose(tasks: list[Task], policy: Policy, now: datetime) -> tuple[Proposal,
     A policy version change permits a new proposal and requires explicit approval.
     """
     require_timezone(now)
+    # timedelta policies express elapsed time, not local calendar/wall-clock time.
+    # Normalize before arithmetic/comparison: same-zone datetime operations ignore DST/fold.
+    now_instant = now.astimezone(timezone.utc)
     if any(task.call_id != policy.call_id for task in tasks):
         raise ValueError("Task outside policy call scope")
     identities = [(task.application_id, task.task_id) for task in tasks]
@@ -113,21 +116,22 @@ def propose(tasks: list[Task], policy: Policy, now: datetime) -> tuple[Proposal,
     for task in tasks:
         if task.completed:
             continue
+        due_instant = task.due_at.astimezone(timezone.utc)
         if task.kind == TaskKind.REQUIREMENTS:
             if not task.missing_requirements:
                 continue
             action, reason = Action.HUMAN_REVIEW, Reason.MISSING_REQUIREMENTS
         elif task.kind == TaskKind.RESPONSE:
-            if now < task.due_at + policy.response_grace:
+            if now_instant < due_instant + policy.response_grace:
                 continue
             action, reason = Action.HUMAN_REVIEW, Reason.RESPONSE_WINDOW_ELAPSED
         elif task.kind == TaskKind.INFORMATION_SESSION:
             # Pre-session window only; no stale invitation reminder after the appointment.
-            if not task.due_at - policy.reminder_lead <= now < task.due_at:
+            if not due_instant - policy.reminder_lead <= now_instant < due_instant:
                 continue
             action, reason = Action.SIMULATED_REMINDER, Reason.INFORMATION_SESSION
         else:
-            if now < task.due_at + policy.reminder_delay:
+            if now_instant < due_instant + policy.reminder_delay:
                 continue
             action, reason = Action.SIMULATED_REMINDER, Reason(task.kind.value)
         revision = sha256(json.dumps([task.kind.value, task.missing_requirements], separators=(",", ":")).encode()).hexdigest()

@@ -9,6 +9,11 @@ from app.core.text import normalize_email
 Stage = Literal["enviada", "requisitos_en_revision", "convocada", "evaluacion_en_curso", "pendiente_decision_humana", "admitida", "lista_espera", "no_admitida", "retirada"]
 
 
+def _strip_if_str(value: object) -> object:
+    """Trim text before length validation without coercing other input types."""
+    return value.strip() if isinstance(value, str) else value
+
+
 class ApplicationCreate(BaseModel):
     """Public inscription form. Only the minimum data needed for pre-selection (data minimisation)."""
 
@@ -24,10 +29,10 @@ class ApplicationCreate(BaseModel):
     def _email(cls, v: str) -> str:
         return normalize_email(v)
 
-    @field_validator("nombre", "motivacion")
+    @field_validator("nombre", "motivacion", mode="before")
     @classmethod
-    def _strip(cls, v: str) -> str:
-        return v.strip()
+    def _trim_text(cls, v: object) -> object:
+        return _strip_if_str(v)
 
 
 class ApplicationReceipt(BaseModel):
@@ -69,6 +74,11 @@ class EventCreate(BaseModel):
     tipo: EventType
     canal: Channel | None = None
     resumen: str = Field(min_length=1, max_length=500, description="Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.")
+
+    @field_validator("resumen", mode="before")
+    @classmethod
+    def _trim_summary(cls, v: object) -> object:
+        return _strip_if_str(v)
 
 
 class EventOut(BaseModel):
