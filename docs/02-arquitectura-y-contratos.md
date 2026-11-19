@@ -38,7 +38,9 @@ erDiagram
 
 Vista física de las tablas principales de admisión y matrícula (`person`, `application`, `enrollment`, `cohort`), generada con DBeaver desde la base local con datos sintéticos / *Physical view of the core admissions and enrollment tables, generated with DBeaver from the local synthetic-data database*:
 
-![Diagrama ER de admisión y matrícula (DBeaver)](images/admissions-erd-dbeaver.png)
+![Diagrama ER de admisión y matrícula (DBeaver)](images/edugest-erd-core-tables.png)
+
+Diagrama ER completo (las 12 tablas del esquema `public`, con todas sus claves foráneas), en formato DBeaver: se abre con DBeaver conectado a la base local / *Full ER diagram (all 12 tables in the `public` schema with every foreign key), DBeaver format; open it in DBeaver connected to the local database*: [edugest-erd-full-2026-11-19.erd](images/edugest-erd-full-2026-11-19.erd)
 
 Reglas (implementadas en F1 salvo indicación):
 
