@@ -560,17 +560,17 @@ def test_database_rejects_out_of_range_policies(db, column, value):
     db.rollback()
 
 
-def test_migration_0005_downgrades_to_0006_and_upgrades_again():
+def test_migration_0005_downgrades_to_0007_and_upgrades_again():
     cfg = Config(os.path.join(API_DIR, "alembic.ini"))
     cfg.set_main_option("script_location", os.path.join(API_DIR, "alembic"))
     try:
-        command.downgrade(cfg, "0006")
+        command.downgrade(cfg, "0007")
         tables = set(inspect(engine).get_table_names())
         assert "preselection_decision" not in tables
-        assert {"call_requirement", "requirement_review", "knowledge_document"} <= tables
+        assert {"automation_execution", "call_requirement", "requirement_review", "knowledge_document"} <= tables
         assert {"silence_days", "silence_max_contacts", "silence_warning_contacts"}.isdisjoint(c["name"] for c in inspect(engine).get_columns("call"))
         assert "resultado" not in {c["name"] for c in inspect(engine).get_columns("application_event")}
     finally:
         command.upgrade(cfg, "head")
-    assert {"preselection_decision", "call_requirement"} <= set(inspect(engine).get_table_names())
+    assert {"preselection_decision", "automation_execution", "call_requirement"} <= set(inspect(engine).get_table_names())
     assert {"silence_days", "silence_max_contacts", "silence_warning_contacts"} <= {c["name"] for c in inspect(engine).get_columns("call")}

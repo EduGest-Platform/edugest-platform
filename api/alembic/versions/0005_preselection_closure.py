@@ -1,11 +1,11 @@
 """KAN-153 · end of pre-selection: per-call silence policy, contact attempt results and human decision history.
 
-Additive and reversible. Chained after 0006 (KAN-135 call requirements), which was merged into dev first and
-itself revises 0004. Alembic follows down_revision, so the linear history is 0004 -> 0006 -> 0005 with a single
-head. 0002 (F2) does not exist yet.
+Additive and reversible. Chained after 0007 (KAN-183 automation executions), the current head of dev, which
+revises 0006 (KAN-135). Alembic follows down_revision, so the linear history is 0004 -> 0006 -> 0007 -> 0005
+with a single head. 0002 (F2) does not exist yet.
 
 Revision ID: 0005
-Revises: 0006
+Revises: 0007
 Create Date: 2026-11-18
 """
 from collections.abc import Sequence
@@ -15,7 +15,7 @@ from alembic import op
 
 
 revision: str = '0005'
-down_revision: str | None = '0006'
+down_revision: str | None = '0007'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -8,6 +8,7 @@ from app.core.deps import DB
 from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
 from app.modules.admissions.router import router as admissions_router
 from app.modules.audit.router import router as audit_router
+from app.modules.automation.router import router as automation_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.identity.router import router as identity_router
 from app.modules.preselection.router import router as preselection_router
@@ -41,6 +42,7 @@ for r in (
     requirements_router,
     prefilter_router,
     preselection_router,
+    automation_router,
     audit_router,
 ):
     app.include_router(r, prefix=API)
