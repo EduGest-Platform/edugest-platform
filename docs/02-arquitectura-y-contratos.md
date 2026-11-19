@@ -36,9 +36,9 @@ erDiagram
   COHORT ||--o{ ENROLLMENT : "matrícula"
 ```
 
-Diagrama ER completo de la base de datos (las 12 tablas del esquema `public`, con sus claves foráneas), generado con DBeaver desde la base local con datos sintéticos / *Full ER diagram of the database (all 12 tables in the `public` schema with their foreign keys), generated with DBeaver from the local synthetic-data database*:
+Diagrama ER completo de la base de datos a fecha 19.11.2026 (las 12 tablas del esquema `public`, con sus claves foráneas), generado con DBeaver desde la base local con datos sintéticos / *Full ER diagram of the database as of 19 Nov 2026 (all 12 tables in the `public` schema with their foreign keys), generated with DBeaver from the local synthetic-data database*:
 
-![Diagrama ER completo de EduGest (DBeaver)](images/edugest-erd-full.gif)
+![Diagrama ER completo de EduGest (DBeaver)](images/edugest-erd-full-2026-11-19.gif)
 
 - Vista reducida de las tablas de admisión y matrícula / *Core admissions and enrollment tables*: [edugest-erd-core-tables.png](images/edugest-erd-core-tables.png)
 - Fuente editable en DBeaver (requiere conexión a la base local) / *Editable DBeaver source (needs a local DB connection)*: [edugest-erd-full-2026-11-19.erd](images/edugest-erd-full-2026-11-19.erd)
