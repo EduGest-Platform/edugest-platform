@@ -50,7 +50,7 @@ class RequirementReview(Base):
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), index=True)
-    # Opaque requirement identifier. It becomes a reference to the immutable requirement version when KAN-135 lands.
+    # Stable per-call reference; the nullable definition link distinguishes legacy unverified rows.
     requirement_ref: Mapped[str] = mapped_column(String(60))
     # Legacy rows remain unverified until an explicit review binds an existing definition.
     requirement_definition_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("call_requirement.id"))
