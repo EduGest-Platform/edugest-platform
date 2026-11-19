@@ -36,6 +36,10 @@ erDiagram
   COHORT ||--o{ ENROLLMENT : "matrícula"
 ```
 
+Vista física de las tablas principales de admisión y matrícula (`person`, `application`, `enrollment`, `cohort`), generada con DBeaver desde la base local con datos sintéticos / *Physical view of the core admissions and enrollment tables, generated with DBeaver from the local synthetic-data database*:
+
+![Diagrama ER de admisión y matrícula (DBeaver)](images/admissions-erd-dbeaver.png)
+
 Reglas (implementadas en F1 salvo indicación):
 
 1. `person.email` normalizado y único → deduplicación; `application` única por (`person_id`, `call_id`).
