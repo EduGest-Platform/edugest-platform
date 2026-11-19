@@ -95,7 +95,7 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
         **_summary(a, person, call).model_dump(),
         motivacion=a.motivacion,
         disponibilidad=a.disponibilidad,
-        events=[EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resumen=e.resumen, actor=name, occurred_at=e.occurred_at) for e, name in events],
+        events=[EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resultado=e.resultado, resumen=e.resumen, actor=name, occurred_at=e.occurred_at) for e, name in events],
     )
 
 
@@ -103,12 +103,14 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
 def post_event(application_id: uuid.UUID, body: EventCreate, p: CurrentPrincipal, db: DB) -> EventOut:
     a, _, call = _load(db, application_id)
     p.require("applications.crm", Scope(program_id=call.program_id, call_id=call.id))
-    ev = ApplicationEvent(application_id=a.id, tipo=body.tipo, canal=body.canal, resumen=body.resumen.strip(), actor_user_id=p.user.id)
+    if body.resultado and body.tipo != "contacto":
+        raise HTTPException(422, "El resultado solo se registra en eventos de contacto")
+    ev = ApplicationEvent(application_id=a.id, tipo=body.tipo, canal=body.canal, resultado=body.resultado, resumen=body.resumen.strip(), actor_user_id=p.user.id)
     db.add(ev)
     db.flush()
     audit.record(db, p, "application.event_added", "application", str(a.id), codigo=a.codigo, tipo=body.tipo)
     db.commit()
-    return EventOut(id=ev.id, tipo=ev.tipo, canal=ev.canal, resumen=ev.resumen, actor=p.user.display_name, occurred_at=ev.occurred_at)
+    return EventOut(id=ev.id, tipo=ev.tipo, canal=ev.canal, resultado=ev.resultado, resumen=ev.resumen, actor=p.user.display_name, occurred_at=ev.occurred_at)
 
 
 @router.get("/me/applications", response_model=list[ApplicationSelfView], summary="Candidaturas propias de la persona autenticada")
