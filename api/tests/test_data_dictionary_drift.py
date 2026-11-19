@@ -16,7 +16,10 @@ EXPECTED_APPLICATION_COLUMNS = {
     "id", "codigo", "legacy_ref", "person_id", "call_id", "stage",
     "motivacion", "disponibilidad", "acepta_datos_sinteticos", "created_at", "updated_at",
 }
-EXPECTED_CALL_COLUMNS = {"id", "program_id", "nombre", "codigo_prefix", "opens_on", "closes_on", "plazas", "estado", "next_seq"}
+EXPECTED_CALL_COLUMNS = {
+    "id", "program_id", "nombre", "codigo_prefix", "opens_on", "closes_on", "plazas", "estado", "next_seq",
+    "silence_days", "silence_max_contacts", "silence_warning_contacts",  # KAN-153: per-call silence policy (30 days / 4 attempts / light alert at 2)
+}
 EXPECTED_APPLICATION_CREATE_FIELDS = {"call_id", "nombre", "email", "motivacion", "disponibilidad", "acepta_datos_sinteticos"}
 
 
