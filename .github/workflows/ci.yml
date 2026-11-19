@@ -26,6 +26,8 @@ jobs:
       - run: python -m unittest discover -s ml/dropout/tests -v
       - run: python -m ml.dropout.train --out "$RUNNER_TEMP/dropout"
       - run: python -m ml.dropout.evaluate --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.score --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.model_card --artifacts "$RUNNER_TEMP/dropout"
 
   rag:
     runs-on: ubuntu-latest
