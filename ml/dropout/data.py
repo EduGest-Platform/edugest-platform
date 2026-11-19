@@ -136,6 +136,8 @@ def generate(seed=42, people=300):
             cutoff = base + timedelta(days=offset)
             target, status = label(case, cutoff)
             rows.append({"person_id": person, "enrollment_id": person + "-enrollment", "cohort_id": cohort,
+                         "active_at_cutoff": not ((withdrawal is not None and withdrawal <= cutoff and case.withdrawal_recorded_at <= cutoff)
+                                                  or (case.competing_at is not None and case.competing_at <= cutoff)),
                          "cutoff": cutoff.isoformat(), "horizon_end": (cutoff + timedelta(days=14)).isoformat(),
                          "split": split, "features": features(case, cutoff), "label": target, "label_status": status})
     return {"protocol": PROTOCOL, "seed": seed, "synthetic_only": True, "rows": rows}

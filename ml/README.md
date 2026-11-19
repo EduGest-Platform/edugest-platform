@@ -1,5 +1,11 @@
 # Synthetic dropout experiments / Experimentos sintéticos de abandono
 
+## KAN-180 / KAN-189 — offline scoring and model card / scoring offline y ficha
+
+ES: tras train/evaluate, ejecutar `python -m ml.dropout.score --artifacts ml/artifacts/demo` y `python -m ml.dropout.model_card --artifacts ml/artifacts/demo`. Genera scores sintéticos con abstención y ficha ES/EN desde los hashes/métricas reales del ensayo. La población activa es metadata conocida al corte, no una feature ni una lectura del estado final. Se abstiene con contexto desconocido/inactivo, menos de 3 días equivalentes, asistencia desconocida >.5 o sin umbral de validación. Son límites técnicos propuestos, no una política PO aceptada. Las señales son valores observados, no atribuciones causales; un score bajo no demuestra ausencia de riesgo.
+
+EN: commands above write local `scores.json` and `model-card.md`, bound to dataset/model/evaluation hashes. Only synthetic test-period fixtures are scored; no API, risk-alert table, cohort authorization adapter or real learner scoring is implemented. The UI/backend integration part of KAN-180 is blocked on EDU-02 and risk contracts. All outputs retain synthetic-only/human-review/not-validated flags. No server, role grant, automatic intervention or model promotion. The JSON prototype is not a production model. The generated card records seed, environment, target proposal, observed results/coverage, missingness location and responsible reviewers; no approval is fabricated.
+
 ## KAN-179 / KAN-198 — evaluation / evaluación
 
 ES: después de entrenar, ejecutar `python -m ml.dropout.evaluate --artifacts ml/artifacts/demo`. Produce `evaluation.json` y `evaluation.csv` con soporte, prevalencia, matriz de confusión, precisión/recall/F1, PR-AUC, Brier y bins de calibración. Cero soporte o métricas indefinidas se registran como null. La regla 3/6 informa cobertura y se abstiene con medias jornadas; su resultado binario no se presenta como probabilidad calibrada. Comparar soportes/cobertura antes de comparar filas. Los agregados describen snapshots correlacionados dentro de persona, no observaciones independientes ni intervalos de confianza.
