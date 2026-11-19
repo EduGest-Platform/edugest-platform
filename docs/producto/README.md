@@ -1,14 +1,19 @@
 # docs/producto — EduGest / Gistar (KAN-107 revisión V2)
 
-**Estado:** documentos de diseño en revisión en el [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (hacia `dev`, abierto, sin fusionar), para revisión de Anas y aceptación de la PO. Sin cambios de código, OpenAPI, PostgreSQL ni migraciones. Solo datos sintéticos.
+**Estado:** documentos de diseño (Diseño KAN-107, rama documental `docs/KAN-107-data-governance` hacia `dev`), para revisión de Anas y aceptación de la PO. Sin cambios de código, OpenAPI, PostgreSQL ni migraciones. Solo datos sintéticos.
 
 
 ## Decisión PO del 18/11/2026 / PO decision of 18/11/2026
 
-**ES:** aceptada la referencia del bootcamp de **1.250 h** y las recomendaciones asociadas (edad configurable, residencia Madrid obligatoria, conocimientos de programación sin experiencia profesional exigida, motivación inicial opcional y disponibilidad inicial opcional con dedicación intensiva informada). La [decisión canónica y su evidencia](kan-107-1-diccionario-datos-consolidado.md#decisión-po-aceptada-el-18112026--po-decision-accepted-on-18112026) distinguen lo aceptado de lo pendiente y del contrato aún sin modificar. Anas y aceptación final del paquete siguen pendientes.
+**ES:** la copia canónica de la decisión (bootcamp de 1.250 h y recomendaciones asociadas), con su evidencia y lo que sigue pendiente, está en el [Entregable 1](kan-107-1-diccionario-datos-consolidado.md#decisión-po-aceptada-el-18112026--po-decision-accepted-on-18112026). No se repite aquí para evitar divergencias.
 
-**EN:** the PO accepted the **1,250-hour bootcamp** reference and associated recommendations: configurable age, mandatory Madrid-region residence, programming background without professional experience required, optional initial motivation and availability with intensive commitment explained. See the canonical decision/evidence above; API/DB changes are not implemented. Other open decisions, Anas review and final package acceptance remain pending.
+**EN:** the canonical copy of the decision (1,250-hour bootcamp and associated recommendations), with evidence and pending items, is in [Deliverable 1](kan-107-1-diccionario-datos-consolidado.md#decisión-po-aceptada-el-18112026--po-decision-accepted-on-18112026). It is not repeated here to avoid drift.
 
+## Revisión del 19/11/2026 / Review of 19/11/2026
+
+**ES:** correcciones de la revisión de Anas: cadena Alembic real de `dev` (`0001 → 0003 → 0004 → 0006`, cabeza única `0006`) en el Entregable 4; KAN-128 reconocido como integrado en el Entregable 6; referencia de notas CRM corregida a R7; recuento de riesgos 18 (R1–R18); la matriz RBAC fechada que no existe en `dev` se sustituye por `docs/reports/KAN-109-f1-rbac-regression.md`; estados de PR abierta sustituidos por la referencia permanente a la rama y la historia; normas de migraciones formuladas para todo el equipo; KAN-124 marcado como integrado para los campos actuales (aceptación pendiente según su informe); la decisión PO del 18/11 queda con una única copia canónica. **No se resuelven aquí** las decisiones PO abiertas (texto libre de KAN-128, ventana de gracia, motivos sensibles, condiciones de acceso G3/G6) ni se implementan cambios de base de datos o permisos.
+
+**EN:** Anas's review fixes: real `dev` Alembic chain in Deliverable 4; KAN-128 acknowledged as merged in Deliverable 6; CRM notes reference fixed to R7; risk count 18 (R1–R18); the dated RBAC matrix that is not in `dev` replaced by `docs/reports/KAN-109-f1-rbac-regression.md`; open-PR status lines replaced by permanent branch/story references; migration rules stated for the whole team; KAN-124 marked as merged for current fields (acceptance pending per its report); one canonical copy of the 18/11 PO decision. Open PO decisions are **not** resolved here and no database or permission change is implemented.
 
 ## Entregables
 
@@ -23,7 +28,7 @@
 
 - [Inventario canónico de Anas (KAN-92/93)](https://github.com/EduGest-Platform/edugest-platform/blob/d59ee8cde39773af9fc041544a2346ec4ab5245d/docs/producto/diccionario-campos-candidatura.md), integrado en `dev` mediante [PR #27](https://github.com/EduGest-Platform/edugest-platform/pull/27). Contraste documental: 18/11/2026, `origin/dev` `d59ee8c`. El PR #15 ya retiró su copia. KAN-92/93 conserva el inventario observado; KAN-107 añade gobierno y versionado, sin crear un segundo inventario canónico.
 - [KAN-107](https://anasfady87-1789923749606.atlassian.net/browse/KAN-107) = **diseño**, [KAN-42](https://anasfady87-1789923749606.atlassian.net/browse/KAN-42) = **implementación**.
-- Rama documental: `docs/KAN-107-data-governance` → `dev`, en el PR #24 (abierto, pendiente de revisión).
+- Rama documental: `docs/KAN-107-data-governance` → `dev`.
 
 ## Decisión de migraciones (NO ejecutar todavía)
 
@@ -47,4 +52,4 @@ Los documentos 1–6 son canónicos en español y cada uno incluye ahora una sec
 
 ### English edition (index)
 
-KAN-107 V2 documents (design only, under review in PR #24, not merged): (1) consolidated data dictionary incl. field-by-field observed-vs-decided obligations; (2) per-call form versioning incl. version-change-during-filling rule; (3) preliminary privacy assessment; (4) implementation plan; (5) PO summary; (6) dynamic scoped access annex. Canonical observed inventory: `docs/producto/diccionario-campos-candidatura.md`, merged by PR #27, checked at `origin/dev` `d59ee8c` on 18/11/2026; PR #15 removed its copy. KAN-107 adds governance without duplicating that inventory. Each document 1–6 ends with an "English edition" section.
+KAN-107 V2 documents (design only; KAN-107 design, documentation branch `docs/KAN-107-data-governance` into `dev`): (1) consolidated data dictionary incl. field-by-field observed-vs-decided obligations; (2) per-call form versioning incl. version-change-during-filling rule; (3) preliminary privacy assessment; (4) implementation plan; (5) PO summary; (6) dynamic scoped access annex. Canonical observed inventory: `docs/producto/diccionario-campos-candidatura.md`, merged by PR #27, checked at `origin/dev` `d59ee8c` on 18/11/2026; PR #15 removed its copy. KAN-107 adds governance without duplicating that inventory. Each document 1–6 ends with an "English edition" section.

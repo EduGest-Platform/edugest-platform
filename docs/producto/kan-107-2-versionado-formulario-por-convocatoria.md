@@ -1,6 +1,6 @@
 # KAN-107 · Entregable 2 — Versionado del formulario por convocatoria / Per-call form versioning
 
-**Estado:** revisión documental V2 para aprobación PO/Anas. Ningún modelo, migración ni contrato modificado. **Regla: Claude NO debe crear migraciones ni reservar números de revisión**; coordinación por el backend owner en KAN-42.
+**Estado:** revisión documental V2 para aprobación PO/Anas. Ningún modelo, migración ni contrato modificado. **Norma para todo el equipo (personas y agentes de IA): bajo KAN-107 no se crean migraciones ni se reservan números de revisión**; coordinación por la responsable de backend en KAN-42.
 > **EN summary:** One new table (`form_version`) holding an immutable, approved JSON definition per call; each application stores `form_version_id` and its `answers` as stable option IDs. Chosen over YAML-in-repo and over a fully relational field/option model.
 
 ## 1. Requisitos y cómo se cumplen

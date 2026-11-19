@@ -1,6 +1,6 @@
 # KAN-107 · Entregable 1 — Diccionario de datos consolidado / Consolidated data dictionary
 
-**Estado:** revisión documental V2 para aprobación PO/Anas (no es validación jurídica ni código implementado) · **Fecha base:** 17/11/2026 · **Reconciliación:** 18/11/2026 · **Ubicación de entrega:** [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (abierto hacia `dev`, rama `docs/KAN-107-data-governance`; pendiente de revisión, no fusionado).
+**Estado:** revisión documental V2 para aprobación PO/Anas (no es validación jurídica ni código implementado) · **Fecha base:** 17/11/2026 · **Reconciliación:** 18/11/2026 · **Ubicación de entrega:** Diseño KAN-107, rama documental `docs/KAN-107-data-governance` hacia `dev`.
 **Base reutilizada:** [inventario canónico KAN-92/93](https://github.com/EduGest-Platform/edugest-platform/blob/d59ee8cde39773af9fc041544a2346ec4ab5245d/docs/producto/diccionario-campos-candidatura.md) de Anas, integrado en `dev` por PR #27; copia retirada del PR #15. Contraste: 18/11/2026, `origin/dev` `d59ee8c`. Las filas `#1–#14` se refieren al Formulario A; B contiene diferencias capturadas el 18/11 y C es una descripción del equipo todavía sin URL/verificación. KAN-92/93 mantiene el inventario observado; este documento añade gobierno y decisiones propuestas, sin sustituirlo.
 
 > **EN summary:** Technical + functional dictionary for the 14 fields of the real Somos F5 form plus EduGest-only fields. Each field has an owner entity (Person vs Application), a stable technical id, a proposed legal-basis *candidate* (all pending confirmation by the Foundation/DPO), access scope and status. Nothing here changes code, models or contract yet.
@@ -66,14 +66,16 @@ El bootcamp A sigue como referencia inicial del MVP, sujeto al mínimo común qu
 
 ## 1. Auditoría del inventario (qué falta, qué se duplica, qué choca)
 
-### 1.1 Estado en `dev` (inspección estática, 18/11/2026, `d59ee8c`; CODE_PRESENT_NOT_RUN)
+### 1.1 Estado en `dev` (inspección estática, 18/11/2026, `d59ee8c`; filas de requisitos revisadas el 19/11/2026 en `c4e385c`; CODE_PRESENT_NOT_RUN)
 
 | Elemento | Dónde | Hoy |
 |---|---|---|
 | `ApplicationCreate`: `call_id, nombre, email, motivacion, disponibilidad, acepta_datos_sinteticos` | `api/app/modules/admissions/schemas.py` | 6 campos |
 | `Person`: `display_name, email, legacy_ref, is_synthetic, created_at` | `api/app/modules/identity/models.py` | 1 solo nombre |
 | `Application`: `codigo, legacy_ref, person_id, call_id, stage, motivacion, disponibilidad (NOT NULL), acepta_datos_sinteticos` | `api/app/modules/admissions/models.py` | sin versión de formulario |
-| `Call`: `id, program_id, nombre, codigo_prefix, opens_on, closes_on, plazas, estado, next_seq` | `api/app/modules/catalog/models.py` | sin configuración de formulario |
+| `Call`: `id, program_id, nombre, codigo_prefix, opens_on, closes_on, plazas, estado, next_seq` | `api/app/modules/catalog/models.py` | sin configuración de formulario. KAN-153 (en revisión) añade `silence_days` y `silence_max_contacts`; al integrarse, actualizar esta fila y `api/tests/test_data_dictionary_drift.py` |
+| `CallRequirement` (`call_requirement`, KAN-135, migración `0006`): `ref, code, version, label, kind, funder` inmutables por convocatoria | `api/app/modules/requirements/models.py` | requisitos configurados, no campos del formulario |
+| `RequirementReview` / `RequirementReviewRevision` (KAN-128, migración `0004`): resultado y `reason` de texto libre (500) por requisito | `api/app/modules/requirements/models.py` | ver Entregable 6, interacción con KAN-128 |
 | Contrato | `contracts/openapi.json` (`ApplicationCreate`, `ApplicationDetail`…) | refleja lo anterior |
 | Logging | `api/app/core/error_handling.py`, `api/app/main.py`, `api/docker-entrypoint.sh` | KAN-105 (#23) integrado: `app.access`, request IDs de servidor, rutas parametrizadas y errores seguros; Uvicorn con `--no-access-log`; #29 evita relanzar excepciones tras iniciar respuesta. Inspección estática, sin certificación runtime de todos los sinks; auditoría funcional separada |
 
@@ -167,7 +169,7 @@ El inventario KAN-92/93 es la fuente de opciones y obligatoriedad; estos destino
 | Etapa | `stage` (existe) | enum de 9 valores | Auto | A | TEC | Existe; las decisiones de admisión son **humanas** |
 | Referencia legado | `legacy_ref` (existe) | `str(20)` | Auto | P/A | TEC | Solo datos semilla |
 | Marca sintética | `is_synthetic` (existe) | `bool` | Auto | P | TEC | Existe |
-| Eventos CRM | `application_event.resumen` (existe) | `str(500)` | — | A | ORD | Ya avisa: "No incluir datos de salud…". Ver R6 |
+| Eventos CRM | `application_event.resumen` (existe) | `str(500)` | — | A | ORD | Ya avisa: "No incluir datos de salud…". Ver R7 |
 
 ### 2.3 Gobierno por campo (resumen agrupado)
 
@@ -248,14 +250,14 @@ Criterio de reparto: **ficha actual de la persona → `Person`; declaraciones y 
 | Inventario canónico KAN-92/93, `docs/producto/diccionario-campos-candidatura.md` | **Leído** en `origin/dev` `d59ee8c`, 18/11/2026; integrado por #27 | A: #1–#14; B: diferencias capturadas 18/11; C: descripción no verificada |
 | `schemas.py`, `models.py` (`admissions`, `identity`, `catalog`) | **Leído** en `dev` | §1.1 |
 | `contracts/openapi.json` | **Leído** (esquemas `ApplicationCreate`, etc.) | §1.1 |
-| `docs/reports/RBAC_MATRIX_2026-11-13.md` | **Leído** (no versionado aún en `dev`, estado `CODE_PRESENT_NOT_RUN`) | Accesos |
+| [`docs/reports/KAN-109-f1-rbac-regression.md`](../reports/KAN-109-f1-rbac-regression.md) | **Leído** en `dev` (regresión RBAC de F1; la matriz RBAC fechada que se citaba antes no está en `dev`) | Accesos |
 | [KAN-92](https://anasfady87-1789923749606.atlassian.net/browse/KAN-92), [KAN-93](https://anasfady87-1789923749606.atlassian.net/browse/KAN-93), [KAN-107](https://anasfady87-1789923749606.atlassian.net/browse/KAN-107), [KAN-112](https://anasfady87-1789923749606.atlassian.net/browse/KAN-112) | **Contrastados por revisor el 17/11/2026** | KAN-93 contiene decisiones PO sobre campos y obligatoriedad; no hay aprobación de cuotas ni requisitos contractuales |
 | AS-IS y aclaraciones de Melissa (Drive) | **No accesible** | **Bloqueo B2**: se cita lo que recoge el documento de Anas (06 y 08/11/2026) |
 | Formulario real Somos F5 | **Texto público de landings consultado 18/11**; campos incrustados no recuperados. Inventario de campos: capturas A (17/11), B (18/11), C sin verificar | — |
 
 ## English edition (equivalent sections, KAN-107 V2)
 
-**Status:** design review in [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (open, not merged). The canonical observed inventory is Anas's `docs/producto/diccionario-campos-candidatura.md`, merged by PR #27, checked at `origin/dev` `d59ee8c` on 18/11/2026. A contains rows #1–#14; B records live-captured differences; C remains unverified. KAN-107 adds governance without replacing that source.
+**Status:** KAN-107 design, documentation branch `docs/KAN-107-data-governance` into `dev`. The canonical observed inventory is Anas's `docs/producto/diccionario-campos-candidatura.md`, merged by PR #27, checked at `origin/dev` `d59ee8c` on 18/11/2026. A contains rows #1–#14; B records live-captured differences; C remains unverified. KAN-107 adds governance without replacing that source.
 
 **§0 How to read.** OBSERVED = field seen in the real form (does not imply a funder requirement); PO DECISION = functional instruction in KAN-93 (not legal validation); Proposal = this analysis, pending approval; Pending = depends on Melissa/Foundation/DPO. All data is synthetic.
 

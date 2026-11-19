@@ -1,11 +1,11 @@
 # KAN-107 · Resumen para la Product Owner / PO summary (revisión V2, 17/11/2026)
 
-> **EN:** Revised design for PO/Anas review only; no code, database migration or API contract changed; the documents are under review in PR #24 (open, not merged). Dynamic per-call protected-field access is proposed but not implemented. The backend owner must coordinate any future schema change in KAN-42 with the existing Alembic chain.
+> **EN:** Revised design for PO/Anas review only; no code, database migration or API contract changed; documents: KAN-107 design, documentation branch `docs/KAN-107-data-governance` into `dev`. Dynamic per-call protected-field access is proposed but not implemented. The backend owner must coordinate any future schema change in KAN-42 with the existing Alembic chain.
 
 **Qué está hecho**
 - Diccionario consolidado (14 campos de Anas + campos de EduGest): `kan-107-1-…`
 - Versionado de formularios **de candidatura** por convocatoria (propuesta `form_version`; integridad y publicación definidas): `kan-107-2-…`
-- Evaluación de privacidad (14 riesgos, estado de decisiones): `kan-107-3-…`
+- Evaluación de privacidad (18 riesgos, R1–R18, estado de decisiones): `kan-107-3-…`
 - Plan por archivo, orden y pruebas existentes/propuestas: `kan-107-4-…`
 
 **Decisiones funcionales (17/11 y aceptación PO 18/11; no son validación jurídica)**
@@ -36,23 +36,22 @@ Confirmar exigencias contractuales, finalidad real de país/nacionalidad/género
 Backend bajo KAN-42: pasos A–D, incluida **autorización por categoría y convocatoria**, tras revisión de la secuencia única Alembic. **No crear migraciones desde KAN-107 ni reservar nombres/IDs.** Anas: paso E, formulario basado en definición pública y `pnpm gen:api`. Resolver con PO si coexisten contacto e inscripción 15 h y qué opciones del selector B crean `Application`/`call_id`; se retira la separación obligatoria como lead. C sigue sin verificar; certificado de discapacidad y entidad de derivación propuestos en G6, sin ampliar alcance aprobado. Ver Entregable 4 y Entregable 6.
 
 **Qué puede considerarse finalizado en KAN-107**
-Solo el **análisis y diseño**, después de revisión de Anas y aceptación formal PO, trazabilidad de fuentes y PR documental cuando esté autorizado. No están terminadas la implementación, migraciones, control de acceso dinámico ni validación jurídica. Este paquete está en el [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (abierto hacia `dev`, pendiente de revisión; no fusionado). No modificar Jira a Done por esta entrega.
+Solo el **análisis y diseño**, después de revisión de Anas y aceptación formal PO, trazabilidad de fuentes y PR documental cuando esté autorizado. No están terminadas la implementación, migraciones, control de acceso dinámico ni validación jurídica. Este paquete: Diseño KAN-107, rama documental `docs/KAN-107-data-governance` hacia `dev`. No modificar Jira a Done por esta entrega.
 
-**Decisión sobre migraciones (sin ambigüedad):** Jira contiene una secuencia prevista de admisión → documentos RAG → académico → alertas. Actualmente el diseño **no crea ninguna migración**. Backend incorpora el cambio de KAN-42 a la única cadena compartida cuando llegue su turno, mirando `alembic heads`, no adivinando nombres ni forzando números. Claude no debe generar `revision` ni `down_revision` para KAN-107.
+**Decisión sobre migraciones (sin ambigüedad):** Jira contiene una secuencia prevista de admisión → documentos RAG → académico → alertas. Actualmente el diseño **no crea ninguna migración**. Backend incorpora el cambio de KAN-42 a la única cadena compartida cuando llegue su turno, mirando `alembic heads`, no adivinando nombres ni forzando números. Nadie del equipo (persona o agente de IA) genera `revision` ni `down_revision` bajo KAN-107. En `dev` (19/11/2026, `c4e385c`) la cadena Alembic integrada es `0001_f1_cimientos` → `0003_rag_knowledge` → `0004_requirement_reviews_and_revision_history` → `0006_call_requirements`, con una sola cabeza (`0006`). No existe `0002`; la `0005` de KAN-153 está en revisión y se encadena tras `0006`. Los números no son un orden cronológico: Alembic sigue `down_revision`.
 
 **Aclaración de funcionamiento:** los permisos sensibles pueden otorgarse/revocarse **durante** la convocatoria sin crear otra versión de formulario. Requieren autoridad administrativa, aprobación, motivo, expiración y auditoría; no están programados en el backend actual.
 
 
 ## Decisión PO del 18/11/2026 / PO decision of 18/11/2026
 
-**ES:** aceptada la referencia del bootcamp de **1.250 h** y las recomendaciones asociadas (edad configurable, residencia Madrid obligatoria, conocimientos de programación sin experiencia profesional exigida, motivación inicial opcional y disponibilidad inicial opcional con dedicación intensiva informada). La [decisión canónica y su evidencia](kan-107-1-diccionario-datos-consolidado.md#decisión-po-aceptada-el-18112026--po-decision-accepted-on-18112026) distinguen lo aceptado de lo pendiente y del contrato aún sin modificar. Anas y aceptación final del paquete siguen pendientes.
+**ES:** la copia canónica de la decisión (bootcamp de 1.250 h y recomendaciones asociadas), con su evidencia y lo que sigue pendiente, está en el [Entregable 1](kan-107-1-diccionario-datos-consolidado.md#decisión-po-aceptada-el-18112026--po-decision-accepted-on-18112026). No se repite aquí para evitar divergencias.
 
-**EN:** the PO accepted the **1,250-hour bootcamp** reference and associated recommendations: configurable age, mandatory Madrid-region residence, programming background without professional experience required, optional initial motivation and availability with intensive commitment explained. See the canonical decision/evidence above; API/DB changes are not implemented. Other open decisions, Anas review and final package acceptance remain pending.
-
+**EN:** the canonical copy of the decision (1,250-hour bootcamp and associated recommendations), with evidence and pending items, is in [Deliverable 1](kan-107-1-diccionario-datos-consolidado.md#decisión-po-aceptada-el-18112026--po-decision-accepted-on-18112026). It is not repeated here to avoid drift.
 
 ## English edition (equivalent sections, KAN-107 V2)
 
-**Done.** Consolidated dictionary (14 fields from Anas's inventory plus EduGest fields), per-call form versioning, preliminary privacy assessment, implementation plan and a dynamic access annex. All are documents under review in [PR #24](https://github.com/EduGest-Platform/edugest-platform/pull/24) (open, not merged).
+**Done.** Consolidated dictionary (14 fields from Anas's inventory plus EduGest fields), per-call form versioning, preliminary privacy assessment, implementation plan and a dynamic access annex. All are documents of the KAN-107 design, documentation branch `docs/KAN-107-data-governance` into `dev`.
 
 **Updated source.** KAN-92/93 inventory is now in `dev` via #27; KAN-107 adds governance without duplicating it. The current B evidence supersedes the inconclusive contact screenshot; routing remains a PO decision. C is unverified; certificate status and referring entity are proposed G6. KAN-105 logging is present (not run here); retention must align with KAN-209/#25. Anas cross-review and PO acceptance remain pending.
 
