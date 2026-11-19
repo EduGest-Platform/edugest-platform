@@ -112,13 +112,16 @@ class RequestContextMiddleware:
             )
 
 
-def _error_response(request_id: str, status_code: int, detail, headers: dict[str, str] | None = None) -> JSONResponse:
+def _error_response(request_id: str, status_code: int, detail, headers: dict[str, str] | None = None, code: str | None = None) -> JSONResponse:
     response_headers = {**(headers or {}), REQUEST_ID_HEADER: request_id}
-    return JSONResponse({"detail": detail, "request_id": request_id}, status_code=status_code, headers=response_headers)
+    body = {"detail": detail, "request_id": request_id}
+    if code:
+        body["code"] = code  # stable reason for the UI (app.core.errors.UserFacingError)
+    return JSONResponse(body, status_code=status_code, headers=response_headers)
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
-    return _error_response(_request_id(request.scope), exc.status_code, exc.detail, dict(exc.headers or {}))
+    return _error_response(_request_id(request.scope), exc.status_code, exc.detail, dict(exc.headers or {}), getattr(exc, "code", None))
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:

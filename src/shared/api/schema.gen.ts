@@ -93,6 +93,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/preselection-decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de decisiones de fin de preselección de una candidatura */
+        get: operations["list_preselection_decisions_api_v1_applications__application_id__preselection_decisions_get"];
+        put?: never;
+        /** Terminar la preselección: convocar a selección, retirada expresa o silencio confirmado por una persona */
+        post: operations["post_preselection_decision_api_v1_applications__application_id__preselection_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/requirement-prefilter": {
         parameters: {
             query?: never;
@@ -252,6 +270,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{call_id}/preselection-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Política de silencio de la convocatoria (por defecto: alerta leve a los 2 intentos; alerta de acción a los 4 intentos y 30 días) */
+        get: operations["get_preselection_policy_api_v1_calls__call_id__preselection_policy_get"];
+        /** Editar la política de silencio de una convocatoria (administración y captación). No cambia decisiones ya tomadas */
+        put: operations["put_preselection_policy_api_v1_calls__call_id__preselection_policy_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{call_id}/requirements": {
         parameters: {
             query?: never;
@@ -264,6 +300,23 @@ export interface paths {
         put?: never;
         /** Publicar una definición inmutable; solo administración. Nunca decide admisión */
         post: operations["create_call_requirement_api_v1_calls__call_id__requirements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{call_id}/silence-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Candidaturas en preselección con alerta de silencio leve o de acción; una persona revisa (no se cierra nada solo) */
+        get: operations["silence_review_api_v1_calls__call_id__silence_review_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -673,6 +726,11 @@ export interface components {
             /** Canal */
             canal?: ("email" | "telefono" | "presencial" | "videollamada") | null;
             /**
+             * Resultado
+             * @description Solo para contactos: «sin_respuesta» cuenta para la revisión de silencio.
+             */
+            resultado?: ("respondida" | "sin_respuesta") | null;
+            /**
              * Resumen
              * @description Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
              */
@@ -699,6 +757,8 @@ export interface components {
              * Format: date-time
              */
             occurred_at: string;
+            /** Resultado */
+            resultado: string | null;
             /** Resumen */
             resumen: string;
             /** Tipo */
@@ -834,6 +894,82 @@ export interface components {
             /** Unselected Codes */
             unselected_codes: string[];
         };
+        /** PreselectionDecisionList */
+        PreselectionDecisionList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["PreselectionDecisionOut"][];
+        };
+        /** PreselectionDecisionOut */
+        PreselectionDecisionOut: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "convocada" | "retirada_expresa" | "silencio_confirmado" | "silencio_reprogramado";
+            /** Evidence */
+            evidence: {
+                [key: string]: unknown;
+            };
+            /** From Stage */
+            from_stage: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+            /** To Stage */
+            to_stage: string;
+        };
+        /** PreselectionDecisionWrite */
+        PreselectionDecisionWrite: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "convocada" | "retirada_expresa" | "silencio_confirmado" | "silencio_reprogramado";
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud ni situación personal.
+             */
+            reason: string;
+        };
+        /** PreselectionPolicy */
+        PreselectionPolicy: {
+            /**
+             * Silence Days
+             * @description Días sin respuesta tras el último intento antes de la alerta de acción
+             */
+            silence_days: number;
+            /**
+             * Silence Max Contacts
+             * @description Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)
+             */
+            silence_max_contacts: number;
+            /**
+             * Silence Warning Contacts
+             * @description Intentos sin respuesta para la alerta leve; salta sin esperar días
+             */
+            silence_warning_contacts: number;
+        };
         /** RequirementReviewHistory */
         RequirementReviewHistory: {
             /** Items */
@@ -939,6 +1075,59 @@ export interface components {
             scope_id: string | null;
             /** Scope Type */
             scope_type: string;
+        };
+        /**
+         * SilenceEvidence
+         * @description Why an application is (or is not) pending a silence review. Computed from CRM contacts, never stored as a state.
+         */
+        SilenceEvidence: {
+            /**
+             * Alert Level
+             * @description Nivel de alerta: «leve» avisa pronto; «accion» pide a una persona confirmar o reprogramar
+             */
+            alert_level: ("leve" | "accion") | null;
+            /** Days Without Response */
+            days_without_response: number | null;
+            /** Last Attempt At */
+            last_attempt_at: string | null;
+            /** Silence Days */
+            silence_days: number;
+            /** Silence Max Contacts */
+            silence_max_contacts: number;
+            /** Silence Warning Contacts */
+            silence_warning_contacts: number;
+            /**
+             * Threshold Met
+             * @description Se cumple el umbral de acción: solo entonces se puede confirmar el silencio
+             */
+            threshold_met: boolean;
+            /** Unanswered Attempts */
+            unanswered_attempts: number;
+        };
+        /** SilenceReviewItem */
+        SilenceReviewItem: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Display Name
+             * @description Nombre de la persona, para identificarla en la lista. El correo solo se ve en el expediente
+             */
+            display_name: string;
+            evidence: components["schemas"]["SilenceEvidence"];
+            /** Stage */
+            stage: string;
+        };
+        /** SilenceReviewList */
+        SilenceReviewList: {
+            /** Call Id */
+            call_id: string;
+            /** Items */
+            items: components["schemas"]["SilenceReviewItem"][];
         };
         /** StageCount */
         StageCount: {
@@ -1199,6 +1388,107 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EventOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_preselection_decisions_api_v1_applications__application_id__preselection_decisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionDecisionList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_preselection_decision_api_v1_applications__application_id__preselection_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreselectionDecisionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionDecisionOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La preselección ya terminó o no se cumple el umbral de silencio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1553,6 +1843,100 @@ export interface operations {
             };
         };
     };
+    get_preselection_policy_api_v1_calls__call_id__preselection_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionPolicy"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_preselection_policy_api_v1_calls__call_id__preselection_policy_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreselectionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionPolicy"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_call_requirements_api_v1_calls__call_id__requirements_get: {
         parameters: {
             query?: never;
@@ -1617,6 +2001,51 @@ export interface operations {
             };
             /** @description Referencia o versión en conflicto */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    silence_review_api_v1_calls__call_id__silence_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SilenceReviewList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
