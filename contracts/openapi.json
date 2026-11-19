@@ -913,6 +913,177 @@
         "title": "PersonOut",
         "type": "object"
       },
+      "PrefilterItem": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "definition_id": {
+            "format": "uuid",
+            "title": "Definition Id",
+            "type": "string"
+          },
+          "definition_version": {
+            "title": "Definition Version",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "required",
+              "recommended"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pending",
+              "met",
+              "not_met",
+              "exception_under_review",
+              "exception_approved"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "verified_review": {
+            "title": "Verified Review",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "code",
+          "definition_id",
+          "definition_version",
+          "kind",
+          "result",
+          "verified_review"
+        ],
+        "title": "PrefilterItem",
+        "type": "object"
+      },
+      "PrefilterRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "requirement_refs": {
+            "items": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Requirement Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requirement_refs"
+        ],
+        "title": "PrefilterRequest",
+        "type": "object"
+      },
+      "PrefilterResult": {
+        "properties": {
+          "advisory_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Advisory Refs",
+            "type": "array"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "evaluation_only": {
+            "const": true,
+            "default": true,
+            "title": "Evaluation Only",
+            "type": "boolean"
+          },
+          "human_review_required": {
+            "title": "Human Review Required",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PrefilterItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "proposal_key": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Key"
+          },
+          "proposed_action": {
+            "anyOf": [
+              {
+                "const": "human_review",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Action"
+          },
+          "scope": {
+            "const": "explicit_versions",
+            "default": "explicit_versions",
+            "title": "Scope",
+            "type": "string"
+          },
+          "unresolved_required_refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Required Refs",
+            "type": "array"
+          },
+          "unselected_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unselected Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "call_id",
+          "items",
+          "unselected_codes",
+          "unresolved_required_refs",
+          "advisory_refs",
+          "human_review_required",
+          "proposed_action",
+          "proposal_key"
+        ],
+        "title": "PrefilterResult",
+        "type": "object"
+      },
       "RequirementReviewHistory": {
         "properties": {
           "items": {
@@ -1542,6 +1713,64 @@
         "summary": "Registrar contacto, nota o recordatorio en el CRM",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/requirement-prefilter": {
+      "post": {
+        "description": "Selección explícita de versiones, no catálogo activo. Códigos omitidos exigen revisión humana. No escribe tareas ni cambia etapas.",
+        "operationId": "evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrefilterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrefilterResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito"
+          },
+          "404": {
+            "description": "Candidatura o requisito no encontrado en su convocatoria"
+          },
+          "422": {
+            "description": "Selección vacía, duplicada o con varias versiones de un código"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Evaluar requisitos seleccionados y proponer revisión humana, nunca decidir admisión",
+        "tags": [
+          "requirements"
         ]
       }
     },
