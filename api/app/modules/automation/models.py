@@ -1,4 +1,4 @@
-"""Immutable records of evaluations, not delivery receipts or completed administrative work."""
+"""Update-protected evaluation evidence; authorized application deletion cascades to its records."""
 import uuid
 from datetime import datetime
 
@@ -17,7 +17,7 @@ class AutomationExecution(Base):
         CheckConstraint("outcome IN ('human_review', 'no_action')", name="ck_automation_execution_outcome"),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id"), index=True)
+    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), index=True)
     call_id: Mapped[str] = mapped_column(ForeignKey("call.id"), index=True)
     kind: Mapped[str] = mapped_column(String(40))
     rule_version: Mapped[str] = mapped_column(String(40))

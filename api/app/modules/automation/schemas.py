@@ -2,9 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
-
-from app.modules.requirements.schemas import PrefilterResult
+from pydantic import BaseModel, ConfigDict, JsonValue
 
 
 class AutomationExecutionOut(BaseModel):
@@ -17,7 +15,8 @@ class AutomationExecutionOut(BaseModel):
     idempotency_key: str
     outcome: Literal["human_review", "no_action"]
     stage_at_evaluation: str
-    snapshot: PrefilterResult
+    # Historical JSON stays readable when the live prefilter schema gains required fields.
+    snapshot: dict[str, JsonValue]
     evaluated_at: datetime
 
 

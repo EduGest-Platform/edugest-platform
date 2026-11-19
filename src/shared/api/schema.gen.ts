@@ -67,7 +67,7 @@ export interface paths {
         put?: never;
         /**
          * Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios
-         * @description Solo personal con requirements.review. Resultado y clave calculados por el servidor. Un registro es evidencia de evaluación, no tarea completada ni ahorro.
+         * @description Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.
          */
         post: operations["record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post"];
         delete?: never;
@@ -552,7 +552,10 @@ export interface components {
             outcome: "human_review" | "no_action";
             /** Rule Version */
             rule_version: string;
-            snapshot: components["schemas"]["PrefilterResult"];
+            /** Snapshot */
+            snapshot: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
             /** Stage At Evaluation */
             stage_at_evaluation: string;
         };
@@ -706,6 +709,7 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        JsonValue: unknown;
         /** LoginIn */
         LoginIn: {
             /** Email */
@@ -1129,7 +1133,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Evaluación ya registrada: reintento sin duplicado */
+            /** @description Mismo snapshot y día UTC: reintento sin duplicado */
             200: {
                 headers: {
                     [name: string]: unknown;

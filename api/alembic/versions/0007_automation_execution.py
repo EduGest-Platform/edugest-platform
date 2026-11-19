@@ -24,7 +24,7 @@ def upgrade():
         sa.Column("recorded_by", sa.Uuid(), nullable=False),
         sa.Column("evaluated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
-        sa.ForeignKeyConstraint(["application_id"], ["application.id"]),
+        sa.ForeignKeyConstraint(["application_id"], ["application.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["call_id"], ["call.id"]),
         sa.ForeignKeyConstraint(["recorded_by"], ["app_user.id"]),
         sa.UniqueConstraint("idempotency_key", name="uq_automation_execution_key"),
@@ -36,7 +36,7 @@ def upgrade():
     op.execute("""CREATE FUNCTION reject_automation_execution_change() RETURNS trigger AS $$
     BEGIN RAISE EXCEPTION 'Automation executions are immutable'; END;
     $$ LANGUAGE plpgsql""")
-    op.execute("""CREATE TRIGGER immutable_automation_execution BEFORE UPDATE OR DELETE ON automation_execution
+    op.execute("""CREATE TRIGGER immutable_automation_execution BEFORE UPDATE ON automation_execution
     FOR EACH ROW EXECUTE FUNCTION reject_automation_execution_change()""")
 
 

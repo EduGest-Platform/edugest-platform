@@ -482,7 +482,11 @@
             "type": "string"
           },
           "snapshot": {
-            "$ref": "#/components/schemas/PrefilterResult"
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Snapshot",
+            "type": "object"
           },
           "stage_at_evaluation": {
             "title": "Stage At Evaluation",
@@ -875,6 +879,7 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "JsonValue": {},
       "LoginIn": {
         "properties": {
           "email": {
@@ -1834,7 +1839,7 @@
     },
     "/api/v1/applications/{application_id}/automation-executions/requirement-prefilter": {
       "post": {
-        "description": "Solo personal con requirements.review. Resultado y clave calculados por el servidor. Un registro es evidencia de evaluación, no tarea completada ni ahorro.",
+        "description": "Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.",
         "operationId": "record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post",
         "parameters": [
           {
@@ -1867,7 +1872,7 @@
                 }
               }
             },
-            "description": "Evaluación ya registrada: reintento sin duplicado"
+            "description": "Mismo snapshot y día UTC: reintento sin duplicado"
           },
           "201": {
             "content": {

@@ -17,9 +17,9 @@ ERRORS = {403: {"description": "Sin permiso o fuera de ámbito"}, 404: {"descrip
 
 @router.post("/applications/{application_id}/automation-executions/requirement-prefilter",
              response_model=AutomationExecutionOut, status_code=201,
-             responses={**ERRORS, 200: {"model": AutomationExecutionOut, "description": "Evaluación ya registrada: reintento sin duplicado"}},
+             responses={**ERRORS, 200: {"model": AutomationExecutionOut, "description": "Mismo snapshot y día UTC: reintento sin duplicado"}},
              summary="Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios",
-             description="Solo personal con requirements.review. Resultado y clave calculados por el servidor. Un registro es evidencia de evaluación, no tarea completada ni ahorro.")
+             description="Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.")
 def record_execution(application_id: uuid.UUID, body: PrefilterRequest, response: Response, p: CurrentPrincipal, db: DB) -> AutomationExecutionOut:
     execution, created = record_requirement_execution(db, p, application_id, body)
     if not created:
