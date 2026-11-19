@@ -4,49 +4,70 @@
 >
 > English: Reference commands only; check environment and credentials; no production migration without approval.
 
-## Estado / Current evidence (11/11/2026, fase F1)
+## Estado / Current evidence (19/11/2026, KAN-86)
 
-- `pnpm exec tsc --noEmit -p tsconfig.json`: **PASS**.
-- `pnpm test` (Vitest): **PASS** 16/16; el `EPERM` del 10/11 no reaparece (era transitorio).
-- `pnpm build`: **PASS** (dist/ generado).
-- `docker compose -f infra/compose.yaml up -d --build`: **PASS**; `db` healthy y `api` arrancada con migraciones + seed idempotente.
-- API verificada en vivo: `/health` ok+db, login sintético, 401/403 (incl. ámbito horizontal), alta y lectura de candidatura, auditoría y persistencia tras reinicio: **PASS** (detalle en `docs/reports/F1_GIT_DOCKER_POSTGRES_FASTAPI_REPORT.md`).
-- **Git:** repositorio propio inicializado el 11/11 en la carpeta del proyecto, rama `main`. Sigue existiendo un repo accidental sin commits en el directorio de usuario de Windows: **no usar Git desde fuera de la carpeta del proyecto** hasta que Eli lo retire. / Own repository initialised 11/11 (branch `main`). An accidental no-commit repo still exists in the Windows user directory: do not run Git from outside the project folder until it is removed.
-- **Secretos:** la contraseña local de PostgreSQL vive en `infra/.env` y `api/.env` (ignorados por Git); plantillas en `infra/.env.example` y `api/.env.example`.
+Verified on Windows 10 Pro (Git Bash and PowerShell), Node 24.18.0, pnpm 10.34.3, Python venv created with `uv`, PostgreSQL 16 + pgvector in the local Docker container. Base `dev` `6a55b66`. Synthetic data only. No password or connection string is written here: they live in the git-ignored `infra/.env` and `api/.env` (templates: `*.env.example`).
 
-## 1. Frontend / Interfaz (PowerShell, raíz del repositorio)
+| Command | Result 19/11 |
+|---|---|
+| `pnpm install --frozen-lockfile` | PASS, 12.7 s |
+| `pnpm exec tsc --noEmit -p .` | PASS |
+| `pnpm test` (Vitest) | PASS, 5 files / 48 tests, 3.0 s (see KAN-87 for the Windows `EPERM` cause and fix) |
+| `pnpm build` | PASS (`dist/`, 443 kB JS) |
+| `uv venv .venv` + `uv pip install -e ".[dev]"` (in `api/`) | PASS |
+| `alembic upgrade head` / `alembic check` on an empty DB | `0005 (head)`; no pending operations |
+| `python -m app.seed` (twice) | Loaded, then "datos ya presentes" (idempotent) |
+| `uvicorn app.main:app --port 8785` + `curl /health` | `{"status":"ok","database":"ok"}` |
+| `pytest` (complete API suite, disposable test DB) | PASS: 559 tests, 0 failures, 0 errors (KAN-85 branch, which adds 2 health tests to `dev`) |
+| `ruff check . --select E4,E7,E9,F` (0.17.5, in `api/`) | PASS |
+| `docker compose -f infra/compose.yaml up -d --build --wait` + `infra/smoke-test.sh` | NOT_RUN locally on 19/11 (shared stack already running); PASS in the CI `compose` job on every PR |
 
-```powershell
+Older evidence: F1 on 11/11 (`docs/reports/F1_GIT_DOCKER_POSTGRES_FASTAPI_REPORT.md`) and KAN-33 (`docs/reports/KAN-33-platform-validation.md`).
+
+## 1. Frontend / Interfaz (repository root)
+
+The project uses **pnpm** (`pnpm-lock.yaml`); `npm ci` fails because there is no `package-lock.json`.
+
+```bash
 node --version
 pnpm --version
-pnpm install --frozen-lockfile  # approval for dependency install + working repo copy
-pnpm exec tsc --noEmit -p tsconfig.json
-pnpm test                    # blocked by EPERM in Codex audit: investigate permissions
-pnpm build                   # creates dist/ only after baseline verified
-pnpm dev                     # local VS Code; NOT if already running inside Figma Make
+pnpm install --frozen-lockfile
+pnpm exec tsc --noEmit -p .
+pnpm test                    # Vitest, once; `pnpm exec vitest` for watch mode
+pnpm build                   # creates dist/
+pnpm dev                     # local only; NOT if Figma Make already runs the preview
+VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev   # web against the local API (API mode)
 ```
 
-**ES:** Verificar `package.json` y `pnpm-lock.yaml` antes de instalar, no reescribir dependencias para evitar EPERM sin diagnosticarlo. **EN:** Use an isolated writable temp path to diagnose EPERM; do not bypass tests silently.
+**ES:** si Vitest falla con `EPERM` en `node_modules/.vite-temp`, ver `docs/reports/KAN-87-vitest-eperm.md`; no saltarse las pruebas. **EN:** if Vitest fails with `EPERM` on `node_modules/.vite-temp`, see the KAN-87 report; never skip the tests.
 
-## 2. PostgreSQL + FastAPI (PowerShell, desde raíz)
+## 2. PostgreSQL + FastAPI
 
-```powershell
-docker --version
-# One-time: copy infra/.env.example to infra/.env and set a random GISTAR_DB_PASSWORD
-# (generation snippet inside the example file). Same for api/.env.example -> api/.env.
-docker compose -f infra/compose.yaml config --quiet   # validates without printing interpolated secrets
-docker compose -f infra/compose.yaml up -d --build
-# Check API/DB readiness and ports; commands below assume api dependencies installed
+```bash
+# One-time: copy infra/.env.example to infra/.env and api/.env.example to api/.env,
+# set a random GISTAR_DB_PASSWORD and GISTAR_DEMO_PASSWORD (no defaults; never commit them).
+docker compose -f infra/compose.yaml config --quiet   # validates without printing secrets
+docker compose -f infra/compose.yaml up -d --build --wait
 cd api
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"      # check pyproject and consent to install
-alembic upgrade head         # LOCAL SYNTHETIC DB ONLY
-python -m pytest
-uvicorn app.main:app --reload
+uv venv .venv                     # or: python -m venv .venv
+uv pip install -p .venv -e ".[dev]"
+.venv/Scripts/python -m alembic upgrade head   # Windows; .venv/bin/python on Linux/macOS. LOCAL SYNTHETIC DB ONLY
+.venv/Scripts/python -m app.seed
+.venv/Scripts/python -m uvicorn app.main:app --reload   # http://localhost:8000/docs and /health
 ```
 
-**ES:** Confirmar `api/README.md` y `infra/compose.yaml` (servicios, puertos y nombres) antes de arrancar; no ejecutar Alembic contra BD externa/producción. **EN:** Never copy demo passwords/URL into public docs; use `.env.example` without secrets.
+**Tests (API).** `pytest` migrates `base → head` and empties its database on every run. Point `GISTAR_TEST_DATABASE_URL` at a database **only you** use: two runs on the same test database break each other.
+
+```bash
+set -a; . ./.env; set +a          # bash: load api/.env without printing it
+export GISTAR_ENVIRONMENT=local
+.venv/Scripts/python -m pytest -p no:cacheprovider --basetemp=<a writable folder>   # pyproject already adds -q; another -q hides the summary
+```
+
+- Windows: `--basetemp` avoids a `PermissionError` in the system temp folder; the complete suite takes more than 10 minutes.
+- After changing the API contract: `python -m scripts.export_openapi`, convert `contracts/openapi.json` to LF, then `pnpm gen:api`.
+
+**ES:** no ejecutar Alembic contra una base externa ni de producción; `alembic downgrade base` borra todas las tablas. **EN:** never run Alembic against an external or production database; `downgrade base` drops every table.
 
 ## 3. Contracts & E2E / Contratos y pruebas de recorrido
 
