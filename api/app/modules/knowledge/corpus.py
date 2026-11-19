@@ -24,10 +24,11 @@ STATUSES = ("vigente", "obsoleto")
 # The responsible area is a staff role, never a person's name (no personal data in the knowledge base).
 MAINTAINER_ROLES = frozenset(ROLE_PERMISSIONS)
 REQUIRED_FIELDS = ("id", "file", "title", "cohort", "version", "valid_from", "status", "synthetic", "maintained_by")
-# Ids and versions reach reports and audit events: plain identifiers only (column limits included), and never
-# values that look like personal data, such as a phone number or a DNI.
-SAFE_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")
-SAFE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$")
+# Ids and versions reach reports and audit events, so they follow a domain format with at most 3 digits:
+# no DNI (8 digits), NIE (7) or phone number (9) can fit, and nothing can be glued with separators.
+# The personal data detector still runs on them as a second check.
+SAFE_KEY = re.compile(r"^[A-Za-z]{1,4}[0-9]{1,3}$")  # A1, B12, DOC7
+SAFE_VERSION = re.compile(r"^v[0-9]{1,3}$")  # v1, v2, v10
 MAX_TITLE = 200
 
 
@@ -102,9 +103,9 @@ def _to_document(root: Path, entry: dict) -> SourceDocument:
     if missing:
         raise CorpusError(f"missing fields: {', '.join(missing)}")
     if not _is_safe(SAFE_KEY, entry["id"]):
-        raise CorpusError("id must be 1-100 letters, digits, '-' or '_', with no personal data")
+        raise CorpusError("id must be 1-4 letters followed by 1-3 digits (for example A1)")
     if not _is_safe(SAFE_VERSION, entry["version"]):
-        raise CorpusError("version must be 1-20 letters, digits, '.', '-' or '_', with no personal data")
+        raise CorpusError("version must be v followed by 1-3 digits (for example v2)")
     if entry["synthetic"] is not True:
         raise CorpusError("only synthetic documents can be ingested")
     if entry["cohort"] not in COHORT_SCOPE:

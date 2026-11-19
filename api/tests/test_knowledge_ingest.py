@@ -241,3 +241,11 @@ def test_a_failure_while_rejecting_never_prints_the_title(corpus, capsys, monkey
     assert main(["--corpus", str(corpus)]) == 1
     report = capsys.readouterr().out
     assert "A1: SQLAlchemyError" in report and EMAIL not in report
+
+
+def test_a_compound_id_never_reaches_the_report(db, corpus, capsys):  # review #51, point 6
+    update_entry(corpus, "A1", id="A1_12345678Z")
+    assert main(["--corpus", str(corpus)]) == 1
+    report = capsys.readouterr().out
+    assert "\n#1 " in report and "12345678Z" not in report
+    assert stored(db, "A1_12345678Z", "v1") is None

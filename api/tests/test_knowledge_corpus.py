@@ -61,8 +61,8 @@ def test_valid_until_is_optional(tmp_path):
         ({"status": "borrador"}, "status must be one of"),
         ({"valid_from": "19/11/2026"}, "not an ISO date"),
         ({"valid_until": "2026-10-01"}, "before valid_from"),
-        ({"version": "v" * 21}, "version must be 1-20"),
-        ({"version": "v1 / Persona Sintética"}, "version must be 1-20"),
+        ({"version": "v" * 21}, "version must be v followed"),
+        ({"version": "v1 / Persona Sintética"}, "version must be v followed"),
         ({"file": "../outside.md"}, "inside the corpus folder"),
         ({"file": "missing.md"}, "file not found"),
     ],
@@ -132,3 +132,26 @@ def test_duplicated_ids_that_look_like_personal_data_are_named_by_position(tmp_p
     with pytest.raises(CorpusError) as error:
         load_corpus(tmp_path)
     assert "#1, #2" in str(error.value) and "612345678" not in str(error.value)
+
+
+@pytest.mark.parametrize("value", ["A1_12345678Z", "A12345678Z", "A1-612345678", "doc_A1", "A1234"])
+def test_compound_or_long_ids_are_rejected_and_reported_by_position(tmp_path, value):  # review #51, point 6
+    documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "id": value}))
+    assert documents == []
+    [entry] = rejected
+    assert entry.source_key == "#1" and value not in entry.reason
+
+
+@pytest.mark.parametrize("value", ["v1_12345678Z", "v1234", "x1", "V1"])
+def test_versions_outside_the_v_number_format_are_rejected(tmp_path, value):  # review #51, point 6
+    documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "version": value}))
+    assert documents == []
+    assert "version must be v followed" in rejected[0].reason and value not in rejected[0].reason
+
+
+def test_duplicated_compound_ids_are_named_by_position(tmp_path):  # review #51, point 6
+    entry = {**VALID, "id": "A1_12345678Z"}
+    (tmp_path / "corpus.json").write_text(json.dumps([entry, entry]), encoding="utf-8")
+    with pytest.raises(CorpusError) as error:
+        load_corpus(tmp_path)
+    assert "#1, #2" in str(error.value) and "12345678Z" not in str(error.value)
