@@ -56,6 +56,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/requirement-prefilter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evaluar requisitos seleccionados y proponer revisión humana, nunca decidir admisión
+         * @description Selección explícita de versiones, no catálogo activo. Códigos omitidos exigen revisión humana. No escribe tareas ni cambia etapas.
+         */
+        post: operations["evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/requirement-reviews": {
         parameters: {
             query?: never;
@@ -653,6 +673,73 @@ export interface components {
              */
             id: string;
         };
+        /** PrefilterItem */
+        PrefilterItem: {
+            /** Code */
+            code: string;
+            /**
+             * Definition Id
+             * Format: uuid
+             */
+            definition_id: string;
+            /** Definition Version */
+            definition_version: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Ref */
+            ref: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Verified Review */
+            verified_review: boolean;
+        };
+        /** PrefilterRequest */
+        PrefilterRequest: {
+            /** Requirement Refs */
+            requirement_refs: string[];
+        };
+        /** PrefilterResult */
+        PrefilterResult: {
+            /** Advisory Refs */
+            advisory_refs: string[];
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Evaluation Only
+             * @default true
+             * @constant
+             */
+            evaluation_only: true;
+            /** Human Review Required */
+            human_review_required: boolean;
+            /** Items */
+            items: components["schemas"]["PrefilterItem"][];
+            /** Proposal Key */
+            proposal_key: string[] | null;
+            /** Proposed Action */
+            proposed_action: "human_review" | null;
+            /**
+             * Scope
+             * @default explicit_versions
+             * @constant
+             */
+            scope: "explicit_versions";
+            /** Unresolved Required Refs */
+            unresolved_required_refs: string[];
+            /** Unselected Codes */
+            unselected_codes: string[];
+        };
         /** RequirementReviewHistory */
         RequirementReviewHistory: {
             /** Items */
@@ -922,6 +1009,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrefilterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrefilterResult"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito no encontrado en su convocatoria */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Selección vacía, duplicada o con varias versiones de un código */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
