@@ -39,7 +39,8 @@ def run_ingest(db: Session, corpus_dir: str, dry_run: bool = False) -> list[Inge
             _finish(db, dry_run)
         except SQLAlchemyError as exc:
             db.rollback()
-            result = IngestResult(doc.source_key, doc.version, "failed", title=doc.title, reason=_safe_error(exc))
+            # No title: a failure can happen while rejecting a document whose title holds personal data.
+            result = IngestResult(doc.source_key, doc.version, "failed", reason=_safe_error(exc))
         results.append(result)
     # A key whose new version was rejected or failed keeps its current version: it is never retired.
     protected = {e.source_key for e in unreadable} | {r.source_key for r in results if r.action in ("rejected", "failed")}

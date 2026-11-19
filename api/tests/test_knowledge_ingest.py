@@ -222,3 +222,22 @@ def test_a_title_change_rewrites_every_chunk(db, corpus):  # review #51, point 3
     texts = list(db.scalars(select(KnowledgeChunk.text).join(KnowledgeDocument).where(KnowledgeDocument.source_key == "A4")))
     # Every chunk carries the new title (the old in-file heading now reads as a section, which is expected).
     assert texts and all(t.startswith("Normas de asistencia revisadas") for t in texts)
+
+
+def test_a_failure_while_rejecting_never_prints_the_title(corpus, capsys, monkeypatch):  # review #51, point 5
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from app.core import audit
+
+    real = audit.record
+
+    def fails_on_rejection(db, actor, action, *args, **kwargs):
+        if action == "knowledge.document.rejected":
+            raise SQLAlchemyError("synthetic failure")
+        return real(db, actor, action, *args, **kwargs)
+
+    monkeypatch.setattr(audit, "record", fails_on_rejection)
+    update_entry(corpus, "A1", title=f"Brief de {EMAIL}")
+    assert main(["--corpus", str(corpus)]) == 1
+    report = capsys.readouterr().out
+    assert "A1: SQLAlchemyError" in report and EMAIL not in report

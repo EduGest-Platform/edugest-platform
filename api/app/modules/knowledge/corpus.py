@@ -15,6 +15,7 @@ from datetime import date
 from pathlib import Path
 
 from app.core.authz import ROLE_PERMISSIONS
+from app.modules.knowledge.privacy import find_personal_data
 
 MANIFEST = "corpus.json"
 # Corpus cohorts (the letters used by the question bank) -> real cohort IDs of the synthetic seed.
@@ -23,7 +24,8 @@ STATUSES = ("vigente", "obsoleto")
 # The responsible area is a staff role, never a person's name (no personal data in the knowledge base).
 MAINTAINER_ROLES = frozenset(ROLE_PERMISSIONS)
 REQUIRED_FIELDS = ("id", "file", "title", "cohort", "version", "valid_from", "status", "synthetic", "maintained_by")
-# Ids and versions reach reports and audit events, so they are restricted to plain identifiers (column limits included).
+# Ids and versions reach reports and audit events: plain identifiers only (column limits included), and never
+# values that look like personal data, such as a phone number or a DNI.
 SAFE_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")
 SAFE_VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$")
 MAX_TITLE = 200
@@ -76,7 +78,7 @@ def entry_reference(entry: dict, position: int) -> str:
 
 
 def _is_safe(pattern: re.Pattern, value: object) -> bool:
-    return isinstance(value, str) and pattern.fullmatch(value) is not None
+    return isinstance(value, str) and pattern.fullmatch(value) is not None and not find_personal_data(value)
 
 
 def _read_manifest(path: Path) -> list[dict]:
@@ -100,9 +102,9 @@ def _to_document(root: Path, entry: dict) -> SourceDocument:
     if missing:
         raise CorpusError(f"missing fields: {', '.join(missing)}")
     if not _is_safe(SAFE_KEY, entry["id"]):
-        raise CorpusError("id must be 1-100 letters, digits, '-' or '_'")
+        raise CorpusError("id must be 1-100 letters, digits, '-' or '_', with no personal data")
     if not _is_safe(SAFE_VERSION, entry["version"]):
-        raise CorpusError("version must be 1-20 letters, digits, '.', '-' or '_'")
+        raise CorpusError("version must be 1-20 letters, digits, '.', '-' or '_', with no personal data")
     if entry["synthetic"] is not True:
         raise CorpusError("only synthetic documents can be ingested")
     if entry["cohort"] not in COHORT_SCOPE:

@@ -111,3 +111,24 @@ def test_an_unsafe_id_is_reported_by_position_and_never_echoed(tmp_path):
 def test_errors_never_echo_manifest_values(tmp_path):
     documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "cohort": "tutoria@example.test"}))
     assert documents == [] and "example.test" not in rejected[0].reason
+
+
+@pytest.mark.parametrize("value", ["612345678", "12345678Z"])
+def test_ids_that_look_like_personal_data_are_reported_by_position(tmp_path, value):  # review #51, point 4
+    documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "id": value}))
+    assert documents == []
+    [entry] = rejected
+    assert entry.source_key == "#1" and value not in entry.reason
+
+
+def test_a_version_that_looks_like_personal_data_is_rejected(tmp_path):  # review #51, point 4
+    documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "version": "612345678"}))
+    assert documents == [] and "version must be" in rejected[0].reason and "612345678" not in rejected[0].reason
+
+
+def test_duplicated_ids_that_look_like_personal_data_are_named_by_position(tmp_path):  # review #51, point 4
+    entry = {**VALID, "id": "612345678"}
+    (tmp_path / "corpus.json").write_text(json.dumps([entry, entry]), encoding="utf-8")
+    with pytest.raises(CorpusError) as error:
+        load_corpus(tmp_path)
+    assert "#1, #2" in str(error.value) and "612345678" not in str(error.value)
