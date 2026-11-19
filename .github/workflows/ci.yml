@@ -129,8 +129,8 @@ jobs:
           assert not set(staging) & names, 'staging and production must not share service names'
           assert st['databases'][0]['name'] != d['databases'][0]['name'], 'staging needs its own database'
           assert st['databases'][0]['postgresMajorVersion'] == '16'
-          # ADR-0008: staging also deploys manually until an exception is approved and recorded.
-          assert all(s['branch'] == 'dev' and s['autoDeployTrigger'] == 'off' for s in staging.values()), 'staging auto-deploy must stay off'
+          # ADR-0008 exception (PO, 2026-11-19): staging deploys from dev only after GitHub checks pass; production stays off.
+          assert all(s['branch'] == 'dev' and s['autoDeployTrigger'] == 'checksPass' for s in staging.values()), 'staging must deploy only after checks pass'
           api_env = {e['key']: e for e in staging['edugest-api-staging']['envVars']}
           assert api_env['GISTAR_ENVIRONMENT']['value'] == 'staging'
           assert api_env['GISTAR_DEMO_PASSWORD']['generateValue'] is True

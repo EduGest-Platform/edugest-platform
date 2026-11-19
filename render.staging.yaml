@@ -22,8 +22,8 @@ services:
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
     plan: free
-    # Despliegue manual mientras no conste la aprobación de la excepción a ADR-0008 (ver docs/deploy/README.md).
-    autoDeployTrigger: "off"
+    # Excepción a ADR-0008 aprobada por la PO el 19/11/2026: cada push a `dev` se despliega solo si el CI de GitHub pasa.
+    autoDeployTrigger: checksPass
     healthCheckPath: /health
     # Migraciones y semilla corren al arrancar, en api/docker-entrypoint.sh.
     envVars:
@@ -44,7 +44,7 @@ services:
     name: edugest-web-staging
     runtime: static
     branch: dev
-    autoDeployTrigger: "off" # Igual que la API: manual hasta que se apruebe la excepción a ADR-0008.
+    autoDeployTrigger: checksPass # Igual que la API (excepción a ADR-0008 aprobada por la PO el 19/11/2026).
     # El frontend está en la raíz del repo (ADR-0001), por eso no hace falta rootDir.
     buildCommand: npm install -g pnpm@10.34.3 && pnpm install --frozen-lockfile && pnpm build
     staticPublishPath: ./dist
