@@ -2,7 +2,8 @@
 
 The pipeline does not know where documents come from (see corpus.py) and never commits: the caller decides,
 one transaction per document, so a failure never leaves half a document behind and a dry run is a rollback.
-Steps: personal data check (fail closed) -> chunking -> create, update or skip by content hash -> audit.
+Steps: personal data check on title and text (fail closed) -> chunking -> create, update or skip by content
+hash -> audit. Chunks are built from title and text, so the hash covers both: a title change rewrites them.
 Embeddings come in a later increment; until then chunks are stored without a vector (keyword search works).
 """
 
@@ -43,20 +44,21 @@ class IngestResult:
     reason: str | None = None
 
 
-def content_hash(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+def content_hash(title: str, text: str) -> str:
+    """Fingerprint of everything the chunks are built from."""
+    return hashlib.sha256(f"{title}\n{text}".encode("utf-8")).hexdigest()
 
 
 def ingest_document(db: Session, doc: SourceDocument, known_names: list[str]) -> IngestResult:
     """Creates, updates or skips one document version. Flushes but never commits."""
-    findings = find_personal_data(doc.text, known_names)
+    findings = find_personal_data(f"{doc.title}\n{doc.text}", known_names)
     if findings:
         return _reject(db, doc, "personal_data", f"personal data: {', '.join(findings)}", kinds=findings)
     chunks = split_into_chunks(doc.title, doc.text)
     if not chunks:
         return _reject(db, doc, "no_content", "no content to index")
 
-    digest = content_hash(doc.text)
+    digest = content_hash(doc.title, doc.text)
     stored = db.scalar(
         select(KnowledgeDocument).where(KnowledgeDocument.source_key == doc.source_key, KnowledgeDocument.version == doc.version)
     )
@@ -82,17 +84,18 @@ def ingest_document(db: Session, doc: SourceDocument, known_names: list[str]) ->
     return _result(doc, action, stored)
 
 
-def retire_missing(db: Session, loaded_versions: dict[str, str], unreadable_keys: set[str]) -> list[IngestResult]:
+def retire_missing(db: Session, loaded_versions: dict[str, str], protected_keys: set[str]) -> list[IngestResult]:
     """Marks as obsolete (never deletes) current documents that left the corpus or were replaced by a new version.
 
-    A key whose corpus entry could not be read is left alone: a typo must not make a good document disappear.
+    Protected keys are left alone: an unreadable entry, or a new version that was rejected or failed, must never
+    retire the version that is still usable.
     """
     results = []
     current = db.scalars(
         select(KnowledgeDocument).where(KnowledgeDocument.status == "vigente").order_by(KnowledgeDocument.source_key, KnowledgeDocument.version)
     )
     for stored in current:
-        if stored.source_key in unreadable_keys or loaded_versions.get(stored.source_key) == stored.version:
+        if stored.source_key in protected_keys or loaded_versions.get(stored.source_key) == stored.version:
             continue
         stored.status = "obsoleto"
         audit.record(db, None, "knowledge.document.retired", TARGET, str(stored.id), source_key=stored.source_key, version=stored.version)
@@ -124,12 +127,13 @@ def _embedded(stored: KnowledgeDocument) -> bool:
 def _reject(db: Session, doc: SourceDocument, code: str, reason: str, **meta) -> IngestResult:
     audit.record(db, None, "knowledge.document.rejected", TARGET, doc.source_key, source_key=doc.source_key, version=doc.version, reason=code, **meta)
     db.flush()
-    return _result(doc, "rejected", None, reason=reason)
+    # The title may hold the rejected data: it is not carried into the report.
+    return _result(doc, "rejected", None, reason=reason, show_title=False)
 
 
-def _result(doc: SourceDocument, action: str, stored: KnowledgeDocument | None, reason: str | None = None) -> IngestResult:
+def _result(doc: SourceDocument, action: str, stored: KnowledgeDocument | None, reason: str | None = None, show_title: bool = True) -> IngestResult:
     return IngestResult(
-        doc.source_key, doc.version, action, title=doc.title, scope_id=doc.scope_id, status=doc.status,
+        doc.source_key, doc.version, action, title=doc.title if show_title else None, scope_id=doc.scope_id, status=doc.status,
         valid_from=doc.valid_from, valid_until=doc.valid_until, maintained_by=doc.maintained_by,
         chunks=len(stored.chunks) if stored is not None else None,
         embedded=_embedded(stored) if stored is not None else False, reason=reason,

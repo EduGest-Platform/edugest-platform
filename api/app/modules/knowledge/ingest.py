@@ -41,7 +41,10 @@ def run_ingest(db: Session, corpus_dir: str, dry_run: bool = False) -> list[Inge
             db.rollback()
             result = IngestResult(doc.source_key, doc.version, "failed", title=doc.title, reason=_safe_error(exc))
         results.append(result)
-    results += retire_missing(db, {d.source_key: d.version for d in documents}, {e.source_key for e in unreadable})
+    # A key whose new version was rejected or failed keeps its current version: it is never retired.
+    protected = {e.source_key for e in unreadable} | {r.source_key for r in results if r.action in ("rejected", "failed")}
+    loaded = {d.source_key: d.version for d in documents if d.source_key not in protected}
+    results += retire_missing(db, loaded, protected)
     _finish(db, dry_run)
     return results
 

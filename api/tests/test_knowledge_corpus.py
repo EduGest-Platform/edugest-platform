@@ -61,7 +61,8 @@ def test_valid_until_is_optional(tmp_path):
         ({"status": "borrador"}, "status must be one of"),
         ({"valid_from": "19/11/2026"}, "not an ISO date"),
         ({"valid_until": "2026-10-01"}, "before valid_from"),
-        ({"version": "v" * 21}, "longer than 20"),
+        ({"version": "v" * 21}, "version must be 1-20"),
+        ({"version": "v1 / Persona Sintética"}, "version must be 1-20"),
         ({"file": "../outside.md"}, "inside the corpus folder"),
         ({"file": "missing.md"}, "file not found"),
     ],
@@ -98,3 +99,15 @@ def test_a_broken_manifest_stops_the_whole_ingest(tmp_path, manifest, message):
         (tmp_path / "corpus.json").write_text(manifest, encoding="utf-8")
     with pytest.raises(CorpusError, match=message):
         load_corpus(tmp_path)
+
+
+def test_an_unsafe_id_is_reported_by_position_and_never_echoed(tmp_path):
+    documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "id": "tutoria@example.test"}))
+    assert documents == []
+    [entry] = rejected
+    assert entry.source_key == "#1" and "example.test" not in entry.reason
+
+
+def test_errors_never_echo_manifest_values(tmp_path):
+    documents, rejected = load_corpus(make_corpus(tmp_path, {**VALID, "cohort": "tutoria@example.test"}))
+    assert documents == [] and "example.test" not in rejected[0].reason

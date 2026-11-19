@@ -175,3 +175,50 @@ def test_the_report_lists_every_document_and_a_summary(corpus, capsys):  # CA10
 def test_a_broken_manifest_exits_with_2(corpus):
     (corpus / "corpus.json").write_text("{not json", encoding="utf-8")
     assert main(["--corpus", str(corpus)]) == 2
+
+
+def test_a_rejected_new_version_never_retires_the_current_one(db, corpus):  # review #51, point 1
+    run_ingest(db, str(corpus))
+    update_entry(corpus, "A2", version="v3")
+    with (corpus / "A2-calendario-v2.md").open("a", encoding="utf-8") as f:
+        f.write(f"\nDudas: {EMAIL}\n")
+    assert actions(run_ingest(db, str(corpus)))[("A2", "v3")] == "rejected"
+    assert stored(db, "A2", "v2").status == "vigente" and stored(db, "A2", "v3") is None
+
+
+def test_a_failed_new_version_never_retires_the_current_one(db, corpus, monkeypatch):  # review #51, point 1
+    import app.modules.knowledge.ingest as ingest_module
+    from sqlalchemy.exc import SQLAlchemyError
+
+    run_ingest(db, str(corpus))
+    update_entry(corpus, "A2", version="v3")
+    real = ingest_module.ingest_document
+
+    def fails_for_a2(session, doc, names):
+        if doc.source_key == "A2":
+            raise SQLAlchemyError("synthetic failure")
+        return real(session, doc, names)
+
+    monkeypatch.setattr(ingest_module, "ingest_document", fails_for_a2)
+    assert actions(run_ingest(db, str(corpus)))[("A2", "v3")] == "failed"
+    assert stored(db, "A2", "v2").status == "vigente"
+
+
+def test_personal_data_in_the_title_is_never_stored_audited_or_printed(db, corpus, capsys):  # review #51, point 2
+    update_entry(corpus, "A1", title=f"Brief de {EMAIL}")
+    assert main(["--corpus", str(corpus)]) == 1
+    assert EMAIL not in capsys.readouterr().out
+    db.expire_all()
+    assert stored(db, "A1", "v1") is None
+    assert not any(EMAIL in chunk for chunk in db.scalars(select(KnowledgeChunk.text)))
+    assert all(EMAIL not in json.dumps(e.meta) for e in db.scalars(select(AuditEvent)))
+
+
+def test_a_title_change_rewrites_every_chunk(db, corpus):  # review #51, point 3
+    run_ingest(db, str(corpus))
+    update_entry(corpus, "A4", title="Normas de asistencia revisadas")
+    assert actions(run_ingest(db, str(corpus)))[("A4", "v1")] == "updated"
+    db.expire_all()
+    texts = list(db.scalars(select(KnowledgeChunk.text).join(KnowledgeDocument).where(KnowledgeDocument.source_key == "A4")))
+    # Every chunk carries the new title (the old in-file heading now reads as a section, which is expected).
+    assert texts and all(t.startswith("Normas de asistencia revisadas") for t in texts)
