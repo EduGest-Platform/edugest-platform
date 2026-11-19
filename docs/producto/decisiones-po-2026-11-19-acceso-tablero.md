@@ -1,6 +1,6 @@
 # Decisiones PO 19/11/2026: acceso, invitaciones, tablero y comunicaciones / PO decisions: access, invitations, board and communications
 
-**Estado / Status:** decisiones de la Product Owner (Elizabeth) del 19/11/2026. **No implementadas** salvo donde se indica. El envío automático de correos de estado está confirmado por Melissa el 19/11/2026 según la PO; no hay acta en el repositorio. / PO decisions, not implemented unless stated.
+**Estado / Status:** decisiones de la Product Owner (Elizabeth) del 19/11/2026. **No implementadas** salvo donde se indica. **Discrepancia abierta:** la PO indica que Melissa confirmó el 19/11/2026 el envío automático de correos de estado, pero la revisión del Drive (consolidación del 19/11) no encontró esa respuesta: el documento «Preguntas para Melissa: Ronda 3» del 19/11 solo contiene la propuesta. Hasta adjuntar la respuesta, tratar D6 como decisión PO pendiente de evidencia de Melissa. / PO decisions, not implemented unless stated.
 
 ## 1. Decisiones / Decisions
 
@@ -11,7 +11,7 @@
 | D3 | Personal | Administración, coordinación, captación, selección y docente **entran por invitación de administración** (administración puede cambiar quién invita) |
 | D4 | Administración | Corresponde a **dirección general**. Tiene un **panel para dar, modificar y quitar permisos** |
 | D5 | Coordinación | **Mismas funciones que administración, sin poder añadir usuarios** |
-| D6 | Correos de estado | El equipo podrá enviar **correos automáticos sobre cómo va la candidatura** (confirmado por Melissa el 19/11/2026, según la PO) |
+| D6 | Correos de estado | El equipo podrá enviar **correos automáticos sobre cómo va la candidatura** (según la PO, confirmado por Melissa el 19/11/2026; **sin evidencia en el Drive**, ver Estado) |
 | D7 | Código de candidatura | **Numérico: año + número**, por ejemplo `2027-00123`, único en la plataforma |
 | D8 | Tablero de coordinación | Tablero común tipo Trello con columnas: **1 Aspirantes · 2 Entrevistados · 3 Admitidos · 4 Lista de espera · 5 Tal vez** (ultimando detalles, p. ej. falta documentación) **· 6 Esta vez no · 7 Recomendaciones** (no admitidos con derivación a otro recurso) |
 | D9 | Columnas y etapas | Las columnas son **etapas reales** de la candidatura, pero **el equipo podrá modificar el tablero**. **Pendiente:** qué movimientos se automatizan y cuáles exigen decisión humana |
@@ -53,6 +53,14 @@
 - **Invitaciones** que caducan (propuesta: 7 días), se reenvían o revocan; roles altos con aprobación; todo cambio de permisos auditado; revisión periódica de accesos.
 - **Correos automáticos** con plantillas revisadas; en la demo, simulados; las malas noticias, revisadas por una persona antes de enviarse y con vía para pedir revisión humana (RGPD art. 22).
 
+## 4b. Contraste con el Drive (consolidación del 19/11) / Drive cross-check
+
+- Siete perfiles: confirmados por Somos F5 (30/10); la matriz detallada de permisos no está validada por Melissa.
+- Dirección general como rol separado: no encontrado. Inscripción sin cuenta y con código de referencia: descrita como punto de partida (Ronda 3).
+- Columnas, etiquetas y quién mueve las tarjetas: no encontrados como decisión de Melissa; el tablero es propuesta del equipo (backlog 12/11). `tal_vez` y `esta_vez_no` son decisión PO del 11/11.
+- Formato del código de candidatura: no encontrado. Quórum de dos firmas: propuesta (Ronda 3), no confirmado.
+- Requisitos en paralelo, lista de espera abierta y entrevista individual alternativa: confirmados por Melissa el 06/11.
+
 ## 5. Propuesta de alcance hasta el 04/12 / Scope proposal to 04/12
 
 **MVP:** tablero con columnas mapeadas a etapas, comentarios y etiquetas, invitaciones de personal y coder, panel de permisos básico, correos de estado simulados, quitar acceso al aspirante, código numérico.
@@ -60,4 +68,4 @@
 
 ## English summary
 
-Applicants have no role or platform access: the public form creates their CRM profile. Learners (coders) and all staff join by invitation (staff invited by admin, coders by the team at enrolment). Admin is general management with a permissions panel; coordination gets the same features except adding users. Automatic application-status emails are confirmed (Melissa, 19/11, per the PO). Application codes become year + number (e.g. `2027-00123`). A shared coordination board has seven columns mapped to real stages, editable by the team; which moves are automated and which require a human decision is pending. Tags and team-visible comments, CRM tracking of emails and calls, and admission decided by selection and coordination by default, all configurable. Proposed MVP and later items are listed above.
+Applicants have no role or platform access: the public form creates their CRM profile. Learners (coders) and all staff join by invitation (staff invited by admin, coders by the team at enrolment). Admin is general management with a permissions panel; coordination gets the same features except adding users. Automatic application-status emails are a PO decision; the PO reports Melissa confirmed them on 19/11, but the Drive review found no written answer yet. Application codes become year + number (e.g. `2027-00123`). A shared coordination board has seven columns mapped to real stages, editable by the team; which moves are automated and which require a human decision is pending. Tags and team-visible comments, CRM tracking of emails and calls, and admission decided by selection and coordination by default, all configurable. Proposed MVP and later items are listed above.
