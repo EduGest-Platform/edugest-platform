@@ -41,23 +41,23 @@ Límites del plan gratuito: los servicios se duermen sin tráfico (primera petic
 
 ## ES · Staging (entorno de pruebas del equipo)
 
-Estado: PROPOSED; no se ha creado en Render. Es un segundo despliegue, con su propia base de datos y sus propios secretos, que sigue la rama `dev`. Sirve para que el equipo vea y pruebe los cambios ya integrados antes de pasarlos a `main`.
+Estado: PROPOSED; no se ha creado en Render. Es un segundo despliegue, con su propia base de datos y sus propios secretos, que se construye desde la rama `dev`. El despliegue es **manual** (`autoDeployTrigger: off`), igual que producción, mientras no conste la aprobación de la excepción a ADR-0008. Sirve para que el equipo vea y pruebe los cambios ya integrados antes de pasarlos a `main`.
 
 | Entorno | Rama | Blueprint | `GISTAR_ENVIRONMENT` | Despliegue |
 |---|---|---|---|---|
 | local | rama de trabajo | `infra/compose.yaml` | `local` | manual, en tu PC |
-| staging | `dev` | `render.staging.yaml` | `staging` | automático si el CI de GitHub pasa (`checksPass`) |
+| staging | `dev` | `render.staging.yaml` | `staging` | manual (`autoDeployTrigger: off`), tras comprobar que el CI de GitHub del commit está en verde |
 | producción | `main` | `render.yaml` | `production` | manual y autorizado |
 
-Flujo: PR de la rama de trabajo a `dev`, CI y revisión, fusión, staging se despliega solo, el equipo lo prueba, PR de `dev` a `main` y despliegue manual de producción.
+Flujo: PR de la rama de trabajo a `dev`, CI y revisión, fusión, una persona autorizada lanza el despliegue manual de staging desde el panel de Render con el CI del commit en verde, el equipo lo prueba, PR de `dev` a `main` y despliegue manual de producción.
 
-Antes de crearlo: la PR de KAN-101 (#37) debe estar integrada en `dev`. Esa PR es la que hace que staging **rechace** la contraseña y la base de datos de demo; sin ella, `GISTAR_ENVIRONMENT=staging` no protege nada y no hay que desplegar.
+Antes de crearlo: KAN-101 debe estar integrada en `dev` (lo está desde el 19/11/2026). Es lo que hace que staging **rechace** la contraseña y la base de datos de demo; sin ella, `GISTAR_ENVIRONMENT=staging` no protege nada y no hay que desplegar.
 
 Crearlo (solo con autorización del PO):
 
 1. En Render: **New → Blueprint**, selecciona el repositorio, rama `dev` y **Blueprint Path** `render.staging.yaml`.
 2. Render crea `edugest-db-staging`, `edugest-api-staging` y `edugest-web-staging`. Rellena los valores manuales: `VITE_GISTAR_API_URL` (URL pública de `edugest-api-staging`) y `GISTAR_CORS_ORIGINS` (por ejemplo `["https://edugest-web-staging.onrender.com"]`).
-3. Vuelve a desplegar `edugest-web-staging` tras fijar `VITE_GISTAR_API_URL`.
+3. Lanza manualmente el despliegue de `edugest-web-staging` tras fijar `VITE_GISTAR_API_URL` (y el de `edugest-api-staging` si fuera necesario): con `autoDeployTrigger: off` Render no despliega nada por sí solo.
 4. Comprueba `/health` y entra con una cuenta sintética. La contraseña es `GISTAR_DEMO_PASSWORD` de staging, en su panel de Render, y es distinta de la de producción.
 
 Comprobaciones tras el primer despliegue (ninguna se ha ejecutado; el CI solo valida el YAML, no que el entorno exista en Render):
@@ -72,7 +72,8 @@ Límites y decisiones pendientes:
 
 - La base gratuita de Render es una por workspace (KAN-142). Decisión del PO (18/11/2026): staging va en el workspace de Elizabeth (PO) y producción en el de Yohanna (SM). Cada workspace tiene su base gratuita y sus 750 horas mensuales, y cada persona conecta su cuenta de Render con el repositorio de GitHub.
 - La base gratuita caduca a los 30 días: apuntar la fecha de creación de cada una.
-- ADR-0008 dice que ningún push despliega solo. Staging sí lo hace (`checksPass`); producción sigue manual. Requiere aceptación del PO y, después, una nota en ADR-0008.
+- ADR-0008 dice que ningún push despliega solo, y staging lo cumple: los dos servicios tienen `autoDeployTrigger: off`. Pasar staging a `checksPass` (desplegar al fusionar en `dev` si el CI pasa) es una excepción a ADR-0008 que requiere aprobación registrada del PO y una nota en el ADR **en el mismo cambio** que modifique el blueprint y la comprobación del CI.
+- Si se aprueba `checksPass`: Render espera a que terminen los checks de GitHub del commit y considera aceptables los estados `success`, **`neutral` y `skipped`** según la [documentación de Render](https://render.com/docs/deploys#integrating-with-ci) citada en la revisión; verificarlo en esa página antes de aprobar el cambio. Un job omitido por filtros de rutas (por ejemplo, el E2E) o marcado como neutral **no** bloquea el despliegue; si eso no basta, hay que hacer obligatorios los jobs necesarios o mantener el despliegue manual.
 
 ## EN · Local with Docker Compose
 
@@ -104,23 +105,23 @@ Free-plan limits: services sleep without traffic (slow first request) and the da
 
 ## EN · Staging (the team's test environment)
 
-Status: PROPOSED; not created on Render. It is a second deployment, with its own database and secrets, that follows the `dev` branch. It lets the team see and test integrated changes before they move to `main`.
+Status: PROPOSED; not created on Render. It is a second deployment, with its own database and secrets, built from the `dev` branch. Deploys are **manual** (`autoDeployTrigger: off`), like production, until an approved exception to ADR-0008 is recorded. It lets the team see and test integrated changes before they move to `main`.
 
 | Environment | Branch | Blueprint | `GISTAR_ENVIRONMENT` | Deploy |
 |---|---|---|---|---|
 | local | working branch | `infra/compose.yaml` | `local` | manual, on your PC |
-| staging | `dev` | `render.staging.yaml` | `staging` | automatic when GitHub CI passes (`checksPass`) |
+| staging | `dev` | `render.staging.yaml` | `staging` | manual (`autoDeployTrigger: off`), after checking the commit's GitHub CI is green |
 | production | `main` | `render.yaml` | `production` | manual and authorised |
 
-Flow: PR from the working branch to `dev`, CI and review, merge, staging deploys by itself, the team tests it, PR from `dev` to `main`, then a manual production deploy.
+Flow: PR from the working branch to `dev`, CI and review, merge, an authorised person triggers the manual staging deploy from the Render dashboard once the commit's CI is green, the team tests it, PR from `dev` to `main`, then a manual production deploy.
 
-Before creating it: the KAN-101 PR (#37) must be merged into `dev`. That PR is what makes staging **reject** the demo password and database; without it `GISTAR_ENVIRONMENT=staging` protects nothing and it must not be deployed.
+Before creating it: KAN-101 must be merged into `dev` (it is, since 19/11/2026). It is what makes staging **reject** the demo password and database; without it `GISTAR_ENVIRONMENT=staging` protects nothing and it must not be deployed.
 
 Create it (only with PO authorisation):
 
 1. In Render: **New → Blueprint**, pick the repository, branch `dev` and **Blueprint Path** `render.staging.yaml`.
 2. Render creates `edugest-db-staging`, `edugest-api-staging` and `edugest-web-staging`. Fill the manual values: `VITE_GISTAR_API_URL` (public URL of `edugest-api-staging`) and `GISTAR_CORS_ORIGINS` (for example `["https://edugest-web-staging.onrender.com"]`).
-3. Redeploy `edugest-web-staging` after setting `VITE_GISTAR_API_URL`.
+3. Manually deploy `edugest-web-staging` after setting `VITE_GISTAR_API_URL` (and `edugest-api-staging` if needed): with `autoDeployTrigger: off` Render deploys nothing by itself.
 4. Check `/health` and sign in with a synthetic account. The password is staging's `GISTAR_DEMO_PASSWORD` in its Render dashboard, and differs from production's.
 
 Checks after the first deploy (none has been run; CI only validates the YAML, not that the environment exists on Render):
@@ -135,4 +136,5 @@ Limits and pending decisions:
 
 - Render's free database is one per workspace (KAN-142). PO decision (18/11/2026): staging lives in Elizabeth's workspace (PO) and production in Yohanna's (SM). Each workspace has its own free database and its own 750 monthly hours, and each person connects their Render account to the GitHub repository.
 - The free database expires after 30 days: note the creation date of each one.
-- ADR-0008 says no push deploys by itself. Staging does (`checksPass`); production stays manual. This needs PO acceptance and, afterwards, a note in ADR-0008.
+- ADR-0008 says no push deploys by itself, and staging complies: both services use `autoDeployTrigger: off`. Switching staging to `checksPass` (deploy on merge to `dev` when CI passes) is an exception to ADR-0008: it needs recorded PO approval and an ADR note **in the same change** that edits the blueprint and the CI check.
+- If `checksPass` is approved: Render waits for the commit's GitHub checks and accepts `success`, **`neutral` and `skipped`** as passing according to the [Render docs](https://render.com/docs/deploys#integrating-with-ci) cited in the review; check that page before approving the change. A job skipped by path filters (for example the E2E) or reported as neutral does **not** block the deploy; if that is not enough, make the required jobs mandatory or keep deploys manual.
