@@ -1,12 +1,12 @@
 # KAN-146 — Selection events and timing contract
 
-Owner: Yohanna. Cross-review: Anas (Jira), Elizabeth (PO/backend). David: elapsed-time semantics and automation boundary. Status: **PROPOSED**, not an implemented API or an approved PO policy. Inspected base: dev 73a3d64, 19/11/2026.
+Owner: Yohanna. Cross-review: Anas (Jira), Elizabeth (PO/backend). David: elapsed-time semantics and automation boundary. Status: **PROPOSED**, not an implemented API or an approved PO policy. Inspected base: dev c59d201 (including integrated #46), 19/11/2026.
 
 ## ES — Qué existe y qué falta
 
 El CRM integrado acepta `contacto`, `nota`, `recordatorio`; registra fecha y actor del servidor, pero no una cita estructurada. `Stage` contiene `convocada` y `evaluacion_en_curso`: un literal no demuestra un flujo de citaciones implementado. Los campos de jornada/entrevista de `src/gistar/seed.json` son del prototipo, no una fuente PostgreSQL validada.
 
-El motor integrado distingue `information_session` de `interview`: la jornada informativa usa una ventana ANTERIOR a la fecha; la entrevista usa actualmente vencimiento + retraso. No reutilizar la rama de entrevista como aviso previo sin decisión explícita y pruebas. `information_session` tampoco equivale a jornada de selección. KAN-129/#57 propone simulaciones de documentación/ejercicios; no aporta calendario de entrevistas. #46 propone cerrar preselección al convocar; no sustituye este contrato de citas.
+El motor integrado distingue `information_session` de `interview`: la jornada informativa usa una ventana ANTERIOR a la fecha; la entrevista usa actualmente vencimiento + retraso. No reutilizar la rama de entrevista como aviso previo sin decisión explícita y pruebas. `information_session` tampoco equivale a jornada de selección. KAN-129/#57 propone simulaciones de documentación/ejercicios; no aporta calendario de entrevistas. #46 ya integrado permite convocar a selección, retirada expresa y silencio confirmado/reprogramado mediante decisión humana. Convocar termina la preselección, pero no crea una cita estructurada ni sustituye este contrato.
 
 ## ES — Contrato propuesto para KAN-155
 
@@ -66,7 +66,7 @@ Anas valida estados/errores necesarios para la UI. Elizabeth decide permisos, et
 
 ## EN — Canonical meaning of the proposal
 
-The integrated CRM stores contact/note/reminder events, not structured appointments. Stage literals and prototype seed fields do not prove a calendar flow. The existing engine distinguishes a pre-event information-session window from an interview reminder after due+delay; neither represents an approved selection-day contract. #46 handles preselection closure; #57 is a staff simulation for documentation/exercises only.
+The integrated CRM stores contact/note/reminder events, not structured appointments. Stage literals and prototype seed fields do not prove a calendar flow. The existing engine distinguishes a pre-event information-session window from an interview reminder after due+delay; neither represents an approved selection-day contract. Integrated #46 implements human decisions to call to selection, withdraw, confirm silence or postpone silence review. Calling ends preselection but does not create a structured appointment. #57 remains a separate reminder-simulation PR for documentation/exercises.
 
 Propose a distinct appointment with server ID/scope, `selection_day` or `individual_interview`, aware UTC start/end, validated IANA display zone, scheduled/cancelled/completed state, optimistic version, server actor/timestamps and approved policy version. End must follow start. No interview conclusions, scores, sensitive notes, tokenized meeting links or recipient data in the minimum contract. This is NOT added to OpenAPI or persistence by this documentation PR.
 
@@ -79,5 +79,6 @@ Future tests must cover exact boundaries, equivalent offsets, spring/fall DST, n
 ## Sources and validation / Fuentes y validación
 
 - [CRM schemas](../../api/app/modules/admissions/schemas.py), [router](../../api/app/modules/admissions/router.py), [engine](../../api/app/modules/automation/engine.py), [DST tests](../../evals/automation/test_dst_deadlines.py).
-- [CRM policy](KAN-120-crm-event-policy.md), [Jira KAN-146](https://anasfady87-1789923749606.atlassian.net/browse/KAN-146), [pending #46](https://github.com/EduGest-Platform/edugest-platform/pull/46), [draft #57](https://github.com/EduGest-Platform/edugest-platform/pull/57).
+- [CRM policy](KAN-120-crm-event-policy.md), [Jira KAN-146](https://anasfady87-1789923749606.atlassian.net/browse/KAN-146), [integrated #46](https://github.com/EduGest-Platform/edugest-platform/pull/46), [draft #57](https://github.com/EduGest-Platform/edugest-platform/pull/57).
+- Integrated preselection evidence: [service](../../api/app/modules/preselection/service.py), [routes](../../api/app/modules/preselection/router.py), [tests](../../api/tests/test_preselection_closure.py).
 - Local validation: relative source links and whitespace; no API/DB test required for documentation-only proposal. Future test matrix above is NOT executed evidence.
