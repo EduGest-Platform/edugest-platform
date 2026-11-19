@@ -18,6 +18,12 @@ Plataforma para centralizar inscripción, preselección, selección, formación 
 - **Servidor**: `VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev`. Login real, rol fijado por el servidor; inscripción,
   candidaturas/CRM y auditoría usan la API. El resto de vistas avisan de que siguen en local hasta su incremento.
 
+## Modelo de datos / Data model
+
+Diagrama ER de la base de datos (12 tablas, datos sintéticos). Detalle y reglas en [docs/02-arquitectura-y-contratos.md](docs/02-arquitectura-y-contratos.md) / *ER diagram of the database (12 tables, synthetic data). Details and rules in the architecture doc.*
+
+![Diagrama ER completo de EduGest (DBeaver)](docs/images/edugest-erd-full.gif)
+
 ## Comandos
 
 ```bash
