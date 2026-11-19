@@ -46,4 +46,4 @@ API y PostgreSQL: ver [`api/README.md`](api/README.md); requieren `infra/.env` y
 
 ## Licencia / License
 
-MIT, con atribución obligatoria al equipo EduGest y al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026). Ver [LICENSE](LICENSE). / MIT, with mandatory attribution to the EduGest team and Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026). See [LICENSE](LICENSE).
+MIT, con atribución obligatoria al equipo EduGest, al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026) y enlace a este repositorio. Ver [LICENSE](LICENSE). / MIT, with mandatory attribution to the EduGest team, Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026) and a link to this repository. See [LICENSE](LICENSE).

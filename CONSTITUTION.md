@@ -74,7 +74,7 @@ Explicit guardrails for Claude, Codex and any other agent (operational detail in
 
 - Product name: **EduGest** (confirmed by the Product Owner on 2026-11-19; it replaces the working name "Gistar"). Technical identifiers that still say `gistar` (the `src/gistar/` folder, the `GISTAR_` environment prefix, the Python package and database names) stay as they are to avoid breaking changes; user-facing text says EduGest.
 - Own product name and artwork. **Do not use the Somos F5 name or logo as the product brand**; colour inspiration only. No licensed material or proprietary screenshots.
-- Licence: **MIT** ([LICENSE](LICENSE)), chosen by the Product Owner on 2026-11-19. The copyright notice credits the EduGest team and states that the project is the final project of Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026); that attribution must be kept in every copy. MIT allows reuse, including commercial use. The licence grants no right to use the Somos F5 name or logo. Somos F5's approval, which this section required, is recorded as pending until it is confirmed.
+- Licence: **MIT** ([LICENSE](LICENSE)), chosen by the Product Owner on 2026-11-19. The copyright notice credits the EduGest team and states that the project is the final project of Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026), with a link to the original repository (https://github.com/EduGest-Platform/edugest-platform); that attribution must be kept in every copy. MIT allows reuse, including commercial use. The licence grants no right to use the Somos F5 name or logo. Somos F5's approval, which this section required, is recorded as pending until it is confirmed.
 
 ## H. Documentation and language policy
 

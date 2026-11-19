@@ -114,7 +114,7 @@ Decisiones de la Product Owner (Elizabeth) del 19/11/2026 y estado real del repo
 | Pendiente | Estado |
 |---|---|
 | B1. Repositorio Git | **Resuelto**: el proyecto vive en GitHub (`EduGest-Platform/edugest-platform`) con PR y revisión |
-| P1. Licencia | **Resuelto por la PO**: MIT con atribución al equipo EduGest y al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026) en el aviso de copyright (`LICENSE`). Permite uso comercial. **Pendiente:** confirmación de Somos F5, que la constitución exige |
+| P1. Licencia | **Resuelto por la PO**: MIT con atribución al equipo EduGest y al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026), con enlace al repositorio original, en el aviso de copyright (`LICENSE`). Permite uso comercial. **Pendiente:** confirmación de Somos F5, que la constitución exige |
 | P2. Nombre | **Resuelto**: EduGest. Textos visibles, títulos y constitución actualizados; los identificadores técnicos `gistar` se mantienen |
 | P3. Inglés canónico + traducción al español | **Resuelto**: confirmado y añadido a la sección H de la constitución |
 | N1/P4. Entorno virtual `src/gistar/env/` | **Resuelto**: ya no existe |
