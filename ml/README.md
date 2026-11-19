@@ -1,5 +1,11 @@
 # Synthetic dropout experiments / Experimentos sintéticos de abandono
 
+## KAN-179 / KAN-198 — evaluation / evaluación
+
+ES: después de entrenar, ejecutar `python -m ml.dropout.evaluate --artifacts ml/artifacts/demo`. Produce `evaluation.json` y `evaluation.csv` con soporte, prevalencia, matriz de confusión, precisión/recall/F1, PR-AUC, Brier y bins de calibración. Cero soporte o métricas indefinidas se registran como null. La regla 3/6 informa cobertura y se abstiene con medias jornadas; su resultado binario no se presenta como probabilidad calibrada. Comparar soportes/cobertura antes de comparar filas. Los agregados describen snapshots correlacionados dentro de persona, no observaciones independientes ni intervalos de confianza.
+
+EN: the same command writes a reproducible ML-only evaluation table for validation/test. Training data never fit preprocessing on those periods. An experimental 25% review-capacity budget chooses the logistic threshold by F1 on validation only (highest-threshold tie break), never test labels. The shared threshold is also reported for Dummy; its alert fraction may exceed the proposed budget. One-class validation leaves threshold unset and any .5 diagnostic classification is labelled fallback, not a support policy. A threshold above 1 means no selected alerts. Hash checks bind dataset/model/evaluation. No synthetic metric establishes real calibration, fairness or intervention readiness; target/window/capacity and threshold still need Abdur/Elizabeth acceptance. This is the ML portion of KAN-198, not RAG/70% evaluation.
+
 ## ES
 
 Responsable de tareas: Abdur. Cambios preparados con asistencia de Codex por Yohanna, sin reasignar Jira ni atribuir autoría a Abdur. Revisión técnica: David; definición de objetivo, esquema y aceptación: Elizabeth con Abdur. Solo prevención de abandono; nada de RAG ni decisiones sobre personas.
