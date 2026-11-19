@@ -451,6 +451,9 @@
             "title": "Cohort Id",
             "type": "string"
           },
+          "cohort_totals": {
+            "$ref": "#/components/schemas/CohortAttendance"
+          },
           "date_from": {
             "anyOf": [
               {
@@ -476,6 +479,7 @@
             "title": "Date To"
           },
           "items": {
+            "description": "Totales por matrícula. Vacío para coordinación, que solo ve el agregado",
             "items": {
               "$ref": "#/components/schemas/EnrollmentAttendance"
             },
@@ -483,16 +487,22 @@
             "type": "array"
           },
           "rule": {
-            "default": "Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.",
+            "default": "Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.",
             "title": "Rule",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
             "type": "string"
           }
         },
         "required": [
           "cohort_id",
+          "timezone",
           "date_from",
           "date_to",
-          "items"
+          "items",
+          "cohort_totals"
         ],
         "title": "AttendanceSummary",
         "type": "object"
@@ -906,6 +916,103 @@
         "title": "CallSummaryOut",
         "type": "object"
       },
+      "CohortAttendance": {
+        "description": "Cohort-level totals for coordination. All values are null when the group is too small to show.",
+        "properties": {
+          "attendance_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Rate"
+          },
+          "attended_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attended Days"
+          },
+          "enrollments": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollments"
+          },
+          "justified_absence_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justified Absence Days"
+          },
+          "late_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Days"
+          },
+          "min_group_size": {
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          },
+          "unjustified_absence_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unjustified Absence Days"
+          },
+          "unrecorded_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrecorded Days"
+          }
+        },
+        "required": [
+          "enrollments",
+          "suppressed",
+          "min_group_size"
+        ],
+        "title": "CohortAttendance",
+        "type": "object"
+      },
       "CohortCompetencies": {
         "properties": {
           "cohort_id": {
@@ -1155,8 +1262,21 @@
                 "type": "null"
               }
             ],
-            "description": "Presente / registrado. Nulo si no hay registros",
+            "description": "Asistido / registrado. Nulo si no hay registros",
             "title": "Attendance Rate"
+          },
+          "attended_days": {
+            "description": "Asistencia a tiempo más con retraso",
+            "title": "Attended Days",
+            "type": "number"
+          },
+          "attended_in_person_days": {
+            "title": "Attended In Person Days",
+            "type": "number"
+          },
+          "attended_online_days": {
+            "title": "Attended Online Days",
+            "type": "number"
           },
           "enrollment_id": {
             "format": "uuid",
@@ -1172,16 +1292,9 @@
             "title": "Justified Absence Days",
             "type": "number"
           },
-          "present_days": {
-            "title": "Present Days",
-            "type": "number"
-          },
-          "present_in_person_days": {
-            "title": "Present In Person Days",
-            "type": "number"
-          },
-          "present_online_days": {
-            "title": "Present Online Days",
+          "late_days": {
+            "description": "Parte de attended_days en la que llegó con retraso",
+            "title": "Late Days",
             "type": "number"
           },
           "unjustified_absence_days": {
@@ -1197,9 +1310,10 @@
         "required": [
           "enrollment_id",
           "held_days",
-          "present_days",
-          "present_in_person_days",
-          "present_online_days",
+          "attended_days",
+          "late_days",
+          "attended_in_person_days",
+          "attended_online_days",
           "justified_absence_days",
           "unjustified_absence_days",
           "unrecorded_days",
@@ -1987,6 +2101,7 @@
           "status": {
             "enum": [
               "presente",
+              "retraso",
               "ausente"
             ],
             "title": "Status",
@@ -2031,7 +2146,7 @@
                 "type": "null"
               }
             ],
-            "description": "Obligatoria si está ausente; vacía si está presente",
+            "description": "Obligatoria si está ausente; vacía si asistió",
             "title": "Justification"
           },
           "modality": {
@@ -2047,7 +2162,7 @@
                 "type": "null"
               }
             ],
-            "description": "Obligatoria si está presente; vacía si está ausente",
+            "description": "Obligatoria si asistió (presente o retraso); vacía si está ausente",
             "title": "Modality"
           },
           "reason": {
@@ -2066,6 +2181,7 @@
           "status": {
             "enum": [
               "presente",
+              "retraso",
               "ausente"
             ],
             "title": "Status",
@@ -2405,6 +2521,7 @@
           "status": {
             "enum": [
               "presente",
+              "retraso",
               "ausente"
             ],
             "title": "Status",
@@ -2489,7 +2606,7 @@
             "type": "number"
           },
           "held": {
-            "description": "La sesión ya se ha celebrado (fecha anterior o igual a hoy)",
+            "description": "La sesión ya se ha celebrado (fecha anterior o igual a hoy en la zona horaria de la cohorte)",
             "title": "Held",
             "type": "boolean"
           },
@@ -4523,7 +4640,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Totales de asistencia por matrícula (contrato get_attendance_summary del asistente)",
+        "summary": "Totales de asistencia por matrícula y de la cohorte (contrato get_attendance_summary del asistente)",
         "tags": [
           "attendance"
         ]

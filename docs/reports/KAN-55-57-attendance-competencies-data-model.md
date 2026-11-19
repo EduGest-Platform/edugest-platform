@@ -36,10 +36,13 @@ erDiagram
 | Tabla | Clave y restricciones | Por qué |
 |---|---|---|
 | `attendance_session` | Única por (`cohort_id`, `session_date`, `shift`). `shift` ∈ mañana/tarde/completa; `duration_fraction` = 0,5 o 1 **forzado por CHECK** según el turno | El peso no se puede escribir mal. El servicio impide además mezclar día completo con mañana/tarde el mismo día (se contaría doble) |
-| `attendance_record` | Única por (`session_id`, `enrollment_id`). CHECK: presente ⇒ modalidad y sin justificación; ausente ⇒ justificación y sin modalidad | Un solo registro vigente por persona y sesión; "presente online" y "ausente justificada" nunca se confunden |
+| `attendance_record` | Única por (`session_id`, `enrollment_id`). `status` ∈ presente/retraso/ausente. CHECK: presente o retraso ⇒ modalidad y sin justificación; ausente ⇒ justificación y sin modalidad | Un solo registro vigente por persona y sesión; "presente online" y "ausente justificada" nunca se confunden |
+| `cohort.timezone` (columna nueva) | ∈ `Europe/Madrid`, `Atlantic/Canary`, `Europe/Lisbon`; por defecto Madrid | Decide qué día es "hoy" para la cohorte (España peninsular, Canarias o Portugal) |
 | `attendance_record_revision` | Única por (`record_id`, `version`). Solo inserción (trigger). Motivo obligatorio desde la versión 2 | Cada corrección conserva el valor anterior, autor, fecha y motivo. El motivo no va al `audit_event` (texto libre) |
 
-**Regla del resumen** (`GET /cohorts/{id}/attendance-summary`, contrato de `get_attendance_summary`): solo cuentan las sesiones ya celebradas; una sesión celebrada sin registro suma en `unrecorded_days` ("sin dato"), nunca como ausencia; `attendance_rate` = presente / registrado y es nulo si no hay registros. Devuelve totales por matrícula, sin nombres.
+**Regla del resumen** (`GET /cohorts/{id}/attendance-summary`, contrato de `get_attendance_summary`): solo cuentan las sesiones ya celebradas según la hora local de la cohorte; una sesión celebrada sin registro suma en `unrecorded_days` ("sin dato"), nunca como ausencia; el retraso cuenta como asistencia (`attended_days`) y se suma también en `late_days`; `attendance_rate` = asistido / registrado y es nulo si no hay registros. Devuelve totales por matrícula (sin nombres) y `cohort_totals`.
+
+**Coordinación** (`attendance.aggregate`) solo recibe `cohort_totals`, nunca filas por persona, y queda suprimido (todo nulo) si la cohorte tiene menos de `min_group_size` matrículas (5 por defecto, como el resto de agregados).
 
 ## Competencias (KAN-57)
 
@@ -57,14 +60,13 @@ erDiagram
 | Permiso | Quién | Ámbito |
 |---|---|---|
 | `attendance.read`, `attendance.record` | docente, admin | cohorte asignada (o global para admin) |
+| `attendance.aggregate` | coordinación | solo totales de cohorte, con supresión de grupos pequeños |
 | `competencies.read`, `competencies.configure`, `competencies.assess` | docente, admin | cohorte asignada; el árbol de un programa lo gestiona quien tenga permiso en alguna de sus cohortes |
 
-Captación, selección, coordinación y personas coder/aspirante reciben 403. Toda escritura deja un `audit_event` con identificadores y códigos, sin texto libre.
+Captación, selección y personas coder/aspirante reciben 403; coordinación recibe 403 en todo lo que no sea el agregado. Toda escritura deja un `audit_event` con identificadores y códigos, sin texto libre.
 
 ## Puntos para validar / Open points
 
 1. **Anas (UI):** ¿la forma de las respuestas encaja con `AttendanceModal` y las vistas de rúbricas/competencias? Cambiar nombres ahora es barato.
-2. **PO:** `retraso` existe en el prototipo pero no en Jira/AGENTS.md; no se ha modelado. ¿Se necesita?
-3. **PO:** ¿coordinación debe ver el resumen de asistencia (agregado con supresión) o solo el docente?
-4. **PO:** la fecha "hoy" para decidir si una sesión está celebrada se toma en UTC; en Madrid puede diferir pasada la medianoche.
-5. La vista de la persona coder (su propia asistencia y niveles) queda para una tarea posterior.
+2. **Decisiones PO 19/11/2026 (aplicadas):** existe el estado `retraso`; coordinación ve el agregado de asistencia; la zona horaria es la de la cohorte (España o Portugal). Aún no hay endpoint para cambiar la zona de una cohorte: por ahora se fija en base de datos.
+3. La vista de la persona coder (su propia asistencia y niveles) queda para una tarea posterior.

@@ -1,12 +1,14 @@
-"""KAN-55: attendance 1 / 0.5, justified vs unjustified, "sin dato", audited corrections and cohort scope."""
+"""KAN-55: attendance 1 / 0.5, late, justified vs unjustified, "sin dato", audited corrections, cohort time zone and scope."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import DBAPIError
 
+from app.core.config import settings
 from app.core.db import utcnow
+from app.modules.attendance import service
 from app.modules.attendance.models import AttendanceRecordRevision, AttendanceSession
 from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Cohort
@@ -102,7 +104,7 @@ def test_totals_add_full_and_half_days_and_keep_justified_apart(client, db, teac
             assert put(client, teacher, session["id"], enrollment, body).status_code == 200
     totals = summary(client, teacher, enrollment)
     assert totals["held_days"] == 3.5
-    assert totals["present_days"] == 1.5 and totals["present_in_person_days"] == 1 and totals["present_online_days"] == 0.5
+    assert totals["attended_days"] == 1.5 and totals["attended_in_person_days"] == 1 and totals["attended_online_days"] == 0.5
     assert totals["unjustified_absence_days"] == 0.5
     assert totals["justified_absence_days"] == 1
     assert totals["unrecorded_days"] == 0.5  # held morning without a record: "sin dato", not an absence
@@ -188,7 +190,7 @@ def test_teacher_of_another_cohort_gets_403(client, db):
     assert client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary", headers=headers).status_code == 403
 
 
-@pytest.mark.parametrize("email", [CAPT_IA, COORD, CODER])
+@pytest.mark.parametrize("email", [CAPT_IA, CODER])
 def test_non_teaching_roles_cannot_record_or_read_attendance(client, email):
     headers = login(client, email)
     assert client.post(f"/api/v1/cohorts/{COHORT}/attendance-sessions", json={"session_date": day(-1), "shift": "manana"}, headers=headers).status_code == 403
@@ -198,3 +200,73 @@ def test_non_teaching_roles_cannot_record_or_read_attendance(client, email):
 def test_admin_can_read_and_anonymous_gets_401(client):
     assert client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary", headers=login(client, ADMIN)).status_code == 200
     assert client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary").status_code == 401
+
+
+# ---------- Late arrivals (PO 19/11/2026) ----------
+
+LATE = {"status": "retraso", "modality": "presencial"}
+
+
+def test_late_counts_as_attended_and_is_also_totalled_apart(client, db, teacher):
+    enrollment = enrollment_of(db)
+    put(client, teacher, new_session(client, teacher, offset=-2, shift="manana")["id"], enrollment, LATE)
+    put(client, teacher, new_session(client, teacher, offset=-1, shift="completa")["id"], enrollment, PRESENT)
+    totals = summary(client, teacher, enrollment)
+    assert totals["attended_days"] == 1.5 and totals["late_days"] == 0.5 and totals["attendance_rate"] == 1
+
+
+def test_late_needs_a_modality_and_no_justification(client, db, teacher):
+    session = new_session(client, teacher)
+    assert put(client, teacher, session["id"], enrollment_of(db), {"status": "retraso"}).status_code == 422
+    assert put(client, teacher, session["id"], enrollment_of(db), {**LATE, "justification": "justificada"}).status_code == 422
+
+
+# ---------- Coordination: cohort totals only (PO 19/11/2026) ----------
+
+
+def test_coordination_sees_cohort_totals_but_never_per_person_rows(client, db, teacher, monkeypatch):
+    monkeypatch.setattr(settings, "min_group_size", 1)
+    put(client, teacher, new_session(client, teacher)["id"], enrollment_of(db), PRESENT)
+    coord = login(client, COORD)
+    body = client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary", headers=coord).json()
+    assert body["items"] == []
+    assert body["cohort_totals"]["suppressed"] is False and body["cohort_totals"]["attended_days"] == 1
+    one_person = client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary", params={"enrollment_id": enrollment_of(db)}, headers=coord)
+    assert one_person.status_code == 403
+    assert client.get(f"/api/v1/cohorts/{COHORT}/attendance-sessions", headers=coord).status_code == 403
+
+
+def test_small_cohort_totals_are_suppressed(client, monkeypatch):
+    monkeypatch.setattr(settings, "min_group_size", 10_000)
+    totals = client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary", headers=login(client, COORD)).json()["cohort_totals"]
+    assert totals["suppressed"] is True and totals["enrollments"] is None and totals["attended_days"] is None
+
+
+# ---------- Cohort time zone: Spain or Portugal (PO 19/11/2026) ----------
+
+
+def test_today_follows_the_cohort_clock(monkeypatch):
+    late_evening_utc = datetime(2026, 11, 19, 23, 30, tzinfo=timezone.utc)
+
+    class FrozenClock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return late_evening_utc.astimezone(tz)
+
+    monkeypatch.setattr(service, "datetime", FrozenClock)
+    assert service.today_in("Europe/Madrid").isoformat() == "2026-11-20"  # already past midnight in Madrid
+    assert service.today_in("Europe/Lisbon").isoformat() == "2026-11-19"
+    assert service.today_in("Atlantic/Canary").isoformat() == "2026-11-19"
+
+
+def test_summary_reports_the_cohort_time_zone(client, db, teacher):
+    db.get(Cohort, COHORT).timezone = "Europe/Lisbon"
+    db.commit()
+    assert client.get(f"/api/v1/cohorts/{COHORT}/attendance-summary", headers=teacher).json()["timezone"] == "Europe/Lisbon"
+
+
+def test_only_spanish_and_portuguese_time_zones_are_allowed(db):
+    db.get(Cohort, COHORT).timezone = "America/New_York"
+    with pytest.raises(DBAPIError):
+        db.commit()
+    db.rollback()

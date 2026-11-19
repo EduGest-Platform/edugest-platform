@@ -2,8 +2,9 @@
 
 import uuid
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from fastapi import status
 from sqlalchemy import select
@@ -12,22 +13,27 @@ from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.authz import Principal
+from app.core.config import settings
 from app.core.db import utcnow
 from app.core.errors import UserFacingError
 from app.modules.attendance.models import AttendanceRecord, AttendanceRecordRevision, AttendanceSession
-from app.modules.attendance.schemas import EnrollmentAttendance, RecordWrite, SessionWrite
+from app.modules.attendance.schemas import CohortAttendance, EnrollmentAttendance, RecordWrite, SessionWrite
 from app.modules.catalog.models import Cohort
 from app.modules.learning.models import Enrollment
 
 SHIFT_FRACTION = {"manana": Decimal("0.5"), "tarde": Decimal("0.5"), "completa": Decimal("1")}
 
 
-def today() -> date:
-    return utcnow().date()
+ATTENDED = ("presente", "retraso")
 
 
-def is_held(session: AttendanceSession) -> bool:
-    return session.session_date <= today()
+def today_in(timezone: str) -> date:
+    """Today's date on the cohort's own clock (Spain peninsula, Canary Islands or Portugal)."""
+    return datetime.now(ZoneInfo(timezone)).date()
+
+
+def is_held(session: AttendanceSession, timezone: str) -> bool:
+    return session.session_date <= today_in(timezone)
 
 
 def _conflict(code: str, message: str) -> UserFacingError:
@@ -69,8 +75,8 @@ def create_session(db: Session, p: Principal, cohort: Cohort, body: SessionWrite
 
 
 def _check_shape(body: RecordWrite) -> None:
-    if body.status == "presente" and (body.modality is None or body.justification is not None):
-        raise UserFacingError(422, "record_present_shape", "Si está presente, indica si fue presencial u online y deja vacía la justificación.")
+    if body.status in ATTENDED and (body.modality is None or body.justification is not None):
+        raise UserFacingError(422, "record_present_shape", "Si asistió (a tiempo o con retraso), indica si fue presencial u online y deja vacía la justificación.")
     if body.status == "ausente" and (body.justification is None or body.modality is not None):
         raise UserFacingError(422, "record_absent_shape", "Si está ausente, indica si la ausencia está justificada o no y deja vacía la modalidad.")
 
@@ -88,12 +94,12 @@ def _add_revision(db: Session, p: Principal, record: AttendanceRecord, reason: s
     )
 
 
-def save_record(db: Session, p: Principal, session: AttendanceSession, enrollment: Enrollment, body: RecordWrite) -> AttendanceRecord:
+def save_record(db: Session, p: Principal, cohort: Cohort, session: AttendanceSession, enrollment: Enrollment, body: RecordWrite) -> AttendanceRecord:
     """First save registers attendance; later saves are corrections that need a reason and keep the previous version."""
     _check_shape(body)
     if enrollment.cohort_id != session.cohort_id:
         raise _conflict("enrollment_not_in_cohort", "Esta persona no está matriculada en la cohorte de la sesión.")
-    if not is_held(session):
+    if not is_held(session, cohort.timezone):
         raise _conflict("session_not_held", "La sesión aún no se ha celebrado. Podrás registrar la asistencia ese día.")
     query = select(AttendanceRecord).where(AttendanceRecord.session_id == session.id, AttendanceRecord.enrollment_id == enrollment.id)
     record = db.scalar(query.with_for_update())
@@ -141,10 +147,10 @@ def _correct(db: Session, p: Principal, record: AttendanceRecord, body: RecordWr
 
 
 def summarize(
-    sessions: list[AttendanceSession], records: list[AttendanceRecord], enrollment_ids: list[uuid.UUID]
+    sessions: list[AttendanceSession], records: list[AttendanceRecord], enrollment_ids: list[uuid.UUID], timezone: str
 ) -> list[EnrollmentAttendance]:
     """Totals per enrollment over held sessions. Missing records count as "sin dato", never as absence."""
-    held = [s for s in sessions if is_held(s)]
+    held = [s for s in sessions if is_held(s, timezone)]
     by_key = {(r.session_id, r.enrollment_id): r for r in records}
     result = []
     for enrollment_id in enrollment_ids:
@@ -155,25 +161,49 @@ def summarize(
             record = by_key.get((session.id, enrollment_id))
             if record is None:
                 totals["unrecorded"] += fraction
-            elif record.status == "presente":
-                totals[f"present_{record.modality}"] += fraction
+            elif record.status in ATTENDED:
+                totals[f"attended_{record.modality}"] += fraction
+                if record.status == "retraso":
+                    totals["late"] += fraction
             else:
                 totals[record.justification] += fraction
         result.append(_to_out(enrollment_id, totals))
     return result
 
 
+def _rate(attended: float, recorded: float) -> float | None:
+    return round(attended / recorded, 4) if recorded else None
+
+
 def _to_out(enrollment_id: uuid.UUID, t: dict[str, Decimal]) -> EnrollmentAttendance:
-    present = t["present_presencial"] + t["present_online"]
-    recorded = present + t["justificada"] + t["no_justificada"]
+    attended = t["attended_presencial"] + t["attended_online"]
+    recorded = attended + t["justificada"] + t["no_justificada"]
     return EnrollmentAttendance(
         enrollment_id=enrollment_id,
         held_days=float(t["held"]),
-        present_days=float(present),
-        present_in_person_days=float(t["present_presencial"]),
-        present_online_days=float(t["present_online"]),
+        attended_days=float(attended),
+        late_days=float(t["late"]),
+        attended_in_person_days=float(t["attended_presencial"]),
+        attended_online_days=float(t["attended_online"]),
         justified_absence_days=float(t["justificada"]),
         unjustified_absence_days=float(t["no_justificada"]),
         unrecorded_days=float(t["unrecorded"]),
-        attendance_rate=round(float(present / recorded), 4) if recorded else None,
+        attendance_rate=_rate(float(attended), float(recorded)),
+    )
+
+
+def cohort_totals(items: list[EnrollmentAttendance]) -> CohortAttendance:
+    """Aggregate for coordination. Hidden below the minimum group size so no one can be singled out."""
+    if len(items) < settings.min_group_size:
+        return CohortAttendance(enrollments=None, suppressed=True, min_group_size=settings.min_group_size)
+
+    def total(field: str) -> float:
+        return sum(getattr(item, field) for item in items)
+
+    recorded = total("attended_days") + total("justified_absence_days") + total("unjustified_absence_days")
+    return CohortAttendance(
+        enrollments=len(items), suppressed=False, min_group_size=settings.min_group_size,
+        attended_days=total("attended_days"), late_days=total("late_days"),
+        justified_absence_days=total("justified_absence_days"), unjustified_absence_days=total("unjustified_absence_days"),
+        unrecorded_days=total("unrecorded_days"), attendance_rate=_rate(total("attended_days"), recorded),
     )

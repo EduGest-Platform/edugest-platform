@@ -1,7 +1,8 @@
 """KAN-55 (PF2-EDU-02): attendance per session or half-day, with justification and audited corrections.
 
 Rules (AGENTS.md, projectplan): a full day weighs 1, a morning or afternoon weighs 0.5; justified and unjustified
-absences are kept apart; a held session without a record is "sin dato", never an absence.
+absences are kept apart; a held session without a record is "sin dato", never an absence. Being late ("retraso",
+PO 19/11/2026) counts as attended but is also totalled on its own.
 """
 
 import uuid
@@ -14,13 +15,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.db import Base, utcnow
 
 SHIFTS = ("manana", "tarde", "completa")
-STATUSES = ("presente", "ausente")
+STATUSES = ("presente", "retraso", "ausente")
 JUSTIFICATIONS = ("justificada", "no_justificada")
 MODALITIES = ("presencial", "online")
 
-# A record is either "present, in person or online" or "absent, justified or not". Nothing in between.
+# A record is either "attended (present or late), in person or online" or "absent, justified or not". Nothing in between.
 _RECORD_SHAPE = (
-    "(status = 'presente' AND modality IS NOT NULL AND justification IS NULL)"
+    "(status IN ('presente', 'retraso') AND modality IS NOT NULL AND justification IS NULL)"
     " OR (status = 'ausente' AND modality IS NULL AND justification IS NOT NULL)"
 )
 

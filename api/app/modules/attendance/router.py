@@ -18,9 +18,11 @@ from app.modules.attendance.schemas import (
     SessionOut,
     SessionWrite,
 )
-from app.modules.attendance.service import create_session, is_held, save_record, summarize
+from app.core.authz import ATTENDANCE_AGGREGATE_PERMISSION, Principal
+from app.modules.attendance.service import cohort_totals, create_session, is_held, save_record, summarize
+from app.modules.catalog.models import Cohort
 from app.modules.identity.models import User
-from app.modules.learning.access import require_cohort, require_enrollment
+from app.modules.learning.access import cohort_scope, load_cohort, require_cohort, require_enrollment
 from app.modules.learning.models import Enrollment
 
 router = APIRouter(tags=["attendance"])
@@ -36,10 +38,10 @@ def _record_out(r: AttendanceRecord) -> RecordOut:
     )
 
 
-def _session_out(s: AttendanceSession, records: list[AttendanceRecord]) -> SessionOut:
+def _session_out(s: AttendanceSession, records: list[AttendanceRecord], timezone: str) -> SessionOut:
     return SessionOut(
         id=s.id, cohort_id=s.cohort_id, session_date=s.session_date, shift=s.shift, duration_fraction=float(s.duration_fraction),
-        held=is_held(s), records=[_record_out(r) for r in records],
+        held=is_held(s, timezone), records=[_record_out(r) for r in records],
     )
 
 
@@ -69,19 +71,19 @@ def _load_session(db: DB, session_id: uuid.UUID) -> AttendanceSession:
              summary="Crear una sesión de asistencia (mañana, tarde o día completo)")
 def post_session(body: SessionWrite, p: CurrentPrincipal, db: DB, cohort_id: str = CohortId) -> SessionOut:
     cohort = require_cohort(db, p, "attendance.record", cohort_id)
-    return _session_out(create_session(db, p, cohort, body), [])
+    return _session_out(create_session(db, p, cohort, body), [], cohort.timezone)
 
 
 @router.get("/cohorts/{cohort_id}/attendance-sessions", response_model=SessionList, responses=_ERRORS,
             summary="Sesiones de asistencia de una cohorte con sus registros")
 def list_sessions(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId, date_from: date | None = None, date_to: date | None = None) -> SessionList:
-    require_cohort(db, p, "attendance.read", cohort_id)
+    cohort = require_cohort(db, p, "attendance.read", cohort_id)
     sessions = _sessions_in(db, cohort_id, date_from, date_to)
     records = _records_of(db, sessions)
     by_session: dict[uuid.UUID, list[AttendanceRecord]] = {s.id: [] for s in sessions}
     for r in records:
         by_session[r.session_id].append(r)
-    return SessionList(cohort_id=cohort_id, items=[_session_out(s, by_session[s.id]) for s in sessions])
+    return SessionList(cohort_id=cohort_id, items=[_session_out(s, by_session[s.id], cohort.timezone) for s in sessions])
 
 
 @router.put("/attendance-sessions/{session_id}/records/{enrollment_id}", response_model=RecordOut,
@@ -89,11 +91,11 @@ def list_sessions(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId, date_f
             summary="Registrar o corregir la asistencia de una persona en una sesión")
 def put_record(session_id: uuid.UUID, enrollment_id: uuid.UUID, body: RecordWrite, p: CurrentPrincipal, db: DB) -> RecordOut:
     session = _load_session(db, session_id)
-    require_cohort(db, p, "attendance.record", session.cohort_id)
+    cohort = require_cohort(db, p, "attendance.record", session.cohort_id)
     enrollment = db.get(Enrollment, enrollment_id)
     if not enrollment:
         raise UserFacingError(status.HTTP_404_NOT_FOUND, "enrollment_not_found", "No encontramos esta matrícula en la cohorte.")
-    return _record_out(save_record(db, p, session, enrollment, body))
+    return _record_out(save_record(db, p, cohort, session, enrollment, body))
 
 
 @router.get("/attendance-records/{record_id}/revisions", response_model=RevisionList, responses=_ERRORS,
@@ -113,20 +115,34 @@ def list_revisions(record_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> Revisio
     return RevisionList(record_id=record.id, items=items)
 
 
-@router.get("/cohorts/{cohort_id}/attendance-summary", response_model=AttendanceSummary, responses=_ERRORS,
-            summary="Totales de asistencia por matrícula (contrato get_attendance_summary del asistente)")
-def get_attendance_summary(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId, enrollment_id: uuid.UUID | None = Query(default=None),
-                           date_from: date | None = None, date_to: date | None = None) -> AttendanceSummary:
+def _summary_access(db: DB, p: Principal, cohort_id: str, enrollment_id: uuid.UUID | None) -> tuple[Cohort, bool]:
+    """Returns the cohort and whether per-enrollment rows may be shown. Coordination only gets cohort totals."""
     if enrollment_id:
-        enrollment, _ = require_enrollment(db, p, "attendance.read", enrollment_id)
+        enrollment, cohort = require_enrollment(db, p, "attendance.read", enrollment_id)
         if enrollment.cohort_id != cohort_id:
             raise UserFacingError(status.HTTP_404_NOT_FOUND, "enrollment_not_found", "Esta matrícula no pertenece a la cohorte.")
-        enrollment_ids = [enrollment.id]
+        return cohort, True
+    cohort = load_cohort(db, cohort_id)
+    if p.can("attendance.read", cohort_scope(cohort)):
+        return cohort, True
+    p.require(ATTENDANCE_AGGREGATE_PERMISSION, cohort_scope(cohort))
+    return cohort, False
+
+
+@router.get("/cohorts/{cohort_id}/attendance-summary", response_model=AttendanceSummary, responses=_ERRORS,
+            summary="Totales de asistencia por matrícula y de la cohorte (contrato get_attendance_summary del asistente)")
+def get_attendance_summary(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId, enrollment_id: uuid.UUID | None = Query(default=None),
+                           date_from: date | None = None, date_to: date | None = None) -> AttendanceSummary:
+    cohort, per_enrollment = _summary_access(db, p, cohort_id, enrollment_id)
+    if enrollment_id:
+        enrollment_ids = [enrollment_id]
     else:
-        require_cohort(db, p, "attendance.read", cohort_id)
         enrollment_ids = list(db.scalars(select(Enrollment.id).where(Enrollment.cohort_id == cohort_id).order_by(Enrollment.created_at, Enrollment.id)))
     sessions = _sessions_in(db, cohort_id, date_from, date_to)
-    items = summarize(sessions, _records_of(db, sessions), enrollment_ids)
-    audit.record(db, p, "attendance.summary_viewed", "cohort", cohort_id, enrollments=len(enrollment_ids))
+    items = summarize(sessions, _records_of(db, sessions), enrollment_ids, cohort.timezone)
+    audit.record(db, p, "attendance.summary_viewed", "cohort", cohort_id, enrollments=len(enrollment_ids), per_enrollment=per_enrollment)
     db.commit()
-    return AttendanceSummary(cohort_id=cohort_id, date_from=date_from, date_to=date_to, items=items)
+    return AttendanceSummary(
+        cohort_id=cohort_id, timezone=cohort.timezone, date_from=date_from, date_to=date_to,
+        items=items if per_enrollment else [], cohort_totals=cohort_totals(items),
+    )

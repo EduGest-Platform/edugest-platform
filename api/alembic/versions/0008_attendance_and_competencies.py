@@ -1,4 +1,4 @@
-"""KAN-55 attendance (sessions, records, correction history) and KAN-57 versioned competency trees and assessments."""
+"""KAN-55 attendance (sessions, records, correction history, cohort time zone) and KAN-57 versioned competency trees and assessments."""
 import sqlalchemy as sa
 from alembic import op
 
@@ -8,9 +8,18 @@ branch_labels = None
 depends_on = None
 
 RECORD_SHAPE = (
-    "(status = 'presente' AND modality IS NOT NULL AND justification IS NULL)"
+    "(status IN ('presente', 'retraso') AND modality IS NOT NULL AND justification IS NULL)"
     " OR (status = 'ausente' AND modality IS NULL AND justification IS NOT NULL)"
 )
+
+
+# PO 19/11/2026: cohorts run in Spain (peninsula or Canary Islands) or Portugal; "today" follows the cohort's clock.
+COHORT_TIMEZONES = "('Europe/Madrid', 'Atlantic/Canary', 'Europe/Lisbon')"
+
+
+def _cohort_timezone():
+    op.add_column("cohort", sa.Column("timezone", sa.String(40), nullable=False, server_default="Europe/Madrid"))
+    op.create_check_constraint("ck_cohort_timezone", "cohort", f"timezone IN {COHORT_TIMEZONES}")
 
 
 def _attendance():
@@ -44,7 +53,7 @@ def _attendance():
         sa.Column("recorded_by", sa.Uuid(), sa.ForeignKey("app_user.id"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.UniqueConstraint("session_id", "enrollment_id", name="uq_attendance_record_session_enrollment"),
-        sa.CheckConstraint("status IN ('presente', 'ausente')", name="ck_attendance_record_status"),
+        sa.CheckConstraint("status IN ('presente', 'retraso', 'ausente')", name="ck_attendance_record_status"),
         sa.CheckConstraint("justification IS NULL OR justification IN ('justificada', 'no_justificada')", name="ck_attendance_record_justification"),
         sa.CheckConstraint("modality IS NULL OR modality IN ('presencial', 'online')", name="ck_attendance_record_modality"),
         sa.CheckConstraint(RECORD_SHAPE, name="ck_attendance_record_shape"),
@@ -151,6 +160,7 @@ def _immutability_triggers():
 
 
 def upgrade():
+    _cohort_timezone()
     _attendance()
     _competencies()
     _immutability_triggers()
@@ -162,3 +172,5 @@ def downgrade():
         op.drop_table(table)
     op.execute("DROP FUNCTION reject_frozen_competency_change()")
     op.execute("DROP FUNCTION reject_history_change()")
+    op.drop_constraint("ck_cohort_timezone", "cohort")
+    op.drop_column("cohort", "timezone")

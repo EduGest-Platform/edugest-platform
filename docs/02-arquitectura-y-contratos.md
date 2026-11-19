@@ -65,7 +65,7 @@ Reglas (implementadas en F1 salvo indicación):
 | `GET /api/v1/me/applications` | la propia persona | **F1** |
 | `GET /api/v1/audit-events` | admin | **F1** |
 | `POST /applications/{id}/reviews` · `/decisions` · `POST /enrollments` | selección + decisión conjunta | F2 |
-| `POST`/`GET /cohorts/{id}/attendance-sessions` · `PUT /attendance-sessions/{id}/records/{enrollment_id}` · `GET /attendance-records/{id}/revisions` · `GET /cohorts/{id}/attendance-summary` | `attendance.*` docente de la cohorte | **KAN-55** |
+| `POST`/`GET /cohorts/{id}/attendance-sessions` · `PUT /attendance-sessions/{id}/records/{enrollment_id}` · `GET /attendance-records/{id}/revisions` · `GET /cohorts/{id}/attendance-summary` | `attendance.*` docente de la cohorte; coordinación solo el agregado | **KAN-55** |
 | `POST`/`GET /programs/{id}/competency-frameworks` · `PUT /competency-frameworks/{id}/competencies` · `POST /competency-frameworks/{id}/publish` · `PUT /cohorts/{id}/competency-framework` · `GET /cohorts/{id}/competencies` · `POST`/`GET /enrollments/{id}/assessments` | `competencies.*` docente de la cohorte | **KAN-57** |
 | `GET /cohorts/{id}/overview` | docente de la cohorte | F3 |
 | `POST /assistant/ask` · `POST /submissions/{id}/feedback-draft` · `GET /cohorts/{id}/risk-alerts` | por ámbito | F4 |

@@ -42,11 +42,17 @@ class Call(Base):
     silence_warning_contacts: Mapped[int] = mapped_column(Integer, default=2, server_default=text("2"))
 
 
+# Spain (peninsula, Canary Islands) and Portugal (PO 19/11/2026). Decides which day is "today" for a cohort.
+COHORT_TIMEZONES = ("Europe/Madrid", "Atlantic/Canary", "Europe/Lisbon")
+
+
 class Cohort(Base):
     __tablename__ = "cohort"
+    __table_args__ = (CheckConstraint(f"timezone IN {COHORT_TIMEZONES}", name="ck_cohort_timezone"),)
     id: Mapped[str] = mapped_column(String(20), primary_key=True)
     program_id: Mapped[str] = mapped_column(ForeignKey("program.id"), index=True)
     call_id: Mapped[str | None] = mapped_column(ForeignKey("call.id"))
     nombre: Mapped[str] = mapped_column(String(160))
     inicio: Mapped[date] = mapped_column(Date)
     fin: Mapped[date] = mapped_column(Date)
+    timezone: Mapped[str] = mapped_column(String(40), default="Europe/Madrid", server_default="Europe/Madrid")

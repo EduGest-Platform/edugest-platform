@@ -399,7 +399,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Totales de asistencia por matrícula (contrato get_attendance_summary del asistente) */
+        /** Totales de asistencia por matrícula y de la cohorte (contrato get_attendance_summary del asistente) */
         get: operations["get_attendance_summary_api_v1_cohorts__cohort_id__attendance_summary_get"];
         put?: never;
         post?: never;
@@ -768,17 +768,23 @@ export interface components {
         AttendanceSummary: {
             /** Cohort Id */
             cohort_id: string;
+            cohort_totals: components["schemas"]["CohortAttendance"];
             /** Date From */
             date_from: string | null;
             /** Date To */
             date_to: string | null;
-            /** Items */
+            /**
+             * Items
+             * @description Totales por matrícula. Vacío para coordinación, que solo ve el agregado
+             */
             items: components["schemas"]["EnrollmentAttendance"][];
             /**
              * Rule
-             * @default Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.
+             * @default Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.
              */
             rule: string;
+            /** Timezone */
+            timezone: string;
         };
         /** AuditEventOut */
         AuditEventOut: {
@@ -960,6 +966,30 @@ export interface components {
             /** Total */
             total: number | null;
         };
+        /**
+         * CohortAttendance
+         * @description Cohort-level totals for coordination. All values are null when the group is too small to show.
+         */
+        CohortAttendance: {
+            /** Attendance Rate */
+            attendance_rate?: number | null;
+            /** Attended Days */
+            attended_days?: number | null;
+            /** Enrollments */
+            enrollments: number | null;
+            /** Justified Absence Days */
+            justified_absence_days?: number | null;
+            /** Late Days */
+            late_days?: number | null;
+            /** Min Group Size */
+            min_group_size: number;
+            /** Suppressed */
+            suppressed: boolean;
+            /** Unjustified Absence Days */
+            unjustified_absence_days?: number | null;
+            /** Unrecorded Days */
+            unrecorded_days?: number | null;
+        };
         /** CohortCompetencies */
         CohortCompetencies: {
             /** Cohort Id */
@@ -1061,9 +1091,18 @@ export interface components {
         EnrollmentAttendance: {
             /**
              * Attendance Rate
-             * @description Presente / registrado. Nulo si no hay registros
+             * @description Asistido / registrado. Nulo si no hay registros
              */
             attendance_rate: number | null;
+            /**
+             * Attended Days
+             * @description Asistencia a tiempo más con retraso
+             */
+            attended_days: number;
+            /** Attended In Person Days */
+            attended_in_person_days: number;
+            /** Attended Online Days */
+            attended_online_days: number;
             /**
              * Enrollment Id
              * Format: uuid
@@ -1076,12 +1115,11 @@ export interface components {
             held_days: number;
             /** Justified Absence Days */
             justified_absence_days: number;
-            /** Present Days */
-            present_days: number;
-            /** Present In Person Days */
-            present_in_person_days: number;
-            /** Present Online Days */
-            present_online_days: number;
+            /**
+             * Late Days
+             * @description Parte de attended_days en la que llegó con retraso
+             */
+            late_days: number;
             /** Unjustified Absence Days */
             unjustified_absence_days: number;
             /**
@@ -1412,7 +1450,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "presente" | "ausente";
+            status: "presente" | "retraso" | "ausente";
             /**
              * Updated At
              * Format: date-time
@@ -1425,12 +1463,12 @@ export interface components {
         RecordWrite: {
             /**
              * Justification
-             * @description Obligatoria si está ausente; vacía si está presente
+             * @description Obligatoria si está ausente; vacía si asistió
              */
             justification?: ("justificada" | "no_justificada") | null;
             /**
              * Modality
-             * @description Obligatoria si está presente; vacía si está ausente
+             * @description Obligatoria si asistió (presente o retraso); vacía si está ausente
              */
             modality?: ("presencial" | "online") | null;
             /**
@@ -1442,7 +1480,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "presente" | "ausente";
+            status: "presente" | "retraso" | "ausente";
         };
         /** RequirementReviewHistory */
         RequirementReviewHistory: {
@@ -1570,7 +1608,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "presente" | "ausente";
+            status: "presente" | "retraso" | "ausente";
             /** Version */
             version: number;
         };
@@ -1598,7 +1636,7 @@ export interface components {
             duration_fraction: number;
             /**
              * Held
-             * @description La sesión ya se ha celebrado (fecha anterior o igual a hoy)
+             * @description La sesión ya se ha celebrado (fecha anterior o igual a hoy en la zona horaria de la cohorte)
              */
             held: boolean;
             /**
