@@ -128,8 +128,8 @@ def test_audit_failure_rolls_back_simulation(client, db, simulation, monkeypatch
         return original(*args, **kwargs)
     with monkeypatch.context() as patch:
         patch.setattr(audit, "record", fail)
-        with pytest.raises(RuntimeError):
-            client.post(url, headers=headers, json=payload())
+        response = client.post(url, headers=headers, json=payload())
+        assert response.status_code == 500
     assert counts(db) == (0, 0)
     assert client.post(url, headers=headers, json=payload()).status_code == 201
     assert counts(db) == (1, 1)
