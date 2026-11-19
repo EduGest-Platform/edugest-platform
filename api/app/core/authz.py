@@ -11,11 +11,13 @@ REQUIREMENT_EXCEPTION_PERMISSIONS = {"requirements.read", "requirements.exceptio
 REQUIREMENT_REVIEW_PERMISSIONS = {*REQUIREMENT_EXCEPTION_PERMISSIONS, "requirements.review"}
 # End of pre-selection (KAN-153): the five internal profiles may read and decide, each only inside its own scope.
 PRESELECTION_PERMISSIONS = {"preselection.read", "preselection.decide"}
+# PO decision 19/11/2026: administration (wildcard) and captación edit the per-call silence policy.
+PRESELECTION_POLICY_PERMISSION = "preselection.configure"
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
     # Fundación / captación: expedientes and CRM of pre-selection, requirement reviews and exceptions.
-    "captacion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS},
+    "captacion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS, PRESELECTION_POLICY_PERMISSION},
     # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
     "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS},
     # Coordinación: aggregated indicators, plus reading and recording requirement exceptions (KAN-128).

@@ -30,16 +30,20 @@ Implementa las decisiones TO-BE de la PO registradas el 18/11/2026 en KAN-119 y 
 
 Cambio aditivo en `POST /applications/{id}/events`: campo opcional `resultado`, solo válido con `tipo = contacto`.
 
-### Interpretaciones que conviene confirmar (no están en las decisiones de la PO)
+### Decisiones de la PO (Elizabeth, 19/11/2026) / PO decisions
 
-1. **Cuándo se cumple el umbral de silencio:** hay al menos *N* intentos de contacto con resultado `sin_respuesta` desde la última respuesta o reprogramación **y** han pasado al menos *D* días desde el último de esos intentos. Un intento sin resultado registrado **no cuenta** (nunca se empuja hacia el cierre sin evidencia). Una respuesta registrada reinicia la cuenta.
-2. **Reprogramar** reinicia la cuenta: harán falta otros *N* intentos sin respuesta y *D* días. Deja la etapa como está y añade una nota al CRM.
-3. **Confirmar el silencio** exige que el umbral se cumpla; si no, 409. Quien tenga constancia de que la persona desiste debe usar `retirada_expresa`.
-4. **Etapa tras confirmar silencio:** `retirada`, igual que la retirada expresa. Se distinguen por la decisión (`silencio_confirmado` frente a `retirada_expresa`) y por la evidencia, no por una etapa nueva (añadirla cambia el vocabulario del contrato y de la interfaz). Consecuencia: los agregados de coordinación por etapa las suman. **Decisión pendiente de la PO** (propuesta: etapa propia en la máquina de estados de KAN-119).
-5. **Retirada expresa solo desde la preselección** (`enviada`, `requisitos_en_revision`). KAN-119 propone «cualquier estado abierto»; los estados posteriores quedan para la máquina de estados completa.
-6. **Quién edita la política:** solo administración. La PO dijo que es editable por convocatoria, pero no quién la edita.
-7. **Docente:** su ámbito es la cohorte; solo alcanza candidaturas de convocatorias que alimentan esa cohorte (misma regla que KAN-128). Una convocatoria abierta sin cohorte no le da acceso.
-8. **Visibilidad para coordinación y docente:** la lista de alertas no muestra nombre ni correo. El historial muestra el motivo, que es texto libre operativo (política de KAN-120: sin datos de salud ni situación personal).
+Sustituyen la lista anterior de «interpretaciones que conviene confirmar». / They replace the former list of interpretations to confirm.
+
+| # | Tema | Decisión PO 19/11 | Implementado |
+|---|---|---|---|
+| 1 | Umbral de silencio | **Dos niveles, editables por convocatoria.** Alerta **leve** desde 2 intentos `sin_respuesta` (sin esperar días). Alerta de **acción** con 4 intentos y 30 días desde el último. Solo la de acción permite confirmar el silencio. Una respuesta o una reprogramación reinicia la cuenta; un intento sin resultado no cuenta | Sí: `call.silence_warning_contacts` (1 ≤ leve ≤ acción), `evidence.alert_level` (`leve`/`accion`), `silence-review` lista ambos niveles |
+| 2 | Reprogramar | Reinicia la cuenta y mantiene la etapa. Se puede reprogramar con alerta leve o de acción; sin alerta, error explicado | Sí |
+| 3 | Errores | **Mensajes para personas no técnicas**, no «409» | Sí en este módulo: `detail` explica qué pasa y qué hacer; `code` estable para la interfaz (`app/core/errors.py`). Anas muestra el mensaje |
+| 4 | Etapa tras confirmar silencio | `retirada`, distinguida por la decisión y la evidencia | Sin cambios |
+| 5 | Retirada expresa | Disponible **siempre durante preselección y selección** (`enviada`, `requisitos_en_revision`, `convocada`, `evaluacion_en_curso`, `pendiente_decision_humana`). Tras la admisión, el abandono es una **baja de matrícula** | Sí: retirada en selección. La baja de matrícula es otra entidad (`Enrollment`) y queda **fuera de esta PR**; aquí la API responde con un mensaje que lo indica |
+| 6 | Quién edita la política | **Administración y captación** (captación dentro de su programa) | Sí: permiso `preselection.configure` |
+| 7 | Docente | Solo convocatorias que alimentan su cohorte; **administración puede ampliarlo** | Regla sin cambios. Hoy administración amplía el ámbito con asignaciones de rol (`role_assignment`) por cohorte o convocatoria; no existe aún una pantalla o endpoint de invitación de personal |
+| 8 | Alertas | La lista **identifica a la persona por su nombre**; el correo solo se ve en el expediente | Sí: `display_name` en `silence-review` |
 
 ## ES — Datos y migración
 
@@ -72,7 +76,9 @@ Entorno: Linux, Python 3.12, PostgreSQL 16.2 + pgvector local y desechable, dato
 - Interfaz (Anas): pantalla de alertas de silencio, formulario de resultado del contacto y botones de convocar / retirada / silencio. El contrato ya está disponible.
 - Recordatorios o avisos automáticos de la alerta (Yohanna): pueden consumir `silence-review`; no se ha implementado ninguno.
 - Actualizar la matriz RBAC (KAN-90, PR #38) con las rutas y permisos nuevos cuando se fusionen #38 y este PR.
-- Decisiones de la PO de la sección «Interpretaciones», y validación de Melissa de lo que la PO decida atribuir al AS-IS.
+- Baja de matrícula de una persona admitida (decisión PO 19/11): historia aparte sobre `Enrollment`.
+- Pendiente de la PO: si la retirada también debe poder registrarse desde `lista_espera` (no se decidió; hoy no se permite).
+- Validación de Melissa de lo que la PO decida atribuir al AS-IS.
 - Sin límite de envíos ni de intentos de decisión (rate limiting): no es parte de esta tarea.
 
 ## EN — What it implements
@@ -85,7 +91,7 @@ It implements the PO's TO-BE decisions recorded on 2026-11-18 in KAN-119 and KAN
 - **Who:** `preselection.read` / `preselection.decide` for admin, captación, selección, coordinación and docente, checked on the server per call (a teacher through the cohorts the call feeds). Applicant and coder accounts get 403. Only admin edits the policy (`calls.configure`).
 - **Audit:** every decision writes an immutable `preselection_decision` row (actor, date, reason, from/to stage, evidence snapshot with the thresholds used, so later policy edits never rewrite history), a CRM event, and an audit event with IDs and codes only (never the free-text reason). Each contact attempt now records channel, date and **result** (`respondida` / `sin_respuesta`).
 
-Interpretations to confirm (not in the PO decisions): (1) threshold = at least *N* unanswered attempts since the last answer or postponement **and** at least *D* days since the last of them; an attempt without a recorded result never counts; (2) postponing restarts the count and keeps the stage; (3) confirming silence requires the threshold (otherwise 409; use express withdrawal if the person said so); (4) a confirmed silence also ends in stage `retirada`, distinguished by decision and evidence — a dedicated stage would change the contract vocabulary and is left to the KAN-119 state machine; (5) express withdrawal is limited to pre-selection stages here; (6) only admin edits the policy; (7) teachers reach only calls that feed their cohort; (8) the alert list shows no name or email.
+Superseded by the PO decisions of 19/11/2026 (table above): two alert levels (light from 2 unanswered attempts, action at 4 attempts and 30 days, all per call), plain-language errors with stable codes, withdrawal during pre-selection and selection (after admission it is an enrollment withdrawal, out of this PR), policy edited by admin and captación, teacher scope extendable by admin, and alerts showing the person's name. Former interpretations: (1) threshold = at least *N* unanswered attempts since the last answer or postponement **and** at least *D* days since the last of them; an attempt without a recorded result never counts; (2) postponing restarts the count and keeps the stage; (3) confirming silence requires the threshold (otherwise 409; use express withdrawal if the person said so); (4) a confirmed silence also ends in stage `retirada`, distinguished by decision and evidence — a dedicated stage would change the contract vocabulary and is left to the KAN-119 state machine; (5) express withdrawal is limited to pre-selection stages here; (6) only admin edits the policy; (7) teachers reach only calls that feed their cohort; (8) the alert list shows no name or email.
 
 Migration `0005` is additive and reversible and chains after `0006` (KAN-135, which revises `0004`), keeping a single Alembic head (`0002`, F2, does not exist). Evidence: local disposable PostgreSQL 16, synthetic data: 297 passed / 3 xfailed (93 new tests), all four manual mutants caught, `alembic check` clean, upgrade/downgrade cycle OK, CI-rules ruff clean, contract and client regenerated (additions only). **Not run:** Docker/Compose, browser E2E, web typecheck/tests, deployment, and the PR's CI at the time of writing.
 

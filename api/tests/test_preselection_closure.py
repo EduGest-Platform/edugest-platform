@@ -168,12 +168,63 @@ def test_open_requirements_do_not_block_the_call_and_are_recorded_as_evidence(cl
 
 
 @pytest.mark.parametrize("stage", ["convocada", "evaluacion_en_curso", "pendiente_decision_humana", "admitida", "lista_espera", "no_admitida", "retirada"])
-@pytest.mark.parametrize("decision", ["convocada", "retirada_expresa"])
-def test_only_applications_still_in_preselection_can_be_decided(client, db, stage, decision):
+def test_only_applications_still_in_preselection_can_be_called_to_selection(client, db, stage):
     target = make_application(db, stage=stage)
     before = snapshot(db, target)
-    assert decide(client, login(client, ADMIN), target.id, decision).status_code == 409
+    response = decide(client, login(client, ADMIN), target.id, "convocada")
+    assert response.status_code == 409
+    assert response.json()["code"] == "preselection_ended"
     assert snapshot(db, target) == before
+
+
+@pytest.mark.parametrize("stage", ["convocada", "evaluacion_en_curso", "pendiente_decision_humana"])
+def test_a_person_can_also_withdraw_during_selection(client, db, stage):
+    """PO decision 19/11/2026: withdrawal is always available during pre-selection and selection."""
+    target = make_application(db, stage=stage)
+    response = decide(client, login(client, SEL_IA), target.id, "retirada_expresa", reason="La persona comunica que no continúa")
+    assert response.status_code == 201, response.text
+    assert (response.json()["from_stage"], response.json()["to_stage"]) == (stage, "retirada")
+    assert stage_of(db, target) == "retirada"
+
+
+def test_withdrawal_after_admission_points_to_the_enrollment_withdrawal(client, db):
+    target = make_application(db, stage="admitida")
+    before = snapshot(db, target)
+    response = decide(client, login(client, ADMIN), target.id, "retirada_expresa")
+    assert response.status_code == 409
+    body = response.json()
+    assert body["code"] == "withdrawal_after_admission" and "matrícula" in body["detail"]
+    assert snapshot(db, target) == before
+
+
+@pytest.mark.parametrize("stage", ["lista_espera", "no_admitida", "retirada"])
+def test_withdrawal_is_not_recorded_once_the_process_has_ended(client, db, stage):
+    target = make_application(db, stage=stage)
+    before = snapshot(db, target)
+    response = decide(client, login(client, ADMIN), target.id, "retirada_expresa")
+    assert response.status_code == 409 and response.json()["code"] == "withdrawal_not_available"
+    assert snapshot(db, target) == before
+
+
+@pytest.mark.parametrize("stage", ["convocada", "evaluacion_en_curso", "pendiente_decision_humana"])
+@pytest.mark.parametrize("decision", ["silencio_confirmado", "silencio_reprogramado"])
+def test_silence_decisions_only_apply_during_preselection(client, db, stage, decision):
+    target = make_application(db, stage=stage)
+    silent_for(db, target)
+    response = decide(client, login(client, ADMIN), target.id, decision)
+    assert response.status_code == 409 and response.json()["code"] == "preselection_ended"
+
+
+def test_error_messages_are_written_for_non_technical_people(client, db):
+    """PO decision 19/11/2026: the UI shows a plain message and a stable code, never just «409»."""
+    target = make_application(db)
+    add_contacts(db, target, (40, "sin_respuesta"), (35, "sin_respuesta"))
+    body = decide(client, login(client, ADMIN), target.id, "silencio_confirmado").json()
+    assert body["code"] == "silence_threshold_not_met"
+    assert "2 intentos sin respuesta" in body["detail"] and "retirada expresa" in body["detail"]
+    assert "409" not in body["detail"] and "threshold" not in body["detail"]
+    denied = decide(client, login(client, CAPT_DATA), target.id).json()
+    assert denied["code"] == "no_scope_permission" and "administración" in denied["detail"]
 
 
 def test_a_second_decision_on_the_same_application_is_a_conflict(client, db):
@@ -181,7 +232,7 @@ def test_a_second_decision_on_the_same_application_is_a_conflict(client, db):
     admin = login(client, ADMIN)
     assert decide(client, admin, target.id).status_code == 201
     before = snapshot(db, target)
-    assert decide(client, admin, target.id, "retirada_expresa").status_code == 409
+    assert decide(client, admin, target.id, "silencio_confirmado").status_code == 409
     assert snapshot(db, target) == before
 
 
@@ -236,25 +287,52 @@ def test_invalid_payloads_are_rejected_without_changes(client, db, payload):
 
 # ---------- silence: a proposal for human review, never an automatic closure ----------
 
-NOT_YET_SILENCE = {
+NO_ALERT = {
     "no contact attempts": [],
-    "fewer attempts than the call requires": [(60, "sin_respuesta"), (50, "sin_respuesta"), (40, "sin_respuesta")],
-    "recent last attempt": [(70, "sin_respuesta"), (50, "sin_respuesta"), (30, "sin_respuesta"), (10, "sin_respuesta")],
+    "a single unanswered attempt": [(60, "sin_respuesta")],
     "attempts without a recorded result": [(90, None), (80, None), (70, None), (60, None)],
     "the person answered after the unanswered attempts": [(90, "sin_respuesta"), (80, "sin_respuesta"), (70, "sin_respuesta"), (60, "sin_respuesta"), (45, "respondida")],
 }
+# Light alert (PO 19/11/2026): from 2 unanswered attempts, with no waiting days, but below the action threshold.
+LIGHT_ALERT = {
+    "two attempts the same day": [(0, "sin_respuesta"), (0, "sin_respuesta")],
+    "fewer attempts than the action threshold": [(60, "sin_respuesta"), (50, "sin_respuesta"), (40, "sin_respuesta")],
+    "recent last attempt": [(70, "sin_respuesta"), (50, "sin_respuesta"), (30, "sin_respuesta"), (10, "sin_respuesta")],
+}
+NOT_YET_SILENCE = {**NO_ALERT, **LIGHT_ALERT}
 
 
-@pytest.mark.parametrize("case", list(NOT_YET_SILENCE))
-def test_silence_cannot_be_confirmed_or_postponed_before_the_threshold(client, db, case):
+@pytest.mark.parametrize("case", list(NO_ALERT))
+def test_without_an_alert_silence_cannot_be_confirmed_or_postponed(client, db, case):
     target = make_application(db)
-    add_contacts(db, target, *NOT_YET_SILENCE[case])
+    add_contacts(db, target, *NO_ALERT[case])
     admin = login(client, ADMIN)
     before = snapshot(db, target)
     assert decide(client, admin, target.id, "silencio_confirmado").status_code == 409
-    assert decide(client, admin, target.id, "silencio_reprogramado").status_code == 409
+    assert decide(client, admin, target.id, "silencio_reprogramado").json()["code"] == "no_silence_alert"
     assert snapshot(db, target) == before
     assert client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"] == []
+
+
+@pytest.mark.parametrize("case", list(LIGHT_ALERT))
+def test_light_alert_is_listed_but_silence_cannot_be_confirmed_yet(client, db, case):
+    target = make_application(db)
+    add_contacts(db, target, *LIGHT_ALERT[case])
+    admin = login(client, ADMIN)
+    [item] = client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"]
+    assert item["evidence"]["alert_level"] == "leve" and item["evidence"]["threshold_met"] is False
+    before = snapshot(db, target)
+    assert decide(client, admin, target.id, "silencio_confirmado").json()["code"] == "silence_threshold_not_met"
+    assert snapshot(db, target) == before
+
+
+def test_a_light_alert_can_be_postponed_and_the_count_restarts(client, db):
+    target = make_application(db)
+    add_contacts(db, target, (3, "sin_respuesta"), (1, "sin_respuesta"))
+    admin = login(client, ADMIN)
+    assert decide(client, admin, target.id, "silencio_reprogramado", reason="Hablaremos la semana próxima").status_code == 201
+    assert client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"] == []
+    assert stage_of(db, target) == "requisitos_en_revision"
 
 
 def test_silence_creates_a_review_alert_and_never_closes_the_application(client, db):
@@ -267,7 +345,10 @@ def test_silence_creates_a_review_alert_and_never_closes_the_application(client,
     [item] = review.json()["items"]
     assert item["application_id"] == str(target.id) and item["codigo"] == target.codigo
     assert item["evidence"]["threshold_met"] is True and item["evidence"]["unanswered_attempts"] == 4
-    assert {"display_name", "email", "person"}.isdisjoint(item)
+    assert item["evidence"]["alert_level"] == "accion"
+    # PO 19/11/2026: the alert identifies the person by name; the e-mail stays in the application file.
+    assert item["display_name"] == db.get(Person, target.person_id).display_name
+    assert {"email", "person"}.isdisjoint(item)
     assert stage_of(db, target) == "requisitos_en_revision"
     assert snapshot(db, target)[:3] == before[:3]  # reading the alert only adds its own audit row
 
@@ -302,13 +383,14 @@ def test_silence_review_with_several_applications_keeps_each_evidence_separate(c
     silent_for(db, silent_b, attempts=6, days=40)
     silent_for(db, postponed)
     add_contacts(db, answered, *NOT_YET_SILENCE["the person answered after the unanswered attempts"])
-    add_contacts(db, few, *NOT_YET_SILENCE["fewer attempts than the call requires"])
+    add_contacts(db, few, *NOT_YET_SILENCE["fewer attempts than the action threshold"])
     admin = login(client, ADMIN)
     # A postponement restarts only its own application's count, never another one's.
     assert decide(client, admin, postponed.id, "silencio_reprogramado", reason="La persona pidió más tiempo").status_code == 201
     items = client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"]
     by_code = {i["codigo"]: i["evidence"] for i in items}
-    assert set(by_code) == {silent_a.codigo, silent_b.codigo}
+    assert set(by_code) == {silent_a.codigo, silent_b.codigo, few.codigo}
+    assert {code: e["alert_level"] for code, e in by_code.items()} == {silent_a.codigo: "accion", silent_b.codigo: "accion", few.codigo: "leve"}
     assert by_code[silent_a.codigo]["unanswered_attempts"] == 4
     assert by_code[silent_b.codigo]["unanswered_attempts"] == 6
     assert by_code[silent_b.codigo]["days_without_response"] >= 40
@@ -331,10 +413,10 @@ def test_silence_review_reads_contacts_and_decisions_once_whatever_the_number_of
     from app.modules.preselection.router import silence_review_items
 
     call = db.get(Call, IA_CALL)
-    applications = [make_application(db) for _ in range(5)]
-    for application in applications:
+    applications = [(make_application(db), "Persona Sintética") for _ in range(5)]
+    for application, _ in applications:
         silent_for(db, application)
-    ids = [a.id for a in applications]
+    ids = [a.id for a, _ in applications]
     events = CountingRows(db.scalars(select(ApplicationEvent).where(ApplicationEvent.application_id.in_(ids))))
     decisions = CountingRows([])
     items = silence_review_items(call, applications, events, decisions, utcnow())
@@ -350,28 +432,47 @@ def policy_url(call_id=IA_CALL) -> str:
     return f"/api/v1/calls/{call_id}/preselection-policy"
 
 
-def test_default_policy_is_30_days_and_4_attempts_for_every_call(client):
+DEFAULT_POLICY = {"silence_days": 30, "silence_max_contacts": 4, "silence_warning_contacts": 2}
+SHORT_POLICY = {"silence_days": 7, "silence_max_contacts": 2, "silence_warning_contacts": 1}
+
+
+def test_default_policy_is_a_light_alert_at_2_attempts_and_action_at_4_attempts_and_30_days(client):
     for call_id in (IA_CALL, DATA_CALL, IA_CLOSED_CALL):
-        assert client.get(policy_url(call_id), headers=login(client, ADMIN)).json() == {"silence_days": 30, "silence_max_contacts": 4}
+        assert client.get(policy_url(call_id), headers=login(client, ADMIN)).json() == DEFAULT_POLICY
 
 
-def test_policy_is_editable_per_call_by_the_administrator_only(client, db):
-    admin = login(client, ADMIN)
-    assert client.put(policy_url(), json={"silence_days": 7, "silence_max_contacts": 2}, headers=admin).status_code == 200
-    assert client.get(policy_url(), headers=login(client, SEL_IA)).json() == {"silence_days": 7, "silence_max_contacts": 2}
-    assert client.get(policy_url(DATA_CALL), headers=admin).json() == {"silence_days": 30, "silence_max_contacts": 4}
+@pytest.mark.parametrize("editor", [ADMIN, CAPT_IA])
+def test_policy_is_editable_per_call_by_administration_and_captacion_of_the_program(client, db, editor):
+    """PO decision 19/11/2026: administration and captación (inside its program) edit the policy."""
+    assert client.put(policy_url(), json=SHORT_POLICY, headers=login(client, editor)).status_code == 200
+    assert client.get(policy_url(), headers=login(client, SEL_IA)).json() == SHORT_POLICY
+    assert client.get(policy_url(DATA_CALL), headers=login(client, ADMIN)).json() == DEFAULT_POLICY
     audit_row = db.scalar(select(AuditEvent).where(AuditEvent.action == "call.preselection_policy_updated"))
-    assert audit_row.meta == {"silence_days_before": 30, "silence_max_contacts_before": 4, "silence_days": 7, "silence_max_contacts": 2}
-    for who in (CAPT_IA, SEL_IA, COORD, DOCENTE, ASPIRANTE):
-        assert client.put(policy_url(), json={"silence_days": 1, "silence_max_contacts": 1}, headers=login(client, who)).status_code == 403
-    assert client.put(policy_url(), json={"silence_days": 1, "silence_max_contacts": 1}).status_code == 401
-    assert client.get(policy_url(), headers=admin).json() == {"silence_days": 7, "silence_max_contacts": 2}
+    assert audit_row.meta == {**{f"{k}_before": v for k, v in DEFAULT_POLICY.items()}, **SHORT_POLICY}
 
 
-@pytest.mark.parametrize("payload", [{"silence_days": 0, "silence_max_contacts": 4}, {"silence_days": 366, "silence_max_contacts": 4}, {"silence_days": 30, "silence_max_contacts": 0}, {"silence_days": 30, "silence_max_contacts": 21}, {"silence_days": "treinta", "silence_max_contacts": 4}, {"silence_days": 30}, {"silence_days": 30, "silence_max_contacts": 4, "extra": 1}])
+def test_other_profiles_and_other_programs_cannot_edit_the_policy(client):
+    other = {"silence_days": 1, "silence_max_contacts": 1, "silence_warning_contacts": 1}
+    for who in (CAPT_DATA, SEL_IA, COORD, DOCENTE, ASPIRANTE):
+        response = client.put(policy_url(), json=other, headers=login(client, who))
+        assert response.status_code == 403
+    assert response.json()["code"] == "no_policy_permission" and "captación" in response.json()["detail"]
+    assert client.put(policy_url(), json=other).status_code == 401
+    assert client.get(policy_url(), headers=login(client, ADMIN)).json() == DEFAULT_POLICY
+
+
+INVALID_POLICIES = [
+    {**DEFAULT_POLICY, "silence_days": 0}, {**DEFAULT_POLICY, "silence_days": 366},
+    {**DEFAULT_POLICY, "silence_max_contacts": 0}, {**DEFAULT_POLICY, "silence_max_contacts": 21},
+    {**DEFAULT_POLICY, "silence_warning_contacts": 0}, {**DEFAULT_POLICY, "silence_warning_contacts": 5},  # light alert after the action one
+    {**DEFAULT_POLICY, "silence_days": "treinta"}, {"silence_days": 30, "silence_max_contacts": 4}, {**DEFAULT_POLICY, "extra": 1},
+]
+
+
+@pytest.mark.parametrize("payload", INVALID_POLICIES)
 def test_invalid_policies_are_rejected(client, payload):
     assert client.put(policy_url(), json=payload, headers=login(client, ADMIN)).status_code == 422
-    assert client.get(policy_url(), headers=login(client, ADMIN)).json() == {"silence_days": 30, "silence_max_contacts": 4}
+    assert client.get(policy_url(), headers=login(client, ADMIN)).json() == DEFAULT_POLICY
 
 
 def test_a_shorter_policy_applies_only_to_its_call(client, db):
@@ -379,9 +480,11 @@ def test_a_shorter_policy_applies_only_to_its_call(client, db):
     ia_app, data_app = make_application(db, IA_CALL), make_application(db, DATA_CALL)
     for target in (ia_app, data_app):
         add_contacts(db, target, (12, "sin_respuesta"), (10, "sin_respuesta"))
-    client.put(policy_url(), json={"silence_days": 7, "silence_max_contacts": 2}, headers=admin)
-    assert [i["codigo"] for i in client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"]] == [ia_app.codigo]
-    assert client.get(f"/api/v1/calls/{DATA_CALL}/silence-review", headers=admin).json()["items"] == []
+    client.put(policy_url(), json=SHORT_POLICY, headers=admin)
+    ia_items = client.get(f"/api/v1/calls/{IA_CALL}/silence-review", headers=admin).json()["items"]
+    data_items = client.get(f"/api/v1/calls/{DATA_CALL}/silence-review", headers=admin).json()["items"]
+    assert [(i["codigo"], i["evidence"]["alert_level"]) for i in ia_items] == [(ia_app.codigo, "accion")]
+    assert [(i["codigo"], i["evidence"]["alert_level"]) for i in data_items] == [(data_app.codigo, "leve")]
 
 
 def test_changing_the_policy_does_not_rewrite_decisions_already_taken(client, db):
@@ -389,7 +492,7 @@ def test_changing_the_policy_does_not_rewrite_decisions_already_taken(client, db
     silent_for(db, target)
     admin = login(client, ADMIN)
     assert decide(client, admin, target.id, "silencio_confirmado").status_code == 201
-    assert client.put(policy_url(), json={"silence_days": 90, "silence_max_contacts": 10}, headers=admin).status_code == 200
+    assert client.put(policy_url(), json={"silence_days": 90, "silence_max_contacts": 10, "silence_warning_contacts": 5}, headers=admin).status_code == 200
     [item] = history(client, admin, target.id).json()["items"]
     assert (item["evidence"]["silence_days"], item["evidence"]["silence_max_contacts"]) == (30, 4)
     assert stage_of(db, target) == "retirada"
@@ -449,7 +552,7 @@ def test_database_rejects_a_result_on_anything_but_a_contact(db):
     db.rollback()
 
 
-@pytest.mark.parametrize(("column", "value"), [("silence_days", 0), ("silence_days", 366), ("silence_max_contacts", 0), ("silence_max_contacts", 21)])
+@pytest.mark.parametrize(("column", "value"), [("silence_days", 0), ("silence_days", 366), ("silence_max_contacts", 0), ("silence_max_contacts", 21), ("silence_warning_contacts", 0), ("silence_warning_contacts", 5)])
 def test_database_rejects_out_of_range_policies(db, column, value):
     setattr(db.get(Call, IA_CALL), column, value)
     with pytest.raises(IntegrityError):
@@ -465,9 +568,9 @@ def test_migration_0005_downgrades_to_0006_and_upgrades_again():
         tables = set(inspect(engine).get_table_names())
         assert "preselection_decision" not in tables
         assert {"call_requirement", "requirement_review", "knowledge_document"} <= tables
-        assert {"silence_days", "silence_max_contacts"}.isdisjoint(c["name"] for c in inspect(engine).get_columns("call"))
+        assert {"silence_days", "silence_max_contacts", "silence_warning_contacts"}.isdisjoint(c["name"] for c in inspect(engine).get_columns("call"))
         assert "resultado" not in {c["name"] for c in inspect(engine).get_columns("application_event")}
     finally:
         command.upgrade(cfg, "head")
     assert {"preselection_decision", "call_requirement"} <= set(inspect(engine).get_table_names())
-    assert {"silence_days", "silence_max_contacts"} <= {c["name"] for c in inspect(engine).get_columns("call")}
+    assert {"silence_days", "silence_max_contacts", "silence_warning_contacts"} <= {c["name"] for c in inspect(engine).get_columns("call")}

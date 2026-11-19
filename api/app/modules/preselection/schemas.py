@@ -2,9 +2,11 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Decision = Literal["convocada", "retirada_expresa", "silencio_confirmado", "silencio_reprogramado"]
+# "leve": early warning (few unanswered attempts, no waiting days). "accion": a person must confirm or postpone.
+AlertLevel = Literal["leve", "accion"]
 
 
 class PreselectionDecisionWrite(BaseModel):
@@ -27,7 +29,9 @@ class SilenceEvidence(BaseModel):
     days_without_response: int | None
     silence_days: int
     silence_max_contacts: int
-    threshold_met: bool
+    silence_warning_contacts: int
+    alert_level: AlertLevel | None = Field(description="Nivel de alerta: «leve» avisa pronto; «accion» pide a una persona confirmar o reprogramar")
+    threshold_met: bool = Field(description="Se cumple el umbral de acción: solo entonces se puede confirmar el silencio")
 
 
 class PreselectionDecisionOut(BaseModel):
@@ -50,6 +54,7 @@ class PreselectionDecisionList(BaseModel):
 class SilenceReviewItem(BaseModel):
     application_id: uuid.UUID
     codigo: str
+    display_name: str = Field(description="Nombre de la persona, para identificarla en la lista. El correo solo se ve en el expediente")
     stage: str
     evidence: SilenceEvidence
 
@@ -62,5 +67,12 @@ class SilenceReviewList(BaseModel):
 class PreselectionPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    silence_days: int = Field(ge=1, le=365, description="Días sin respuesta tras el último intento antes de proponer revisión de silencio")
-    silence_max_contacts: int = Field(ge=1, le=20, description="Intentos de contacto sin respuesta registrados antes de proponer revisión de silencio")
+    silence_days: int = Field(ge=1, le=365, description="Días sin respuesta tras el último intento antes de la alerta de acción")
+    silence_max_contacts: int = Field(ge=1, le=20, description="Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)")
+    silence_warning_contacts: int = Field(ge=1, le=20, description="Intentos sin respuesta para la alerta leve; salta sin esperar días")
+
+    @model_validator(mode="after")
+    def _warning_comes_first(self) -> "PreselectionPolicy":
+        if self.silence_warning_contacts > self.silence_max_contacts:
+            raise ValueError("La alerta leve no puede pedir más intentos que la alerta de acción")
+        return self

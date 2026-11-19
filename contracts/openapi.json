@@ -1236,23 +1236,31 @@
         "additionalProperties": false,
         "properties": {
           "silence_days": {
-            "description": "Días sin respuesta tras el último intento antes de proponer revisión de silencio",
+            "description": "Días sin respuesta tras el último intento antes de la alerta de acción",
             "maximum": 365.0,
             "minimum": 1.0,
             "title": "Silence Days",
             "type": "integer"
           },
           "silence_max_contacts": {
-            "description": "Intentos de contacto sin respuesta registrados antes de proponer revisión de silencio",
+            "description": "Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)",
             "maximum": 20.0,
             "minimum": 1.0,
             "title": "Silence Max Contacts",
+            "type": "integer"
+          },
+          "silence_warning_contacts": {
+            "description": "Intentos sin respuesta para la alerta leve; salta sin esperar días",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Silence Warning Contacts",
             "type": "integer"
           }
         },
         "required": [
           "silence_days",
-          "silence_max_contacts"
+          "silence_max_contacts",
+          "silence_warning_contacts"
         ],
         "title": "PreselectionPolicy",
         "type": "object"
@@ -1533,6 +1541,22 @@
       "SilenceEvidence": {
         "description": "Why an application is (or is not) pending a silence review. Computed from CRM contacts, never stored as a state.",
         "properties": {
+          "alert_level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "leve",
+                  "accion"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nivel de alerta: «leve» avisa pronto; «accion» pide a una persona confirmar o reprogramar",
+            "title": "Alert Level"
+          },
           "days_without_response": {
             "anyOf": [
               {
@@ -1564,7 +1588,12 @@
             "title": "Silence Max Contacts",
             "type": "integer"
           },
+          "silence_warning_contacts": {
+            "title": "Silence Warning Contacts",
+            "type": "integer"
+          },
           "threshold_met": {
+            "description": "Se cumple el umbral de acción: solo entonces se puede confirmar el silencio",
             "title": "Threshold Met",
             "type": "boolean"
           },
@@ -1579,6 +1608,8 @@
           "days_without_response",
           "silence_days",
           "silence_max_contacts",
+          "silence_warning_contacts",
+          "alert_level",
           "threshold_met"
         ],
         "title": "SilenceEvidence",
@@ -1595,6 +1626,11 @@
             "title": "Codigo",
             "type": "string"
           },
+          "display_name": {
+            "description": "Nombre de la persona, para identificarla en la lista. El correo solo se ve en el expediente",
+            "title": "Display Name",
+            "type": "string"
+          },
           "evidence": {
             "$ref": "#/components/schemas/SilenceEvidence"
           },
@@ -1606,6 +1642,7 @@
         "required": [
           "application_id",
           "codigo",
+          "display_name",
           "stage",
           "evidence"
         ],
@@ -2672,7 +2709,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Política de silencio de la convocatoria (por defecto 30 días y 4 intentos de contacto)",
+        "summary": "Política de silencio de la convocatoria (por defecto: alerta leve a los 2 intentos; alerta de acción a los 4 intentos y 30 días)",
         "tags": [
           "preselection"
         ]
@@ -2734,7 +2771,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Editar la política de silencio de una convocatoria. No cambia decisiones ya tomadas",
+        "summary": "Editar la política de silencio de una convocatoria (administración y captación). No cambia decisiones ya tomadas",
         "tags": [
           "preselection"
         ]
@@ -2896,7 +2933,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Candidaturas en preselección que han cumplido el umbral de silencio y esperan revisión humana (no se cierra nada solo)",
+        "summary": "Candidaturas en preselección con alerta de silencio leve o de acción; una persona revisa (no se cierra nada solo)",
         "tags": [
           "preselection"
         ]

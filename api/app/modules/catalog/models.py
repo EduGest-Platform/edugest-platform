@@ -23,6 +23,7 @@ class Call(Base):
         CheckConstraint("estado IN ('abierta','cerrada')", name="ck_call_estado"),
         CheckConstraint("silence_days BETWEEN 1 AND 365", name="ck_call_silence_days"),
         CheckConstraint("silence_max_contacts BETWEEN 1 AND 20", name="ck_call_silence_max_contacts"),
+        CheckConstraint("silence_warning_contacts BETWEEN 1 AND silence_max_contacts", name="ck_call_silence_warning_contacts"),
     )
     id: Mapped[str] = mapped_column(String(30), primary_key=True)
     program_id: Mapped[str] = mapped_column(ForeignKey("program.id"), index=True)
@@ -37,6 +38,8 @@ class Call(Base):
     # Pre-selection silence policy (KAN-153). Editable per call; a decision stores the values it used.
     silence_days: Mapped[int] = mapped_column(Integer, default=30, server_default=text("30"))
     silence_max_contacts: Mapped[int] = mapped_column(Integer, default=4, server_default=text("4"))
+    # Early, light alert (PO 19/11/2026): unanswered attempts that already flag the application, with no waiting days.
+    silence_warning_contacts: Mapped[int] = mapped_column(Integer, default=2, server_default=text("2"))
 
 
 class Cohort(Base):

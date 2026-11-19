@@ -240,9 +240,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Política de silencio de la convocatoria (por defecto 30 días y 4 intentos de contacto) */
+        /** Política de silencio de la convocatoria (por defecto: alerta leve a los 2 intentos; alerta de acción a los 4 intentos y 30 días) */
         get: operations["get_preselection_policy_api_v1_calls__call_id__preselection_policy_get"];
-        /** Editar la política de silencio de una convocatoria. No cambia decisiones ya tomadas */
+        /** Editar la política de silencio de una convocatoria (administración y captación). No cambia decisiones ya tomadas */
         put: operations["put_preselection_policy_api_v1_calls__call_id__preselection_policy_put"];
         post?: never;
         delete?: never;
@@ -276,7 +276,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Candidaturas en preselección que han cumplido el umbral de silencio y esperan revisión humana (no se cierra nada solo) */
+        /** Candidaturas en preselección con alerta de silencio leve o de acción; una persona revisa (no se cierra nada solo) */
         get: operations["silence_review_api_v1_calls__call_id__silence_review_get"];
         put?: never;
         post?: never;
@@ -862,14 +862,19 @@ export interface components {
         PreselectionPolicy: {
             /**
              * Silence Days
-             * @description Días sin respuesta tras el último intento antes de proponer revisión de silencio
+             * @description Días sin respuesta tras el último intento antes de la alerta de acción
              */
             silence_days: number;
             /**
              * Silence Max Contacts
-             * @description Intentos de contacto sin respuesta registrados antes de proponer revisión de silencio
+             * @description Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)
              */
             silence_max_contacts: number;
+            /**
+             * Silence Warning Contacts
+             * @description Intentos sin respuesta para la alerta leve; salta sin esperar días
+             */
+            silence_warning_contacts: number;
         };
         /** RequirementReviewHistory */
         RequirementReviewHistory: {
@@ -982,6 +987,11 @@ export interface components {
          * @description Why an application is (or is not) pending a silence review. Computed from CRM contacts, never stored as a state.
          */
         SilenceEvidence: {
+            /**
+             * Alert Level
+             * @description Nivel de alerta: «leve» avisa pronto; «accion» pide a una persona confirmar o reprogramar
+             */
+            alert_level: ("leve" | "accion") | null;
             /** Days Without Response */
             days_without_response: number | null;
             /** Last Attempt At */
@@ -990,7 +1000,12 @@ export interface components {
             silence_days: number;
             /** Silence Max Contacts */
             silence_max_contacts: number;
-            /** Threshold Met */
+            /** Silence Warning Contacts */
+            silence_warning_contacts: number;
+            /**
+             * Threshold Met
+             * @description Se cumple el umbral de acción: solo entonces se puede confirmar el silencio
+             */
             threshold_met: boolean;
             /** Unanswered Attempts */
             unanswered_attempts: number;
@@ -1004,6 +1019,11 @@ export interface components {
             application_id: string;
             /** Codigo */
             codigo: string;
+            /**
+             * Display Name
+             * @description Nombre de la persona, para identificarla en la lista. El correo solo se ve en el expediente
+             */
+            display_name: string;
             evidence: components["schemas"]["SilenceEvidence"];
             /** Stage */
             stage: string;

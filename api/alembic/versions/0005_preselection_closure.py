@@ -27,6 +27,8 @@ def upgrade() -> None:
     op.add_column('call', sa.Column('silence_max_contacts', sa.Integer(), server_default=sa.text('4'), nullable=False))
     op.create_check_constraint('ck_call_silence_days', 'call', 'silence_days BETWEEN 1 AND 365')
     op.create_check_constraint('ck_call_silence_max_contacts', 'call', 'silence_max_contacts BETWEEN 1 AND 20')
+    op.add_column('call', sa.Column('silence_warning_contacts', sa.Integer(), server_default=sa.text('2'), nullable=False))
+    op.create_check_constraint('ck_call_silence_warning_contacts', 'call', 'silence_warning_contacts BETWEEN 1 AND silence_max_contacts')
 
     op.add_column('application_event', sa.Column('resultado', sa.String(length=20), nullable=True))
     op.create_check_constraint(
@@ -59,6 +61,8 @@ def downgrade() -> None:
     op.drop_table('preselection_decision')
     op.drop_constraint('ck_application_event_resultado', 'application_event', type_='check')
     op.drop_column('application_event', 'resultado')
+    op.drop_constraint('ck_call_silence_warning_contacts', 'call', type_='check')
+    op.drop_column('call', 'silence_warning_contacts')
     op.drop_constraint('ck_call_silence_max_contacts', 'call', type_='check')
     op.drop_constraint('ck_call_silence_days', 'call', type_='check')
     op.drop_column('call', 'silence_max_contacts')
