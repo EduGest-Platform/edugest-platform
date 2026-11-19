@@ -8,6 +8,7 @@ TEST_URL = os.environ.get("GISTAR_TEST_DATABASE_URL")
 if not TEST_URL:
     raise RuntimeError("Define GISTAR_TEST_DATABASE_URL (PostgreSQL de pruebas, se vacía en cada test)")
 os.environ["GISTAR_DATABASE_URL"] = TEST_URL
+os.environ.setdefault("GISTAR_ENVIRONMENT", "local")
 os.environ.setdefault("GISTAR_SCRYPT_N", "1024")
 
 from alembic import command  # noqa: E402
