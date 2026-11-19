@@ -69,11 +69,11 @@ Probabilidad (P) e impacto (I): B/M/A. Estado: ABIERTO · MITIGADO EN DISEÑO ·
 | D2 | ¿El financiador exige nacionalidad, país y género? | **OBSERVADO en bootcamp + DECISIÓN PO de mantener en demo**; **exigencia contractual no confirmada**. Solicitar fundamento a Melissa |
 | D3 | Opciones de situación actual por financiador | **Simuladas en seed** para el MVP; la lista real la aporta la Fundación después |
 | D4 | Plazos de conservación | **Pendiente**, fuera de alcance |
-| D5 | Edad mínima | **PO 18/11:** edad configurable por convocatoria y mayoría de edad para bootcamp 1.250 h, aceptadas en diseño sintético. B publica >16; fecha de comprobación e interpretación exacta pendientes; año insuficiente |
-| D6 | Quién ve datos sensibles | **Refinada a política configurable**: solo personal con rol y ámbito autorizado **y concesión G3/G6** activa por convocatoria. Admin gestiona, pero no obtiene lectura G3/G6 automáticamente. El aspirante tiene derechos de protección de datos, independientes del acceso a notas internas |
+| D5 | Edad mínima | **PO 18/11:** edad configurable por convocatoria y mayoría de edad para bootcamp 1.250 h, aceptadas en diseño sintético. B publica >16. **PO 19/11:** edad al inicio del curso y «más de 16» = 16 o más; con solo el año, revisión humana |
+| D6 | Quién ve datos sensibles | **PO 19/11:** administración y selección ven G3/G6 por defecto; administración concede o retira el acceso a otros perfiles, con auditoría. (Sustituye la propuesta anterior de que admin no tuviera lectura automática.) El aspirante tiene derechos de protección de datos, independientes del acceso a notas internas |
 | D7 | EIPD | **Pendiente**, la valora la Fundación antes de usar datos reales |
 | D8 | `motivacion` | **PO 18/11:** motivación inicial opcional en diseño, profundizada en entrevista. Sigue **obligatoria en API/BD** (`NOT NULL`) hasta implementar en KAN-42 |
-| D9 | Residencia: revisión o elegibilidad | **PO 18/11:** obligatoria en bootcamp 1.250 h por requisito territorial publicado (Comunidad de Madrid); revisión humana. Otras convocatorias sin finalidad territorial siguen pendientes |
+| D9 | Residencia: revisión o elegibilidad | **PO 18/11:** obligatoria en bootcamp 1.250 h por requisito territorial publicado (Comunidad de Madrid); revisión humana. **PO 19/11:** en otras convocatorias, configurable según lo publicado, con revisión humana |
 | D10 | Rectificación y borrado (por correo) | Proceso **pendiente**, fuera de alcance |
 
 ## 7. Privilegios dinámicos y riesgos adicionales (V2)
