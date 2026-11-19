@@ -34,13 +34,17 @@ def _summary(a: Application, person: Person, call: Call) -> ApplicationSummary:
     )
 
 
-NOT_FOUND_OR_OUT_OF_SCOPE = "Candidatura no encontrada"
+APPLICATION_NOT_FOUND = "Candidatura no encontrada"
+OUT_OF_SCOPE = (
+    "Esta candidatura pertenece a una convocatoria que no tienes asignada. "
+    "Si necesitas verla, pide acceso a administración."
+)
 
 
 def _load(db: DB, application_id: uuid.UUID) -> tuple[Application, Person, Call]:
     row = db.execute(select(Application, Person, Call).join(Person, Person.id == Application.person_id).join(Call, Call.id == Application.call_id).where(Application.id == application_id)).first()
     if not row:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_OR_OUT_OF_SCOPE)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, APPLICATION_NOT_FOUND)
     a, person, call = row
     return a, person, call
 
@@ -48,15 +52,18 @@ def _load(db: DB, application_id: uuid.UUID) -> tuple[Application, Person, Call]
 def _load_in_scope(db: DB, p: CurrentPrincipal, perm: str, application_id: uuid.UUID) -> tuple[Application, Person, Call]:
     """Loads an application only if `perm` covers its program or call.
 
-    PO decision (19/11/2026): an existing application outside the caller's scope answers exactly like an unknown
-    id (404), so ids cannot be probed. A caller without `perm` in any scope still gets 403 before any lookup.
+    PO decision (19/11/2026): an application outside the caller's scope answers 403 with a message that says why
+    and what to do, and the denied attempt is audited (ids and codes only) so administration can spot probing.
+    A caller without `perm` in any scope gets 403 before any lookup, so it cannot tell known from unknown ids.
     """
     is_global, programs, calls = p.scopes_for(perm)
     if not (is_global or programs or calls):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes permiso sobre este ámbito")
     a, person, call = _load(db, application_id)
     if not p.can(perm, Scope(program_id=call.program_id, call_id=call.id)):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_OR_OUT_OF_SCOPE)
+        audit.record(db, p, "application.access_denied", "application", str(a.id), codigo=a.codigo, permission=perm)
+        db.commit()
+        raise HTTPException(status.HTTP_403_FORBIDDEN, OUT_OF_SCOPE)
     return a, person, call
 
 

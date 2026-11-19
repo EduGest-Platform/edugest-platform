@@ -26,9 +26,9 @@ def test_captacion_is_limited_to_its_program(client):
     body = apps(client, h).json()
     assert body["total"] == 6 and {a["program_id"] for a in body["items"]} == {"P-IA"}
     data_app = an_app(client, "P-DATA")
-    assert client.get(f"/api/v1/applications/{data_app['id']}", headers=h).status_code == 404  # out of scope = unknown
+    assert client.get(f"/api/v1/applications/{data_app['id']}", headers=h).status_code == 403
     r = client.post(f"/api/v1/applications/{data_app['id']}/events", headers=h, json={"tipo": "nota", "resumen": "x"})
-    assert r.status_code == 404
+    assert r.status_code == 403
     # filtering by a foreign call returns nothing instead of leaking
     assert apps(client, h, call_id="CONV-DATA-2027A").json()["total"] == 0
     assert apps(client, login(client, CAPT_DATA)).json()["total"] == 6
@@ -38,7 +38,7 @@ def test_seleccion_is_limited_to_its_call(client):
     h = login(client, SEL_IA)
     body = apps(client, h).json()
     assert body["total"] == 6 and {a["call_id"] for a in body["items"]} == {"CONV-IA-2027A"}
-    assert client.get(f"/api/v1/applications/{an_app(client, 'P-DATA')['id']}", headers=h).status_code == 404  # out of scope = unknown
+    assert client.get(f"/api/v1/applications/{an_app(client, 'P-DATA')['id']}", headers=h).status_code == 403
 
 
 def test_docente_has_no_access_to_admissions(client):

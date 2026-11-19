@@ -40,7 +40,7 @@ def test_foreign_crm_write_has_no_event_or_success_audit_side_effect(client, db,
     headers = login(client, account)
     before = event_count(db, application["id"])
     response = client.post(f"/api/v1/applications/{application['id']}/events", headers=headers, json={"tipo": "nota", "resumen": "Forbidden synthetic note"})
-    assert response.status_code == 404  # out of scope looks like an unknown id (PO decision 19/11/2026)
+    assert response.status_code == 403
     assert event_count(db, application["id"]) == before
     assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "application.event_added", AuditEvent.target_id == application["id"])) == 0
 

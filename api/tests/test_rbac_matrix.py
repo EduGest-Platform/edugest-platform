@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.modules.admissions.models import Application
+from app.modules.audit.models import AuditEvent
 from app.modules.identity.models import User
 from tests.conftest import ADMIN, ASPIRANTE, CAPT_IA, CODER, COORD, DOCENTE, SEL_IA, login, new_application
 
@@ -21,9 +22,8 @@ email_counter = itertools.count(1)
 NO_ACCESS = dict(
     list=403, detail_own=403, detail_other=403, event_own=403, event_other=403, summary_own=403, summary_other=403, audit=403,
 )
-# Out-of-scope applications answer 404, like an unknown id (PO decision 19/11/2026); summaries keep 403 (call ids are public).
 SCOPED_STAFF = dict(
-    list=200, detail_own=200, detail_other=404, event_own=201, event_other=404, summary_own=200, summary_other=403, audit=403,
+    list=200, detail_own=200, detail_other=403, event_own=201, event_other=403, summary_own=200, summary_other=403, audit=403,
 )
 LOGGED_IN = dict(mine=200, me=200)
 # Public routes: the credentials sent decide login; a bearer is optional for the public inscription form.
@@ -148,15 +148,23 @@ def test_person_accounts_see_only_their_own_applications(client, db, account):
 
 
 @pytest.mark.parametrize("profile", ["captacion", "seleccion"])
-def test_out_of_scope_and_unknown_applications_get_the_same_answer(client, profile):
+def test_out_of_scope_access_explains_itself_and_is_audited_without_side_effects(client, db, profile):
+    """PO decision 19/11/2026: 403 with a plain message, plus an audit row of the denied attempt (ids and codes only)."""
     account, _ = MATRIX[profile]
     headers = login(client, account)
     foreign = seed_application_ids(client)[OTHER_PROGRAM]
-    unknown = "00000000-0000-0000-0000-000000000000"
-    for method, suffix, body in (("get", "", None), ("post", "/events", {"tipo": "nota", "resumen": "matrix check"})):
-        answers = [getattr(client, method)(f"/api/v1/applications/{app_id}{suffix}", headers=headers, **({"json": body} if body else {})) for app_id in (foreign, unknown)]
-        assert [a.status_code for a in answers] == [404, 404]
-        assert answers[0].json()["detail"] == answers[1].json()["detail"]
+    read = client.get(f"/api/v1/applications/{foreign}", headers=headers)
+    write = client.post(f"/api/v1/applications/{foreign}/events", headers=headers, json={"tipo": "nota", "resumen": "matrix check"})
+    for response in (read, write):
+        assert response.status_code == 403
+        assert "pide acceso a administración" in response.json()["detail"]
+    db.expire_all()
+    denied = db.scalars(select(AuditEvent).where(AuditEvent.action == "application.access_denied", AuditEvent.target_id == foreign)).all()
+    assert [row.meta["permission"] for row in denied] == ["applications.read", "applications.crm"]
+    assert all(set(row.meta) == {"codigo", "permission"} for row in denied)
+    assert not db.scalar(select(AuditEvent).where(AuditEvent.action.in_(["application.viewed", "application.event_added"]), AuditEvent.target_id == foreign))
+    unknown = client.get("/api/v1/applications/00000000-0000-0000-0000-000000000000", headers=headers)
+    assert unknown.status_code == 404
 
 
 @pytest.mark.parametrize("account", [COORD, DOCENTE, ASPIRANTE])
