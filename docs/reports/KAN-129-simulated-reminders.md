@@ -10,7 +10,7 @@ Una clave combina la propuesta del motor y el instante de vencimiento UTC: dos z
 
 Tabla `simulated_reminder`: UUID, candidatura con borrado en cascada, convocatoria, referencia, tipo, vencimiento, versión de regla, clave, actor y fecha del servidor. No endpoint de edición/borrado; no se promete protección de UPDATE en BD ni una política de retención. Auditoría independiente conserva su política existente. No se modifican CRM, etapa, matrícula o decisiones.
 
-Migración 0008 tras 0007 integrada. #46 sigue abierto con 0005 tras 0007: antes de fusionar el segundo PR hay que actualizar y reconciliar una sola cabeza Alembic, regenerar contratos y repetir pruebas. No integrar ambos sin esa reconciliación. No se reescribe ninguna migración integrada.
+Migración 0008 tras 0005 integrada por #46. Cadena: 0006 → 0007 → 0005 → 0008, con una sola cabeza. El downgrade de 0008 vuelve a 0005 y conserva preselección, ejecuciones y requisitos. Contrato y cliente regenerados tras actualizar con dev. No se reescribe ninguna migración integrada.
 
 No scheduler, correos, inbox para aspirantes ni ahorro acreditado. Jornada informativa y entrevista quedan pendientes de fuentes de calendario/contratos; silencio permanece en #46/KAN-184. No se cambia su política ni se contabilizan estas simulaciones como trabajo completado en el evaluador del 70 %.
 
@@ -20,7 +20,7 @@ Partial KAN-129 increment: a scoped staff API persists documentation/exercise re
 
 Existing `propose` evaluates server time: before due returns 200/not_due with no reminder; due creates 201; retry returns 200/original. An application lock, unique digest and PostgreSQL conflict handling keep recording/audit atomic. The key also includes the normalized due instant, distinguishing reschedules while deduplicating equivalent timezone offsets. Unlike daily KAN-183 evaluations, a reminder simulation does not repeat each day. Lists disclose total/limit, exclude actor/key and have no recipient or free-text message.
 
-Migration 0008 follows integrated 0007. Pending #46 also follows 0007; whichever integrates second must reconcile the migration chain to one head, update with dev, regenerate contracts and rerun CI. No shared DB operations or rewriting of integrated migrations. Application deletion cascades to simulations, without promising audit erasure or retention policy. No update/delete API or DB update-protection claim.
+Migration 0008 now follows integrated 0005 from #46: 0006 → 0007 → 0005 → 0008, with one head. Downgrade returns to 0005, preserving preselection, executions and requirements. Contracts/client regenerate after updating with dev. No shared DB operations or rewriting of integrated migrations. Application deletion cascades to simulations, without promising audit erasure or retention policy. No update/delete API or DB update-protection claim.
 
 No actual sends, scheduler, learner inbox, CRM/stage/enrollment decisions or savings claim. Information-session/interview calendars remain pending; silence detection stays in #46. This does not complete all KAN-129 acceptance criteria or change Jira.
 

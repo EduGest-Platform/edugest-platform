@@ -143,14 +143,14 @@ def test_application_deletion_cascades(client, db, simulation):
     assert counts(db) == (0, 1)
 
 
-def test_reminder_migration_roundtrip_preserves_execution_table():
+def test_reminder_migration_roundtrip_preserves_preselection_and_execution_tables():
     cfg = Config(API_DIR + "/alembic.ini")
     cfg.set_main_option("script_location", API_DIR + "/alembic")
     try:
-        command.downgrade(cfg, "0007")
+        command.downgrade(cfg, "0005")
         tables = set(inspect(engine).get_table_names())
         assert "simulated_reminder" not in tables
-        assert {"automation_execution", "call_requirement", "knowledge_document"} <= tables
+        assert {"preselection_decision", "automation_execution", "call_requirement", "knowledge_document"} <= tables
     finally:
         command.upgrade(cfg, "head")
     assert "simulated_reminder" in inspect(engine).get_table_names()

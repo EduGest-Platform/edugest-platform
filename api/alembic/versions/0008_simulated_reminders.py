@@ -1,9 +1,9 @@
-"""KAN-129: isolated simulated reminder evidence after integrated 0007."""
+"""KAN-129: isolated simulated reminder evidence after integrated 0005 (preselection closure)."""
 from alembic import op
 import sqlalchemy as sa
 
 revision = "0008"
-down_revision = "0007"
+down_revision = "0005"
 branch_labels = None
 depends_on = None
 
