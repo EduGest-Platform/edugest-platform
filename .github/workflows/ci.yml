@@ -25,6 +25,7 @@ jobs:
       - run: ruff check ml --select E4,E7,E9,F
       - run: python -m unittest discover -s ml/dropout/tests -v
       - run: python -m ml.dropout.train --out "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.evaluate --artifacts "$RUNNER_TEMP/dropout"
 
   rag:
     runs-on: ubuntu-latest
