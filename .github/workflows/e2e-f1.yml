@@ -10,6 +10,9 @@ on:
       - '!e2e/**/*.md'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - 'index.html'
+      - 'tsconfig.json'
+      - 'public/**'
       - 'vite.config.ts'
       - '.github/workflows/e2e-f1.yml'
   push:
