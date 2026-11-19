@@ -457,6 +457,151 @@
         "title": "CallOut",
         "type": "object"
       },
+      "CallRequirementList": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CallRequirementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "call_id",
+          "items"
+        ],
+        "title": "CallRequirementList",
+        "type": "object"
+      },
+      "CallRequirementOut": {
+        "properties": {
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "funder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funder"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "required",
+              "recommended"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "call_id",
+          "ref",
+          "code",
+          "version",
+          "label",
+          "kind",
+          "funder",
+          "created_at"
+        ],
+        "title": "CallRequirementOut",
+        "type": "object"
+      },
+      "CallRequirementWrite": {
+        "additionalProperties": false,
+        "description": "A fresh immutable reference, or the next version of the same logical code.",
+        "properties": {
+          "code": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "expected_version": {
+            "default": 0,
+            "description": "0 para un código nuevo; versión anterior al publicar su sucesora",
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "funder": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funder"
+          },
+          "kind": {
+            "enum": [
+              "required",
+              "recommended"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "ref": {
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,59}$",
+            "title": "Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "code",
+          "label",
+          "kind"
+        ],
+        "title": "CallRequirementWrite",
+        "type": "object"
+      },
       "CallSummaryOut": {
         "properties": {
           "by_stage": {
@@ -841,6 +986,18 @@
             ],
             "title": "Reason"
           },
+          "requirement_definition_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Definition Id"
+          },
           "requirement_ref": {
             "title": "Requirement Ref",
             "type": "string"
@@ -944,6 +1101,18 @@
           "reason": {
             "title": "Reason",
             "type": "string"
+          },
+          "requirement_definition_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Definition Id"
           },
           "result": {
             "enum": [
@@ -1432,7 +1601,7 @@
     },
     "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
       "put": {
-        "description": "`requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`.",
+        "description": "`requirement_ref` debe existir en el catálogo de la convocatoria. Cada referencia identifica una definición inmutable; el resultado conserva su vínculo aunque se publiquen versiones nuevas. No incluir datos sensibles en `reason`.",
         "operationId": "put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put",
         "parameters": [
           {
@@ -1828,6 +1997,114 @@
         "summary": "Convocatorias (público: solo datos de la oferta)",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/requirements": {
+      "get": {
+        "operationId": "list_call_requirements_api_v1_calls__call_id__requirements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallRequirementList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Catálogo de requisitos y sus versiones inmutables dentro del ámbito autorizado",
+        "tags": [
+          "requirements"
+        ]
+      },
+      "post": {
+        "operationId": "create_call_requirement_api_v1_calls__call_id__requirements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallRequirementWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallRequirementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Solo administración"
+          },
+          "409": {
+            "description": "Referencia o versión en conflicto"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publicar una definición inmutable; solo administración. Nunca decide admisión",
+        "tags": [
+          "requirements"
         ]
       }
     },

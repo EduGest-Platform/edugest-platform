@@ -1,5 +1,7 @@
 # KAN-128 — Requirement reviews / Revisiones de requisitos
 
+**KAN-135 follow-up (19/11/2026) / Seguimiento:** the original KAN-128 evidence and interim limits below are historical. Unknown or foreign-call references are now rejected on review writes; current/new history rows retain immutable definition IDs, while legacy null links remain unverified. The old “pending KAN-135” reference limitation is superseded by [the KAN-135 contract](KAN-135-call-requirements.md). / La evidencia y límites originales se conservan como historia. Las escrituras ahora rechazan referencias desconocidas o de otra convocatoria; revisión e historial nuevo conservan IDs de definición inmutable, y los vínculos nulos antiguos siguen sin verificar. El contrato enlazado sustituye la limitación anterior sobre referencias pendientes de KAN-135.
+
 Status / Estado: implemented and tested locally (synthetic data, PostgreSQL 16 + pgvector). NOT_RUN: Docker Compose, GitHub Actions, e2e, UI. / Implementado y probado en local (datos sintéticos). No ejecutado: Docker Compose, GitHub Actions, e2e, interfaz.
 
 ## ES · Qué hace

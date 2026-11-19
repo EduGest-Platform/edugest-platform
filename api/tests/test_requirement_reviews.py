@@ -18,12 +18,23 @@ from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.audit.models import AuditEvent
 from app.modules.identity.models import Person, User
 from app.modules.learning.models import Enrollment
-from app.modules.requirements.models import RequirementReview, RequirementReviewRevision
+from app.modules.requirements.models import CallRequirement, RequirementReview, RequirementReviewRevision
 from tests.conftest import ADMIN, API_DIR, ASPIRANTE, CAPT_DATA, CAPT_IA, CODER, COORD, DOCENTE, SEL_IA, login
 
 IA_CALL, DATA_CALL, IA_CLOSED_CALL = "CONV-IA-2027A", "CONV-DATA-2027A", "CONV-IA-2026B"
 REF = "identity-document"
 REASON = "Documento comprobado en la revisión"
+
+
+@pytest.fixture(autouse=True)
+def configured_requirements(_fresh_data, db):
+    """Explicit test-only catalogues: no business requirements are invented in the product seed."""
+    author = db.scalar(select(User).where(User.email == ADMIN))
+    for call_id in (IA_CALL, DATA_CALL, IA_CLOSED_CALL):
+        for ref in (REF, "another-requirement"):
+            db.add(CallRequirement(call_id=call_id, ref=ref, code=ref, version=1,
+                                   label="Synthetic test requirement", kind="required", created_by=author.id))
+    db.commit()
 
 
 def application_in(db, call_id) -> Application:

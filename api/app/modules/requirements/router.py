@@ -2,15 +2,20 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, Path, Response, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.core import audit
+from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal
 from app.modules.admissions.models import Application
 from app.modules.catalog.models import Call
 from app.modules.identity.models import User
-from app.modules.requirements.models import RequirementReview, RequirementReviewRevision
+from app.modules.requirements.models import CallRequirement, RequirementReview, RequirementReviewRevision
 from app.modules.requirements.schemas import (
     REQUIREMENT_REF_PATTERN,
+    CallRequirementList,
+    CallRequirementOut,
+    CallRequirementWrite,
     RequirementReviewHistory,
     RequirementReviewList,
     RequirementReviewOut,
@@ -41,6 +46,7 @@ def _out(review: RequirementReview, names: dict[uuid.UUID, str]) -> RequirementR
     return RequirementReviewOut(
         id=review.id, application_id=review.application_id, requirement_ref=review.requirement_ref, result=review.result,
         reviewer=names.get(review.reviewer_user_id), reviewed_at=review.reviewed_at, reason=review.reason, version=review.version,
+        requirement_definition_id=review.requirement_definition_id,
     )
 
 
@@ -70,8 +76,8 @@ def list_requirement_reviews(application_id: uuid.UUID, p: CurrentPrincipal, db:
     },
     summary="Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura",
     description=(
-        "`requirement_ref` es un identificador opaco: hasta KAN-135 la API no comprueba que exista ni que pertenezca a la "
-        "convocatoria, así que este resultado no es una validación oficial del requisito. No incluir datos sensibles en `reason`."
+        "`requirement_ref` debe existir en el catálogo de la convocatoria. Cada referencia identifica una definición "
+        "inmutable; el resultado conserva su vínculo aunque se publiquen versiones nuevas. No incluir datos sensibles en `reason`."
     ),
 )
 def put_requirement_review(
@@ -103,5 +109,51 @@ def get_requirement_review_history(application_id: uuid.UUID, p: CurrentPrincipa
     return RequirementReviewHistory(
         review_id=review.id,
         requirement_ref=review.requirement_ref,
-        items=[RequirementRevisionOut(revision=r.revision, result=r.result, reviewer=names.get(r.reviewer_user_id), reviewed_at=r.reviewed_at, reason=r.reason) for r in revisions],
+        items=[RequirementRevisionOut(revision=r.revision, requirement_definition_id=r.requirement_definition_id,
+                                      result=r.result, reviewer=names.get(r.reviewer_user_id), reviewed_at=r.reviewed_at, reason=r.reason) for r in revisions],
     )
+
+
+def _load_call(db: DB, call_id: str) -> Call:
+    call = db.get(Call, call_id)
+    if call is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Convocatoria no encontrada")
+    return call
+
+
+@router.get("/calls/{call_id}/requirements", response_model=CallRequirementList,
+            summary="Catálogo de requisitos y sus versiones inmutables dentro del ámbito autorizado")
+def list_call_requirements(call_id: str, p: CurrentPrincipal, db: DB) -> CallRequirementList:
+    call = _load_call(db, call_id)
+    require_access(db, p, "requirements.read", call)
+    definitions = db.scalars(select(CallRequirement).where(CallRequirement.call_id == call.id)
+                             .order_by(CallRequirement.code, CallRequirement.version)).all()
+    audit.record(db, p, "call_requirement.viewed", "call", call.id)
+    db.commit()
+    return CallRequirementList(call_id=call.id, items=[CallRequirementOut.model_validate(d) for d in definitions])
+
+
+@router.post("/calls/{call_id}/requirements", response_model=CallRequirementOut, status_code=201,
+             responses={403: {"description": "Solo administración"}, 409: {"description": "Referencia o versión en conflicto"}},
+             summary="Publicar una definición inmutable; solo administración. Nunca decide admisión")
+def create_call_requirement(call_id: str, body: CallRequirementWrite, p: CurrentPrincipal, db: DB) -> CallRequirementOut:
+    call = _load_call(db, call_id)
+    # No new role grants: only the existing admin wildcard can configure definitions.
+    p.require("requirements.configure", Scope(program_id=call.program_id, call_id=call.id))
+    db.execute(select(Call).where(Call.id == call.id).with_for_update()).scalar_one()
+    previous = db.scalar(select(CallRequirement).where(CallRequirement.call_id == call.id, CallRequirement.code == body.code)
+                         .order_by(CallRequirement.version.desc()).limit(1))
+    version = previous.version if previous else 0
+    if body.expected_version != version:
+        raise HTTPException(status.HTTP_409_CONFLICT, "El catálogo ha cambiado: vuelve a cargar la versión")
+    definition = CallRequirement(call_id=call.id, ref=body.ref, code=body.code, version=version + 1,
+                                 label=body.label, kind=body.kind, funder=body.funder, created_by=p.user.id)
+    db.add(definition)
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Referencia o versión ya publicada") from exc
+    audit.record(db, p, "call_requirement.created", "call", call.id, definition_id=str(definition.id), version=definition.version)
+    db.commit()
+    return CallRequirementOut.model_validate(definition)

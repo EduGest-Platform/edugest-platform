@@ -8,7 +8,7 @@ from app.core.authz import Principal, Scope
 from app.core.db import utcnow
 from app.modules.admissions.models import Application
 from app.modules.catalog.models import Call, Cohort
-from app.modules.requirements.models import EXCEPTION_RESULTS, RequirementReview, RequirementReviewRevision
+from app.modules.requirements.models import CallRequirement, EXCEPTION_RESULTS, RequirementReview, RequirementReviewRevision
 from app.modules.requirements.schemas import RequirementReviewWrite
 
 _FIRST_REVIEW = {"met", "not_met", "exception_under_review"}
@@ -61,6 +61,11 @@ def save_review(
     # Taking or undoing an exception needs its own permission, separate from the plain met / not met review.
     touches_exception = body.result in EXCEPTION_RESULTS or current in EXCEPTION_RESULTS
     require_access(db, actor, "requirements.exception" if touches_exception else "requirements.review", call)
+    definition = db.scalar(select(CallRequirement).where(CallRequirement.call_id == call.id, CallRequirement.ref == requirement_ref))
+    if definition is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Requisito no configurado para esta convocatoria")
+    if review and review.requirement_definition_id not in (None, definition.id):
+        raise _conflict("La revisión pertenece a otra definición del requisito")
     _check_version(review, body.expected_version)
     _check_transition(current, body.result)
 
@@ -72,6 +77,7 @@ def save_review(
     else:
         review.version += 1
     review.result, review.reviewer_user_id, review.reviewed_at, review.reason = body.result, actor.user.id, now, body.reason
+    review.requirement_definition_id = definition.id
     try:
         db.flush()
     except IntegrityError as e:  # concurrent first review of the same requirement
@@ -79,7 +85,8 @@ def save_review(
         raise _conflict("La revisión ha cambiado: vuelve a cargarla antes de modificarla") from e
     db.add(
         RequirementReviewRevision(
-            review_id=review.id, revision=review.version, result=body.result, reviewer_user_id=actor.user.id, reviewed_at=now, reason=body.reason
+            review_id=review.id, revision=review.version, result=body.result, reviewer_user_id=actor.user.id, reviewed_at=now, reason=body.reason,
+            requirement_definition_id=definition.id,
         )
     )
     action = "requirement_review.created" if created else "requirement_review.revised"
