@@ -59,7 +59,7 @@ function Logo() {
           <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" />
         </svg>
       </span>
-      <span className="text-[22px] font-extrabold tracking-tight">Gistar</span>
+      <span className="text-[22px] font-extrabold tracking-tight">EduGest</span>
     </div>
   )
 }
@@ -106,7 +106,7 @@ export function Shell() {
           })}
         </nav>
         <footer className="mt-auto hidden px-6 text-xs leading-relaxed text-[#8fb0c6] md:block">
-          Gistar v1 · Datos ficticios
+          EduGest v1 · Datos ficticios
           <br />
           Proyecto 2 · Somos F5
         </footer>

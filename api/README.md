@@ -1,4 +1,4 @@
-# Gistar API (nombre provisional)
+# EduGest API
 
 FastAPI + SQLAlchemy 2 + Alembic sobre **PostgreSQL** (nunca SQLite: las pruebas usan la misma base que producción).
 Datos **exclusivamente sintéticos**. La autorización se comprueba en el servidor por **rol + ámbito**.

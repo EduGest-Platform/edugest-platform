@@ -58,7 +58,7 @@ export const VIEWS: Record<View, { label: string; icon: LucideIcon }> = {
   asistencia: { label: 'Asistencia', icon: ClipboardCheck },
   entregas: { label: 'Entregas', icon: FileStack },
   alertas: { label: 'Tutoría y alertas', icon: LifeBuoy },
-  asistente: { label: 'Asistente Gistar', icon: MessageSquareText },
+  asistente: { label: 'Asistente EduGest', icon: MessageSquareText },
   progreso: { label: 'Mi progreso', icon: TrendingUp },
   inscripcion: { label: 'Inscripción', icon: PenLine },
   candidatura: { label: 'Mi candidatura', icon: UserRoundCheck },

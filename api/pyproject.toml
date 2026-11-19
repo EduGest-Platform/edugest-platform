@@ -1,7 +1,7 @@
 [project]
 name = "gistar-api"
 version = "0.1.0"
-description = "Gistar (nombre provisional) · API FastAPI del Proyecto Final 2 · datos exclusivamente sintéticos"
+description = "EduGest · API FastAPI del Proyecto Final 2 · datos exclusivamente sintéticos"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115",

@@ -16,7 +16,7 @@ from app.modules.requirements.router import router as requirements_router
 from app.modules.requirements.prefilter import router as prefilter_router
 
 app = FastAPI(
-    title="Gistar API (nombre provisional)",
+    title="EduGest API",
     version="0.1.0",
     description=(
         "API del Proyecto Final 2 · Fundación Somos F5. **Datos exclusivamente sintéticos.** "

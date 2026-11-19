@@ -27,7 +27,7 @@
 | `.gitignore` | Sin regla para `src/gistar/env/` | Añadida regla | Venv excluido |
 | `api/.env.example` | No existía (README lo citaba) | Creado con valores sintéticos | Comando `cp` del README ya funciona |
 | `README.md` | Sin mapa de gobierno ni inglés | Añadida tabla de gobierno + resumen EN | Punto de entrada bilingüe |
-| `AUDITORIA_CODEX_ESTADO_ACTUAL.md` | En la raíz | **Sin tocar** (fuente citada por AGENTS.md) | Pendiente no bloqueante: mover a `docs/` |
+| `AUDITORIA_CODEX_ESTADO_ACTUAL.md` | En la raíz (movido a `docs/auditorias/` el 19/11/2026) | **Sin tocar** (fuente citada por AGENTS.md) | Pendiente no bloqueante: mover a `docs/` |
 | `docs/`, `api/README.md`, código, CI | Correctos | Sin cambios | Intactos |
 
 ## 3. Cambios realizados y justificación
@@ -106,3 +106,22 @@ Relación: la constitución fija el **qué**; `AGENTS.md` el **cómo** para agen
 **`READY WITH WARNINGS`.**
 
 Evidencia: la jerarquía documental es coherente y verificada (enlaces, comandos, variables, ausencia de secretos), las contradicciones entre el scaffold y las reglas V3 están eliminadas y la constitución cubre los seis bloques exigidos más legibilidad humana del código. No es `READY FOR GITHUB` porque (1) no existe repositorio Git del proyecto —solo el accidental del directorio de usuario, que además haría que un `git add` arrastrara todo `C:\Users\Admin`— y (2) licencia y nombre del producto esperan decisión del PO. Resuelto B1 y revisadas P1–P2, la documentación puede publicarse tal cual.
+
+## 10. Cierre de pendientes (19/11/2026) / Closing the open items
+
+Decisiones de la Product Owner (Elizabeth) del 19/11/2026 y estado real del repositorio:
+
+| Pendiente | Estado |
+|---|---|
+| B1. Repositorio Git | **Resuelto**: el proyecto vive en GitHub (`EduGest-Platform/edugest-platform`) con PR y revisión |
+| P1. Licencia | **Pendiente de decisión final** (ver la PR de cierre): la PO quiere atribución obligatoria al equipo y al bootcamp; falta confirmar si se permite o no el uso comercial. La constitución exige también la aprobación de Somos F5 |
+| P2. Nombre | **Resuelto**: EduGest. Textos visibles, títulos y constitución actualizados; los identificadores técnicos `gistar` se mantienen |
+| P3. Inglés canónico + traducción al español | **Resuelto**: confirmado y añadido a la sección H de la constitución |
+| N1/P4. Entorno virtual `src/gistar/env/` | **Resuelto**: ya no existe |
+| N2/P4. Auditoría Codex en la raíz | **Resuelto**: movida a `docs/auditorias/` y referencia de `AGENTS.md` actualizada |
+| Primer commit revisado | **Superado**: el equipo trabaja con PR y revisión cruzada |
+| M1. Traducciones de `docs/00–03` | Mejora opcional, sin cambios |
+| M2. Comprobación de enlaces Markdown en CI | Mejora opcional, sin cambios |
+| M3. Constitución en la plantilla de PR | **Resuelto**: la plantilla cita `CONSTITUTION.md §E.6` |
+
+**EN:** As of 19/11/2026 the only open item is the licence (P1); everything else is resolved or optional.
