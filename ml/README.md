@@ -1,5 +1,11 @@
 # Synthetic dropout experiments / Experimentos sintéticos de abandono
 
+## KAN-159 — local MLflow tracking / tracking MLflow local
+
+ES: instalar `ml/requirements-tracking.txt` para la serie completa. Tras train/evaluate/score/model_card: `python -m ml.dropout.tracking --artifacts ml/artifacts/demo --store ml/artifacts/tracking`. Crea una BD SQLite y artefactos locales; rechaza URIs remotas incluso localhost. Registra métricas, soporte, hashes, semilla, versión y un modelo JSON de flavor propio, sin pyfunc/servidor ni promoción. MLflow 3.1.1 coincide con el contenedor de demo; skinny, SQLAlchemy y Alembic se aíslan del entorno API. No modifica el MLflow compartido, cuentas, datos de producto ni roles.
+
+EN: tracking/registry URIs are explicitly local SQLite; artifact/model sources use explicit local file URIs, never implicit global tracking configuration. Successful identical artifact sets reuse a finished run and registry version. A single-writer file lock rejects concurrent writers; inspect a stale lock before manually removing it. Failures mark the run FAILED and release resources; a partial failed run/version may require inspection, not automatic deletion. Undefined metrics remain in JSON rather than invented numeric logs. No stage/alias promotion occurs. Custom JSON artifacts use our offline predictor; they are not a serving/pyfunc flavor. SQLite pools are explicitly closed through an adapter for pinned MLflow 3.1.1 to permit Windows cleanup. The tests exercise actual SQLite tracking, registry retrieval, artifact download, retry reuse and injected failure cleanup.
+
 ## KAN-180 / KAN-189 — offline scoring and model card / scoring offline y ficha
 
 ES: tras train/evaluate, ejecutar `python -m ml.dropout.score --artifacts ml/artifacts/demo` y `python -m ml.dropout.model_card --artifacts ml/artifacts/demo`. Genera scores sintéticos con abstención y ficha ES/EN desde los hashes/métricas reales del ensayo. La población activa es metadata conocida al corte, no una feature ni una lectura del estado final. Se abstiene con contexto desconocido/inactivo, menos de 3 días equivalentes, asistencia desconocida >.5 o sin umbral de validación. Son límites técnicos propuestos, no una política PO aceptada. Las señales son valores observados, no atribuciones causales; un score bajo no demuestra ausencia de riesgo.
@@ -26,12 +32,14 @@ Dependencias aisladas en `ml/requirements.txt`: numpy/scipy/scikit-learn para el
 
 ```powershell
 python -m venv .venv-ml
-.venv-ml/Scripts/python -m pip install -r ml/requirements.txt
+.venv-ml/Scripts/python -m pip install -r ml/requirements-tracking.txt
 .venv-ml/Scripts/python -m unittest discover -s ml/dropout/tests -v
 .venv-ml/Scripts/python -m ml.dropout.train --out ml/artifacts/demo --seed 42 --people 300
 ```
 
 En Linux: usar `.venv-ml/bin/python`. La ruta de salida es local e ignorada. Modelo no publicado, ni servidor ni datos reales. Las fechas, ventanas, umbrales y política de datos insuficientes de KAN-114 siguen pendientes de aceptación antes de cualquier uso funcional.
+
+Solo baseline / baseline only: install `ml/requirements.txt` and run `unittest discover -s ml/dropout/tests -p test_data_train.py`; full discovery includes MLflow integration tests and needs the tracking dependencies / la suite completa incluye MLflow y necesita esas dependencias.
 
 ## EN
 
