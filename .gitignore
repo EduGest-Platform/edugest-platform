@@ -25,9 +25,12 @@ logs/
 # Python API
 api/.venv/
 .venv/
+.venv-ml/
 # Stray virtualenv accidentally created inside the frontend source tree
 src/gistar/env/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+ml/artifacts/
+mlruns/
 *.egg-info/

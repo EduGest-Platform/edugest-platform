@@ -96,6 +96,8 @@ Risk ML: baseline trained on documented synthetic data, model card and limitatio
 
 ## 6.1 Current repository conventions / Convenciones actuales
 
+- Offline synthetic dropout experiments live in `ml/`, with isolated pinned dependencies and the `dropout` CI job. A green experiment does not approve a target, threshold, production use or Jira completion. / Los experimentos sintéticos offline de abandono están en `ml/`, con dependencias aisladas y CI `dropout`; no implican aceptación funcional ni tareas terminadas.
+
 - **Integration branch:** `dev` (PR base); `main` only through an agreed release merge.
 - **Branches with a ticket:** `type/KAN-x-short-slug` (e.g. `docs/KAN-120-crm-event-policy`); the `KAN-x` key is required in branch and commit, recommended in the PR title. One ticket per branch where possible.
 - **Maintenance without a ticket** (team instructions, tooling, typos): `type/short-slug` (e.g. `docs/agents-language-policy`), commit `type(area): summary`, and state "no ticket" in the PR body.
