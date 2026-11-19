@@ -21,8 +21,9 @@ email_counter = itertools.count(1)
 NO_ACCESS = dict(
     list=403, detail_own=403, detail_other=403, event_own=403, event_other=403, summary_own=403, summary_other=403, audit=403,
 )
+# Out-of-scope applications answer 404, like an unknown id (PO decision 19/11/2026); summaries keep 403 (call ids are public).
 SCOPED_STAFF = dict(
-    list=200, detail_own=200, detail_other=403, event_own=201, event_other=403, summary_own=200, summary_other=403, audit=403,
+    list=200, detail_own=200, detail_other=404, event_own=201, event_other=404, summary_own=200, summary_other=403, audit=403,
 )
 LOGGED_IN = dict(mine=200, me=200)
 # Public routes: the credentials sent decide login; a bearer is optional for the public inscription form.
@@ -144,6 +145,25 @@ def test_person_accounts_see_only_their_own_applications(client, db, account):
     returned = {item["id"] for item in client.get("/api/v1/me/applications", headers=headers).json()}
     assert returned == own
     assert not returned & set(seed_application_ids(client).values()) - own
+
+
+@pytest.mark.parametrize("profile", ["captacion", "seleccion"])
+def test_out_of_scope_and_unknown_applications_get_the_same_answer(client, profile):
+    account, _ = MATRIX[profile]
+    headers = login(client, account)
+    foreign = seed_application_ids(client)[OTHER_PROGRAM]
+    unknown = "00000000-0000-0000-0000-000000000000"
+    for method, suffix, body in (("get", "", None), ("post", "/events", {"tipo": "nota", "resumen": "matrix check"})):
+        answers = [getattr(client, method)(f"/api/v1/applications/{app_id}{suffix}", headers=headers, **({"json": body} if body else {})) for app_id in (foreign, unknown)]
+        assert [a.status_code for a in answers] == [404, 404]
+        assert answers[0].json()["detail"] == answers[1].json()["detail"]
+
+
+@pytest.mark.parametrize("account", [COORD, DOCENTE, ASPIRANTE])
+def test_profiles_without_application_access_get_403_for_known_and_unknown_ids(client, account):
+    headers = login(client, account)
+    for app_id in (seed_application_ids(client)[OWN_PROGRAM], "00000000-0000-0000-0000-000000000000"):
+        assert client.get(f"/api/v1/applications/{app_id}", headers=headers).status_code == 403
 
 
 def test_public_routes_need_no_session(client):

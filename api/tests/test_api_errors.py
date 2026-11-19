@@ -35,13 +35,22 @@ def test_401_keeps_detail_and_adds_request_id(client):
 
 
 def test_403_keeps_detail_and_adds_request_id(client):
+    r = client.get("/api/v1/audit-events", headers=login(client, CAPT_IA))
+    assert r.status_code == 403
+    assert r.json()["detail"]
+    assert_correlated(r)
+
+
+def test_out_of_scope_application_is_indistinguishable_from_an_unknown_one(client):
+    """PO decision 19/11/2026: an existing application outside the scope answers like an unknown id."""
     ia_headers = login(client, CAPT_IA)
     other = login(client, ADMIN)
     data_app = next(a for a in client.get("/api/v1/applications", headers=other, params={"limit": 200}).json()["items"] if a["program_id"] == "P-DATA")
-    r = client.get(f"/api/v1/applications/{data_app['id']}", headers=ia_headers)
-    assert r.status_code == 403
-    assert r.json()["detail"] == "No tienes permiso sobre este ámbito"
-    assert_correlated(r)
+    foreign = client.get(f"/api/v1/applications/{data_app['id']}", headers=ia_headers)
+    unknown = client.get("/api/v1/applications/00000000-0000-0000-0000-000000000000", headers=ia_headers)
+    assert foreign.status_code == unknown.status_code == 404
+    assert foreign.json()["detail"] == unknown.json()["detail"]
+    assert_correlated(foreign)
 
 
 def test_409_duplicate_application_is_correlated_and_audits_nothing_extra(client, db):

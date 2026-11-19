@@ -20,7 +20,7 @@ Authorization is **role + scope** (`Principal.can`, `Principal.require`, `Princi
 
 ## 2. Endpoint, action and scope / Ruta, acción y ámbito
 
-`✓` allowed · `scope` allowed only inside the assigned program or call (otherwise 403) · `401` no valid session · `403` no permission. / `✓` permitido · `scope` solo dentro del programa o la convocatoria asignados (si no, 403) · `401` sin sesión válida · `403` sin permiso.
+`✓` allowed · `scope` allowed only inside the assigned program or call (otherwise 403 for summaries and 404 for applications, see §4) · `401` no valid session · `403` no permission. / `✓` permitido · `scope` solo dentro del programa o la convocatoria asignados (si no, 403 en resúmenes y 404 en expedientes, ver §4) · `401` sin sesión válida · `403` sin permiso.
 
 | Endpoint | Anonymous | Aspirante / Coder | Captación | Selección | Coordinación | Docente | Admin |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -31,8 +31,8 @@ Authorization is **role + scope** (`Principal.can`, `Principal.require`, `Princi
 | `GET /auth/me`, `POST /auth/logout` | 401 | ✓ own session | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `GET /me/applications` | 401 | ✓ own person only | `[]` unless linked to a person | `[]` unless linked | `[]` unless linked | `[]` unless linked | `[]` unless linked |
 | `GET /applications` (list) | 401 | 403 | scope (filtered) | scope (filtered) | 403 | 403 | ✓ all |
-| `GET /applications/{id}` | 401 | 403 | scope | scope | 403 | 403 | ✓ |
-| `POST /applications/{id}/events` | 401 | 403 | scope | scope | 403 | 403 | ✓ |
+| `GET /applications/{id}` | 401 | 403 | scope (404 outside) | scope (404 outside) | 403 | 403 | ✓ |
+| `POST /applications/{id}/events` | 401 | 403 | scope (404 outside) | scope (404 outside) | 403 | 403 | ✓ |
 | `GET /calls/{id}/summary` (aggregates, small groups suppressed) | 401 | 403 | scope | scope | ✓ | 403 | ✓ |
 | `GET /audit-events` | 401 | 403 | 403 | 403 | 403 | 403 | ✓ |
 
@@ -58,7 +58,7 @@ Legend / Leyenda: **M** = asserted by `api/tests/test_rbac_matrix.py` (new or ex
 | `GET /me/applications` | **M** | **M** new: aspirante and coder get exactly their own person's applications and no seed application of another person; staff get `[]`. **E** query parameters cannot redirect it and internal notes do not leak | `test_rbac_matrix.py::test_person_accounts_see_only_their_own_applications`; `test_rbac_regression.py::test_self_view_cannot_be_redirected_to_another_person_or_leak_notes` |
 | `GET /applications` (list) | **M** | **M** new: captación only its program, selección only its call, admin both programs; the foreign application id is absent; `call_id`/`q` filters cannot bring it in. **E** totals per scope | `test_rbac_matrix.py::test_lists_contain_only_applications_inside_the_scope`, `::test_query_parameters_cannot_bring_foreign_applications_into_a_scoped_list`; `test_rbac.py`; `test_rbac_regression.py::test_query_parameters_cannot_broaden_scope_or_expose_foreign_aggregates` |
 | `GET /applications/{id}` own scope / other scope | **M** both (`detail_own`, `detail_other`) | **E** reading writes `application.viewed` | `test_rbac_matrix.py`; `test_crm_audit.py` |
-| `POST /applications/{id}/events` own scope / other scope | **M** both; `event_other` is new (403 for scoped staff and everyone else, 201 for admin) | **E** a rejected foreign write leaves no event and no success audit row; author derived by the server | `test_rbac_matrix.py`; `test_rbac_regression.py::test_foreign_crm_write_has_no_event_or_success_audit_side_effect`, `::test_crm_actor_is_server_derived_even_with_forged_payload` |
+| `POST /applications/{id}/events` own scope / other scope | **M** both; `event_other` is new (404 for scoped staff, 403 for profiles without CRM permission, 201 for admin) | **E** a rejected foreign write leaves no event and no success audit row; author derived by the server | `test_rbac_matrix.py`; `test_rbac_regression.py::test_foreign_crm_write_has_no_event_or_success_audit_side_effect`, `::test_crm_actor_is_server_derived_even_with_forged_payload` |
 | `GET /calls/{id}/summary` own / other | **M** both | **E** small groups suppressed; filters cannot expose foreign aggregates | `test_rbac_matrix.py`; `test_rbac.py::test_coordinacion_gets_only_suppressed_aggregates`, `::test_small_groups_are_fully_suppressed` |
 | `GET /audit-events` | **M** | **E** append-only | `test_rbac_matrix.py`; `test_crm_audit.py::test_audit_trail_is_append_only` |
 | Invalid, revoked or deactivated sessions on every protected route | — | **E** | `test_rbac_regression.py`; `test_public_routes_auth.py::test_every_non_public_operation_answers_401_without_usable_credentials` |
@@ -67,17 +67,18 @@ A mutation check was run locally: removing the scope filter from `GET /applicati
 
 ### 3.2 Still pending / Pendiente
 
-- **P:** `GET /applications/{id}` returns `403` (existing id) vs `404` (unknown id) to out-of-scope staff; the behaviour is tested but the decision to unify it is open (see §4). / Pendiente de decisión, no de prueba.
+- Out-of-scope vs unknown application: **decided and tested** (§4): `test_rbac_matrix.py::test_out_of_scope_and_unknown_applications_get_the_same_answer`, `::test_profiles_without_application_access_get_403_for_known_and_unknown_ids`, `test_api_errors.py::test_out_of_scope_application_is_indistinguishable_from_an_unknown_one`. The requirement and pre-selection routes still answer 403 out of scope; aligning them is follow-up work. / Decidido y probado; queda alinear las rutas de requisitos y preselección.
+- **P:** Denied attempts are not written to the audit log today. / Los intentos denegados no se auditan hoy.
 - **P:** The requirement endpoints added after F1 (`/calls/{id}/requirements`, `/applications/{id}/requirement-reviews…`, `/applications/{id}/requirement-prefilter`) are **not** cells of this matrix. They have their own positive/negative scope tests in `test_call_requirements.py`, `test_requirement_reviews.py` and `test_requirement_prefilter.py`; adding them to section 2 is follow-up work. / Las rutas de requisitos posteriores a F1 no están en esta matriz; tienen sus propias pruebas.
 - **P:** No rate-limit or brute-force test for `POST /auth/login`. / Sin prueba de límite de intentos.
 
 ### 3.3 Local result / Resultado local
 
-At `dev` `c4e385c` merged into this branch: `test_rbac_matrix.py` **24 passed**; full API `pytest` **356 passed**. / `test_rbac_matrix.py`: 24 pruebas superadas.
+At `dev` `c4e385c` merged into this branch: `test_rbac_matrix.py` **29 passed**; full API `pytest` **362 passed**. / `test_rbac_matrix.py`: 24 pruebas superadas.
 
 ## 4. Observations and gaps / Observaciones y brechas
 
-- **EN:** An out-of-scope staff user gets `403` for an existing application and `404` for an unknown id, which reveals that an id exists. Ids are random UUIDs, so the risk is low; decide whether to unify the answer. **ES:** Un id existente fuera de ámbito da `403` y uno inexistente `404`; el riesgo es bajo (UUID aleatorios), pero conviene decidir si se unifica.
+- **EN — PO decision 19/11/2026, implemented:** an existing application outside the caller's scope now answers `404` with the same message as an unknown id, on `GET /applications/{id}` and `POST /applications/{id}/events`, so ids cannot be probed. A profile without the permission in any scope still gets `403` before any lookup (same answer for known and unknown ids). **ES — Decisión PO 19/11/2026, implementada:** un expediente existente fuera de ámbito responde `404` con el mismo mensaje que un id inexistente; un perfil sin el permiso en ningún ámbito recibe `403` antes de buscar.
 - **EN:** `GET /calls/{id}/summary` answers `404` for an unknown call before checking permission. Call ids are public through `GET /calls`, so nothing new is disclosed. **ES:** El `404` previo al permiso no revela nada nuevo.
 - **EN:** The seven profiles are the five staff roles plus applicant and learner. Since F1, `dev` adds `requirements.read`, `requirements.exception` (captación, selección, coordinación, docente) and `requirements.review` (captación, selección), see `authz.py`; they are documented by the KAN-128/KAN-135 reports, not in section 1. Teacher and learning permissions, admission decisions and staff invitation are not implemented. This PR does not change any permission. **ES:** Desde F1, `dev` añade permisos de requisitos (ver `authz.py` y los informes KAN-128/KAN-135). Faltan permisos de docencia, decisión de admisión e invitación de personal. Esta PR no cambia ningún permiso.
 - **EN:** `audit.read` is granted only through the admin wildcard; any new role needs an explicit grant. **ES:** `audit.read` solo llega por el comodín de administración.

@@ -34,11 +34,29 @@ def _summary(a: Application, person: Person, call: Call) -> ApplicationSummary:
     )
 
 
+NOT_FOUND_OR_OUT_OF_SCOPE = "Candidatura no encontrada"
+
+
 def _load(db: DB, application_id: uuid.UUID) -> tuple[Application, Person, Call]:
     row = db.execute(select(Application, Person, Call).join(Person, Person.id == Application.person_id).join(Call, Call.id == Application.call_id).where(Application.id == application_id)).first()
     if not row:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidatura no encontrada")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_OR_OUT_OF_SCOPE)
     a, person, call = row
+    return a, person, call
+
+
+def _load_in_scope(db: DB, p: CurrentPrincipal, perm: str, application_id: uuid.UUID) -> tuple[Application, Person, Call]:
+    """Loads an application only if `perm` covers its program or call.
+
+    PO decision (19/11/2026): an existing application outside the caller's scope answers exactly like an unknown
+    id (404), so ids cannot be probed. A caller without `perm` in any scope still gets 403 before any lookup.
+    """
+    is_global, programs, calls = p.scopes_for(perm)
+    if not (is_global or programs or calls):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes permiso sobre este ámbito")
+    a, person, call = _load(db, application_id)
+    if not p.can(perm, Scope(program_id=call.program_id, call_id=call.id)):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND_OR_OUT_OF_SCOPE)
     return a, person, call
 
 
@@ -84,8 +102,7 @@ def list_applications(
 
 @router.get("/applications/{application_id}", response_model=ApplicationDetail, summary="Ficha del expediente con historial CRM")
 def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> ApplicationDetail:
-    a, person, call = _load(db, application_id)
-    p.require("applications.read", Scope(program_id=call.program_id, call_id=call.id))
+    a, person, call = _load_in_scope(db, p, "applications.read", application_id)
     events = db.execute(
         select(ApplicationEvent, User.display_name).outerjoin(User, User.id == ApplicationEvent.actor_user_id).where(ApplicationEvent.application_id == a.id).order_by(ApplicationEvent.occurred_at)
     ).all()
@@ -101,8 +118,7 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
 
 @router.post("/applications/{application_id}/events", response_model=EventOut, status_code=201, summary="Registrar contacto, nota o recordatorio en el CRM")
 def post_event(application_id: uuid.UUID, body: EventCreate, p: CurrentPrincipal, db: DB) -> EventOut:
-    a, _, call = _load(db, application_id)
-    p.require("applications.crm", Scope(program_id=call.program_id, call_id=call.id))
+    a, _, call = _load_in_scope(db, p, "applications.crm", application_id)
     ev = ApplicationEvent(application_id=a.id, tipo=body.tipo, canal=body.canal, resumen=body.resumen.strip(), actor_user_id=p.user.id)
     db.add(ev)
     db.flush()
