@@ -6,16 +6,16 @@
  * `--configLoader runner`, which does not write a bundled copy to
  * `node_modules/.vite-temp`. A locked `.vite-temp` caused the Windows EPERM (KAN-87).
  */
-import { fileURLToPath } from "node:url"
-import { defineConfig } from "vitest/config"
+import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   test: {
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })
