@@ -46,7 +46,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Historial de evaluaciones del ámbito; total explícito si el límite trunca la lista */
+        /** Historial de evaluaciones del Ã¡mbito; total explÃ­cito si el lÃ­mite trunca la lista */
         get: operations["list_executions_api_v1_applications__application_id__automation_executions_get"];
         put?: never;
         post?: never;
@@ -67,7 +67,7 @@ export interface paths {
         put?: never;
         /**
          * Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios
-         * @description Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.
+         * @description Solo personal con requirements.review. Resultado, clave y dÃ­a UTC calculados por el servidor. Otro dÃ­a registra una nueva evaluaciÃ³n. Un registro es evidencia de evaluaciÃ³n, no tarea completada ni ahorro.
          */
         post: operations["record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post"];
         delete?: never;
@@ -161,6 +161,24 @@ export interface paths {
         get: operations["get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/simulated-reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de simulaciones, nunca recibos de entrega */
+        get: operations["list_simulated_reminders_api_v1_applications__application_id__simulated_reminders_get"];
+        put?: never;
+        /** Simular recordatorio con fecha introducida por personal, sin enviar ni resolver tareas */
+        post: operations["create_simulated_reminder_api_v1_applications__application_id__simulated_reminders_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -834,6 +852,41 @@ export interface components {
             /** Unselected Codes */
             unselected_codes: string[];
         };
+        /** ReminderSimulationRequest */
+        ReminderSimulationRequest: {
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "documentation" | "exercises";
+            /**
+             * Synthetic Only
+             * @constant
+             */
+            synthetic_only: true;
+            /** Task Ref */
+            task_ref: string;
+        };
+        /** ReminderSimulationResult */
+        ReminderSimulationResult: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "simulated_reminder" | "not_due";
+            reminder: components["schemas"]["SimulatedReminderOut"] | null;
+            /**
+             * Simulated Only
+             * @default true
+             * @constant
+             */
+            simulated_only: true;
+        };
         /** RequirementReviewHistory */
         RequirementReviewHistory: {
             /** Items */
@@ -939,6 +992,66 @@ export interface components {
             scope_id: string | null;
             /** Scope Type */
             scope_type: string;
+        };
+        /** SimulatedReminderList */
+        SimulatedReminderList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["SimulatedReminderOut"][];
+            /** Limit */
+            limit: number;
+            /** Total */
+            total: number;
+        };
+        /** SimulatedReminderOut */
+        SimulatedReminderOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "documentation" | "exercises";
+            /** Rule Version */
+            rule_version: string;
+            /**
+             * Schedule Source
+             * @default staff_entered
+             * @constant
+             */
+            schedule_source: "staff_entered";
+            /**
+             * Simulated At
+             * Format: date-time
+             */
+            simulated_at: string;
+            /**
+             * Simulated Only
+             * @default true
+             * @constant
+             */
+            simulated_only: true;
+            /** Task Ref */
+            task_ref: string;
         };
         /** StageCount */
         StageCount: {
@@ -1093,7 +1206,7 @@ export interface operations {
                     "application/json": components["schemas"]["AutomationExecutionList"];
                 };
             };
-            /** @description Sin permiso o fuera de ámbito */
+            /** @description Sin permiso o fuera de Ã¡mbito */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1133,7 +1246,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Mismo snapshot y día UTC: reintento sin duplicado */
+            /** @description Mismo snapshot y dÃ­a UTC: reintento sin duplicado */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1151,7 +1264,7 @@ export interface operations {
                     "application/json": components["schemas"]["AutomationExecutionOut"];
                 };
             };
-            /** @description Sin permiso o fuera de ámbito */
+            /** @description Sin permiso o fuera de Ã¡mbito */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1401,6 +1514,118 @@ export interface operations {
             };
             /** @description Candidatura no encontrada */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_simulated_reminders_api_v1_applications__application_id__simulated_reminders_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulatedReminderList"];
+                };
+            };
+            /** @description Sin permiso o fuera de Ã¡mbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito desconocido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_simulated_reminder_api_v1_applications__application_id__simulated_reminders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderSimulationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderSimulationResult"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderSimulationResult"];
+                };
+            };
+            /** @description Sin permiso o fuera de Ã¡mbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito desconocido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Fuera de preselección */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
