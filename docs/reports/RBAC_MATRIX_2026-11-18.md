@@ -74,7 +74,7 @@ A mutation check was run locally: removing the scope filter from `GET /applicati
 
 ### 3.3 Local result / Resultado local
 
-At `dev` `c4e385c` merged into this branch: `test_rbac_matrix.py` **28 passed**; full API `pytest` **361 passed**. / `test_rbac_matrix.py`: 24 pruebas superadas.
+At `dev` `c4e385c` merged into this branch: `test_rbac_matrix.py` **29 passed**; full API `pytest` **361 passed**. / `test_rbac_matrix.py`: 24 pruebas superadas.
 
 ## 4. Observations and gaps / Observaciones y brechas
 
