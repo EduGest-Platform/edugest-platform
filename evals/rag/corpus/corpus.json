@@ -1,8 +1,8 @@
 [
-  {"id": "A1", "file": "A1-brief-recetario.md", "title": "Brief del proyecto «Recetario inteligente»", "cohort": "A", "version": "v1", "valid_from": "2026-11-16", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true},
-  {"id": "A2", "file": "A2-calendario-v2.md", "title": "Calendario de la cohorte", "cohort": "A", "version": "v2", "valid_from": "2026-11-01", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true},
-  {"id": "A3", "file": "A3-calendario-v1.md", "title": "Calendario de la cohorte (antiguo)", "cohort": "A", "version": "v1", "valid_from": "2026-09-15", "valid_until": "2026-10-31", "status": "obsoleto", "synthetic": true},
-  {"id": "A4", "file": "A4-normas-asistencia.md", "title": "Normas de asistencia", "cohort": "A", "version": "v1", "valid_from": "2026-11-01", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true},
-  {"id": "A5", "file": "A5-criterios-evaluacion.md", "title": "Criterios de evaluación", "cohort": "A", "version": "v1", "valid_from": "2026-11-01", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true},
-  {"id": "B1", "file": "B1-brief-detector-plagas.md", "title": "Brief del proyecto «Detector de plagas»", "cohort": "B", "version": "v1", "valid_from": "2026-11-16", "valid_until": "2026-12-18", "status": "vigente", "synthetic": true}
+  {"id": "A1", "file": "A1-brief-recetario.md", "title": "Brief del proyecto «Recetario inteligente»", "cohort": "A", "version": "v1", "valid_from": "2026-11-16", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true, "maintained_by": "docente"},
+  {"id": "A2", "file": "A2-calendario-v2.md", "title": "Calendario de la cohorte", "cohort": "A", "version": "v2", "valid_from": "2026-11-01", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true, "maintained_by": "coordinacion"},
+  {"id": "A3", "file": "A3-calendario-v1.md", "title": "Calendario de la cohorte (antiguo)", "cohort": "A", "version": "v1", "valid_from": "2026-09-15", "valid_until": "2026-10-31", "status": "obsoleto", "synthetic": true, "maintained_by": "coordinacion"},
+  {"id": "A4", "file": "A4-normas-asistencia.md", "title": "Normas de asistencia", "cohort": "A", "version": "v1", "valid_from": "2026-11-01", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true, "maintained_by": "coordinacion"},
+  {"id": "A5", "file": "A5-criterios-evaluacion.md", "title": "Criterios de evaluación", "cohort": "A", "version": "v1", "valid_from": "2026-11-01", "valid_until": "2026-12-22", "status": "vigente", "synthetic": true, "maintained_by": "docente"},
+  {"id": "B1", "file": "B1-brief-detector-plagas.md", "title": "Brief del proyecto «Detector de plagas»", "cohort": "B", "version": "v1", "valid_from": "2026-11-16", "valid_until": "2026-12-18", "status": "vigente", "synthetic": true, "maintained_by": "docente"}
 ]
