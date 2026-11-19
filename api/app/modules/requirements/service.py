@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -96,3 +98,10 @@ def save_review(
     )
     db.commit()
     return review, created
+
+
+def load_application(db: Session, application_id: uuid.UUID) -> tuple[Application, Call]:
+    row = db.execute(select(Application, Call).join(Call, Call.id == Application.call_id).where(Application.id == application_id)).first()
+    if not row:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidatura no encontrada")
+    return row[0], row[1]

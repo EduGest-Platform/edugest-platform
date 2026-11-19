@@ -2,8 +2,10 @@
 
 from app.modules.admissions.models import Application, ApplicationEvent  # noqa: F401
 from app.modules.audit.models import AuditEvent  # noqa: F401
+from app.modules.automation.models import AutomationExecution  # noqa: F401
 from app.modules.catalog.models import Call, Cohort, Program  # noqa: F401
 from app.modules.identity.models import AuthSession, Person, RoleAssignment, User  # noqa: F401
 from app.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument  # noqa: F401
 from app.modules.learning.models import Enrollment  # noqa: F401
+from app.modules.preselection.models import PreselectionDecision  # noqa: F401
 from app.modules.requirements.models import CallRequirement, RequirementReview, RequirementReviewRevision  # noqa: F401

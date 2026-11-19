@@ -13,6 +13,7 @@
 - El frontend está en la raíz del repositorio (ADR-0001), así que la web no necesita `rootDir`.
 - API y base de datos van en la región `frankfurt` (la red interna exige la misma región) y la base no admite conexiones desde internet (`ipAllowList: []`).
 - MLflow no se despliega en Render: solo existe en el compose local.
+- **Excepción para staging (decisión de la PO, 19/11/2026):** `render.staging.yaml` despliega automáticamente cada push a `dev` cuando pasan los checks de GitHub (`autoDeployTrigger: checksPass`). Staging tiene base de datos y secretos propios y solo datos sintéticos. Producción (`render.yaml`) sigue con `autoDeployTrigger: "off"`. Crear los recursos en Render sigue necesitando autorización.
 
 **Motivo.** La rúbrica pide Docker Compose, GitHub Actions y Render. Un solo comando local y un blueprint versionado hacen la demo reproducible.
 
@@ -34,6 +35,7 @@
 - The frontend lives at the repository root (ADR-0001), so the web needs no `rootDir`.
 - API and database use the `frankfurt` region (the private network requires the same region) and the database accepts no connections from the internet (`ipAllowList: []`).
 - MLflow is not deployed to Render: it only exists in the local compose.
+- **Staging exception (PO decision, 19/11/2026):** `render.staging.yaml` deploys every push to `dev` automatically once GitHub checks pass (`autoDeployTrigger: checksPass`). Staging has its own database and secrets and synthetic data only. Production (`render.yaml`) keeps `autoDeployTrigger: "off"`. Creating the resources on Render still requires authorisation.
 
 **Rationale.** The rubric asks for Docker Compose, GitHub Actions and Render. One local command plus a versioned blueprint makes the demo reproducible.
 
