@@ -19,6 +19,7 @@ from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.catalog.models import Call, Cohort, Program
 from app.modules.identity.models import Person, RoleAssignment, User
 from app.modules.learning.models import Enrollment
+from app.seed_academic import load_academic
 
 CALLS = [
     # id, program, nombre, prefix, opens, closes, plazas, estado, cohort fed
@@ -105,11 +106,18 @@ def main() -> None:
     with SessionLocal() as db:
         if "--reset" in sys.argv:
             reset(db)
-        elif db.scalar(select(Program.id).limit(1)):
-            print("Seed: datos ya presentes, nada que hacer (usa --reset para recargar)")
-            return
-        seed(db)
-        print("Seed: datos sintéticos cargados")
+        if db.scalar(select(Program.id).limit(1)):
+            print("Seed: datos base ya presentes (usa --reset para recargar)")
+        else:
+            seed(db)
+            print("Seed: datos sintéticos cargados")
+        # Separate check, so a database seeded before KAN-173 (staging) also gets the academic data, without a reset.
+        loaded = load_academic(db, load_seed())
+        if loaded is None:
+            print("Seed v2: datos académicos ya presentes")
+        else:
+            print(f"Seed v2: {loaded['frameworks']} árboles de competencias, {loaded['assessments']} evaluaciones, "
+                  f"{loaded['sessions']} sesiones y {loaded['records']} registros de asistencia")
 
 
 if __name__ == "__main__":
