@@ -1,0 +1,25 @@
+{
+  "catalogue_approval": "hypothetical_not_approved",
+  "catalogue_unit": "per_task_occurrence",
+  "input_sha256": "aae0fe8e619e9093778a92e0b5bf9bc5d725215ccafef7ce18193eca8e5f89e6",
+  "metric": {
+    "automated_task_count": 0,
+    "baseline_manual_minutes": 3000.0,
+    "case_count": 100,
+    "catalogue_version": "synthetic-example-v1",
+    "client_approval": "PENDING",
+    "eligible_case_count": 100,
+    "eligible_task_count": 200,
+    "estimated_saved_minutes": 0,
+    "minimum_case_count_met": true,
+    "percentage": 0.0,
+    "po_time_saved_definition_confirmed_on": "2026-11-17",
+    "status": "ESTIMATED_UNDER_CATALOGUE_ASSUMPTIONS_NOT_PRODUCTION_SAVINGS",
+    "unit": "estimated_manual_minutes_saved"
+  },
+  "production_evidence_authenticated": false,
+  "scenario_id": "synthetic-manual-only-100",
+  "schema_version": 1,
+  "status": "HYPOTHETICAL_SCENARIO_NOT_MEASURED_SAVINGS",
+  "synthetic_only": true
+}
