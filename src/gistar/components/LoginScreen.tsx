@@ -18,7 +18,7 @@ const DEMO_ACCOUNTS = [
 ] as const
 
 export function LoginScreen() {
-  const { login, apiDown } = useApiSession()
+  const { login, apiDown, notice } = useApiSession()
   const [tab, setTab] = useState<'login' | 'inscripcion'>('login')
   const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[1][0])
   const [password, setPassword] = useState('')
@@ -41,10 +41,15 @@ export function LoginScreen() {
               <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" />
             </svg>
           </span>
-          <span className="text-2xl font-extrabold tracking-tight text-navy">Gistar</span>
-          <span className="ml-auto rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold text-[#09152b]">DEMO · Datos sintéticos</span>
+          <span className="text-2xl font-extrabold tracking-tight text-navy">EduGest</span>
+          <span className="ml-auto rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold text-[#6d5014]">DEMO · Datos sintéticos</span>
         </div>
-        {apiDown && <Notice tone="warning">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
+        {notice && !apiDown && (
+          <Notice tone="warning" live="polite">
+            {notice}
+          </Notice>
+        )}
+        {apiDown && <Notice tone="warning" live="assertive">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
         <div className="mb-4">
           <Segmented label="Acceso" value={tab} onChange={setTab} options={[{ id: 'login', label: 'Iniciar sesión' }, { id: 'inscripcion', label: 'Quiero inscribirme' }]} />
         </div>
@@ -63,7 +68,11 @@ export function LoginScreen() {
               <Field label="Contraseña" htmlFor="lg-pass" hint="Contraseña de las cuentas sintéticas (api/README.md).">
                 <input id="lg-pass" type="password" autoComplete="current-password" className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} required />
               </Field>
-              {error && <Notice tone="warning">{error}</Notice>}
+              {error && (
+                <Notice tone="warning" live="assertive">
+                  {error}
+                </Notice>
+              )}
               <div>
                 <Button type="submit" disabled={busy}>
                   <LogIn className="size-4" aria-hidden /> {busy ? 'Entrando…' : 'Entrar'}

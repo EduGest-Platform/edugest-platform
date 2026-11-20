@@ -11,15 +11,41 @@ export const check = (name, ok, extra = '') => {
 }
 
 const PORT = 9300 + Math.floor(Math.random() * 90)
-const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--disable-gpu', `--remote-debugging-port=${PORT}`, `--user-data-dir=/tmp/e2e-${Date.now()}`, 'about:blank'], { stdio: 'ignore' })
-let ver
-for (let i = 0; i < 40 && !ver; i++) {
-  try {
-    ver = await (await fetch(`http://127.0.0.1:${PORT}/json/version`)).json()
-  } catch {
-    await sleep(250)
+// CI runners can be slow to start Chrome on a cold cache, so give it a generous wait.
+const CHROME_START_TIMEOUT_MS = 30_000
+const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--disable-gpu', `--remote-debugging-port=${PORT}`, `--user-data-dir=/tmp/e2e-${Date.now()}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] })
+
+// Keep Chrome's last stderr lines so a startup failure explains itself.
+let chromeStderr = ''
+chrome.stderr.on('data', (chunk) => {
+  chromeStderr = (chromeStderr + chunk).slice(-4000)
+})
+let chromeExit = null
+chrome.on('exit', (code, signal) => {
+  chromeExit = { code, signal }
+})
+chrome.on('error', (err) => {
+  chromeExit = { error: err.message }
+})
+
+async function waitForChrome() {
+  const deadline = Date.now() + CHROME_START_TIMEOUT_MS
+  while (Date.now() < deadline && !chromeExit) {
+    try {
+      return await (await fetch(`http://127.0.0.1:${PORT}/json/version`)).json()
+    } catch {
+      await sleep(250)
+    }
   }
+  const reason = chromeExit ? `Chrome exited early (${JSON.stringify(chromeExit)})` : `Chrome did not answer within ${CHROME_START_TIMEOUT_MS / 1000} s`
+  console.error(`E2E setup failed: ${reason}. Binary: ${CHROME}, debugging port: ${PORT}.`)
+  if (chromeStderr.trim()) console.error(`Last Chrome stderr:
+${chromeStderr.trim()}`)
+  chrome.kill()
+  process.exit(1)
 }
+
+const ver = await waitForChrome()
 const ws = new WebSocket(ver.webSocketDebuggerUrl)
 await new Promise((r) => ws.addEventListener('open', r))
 let seq = 0

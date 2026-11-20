@@ -1,0 +1,31 @@
+import { describe, expect, it } from 'vitest'
+import { API_VIEWS, dataSourceFor } from '../../shared/api/config'
+import { API_SCREENS } from '../apiScreens'
+import { VIEWS } from '../config'
+
+const ALL_VIEWS = Object.keys(VIEWS)
+
+describe('dataSourceFor (KAN-89)', () => {
+  it('keeps every view local when there is no API URL', () => {
+    for (const view of ALL_VIEWS) expect(dataSourceFor(view, false)).toBe('local')
+  })
+
+  it('uses the API only for migrated views in API mode', () => {
+    const apiViews = ALL_VIEWS.filter((view) => dataSourceFor(view, true) === 'api')
+    expect(apiViews.sort()).toEqual([...API_VIEWS].sort())
+  })
+
+  it('treats unknown views as local, never as API', () => {
+    expect(dataSourceFor('vista-inexistente', true)).toBe('local')
+  })
+})
+
+describe('API view registry', () => {
+  it('lists only views that exist in the menu configuration', () => {
+    for (const view of API_VIEWS) expect(ALL_VIEWS).toContain(view)
+  })
+
+  it('has an API screen for every migrated view and none for local views', () => {
+    expect(Object.keys(API_SCREENS).sort()).toEqual([...API_VIEWS].sort())
+  })
+})

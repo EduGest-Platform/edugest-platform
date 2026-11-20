@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt",
-    "test": "vitest run",
+    "test": "vitest run --configLoader runner",
     "gen:api": "openapi-typescript contracts/openapi.json -o src/shared/api/schema.gen.ts",
     "e2e:local": "node e2e/local-mode.mjs",
     "e2e:api": "node e2e/f1-api-mode.mjs"

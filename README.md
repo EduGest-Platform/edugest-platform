@@ -1,4 +1,4 @@
-# Gistar (nombre provisional) · Proyecto Final 2 · Fundación Somos F5
+# EduGest · Proyecto Final 2 · Fundación Somos F5
 
 Plataforma para centralizar inscripción, preselección, selección, formación y acompañamiento.
 **Datos exclusivamente sintéticos.** La IA asiste; las decisiones de admisión, exclusión o baja las toman personas.
@@ -42,4 +42,8 @@ API y PostgreSQL: ver [`api/README.md`](api/README.md); requieren `infra/.env` y
 | [`commands.md`](commands.md) | Comandos verificados y previstos / Verified and planned commands |
 | [`projectplan.md`](projectplan.md) | Plan de producto y entrega / Product and delivery plan |
 
-**EN summary:** Gistar (working name) is the Somos F5 Final Project 2 platform covering application, preselection, human-decided selection, enrolment and academic follow-up, with a scoped RAG assistant and advisory dropout ML. Synthetic data only; code in English; repository docs in Spanish and English. Start with the constitution, then `AGENTS.md` (agents) or `contribution.md` (humans).
+**EN summary:** EduGest is the Somos F5 Final Project 2 platform covering application, preselection, human-decided selection, enrolment and academic follow-up, with a scoped RAG assistant and advisory dropout ML. Synthetic data only; code in English; repository docs in Spanish and English. Start with the constitution, then `AGENTS.md` (agents) or `contribution.md` (humans).
+
+## Licencia / License
+
+MIT, con atribución obligatoria al equipo EduGest, al Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026) y enlace a este repositorio. Ver [LICENSE](LICENSE). / MIT, with mandatory attribution to the EduGest team, Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026) and a link to this repository. See [LICENSE](LICENSE).

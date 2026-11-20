@@ -5,13 +5,20 @@ from sqlalchemy import text
 from app import models  # noqa: F401  (registers metadata)
 from app.core.config import settings
 from app.core.deps import DB
+from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
 from app.modules.admissions.router import router as admissions_router
+from app.modules.attendance.router import router as attendance_router
 from app.modules.audit.router import router as audit_router
+from app.modules.automation.router import router as automation_router
 from app.modules.catalog.router import router as catalog_router
+from app.modules.competencies.router import router as competencies_router
 from app.modules.identity.router import router as identity_router
+from app.modules.preselection.router import router as preselection_router
+from app.modules.requirements.router import router as requirements_router
+from app.modules.requirements.prefilter import router as prefilter_router
 
 app = FastAPI(
-    title="Gistar API (nombre provisional)",
+    title="EduGest API",
     version="0.1.0",
     description=(
         "API del Proyecto Final 2 · Fundación Somos F5. **Datos exclusivamente sintéticos.** "
@@ -19,16 +26,29 @@ app = FastAPI(
         "La plataforma no toma decisiones automáticas de admisión, exclusión ni baja."
     ),
 )
+install_error_handling(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
+    expose_headers=[REQUEST_ID_HEADER],
 )
 
 API = "/api/v1"
-for r in (identity_router, catalog_router, admissions_router, audit_router):
+for r in (
+    identity_router,
+    catalog_router,
+    admissions_router,
+    requirements_router,
+    prefilter_router,
+    preselection_router,
+    automation_router,
+    attendance_router,
+    competencies_router,
+    audit_router,
+):
     app.include_router(r, prefix=API)
 
 

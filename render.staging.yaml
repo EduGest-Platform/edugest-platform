@@ -1,0 +1,59 @@
+# Blueprint de Render para el entorno STAGING de EduGest. Estado: PROPOSED; no se ha desplegado.
+# Es un Blueprint independiente de render.yaml (producción): en Render se crea con «Blueprint Path» = render.staging.yaml
+# y la rama `dev`. Los recursos no se comparten con producción. Ver docs/deploy/README.md.
+# Solo datos sintéticos: no cargar datos reales en este entorno.
+databases:
+  - name: edugest-db-staging
+    databaseName: gistar_staging
+    user: gistar
+    region: frankfurt # Misma región que la API: la conexión interna solo funciona dentro de una región.
+    postgresMajorVersion: "16"
+    # El plan gratuito permite una sola base activa por workspace (KAN-142): staging va en el workspace
+    # de Elizabeth (PO) y producción en el de Yohanna (SM). Además caduca a los 30 días.
+    plan: free
+    ipAllowList: [] # Sin conexiones desde internet: solo accede edugest-api-staging por la red interna.
+
+services:
+  - type: web
+    name: edugest-api-staging
+    runtime: docker
+    region: frankfurt
+    branch: dev # Staging sigue la rama de integración; producción despliega un commit revisado de main.
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    plan: free
+    # Excepción a ADR-0008 aprobada por la PO el 19/11/2026: cada push a `dev` se despliega solo si el CI de GitHub pasa.
+    autoDeployTrigger: checksPass
+    healthCheckPath: /health
+    # Migraciones y semilla corren al arrancar, en api/docker-entrypoint.sh.
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: edugest-db-staging
+          property: connectionString
+      - key: GISTAR_ENVIRONMENT
+        value: staging
+      - key: GISTAR_DEMO_PASSWORD
+        generateValue: true # Contraseña propia de staging; consultarla en el panel de Render. No reutilizar la de producción.
+      - key: GISTAR_CORS_ORIGINS
+        sync: false # Lista JSON con la URL pública de la web de staging, p. ej. ["https://edugest-web-staging.onrender.com"]
+      - key: GISTAR_GITHUB_TOKEN
+        sync: false # Opcional: vacío o un token con lectura solo de repositorios públicos.
+
+  - type: web
+    name: edugest-web-staging
+    runtime: static
+    branch: dev
+    autoDeployTrigger: checksPass # Igual que la API (excepción a ADR-0008 aprobada por la PO el 19/11/2026).
+    # El frontend está en la raíz del repo (ADR-0001), por eso no hace falta rootDir.
+    buildCommand: npm install -g pnpm@10.34.3 && pnpm install --frozen-lockfile && pnpm build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_GISTAR_API_URL
+        sync: false # URL pública de edugest-api-staging, p. ej. https://edugest-api-staging.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

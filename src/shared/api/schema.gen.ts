@@ -39,6 +39,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/automation-executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de evaluaciones del ámbito; total explícito si el límite trunca la lista */
+        get: operations["list_executions_api_v1_applications__application_id__automation_executions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/automation-executions/requirement-prefilter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios
+         * @description Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.
+         */
+        post: operations["record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/events": {
         parameters: {
             query?: never;
@@ -50,6 +87,132 @@ export interface paths {
         put?: never;
         /** Registrar contacto, nota o recordatorio en el CRM */
         post: operations["post_event_api_v1_applications__application_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/preselection-decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de decisiones de fin de preselección de una candidatura */
+        get: operations["list_preselection_decisions_api_v1_applications__application_id__preselection_decisions_get"];
+        put?: never;
+        /** Terminar la preselección: convocar a selección, retirada expresa o silencio confirmado por una persona */
+        post: operations["post_preselection_decision_api_v1_applications__application_id__preselection_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-prefilter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evaluar requisitos seleccionados y proponer revisión humana, nunca decidir admisión
+         * @description Selección explícita de versiones, no catálogo activo. Códigos omitidos exigen revisión humana. No escribe tareas ni cambia etapas.
+         */
+        post: operations["evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revisiones de requisitos de una candidatura (lista vacía = sin revisar, no «todo cumplido») */
+        get: operations["list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Registrar o revisar el resultado de un requisito, incluidas las excepciones. No cambia la etapa de la candidatura
+         * @description `requirement_ref` debe existir en el catálogo de la convocatoria. Cada referencia identifica una definición inmutable; el resultado conserva su vínculo aunque se publiquen versiones nuevas. No incluir datos sensibles en `reason`.
+         */
+        put: operations["put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/requirement-reviews/{requirement_ref}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión */
+        get: operations["get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-records/{record_id}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de un registro de asistencia: valor inicial y cada corrección con autor, fecha y motivo */
+        get: operations["list_revisions_api_v1_attendance_records__record_id__revisions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/records/{enrollment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Registrar o corregir la asistencia de una persona en una sesión */
+        put: operations["put_record_api_v1_attendance_sessions__session_id__records__enrollment_id__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -141,6 +304,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{call_id}/preselection-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Política de silencio de la convocatoria (por defecto: alerta leve a los 2 intentos; alerta de acción a los 4 intentos y 30 días) */
+        get: operations["get_preselection_policy_api_v1_calls__call_id__preselection_policy_get"];
+        /** Editar la política de silencio de una convocatoria (administración y captación). No cambia decisiones ya tomadas */
+        put: operations["put_preselection_policy_api_v1_calls__call_id__preselection_policy_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{call_id}/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo de requisitos y sus versiones inmutables dentro del ámbito autorizado */
+        get: operations["list_call_requirements_api_v1_calls__call_id__requirements_get"];
+        put?: never;
+        /** Publicar una definición inmutable; solo administración. Nunca decide admisión */
+        post: operations["create_call_requirement_api_v1_calls__call_id__requirements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{call_id}/silence-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Candidaturas en preselección con alerta de silencio leve o de acción; una persona revisa (no se cierra nada solo) */
+        get: operations["silence_review_api_v1_calls__call_id__silence_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{call_id}/summary": {
         parameters: {
             query?: never;
@@ -158,6 +374,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/attendance-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sesiones de asistencia de una cohorte con sus registros */
+        get: operations["list_sessions_api_v1_cohorts__cohort_id__attendance_sessions_get"];
+        put?: never;
+        /** Crear una sesión de asistencia (mañana, tarde o día completo) */
+        post: operations["post_session_api_v1_cohorts__cohort_id__attendance_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/attendance-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Totales de asistencia por matrícula y de la cohorte (contrato get_attendance_summary del asistente) */
+        get: operations["get_attendance_summary_api_v1_cohorts__cohort_id__attendance_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/competencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Competencias que se evalúan en una cohorte (versión del árbol asignada) */
+        get: operations["get_cohort_competencies_api_v1_cohorts__cohort_id__competencies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/competency-framework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Elegir la versión publicada del árbol que usa una cohorte */
+        put: operations["put_cohort_framework_api_v1_cohorts__cohort_id__competency_framework_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competency-frameworks/{framework_id}/competencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Sustituir las competencias de un borrador (las versiones publicadas no se editan) */
+        put: operations["put_framework_competencies_api_v1_competency_frameworks__framework_id__competencies_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competency-frameworks/{framework_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publicar un borrador; la versión publicada anterior pasa a archivada y sigue consultable */
+        post: operations["post_publish_api_v1_competency_frameworks__framework_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollment_id}/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Nivel actual por competencia y todo el historial de evaluaciones de una matrícula */
+        get: operations["list_assessments_api_v1_enrollments__enrollment_id__assessments_get"];
+        put?: never;
+        /** Registrar el nivel 1–3 de un coder en una competencia, con evidencia */
+        post: operations["post_assessment_api_v1_enrollments__enrollment_id__assessments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/applications": {
         parameters: {
             query?: never;
@@ -169,6 +506,24 @@ export interface paths {
         get: operations["my_applications_api_v1_me_applications_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/programs/{program_id}/competency-frameworks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Versiones del árbol de competencias de un bootcamp (borrador, publicada y archivadas) */
+        get: operations["list_frameworks_api_v1_programs__program_id__competency_frameworks_get"];
+        put?: never;
+        /** Crear una versión borrador del árbol de competencias de un bootcamp */
+        post: operations["post_framework_api_v1_programs__program_id__competency_frameworks_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -352,6 +707,85 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AssessmentOut */
+        AssessmentOut: {
+            /**
+             * Assessed At
+             * Format: date-time
+             */
+            assessed_at: string;
+            /** Assessed By */
+            assessed_by: string | null;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Competency Id
+             * Format: uuid
+             */
+            competency_id: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** Evidence */
+            evidence: string;
+            /** Framework Version */
+            framework_version: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Level
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3;
+        };
+        /** AssessmentWrite */
+        AssessmentWrite: {
+            /**
+             * Competency Id
+             * Format: uuid
+             */
+            competency_id: string;
+            /**
+             * Evidence
+             * @description En qué se basa el nivel (entrega, observación…). Sin datos personales.
+             */
+            evidence: string;
+            /**
+             * Level
+             * @enum {integer}
+             */
+            level: 1 | 2 | 3;
+        };
+        /**
+         * AttendanceSummary
+         * @description Contract of get_attendance_summary for the assistant: totals only, no names.
+         */
+        AttendanceSummary: {
+            /** Cohort Id */
+            cohort_id: string;
+            cohort_totals: components["schemas"]["CohortAttendance"];
+            /** Date From */
+            date_from: string | null;
+            /** Date To */
+            date_to: string | null;
+            /**
+             * Items
+             * @description Totales por matrícula. Vacío para coordinación, que solo ve el agregado
+             */
+            items: components["schemas"]["EnrollmentAttendance"][];
+            /**
+             * Rule
+             * @default Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.
+             */
+            rule: string;
+            /** Timezone */
+            timezone: string;
+        };
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -375,6 +809,60 @@ export interface components {
             target_id: string | null;
             /** Target Type */
             target_type: string;
+        };
+        /** AutomationExecutionList */
+        AutomationExecutionList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["AutomationExecutionOut"][];
+            /** Limit */
+            limit: number;
+            /** Total */
+            total: number;
+        };
+        /** AutomationExecutionOut */
+        AutomationExecutionOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Evaluated At
+             * Format: date-time
+             */
+            evaluated_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "requirement_prefilter";
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "human_review" | "no_action";
+            /** Rule Version */
+            rule_version: string;
+            /** Snapshot */
+            snapshot: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Stage At Evaluation */
+            stage_at_evaluation: string;
         };
         /** CallOut */
         CallOut: {
@@ -401,6 +889,68 @@ export interface components {
             /** Program Nombre */
             program_nombre: string;
         };
+        /** CallRequirementList */
+        CallRequirementList: {
+            /** Call Id */
+            call_id: string;
+            /** Items */
+            items: components["schemas"]["CallRequirementOut"][];
+        };
+        /** CallRequirementOut */
+        CallRequirementOut: {
+            /** Call Id */
+            call_id: string;
+            /** Code */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Funder */
+            funder: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Label */
+            label: string;
+            /** Ref */
+            ref: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * CallRequirementWrite
+         * @description A fresh immutable reference, or the next version of the same logical code.
+         */
+        CallRequirementWrite: {
+            /** Code */
+            code: string;
+            /**
+             * Expected Version
+             * @description 0 para un código nuevo; versión anterior al publicar su sucesora
+             * @default 0
+             */
+            expected_version: number;
+            /** Funder */
+            funder?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Label */
+            label: string;
+            /** Ref */
+            ref: string;
+        };
         /** CallSummaryOut */
         CallSummaryOut: {
             /** By Stage */
@@ -416,6 +966,168 @@ export interface components {
             /** Total */
             total: number | null;
         };
+        /**
+         * CohortAttendance
+         * @description Cohort-level totals for coordination. All values are null when the group is too small to show.
+         */
+        CohortAttendance: {
+            /** Attendance Rate */
+            attendance_rate?: number | null;
+            /** Attended Days */
+            attended_days?: number | null;
+            /** Enrollments */
+            enrollments: number | null;
+            /** Justified Absence Days */
+            justified_absence_days?: number | null;
+            /** Late Days */
+            late_days?: number | null;
+            /** Min Group Size */
+            min_group_size: number;
+            /** Suppressed */
+            suppressed: boolean;
+            /** Unjustified Absence Days */
+            unjustified_absence_days?: number | null;
+            /** Unrecorded Days */
+            unrecorded_days?: number | null;
+        };
+        /** CohortCompetencies */
+        CohortCompetencies: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** @description Versión del árbol que usa la cohorte. Nulo si aún no tiene ninguna */
+            framework: components["schemas"]["FrameworkOut"] | null;
+        };
+        /** CohortFrameworkWrite */
+        CohortFrameworkWrite: {
+            /**
+             * Framework Id
+             * Format: uuid
+             */
+            framework_id: string;
+        };
+        /** CompetencyOut */
+        CompetencyOut: {
+            /** Codigo */
+            codigo: string;
+            /** Descripcion */
+            descripcion: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Level 1 */
+            level_1: string;
+            /** Level 2 */
+            level_2: string;
+            /** Level 3 */
+            level_3: string;
+            /** Nombre */
+            nombre: string;
+            /** Orden */
+            orden: number;
+        };
+        /** CompetencyWrite */
+        CompetencyWrite: {
+            /**
+             * Codigo
+             * @description C1, C2… como en el briefing
+             */
+            codigo: string;
+            /**
+             * Descripcion
+             * @default
+             */
+            descripcion: string;
+            /**
+             * Level 1
+             * @description Qué demuestra un coder en el nivel 1
+             */
+            level_1: string;
+            /** Level 2 */
+            level_2: string;
+            /** Level 3 */
+            level_3: string;
+            /** Nombre */
+            nombre: string;
+        };
+        /** CurrentLevel */
+        CurrentLevel: {
+            /** Assessed At */
+            assessed_at: string | null;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Competency Id
+             * Format: uuid
+             */
+            competency_id: string;
+            /**
+             * Level
+             * @description Último nivel evaluado. Nulo = sin evaluar (nunca nivel 0)
+             */
+            level: (1 | 2 | 3) | null;
+            /** Nombre */
+            nombre: string;
+        };
+        /** EnrollmentAssessments */
+        EnrollmentAssessments: {
+            /** Current */
+            current: components["schemas"]["CurrentLevel"][];
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** Framework Version */
+            framework_version: number | null;
+            /**
+             * History
+             * @description Todas las evaluaciones, también de versiones anteriores del árbol
+             */
+            history: components["schemas"]["AssessmentOut"][];
+        };
+        /** EnrollmentAttendance */
+        EnrollmentAttendance: {
+            /**
+             * Attendance Rate
+             * @description Asistido / registrado. Nulo si no hay registros
+             */
+            attendance_rate: number | null;
+            /**
+             * Attended Days
+             * @description Asistencia a tiempo más con retraso
+             */
+            attended_days: number;
+            /** Attended In Person Days */
+            attended_in_person_days: number;
+            /** Attended Online Days */
+            attended_online_days: number;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Held Days
+             * @description Suma de fracciones de las sesiones celebradas
+             */
+            held_days: number;
+            /** Justified Absence Days */
+            justified_absence_days: number;
+            /**
+             * Late Days
+             * @description Parte de attended_days en la que llegó con retraso
+             */
+            late_days: number;
+            /** Unjustified Absence Days */
+            unjustified_absence_days: number;
+            /**
+             * Unrecorded Days
+             * @description Sesiones celebradas sin registro (sin dato)
+             */
+            unrecorded_days: number;
+        };
         /** EnrollmentOut */
         EnrollmentOut: {
             /** Cohort Id */
@@ -427,6 +1139,11 @@ export interface components {
         EventCreate: {
             /** Canal */
             canal?: ("email" | "telefono" | "presencial" | "videollamada") | null;
+            /**
+             * Resultado
+             * @description Solo para contactos: «sin_respuesta» cuenta para la revisión de silencio.
+             */
+            resultado?: ("respondida" | "sin_respuesta") | null;
             /**
              * Resumen
              * @description Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
@@ -454,16 +1171,60 @@ export interface components {
              * Format: date-time
              */
             occurred_at: string;
+            /** Resultado */
+            resultado: string | null;
             /** Resumen */
             resumen: string;
             /** Tipo */
             tipo: string;
+        };
+        /** FrameworkList */
+        FrameworkList: {
+            /** Items */
+            items: components["schemas"]["FrameworkOut"][];
+            /** Program Id */
+            program_id: string;
+        };
+        /** FrameworkOut */
+        FrameworkOut: {
+            /** Competencies */
+            competencies: components["schemas"]["CompetencyOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "borrador" | "publicada" | "archivada";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Program Id */
+            program_id: string;
+            /** Published At */
+            published_at: string | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * FrameworkWrite
+         * @description The full list of competencies of a draft version. Order in the list is the display order.
+         */
+        FrameworkWrite: {
+            /** Competencies */
+            competencies: components["schemas"]["CompetencyWrite"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        JsonValue: unknown;
         /** LoginIn */
         LoginIn: {
             /** Email */
@@ -519,6 +1280,338 @@ export interface components {
              */
             id: string;
         };
+        /** PrefilterItem */
+        PrefilterItem: {
+            /** Code */
+            code: string;
+            /**
+             * Definition Id
+             * Format: uuid
+             */
+            definition_id: string;
+            /** Definition Version */
+            definition_version: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "required" | "recommended";
+            /** Ref */
+            ref: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Review Version */
+            review_version?: number | null;
+            /** Verified Review */
+            verified_review: boolean;
+        };
+        /** PrefilterRequest */
+        PrefilterRequest: {
+            /** Requirement Refs */
+            requirement_refs: string[];
+        };
+        /** PrefilterResult */
+        PrefilterResult: {
+            /** Advisory Refs */
+            advisory_refs: string[];
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /**
+             * Evaluation Only
+             * @default true
+             * @constant
+             */
+            evaluation_only: true;
+            /** Human Review Required */
+            human_review_required: boolean;
+            /** Items */
+            items: components["schemas"]["PrefilterItem"][];
+            /** Proposal Key */
+            proposal_key: string[] | null;
+            /** Proposed Action */
+            proposed_action: "human_review" | null;
+            /**
+             * Scope
+             * @default explicit_versions
+             * @constant
+             */
+            scope: "explicit_versions";
+            /** Unresolved Required Refs */
+            unresolved_required_refs: string[];
+            /** Unselected Codes */
+            unselected_codes: string[];
+        };
+        /** PreselectionDecisionList */
+        PreselectionDecisionList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["PreselectionDecisionOut"][];
+        };
+        /** PreselectionDecisionOut */
+        PreselectionDecisionOut: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "convocada" | "retirada_expresa" | "silencio_confirmado" | "silencio_reprogramado";
+            /** Evidence */
+            evidence: {
+                [key: string]: unknown;
+            };
+            /** From Stage */
+            from_stage: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+            /** To Stage */
+            to_stage: string;
+        };
+        /** PreselectionDecisionWrite */
+        PreselectionDecisionWrite: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "convocada" | "retirada_expresa" | "silencio_confirmado" | "silencio_reprogramado";
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud ni situación personal.
+             */
+            reason: string;
+        };
+        /** PreselectionPolicy */
+        PreselectionPolicy: {
+            /**
+             * Silence Days
+             * @description Días sin respuesta tras el último intento antes de la alerta de acción
+             */
+            silence_days: number;
+            /**
+             * Silence Max Contacts
+             * @description Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)
+             */
+            silence_max_contacts: number;
+            /**
+             * Silence Warning Contacts
+             * @description Intentos sin respuesta para la alerta leve; salta sin esperar días
+             */
+            silence_warning_contacts: number;
+        };
+        /** RecordOut */
+        RecordOut: {
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Justification */
+            justification: ("justificada" | "no_justificada") | null;
+            /** Modality */
+            modality: ("presencial" | "online") | null;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "presente" | "retraso" | "ausente";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /** RecordWrite */
+        RecordWrite: {
+            /**
+             * Justification
+             * @description Obligatoria si está ausente; vacía si asistió
+             */
+            justification?: ("justificada" | "no_justificada") | null;
+            /**
+             * Modality
+             * @description Obligatoria si asistió (presente o retraso); vacía si está ausente
+             */
+            modality?: ("presencial" | "online") | null;
+            /**
+             * Reason
+             * @description Motivo de la corrección. Obligatorio al cambiar un registro. Sin datos de salud ni personales.
+             */
+            reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "presente" | "retraso" | "ausente";
+        };
+        /** RequirementReviewHistory */
+        RequirementReviewHistory: {
+            /** Items */
+            items: components["schemas"]["RequirementRevisionOut"][];
+            /** Requirement Ref */
+            requirement_ref: string;
+            /**
+             * Review Id
+             * Format: uuid
+             */
+            review_id: string;
+        };
+        /**
+         * RequirementReviewList
+         * @description An empty list means «not reviewed yet», never «all requirements met».
+         */
+        RequirementReviewList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["RequirementReviewOut"][];
+        };
+        /** RequirementReviewOut */
+        RequirementReviewOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string | null;
+            /** Requirement Definition Id */
+            requirement_definition_id?: string | null;
+            /** Requirement Ref */
+            requirement_ref: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Reviewer */
+            reviewer: string | null;
+            /** Version */
+            version: number;
+        };
+        /**
+         * RequirementReviewWrite
+         * @description Body to record or revise a review. Author and date are never accepted from the client.
+         */
+        RequirementReviewWrite: {
+            /**
+             * Expected Version
+             * @description Versión que la persona vio al abrir la revisión. Se omite solo al crear la primera.
+             */
+            expected_version?: number | null;
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
+             */
+            reason: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "met" | "not_met" | "exception_under_review" | "exception_approved";
+        };
+        /** RequirementRevisionOut */
+        RequirementRevisionOut: {
+            /** Reason */
+            reason: string;
+            /** Requirement Definition Id */
+            requirement_definition_id?: string | null;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pending" | "met" | "not_met" | "exception_under_review" | "exception_approved";
+            /**
+             * Reviewed At
+             * Format: date-time
+             */
+            reviewed_at: string;
+            /** Reviewer */
+            reviewer: string | null;
+            /** Revision */
+            revision: number;
+        };
+        /** RevisionList */
+        RevisionList: {
+            /** Items */
+            items: components["schemas"]["RevisionOut"][];
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+        };
+        /** RevisionOut */
+        RevisionOut: {
+            /**
+             * Changed At
+             * Format: date-time
+             */
+            changed_at: string;
+            /** Changed By */
+            changed_by: string | null;
+            /** Justification */
+            justification: ("justificada" | "no_justificada") | null;
+            /** Modality */
+            modality: ("presencial" | "online") | null;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "presente" | "retraso" | "ausente";
+            /** Version */
+            version: number;
+        };
         /** RoleAssignmentOut */
         RoleAssignmentOut: {
             /** Role */
@@ -527,6 +1620,109 @@ export interface components {
             scope_id: string | null;
             /** Scope Type */
             scope_type: string;
+        };
+        /** SessionList */
+        SessionList: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Items */
+            items: components["schemas"]["SessionOut"][];
+        };
+        /** SessionOut */
+        SessionOut: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Duration Fraction */
+            duration_fraction: number;
+            /**
+             * Held
+             * @description La sesión ya se ha celebrado (fecha anterior o igual a hoy en la zona horaria de la cohorte)
+             */
+            held: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Records */
+            records: components["schemas"]["RecordOut"][];
+            /**
+             * Session Date
+             * Format: date
+             */
+            session_date: string;
+            /**
+             * Shift
+             * @enum {string}
+             */
+            shift: "manana" | "tarde" | "completa";
+        };
+        /** SessionWrite */
+        SessionWrite: {
+            /**
+             * Session Date
+             * Format: date
+             */
+            session_date: string;
+            /**
+             * Shift
+             * @description manana o tarde pesan 0,5; completa pesa 1
+             * @enum {string}
+             */
+            shift: "manana" | "tarde" | "completa";
+        };
+        /**
+         * SilenceEvidence
+         * @description Why an application is (or is not) pending a silence review. Computed from CRM contacts, never stored as a state.
+         */
+        SilenceEvidence: {
+            /**
+             * Alert Level
+             * @description Nivel de alerta: «leve» avisa pronto; «accion» pide a una persona confirmar o reprogramar
+             */
+            alert_level: ("leve" | "accion") | null;
+            /** Days Without Response */
+            days_without_response: number | null;
+            /** Last Attempt At */
+            last_attempt_at: string | null;
+            /** Silence Days */
+            silence_days: number;
+            /** Silence Max Contacts */
+            silence_max_contacts: number;
+            /** Silence Warning Contacts */
+            silence_warning_contacts: number;
+            /**
+             * Threshold Met
+             * @description Se cumple el umbral de acción: solo entonces se puede confirmar el silencio
+             */
+            threshold_met: boolean;
+            /** Unanswered Attempts */
+            unanswered_attempts: number;
+        };
+        /** SilenceReviewItem */
+        SilenceReviewItem: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Display Name
+             * @description Nombre de la persona, para identificarla en la lista. El correo solo se ve en el expediente
+             */
+            display_name: string;
+            evidence: components["schemas"]["SilenceEvidence"];
+            /** Stage */
+            stage: string;
+        };
+        /** SilenceReviewList */
+        SilenceReviewList: {
+            /** Call Id */
+            call_id: string;
+            /** Items */
+            items: components["schemas"]["SilenceReviewItem"][];
         };
         /** StageCount */
         StageCount: {
@@ -659,6 +1855,111 @@ export interface operations {
             };
         };
     };
+    list_executions_api_v1_applications__application_id__automation_executions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationExecutionList"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito desconocido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrefilterRequest"];
+            };
+        };
+        responses: {
+            /** @description Mismo snapshot y día UTC: reintento sin duplicado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationExecutionOut"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationExecutionOut"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito desconocido */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_event_api_v1_applications__application_id__events_post: {
         parameters: {
             query?: never;
@@ -691,6 +1992,413 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_preselection_decisions_api_v1_applications__application_id__preselection_decisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionDecisionList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_preselection_decision_api_v1_applications__application_id__preselection_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreselectionDecisionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionDecisionOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La preselección ya terminó o no se cumple el umbral de silencio */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_prefilter_api_v1_applications__application_id__requirement_prefilter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrefilterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrefilterResult"];
+                };
+            };
+            /** @description Sin permiso o fuera de ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura o requisito no encontrado en su convocatoria */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Selección vacía, duplicada o con varias versiones de un código */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_requirement_reviews_api_v1_applications__application_id__requirement_reviews_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_requirement_review_api_v1_applications__application_id__requirement_reviews__requirement_ref__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                /** @description Identificador del requisito dentro de la convocatoria */
+                requirement_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequirementReviewWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewOut"];
+                };
+            };
+            /** @description Primera revisión creada */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Versión desfasada o cambio de resultado no permitido */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_requirement_review_history_api_v1_applications__application_id__requirement_reviews__requirement_ref__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                /** @description Identificador del requisito dentro de la convocatoria */
+                requirement_ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementReviewHistory"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_revisions_api_v1_attendance_records__record_id__revisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionList"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_record_api_v1_attendance_sessions__session_id__records__enrollment_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sesión futura o matrícula de otra cohorte */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Datos incoherentes o falta el motivo de la corrección */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -830,6 +2538,225 @@ export interface operations {
             };
         };
     };
+    get_preselection_policy_api_v1_calls__call_id__preselection_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionPolicy"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_preselection_policy_api_v1_calls__call_id__preselection_policy_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreselectionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreselectionPolicy"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_call_requirements_api_v1_calls__call_id__requirements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallRequirementList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_call_requirement_api_v1_calls__call_id__requirements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallRequirementWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallRequirementOut"];
+                };
+            };
+            /** @description Solo administración */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Referencia o versión en conflicto */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    silence_review_api_v1_calls__call_id__silence_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SilenceReviewList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     call_summary_api_v1_calls__call_id__summary_get: {
         parameters: {
             query?: never;
@@ -861,6 +2788,469 @@ export interface operations {
             };
         };
     };
+    list_sessions_api_v1_cohorts__cohort_id__attendance_sessions_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionList"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_session_api_v1_cohorts__cohort_id__attendance_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sesión duplicada, solapada o fuera de fechas */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_attendance_summary_api_v1_cohorts__cohort_id__attendance_summary_get: {
+        parameters: {
+            query?: {
+                enrollment_id?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceSummary"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_cohort_competencies_api_v1_cohorts__cohort_id__competencies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortCompetencies"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_cohort_framework_api_v1_cohorts__cohort_id__competency_framework_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CohortFrameworkWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortCompetencies"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La operación no es válida en el estado actual */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_framework_competencies_api_v1_competency_frameworks__framework_id__competencies_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                framework_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FrameworkWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameworkOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La operación no es válida en el estado actual */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_publish_api_v1_competency_frameworks__framework_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                framework_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameworkOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La operación no es válida en el estado actual */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_assessments_api_v1_enrollments__enrollment_id__assessments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentAssessments"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_assessment_api_v1_enrollments__enrollment_id__assessments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssessmentWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La operación no es válida en el estado actual */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_applications_api_v1_me_applications_get: {
         parameters: {
             query?: never;
@@ -877,6 +3267,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationSelfView"][];
+                };
+            };
+        };
+    };
+    list_frameworks_api_v1_programs__program_id__competency_frameworks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameworkList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_framework_api_v1_programs__program_id__competency_frameworks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                program_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FrameworkWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FrameworkOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La operación no es válida en el estado actual */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

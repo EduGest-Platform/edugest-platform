@@ -1,10 +1,57 @@
 name: CI
 on:
   push:
-    branches: [main, f1-cimientos]
+    branches: [main, dev]
   pull_request:
 
+# El CI solo puede leer el repositorio.
+permissions:
+  contents: read
+
+# Un push nuevo cancela la ejecución anterior de la misma rama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  dropout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r ml/requirements-tracking.txt ruff==0.17.5
+      - run: ruff check ml --select E4,E7,E9,F
+      - run: python -m unittest discover -s ml/dropout/tests -v
+      - run: python -m ml.dropout.train --out "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.evaluate --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.score --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.model_card --artifacts "$RUNNER_TEMP/dropout"
+      - run: python -m ml.dropout.tracking --artifacts "$RUNNER_TEMP/dropout" --store "$RUNNER_TEMP/dropout-tracking"
+
+  rag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Banco de preguntas del RAG válido (KAN-108)
+        # Solo biblioteca estándar: no llama a Gemini ni necesita claves.
+        run: python evals/rag/validate_bank.py
+      - name: Linter (ruff) de evals/rag · solo reglas de errores reales
+        run: pip install ruff==0.17.5 && ruff check evals/rag --select E4,E7,E9,F
+
+  automation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s evals/automation -v
+
   web:
     runs-on: ubuntu-latest
     steps:
@@ -17,6 +64,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Formato (oxfmt) · aviso, todavía no bloquea
+        # Hoy 42 de 45 archivos de src/ y e2e/ no siguen oxfmt. Pasa a bloqueante (quitar continue-on-error)
+        # cuando un PR de formato los deje limpios. `pnpm format --check` no sirve: revisa también node_modules.
+        continue-on-error: true
+        run: pnpm exec oxfmt --check src e2e
       - run: pnpm exec tsc --noEmit -p .
       - run: pnpm test
       - run: pnpm build
@@ -40,14 +92,81 @@ jobs:
         working-directory: api
     env:
       GISTAR_TEST_DATABASE_URL: postgresql+psycopg://gistar:gistar@localhost:5432/gistar_test
+      GISTAR_ENVIRONMENT: local
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/pyproject.toml
       - run: pip install -e ".[dev]"
+      - name: Linter (ruff) · solo reglas de errores reales
+        # Versión fijada para que el resultado no cambie solo. Las reglas de estilo (orden de imports, etc.)
+        # se activan cuando el código de api/ esté limpio.
+        run: pip install ruff==0.17.5 && ruff check . --select E4,E7,E9,F
       - name: Migraciones sin deriva respecto a los modelos
         env:
           GISTAR_DATABASE_URL: postgresql+psycopg://gistar:gistar@localhost:5432/gistar_test
         run: alembic upgrade head && alembic check && alembic downgrade base
       - run: pytest
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Buscar contraseñas o claves subidas por error (gitleaks)
+        # Versión en Docker: la Action de gitleaks pide licencia en repositorios de organización.
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --redact -v
+
+  compose:
+    needs: [web, api]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: render.yaml es YAML válido con los servicios esperados
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet pyyaml
+          "$RUNNER_TEMP/venv/bin/python" - <<'PY'
+          import yaml
+          d = yaml.safe_load(open('render.yaml'))
+          names = {s['name'] for s in d['services']}
+          assert names == {'edugest-api', 'edugest-web'}, names
+          assert d['databases'][0]['postgresMajorVersion'] == '16'
+          assert all(s['autoDeployTrigger'] == 'off' for s in d['services']), 'auto-deploy must stay off'
+          print('render.yaml ok')
+          st = yaml.safe_load(open('render.staging.yaml'))
+          staging = {s['name']: s for s in st['services']}
+          assert set(staging) == {'edugest-api-staging', 'edugest-web-staging'}, set(staging)
+          assert not set(staging) & names, 'staging and production must not share service names'
+          assert st['databases'][0]['name'] != d['databases'][0]['name'], 'staging needs its own database'
+          assert st['databases'][0]['postgresMajorVersion'] == '16'
+          # ADR-0008 exception (PO, 2026-11-19): staging deploys from dev only after GitHub checks pass; production stays off.
+          assert all(s['branch'] == 'dev' and s['autoDeployTrigger'] == 'checksPass' for s in staging.values()), 'staging must deploy only after checks pass'
+          api_env = {e['key']: e for e in staging['edugest-api-staging']['envVars']}
+          assert api_env['GISTAR_ENVIRONMENT']['value'] == 'staging'
+          assert api_env['GISTAR_DEMO_PASSWORD']['generateValue'] is True
+          print('render.staging.yaml ok')
+          PY
+      - name: Variables de entorno de CI (contraseñas aleatorias, solo datos sintéticos)
+        run: |
+          DB_PASS=$(openssl rand -hex 24); DEMO_PASS=$(openssl rand -hex 12)
+          echo "::add-mask::$DB_PASS"; echo "::add-mask::$DEMO_PASS"
+          printf 'GISTAR_DB_PASSWORD=%s\nGISTAR_DEMO_PASSWORD=%s\n' "$DB_PASS" "$DEMO_PASS" > infra/.env
+          echo "DEMO_PASSWORD=$DEMO_PASS" >> "$GITHUB_ENV"
+      - name: Configuración del compose válida
+        run: docker compose -f infra/compose.yaml config --quiet
+      - name: Levantar db, api, mlflow y web
+        run: docker compose -f infra/compose.yaml up -d --build --wait
+      - name: Prueba de humo
+        run: bash infra/smoke-test.sh
+      - name: Registros del compose si algo falla
+        if: failure()
+        run: docker compose -f infra/compose.yaml logs --no-color
+      - name: Limpieza
+        if: always()
+        run: docker compose -f infra/compose.yaml down -v

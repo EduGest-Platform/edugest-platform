@@ -6,6 +6,7 @@ from sqlalchemy import func, or_, select
 from app.core import audit
 from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal, OptionalPrincipal
+from app.core.text import LIKE_ESCAPE, escape_like
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.admissions.schemas import (
     ApplicationCreate,
@@ -33,11 +34,36 @@ def _summary(a: Application, person: Person, call: Call) -> ApplicationSummary:
     )
 
 
+APPLICATION_NOT_FOUND = "Candidatura no encontrada"
+OUT_OF_SCOPE = (
+    "Esta candidatura pertenece a una convocatoria que no tienes asignada. "
+    "Si necesitas verla, pide acceso a administración."
+)
+
+
 def _load(db: DB, application_id: uuid.UUID) -> tuple[Application, Person, Call]:
     row = db.execute(select(Application, Person, Call).join(Person, Person.id == Application.person_id).join(Call, Call.id == Application.call_id).where(Application.id == application_id)).first()
     if not row:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Candidatura no encontrada")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, APPLICATION_NOT_FOUND)
     a, person, call = row
+    return a, person, call
+
+
+def _load_in_scope(db: DB, p: CurrentPrincipal, perm: str, application_id: uuid.UUID) -> tuple[Application, Person, Call]:
+    """Loads an application only if `perm` covers its program or call.
+
+    PO decision (19/11/2026): an application outside the caller's scope answers 403 with a message that says why
+    and what to do, and the denied attempt is audited (ids and codes only) so administration can spot probing.
+    A caller without `perm` in any scope gets 403 before any lookup, so it cannot tell known from unknown ids.
+    """
+    is_global, programs, calls = p.scopes_for(perm)
+    if not (is_global or programs or calls):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes permiso sobre este ámbito")
+    a, person, call = _load(db, application_id)
+    if not p.can(perm, Scope(program_id=call.program_id, call_id=call.id)):
+        audit.record(db, p, "application.access_denied", "application", str(a.id), codigo=a.codigo, permission=perm)
+        db.commit()
+        raise HTTPException(status.HTTP_403_FORBIDDEN, OUT_OF_SCOPE)
     return a, person, call
 
 
@@ -68,8 +94,14 @@ def list_applications(
     if stage:
         base = base.where(Application.stage == stage)
     if q:
-        like = f"%{q.strip().lower()}%"
-        base = base.where(or_(func.lower(Person.display_name).like(like), Person.email.like(like), func.lower(Application.codigo).like(like)))
+        like = f"%{escape_like(q.strip().lower())}%"
+        base = base.where(
+            or_(
+                func.lower(Person.display_name).like(like, escape=LIKE_ESCAPE),
+                Person.email.like(like, escape=LIKE_ESCAPE),
+                func.lower(Application.codigo).like(like, escape=LIKE_ESCAPE),
+            )
+        )
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
     rows = db.execute(base.order_by(Application.created_at.desc(), Application.codigo.desc()).limit(limit).offset(offset)).all()
     return ApplicationList(items=[_summary(*r) for r in rows], total=total)
@@ -77,8 +109,7 @@ def list_applications(
 
 @router.get("/applications/{application_id}", response_model=ApplicationDetail, summary="Ficha del expediente con historial CRM")
 def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> ApplicationDetail:
-    a, person, call = _load(db, application_id)
-    p.require("applications.read", Scope(program_id=call.program_id, call_id=call.id))
+    a, person, call = _load_in_scope(db, p, "applications.read", application_id)
     events = db.execute(
         select(ApplicationEvent, User.display_name).outerjoin(User, User.id == ApplicationEvent.actor_user_id).where(ApplicationEvent.application_id == a.id).order_by(ApplicationEvent.occurred_at)
     ).all()
@@ -88,20 +119,21 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
         **_summary(a, person, call).model_dump(),
         motivacion=a.motivacion,
         disponibilidad=a.disponibilidad,
-        events=[EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resumen=e.resumen, actor=name, occurred_at=e.occurred_at) for e, name in events],
+        events=[EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resultado=e.resultado, resumen=e.resumen, actor=name, occurred_at=e.occurred_at) for e, name in events],
     )
 
 
 @router.post("/applications/{application_id}/events", response_model=EventOut, status_code=201, summary="Registrar contacto, nota o recordatorio en el CRM")
 def post_event(application_id: uuid.UUID, body: EventCreate, p: CurrentPrincipal, db: DB) -> EventOut:
-    a, _, call = _load(db, application_id)
-    p.require("applications.crm", Scope(program_id=call.program_id, call_id=call.id))
-    ev = ApplicationEvent(application_id=a.id, tipo=body.tipo, canal=body.canal, resumen=body.resumen.strip(), actor_user_id=p.user.id)
+    a, _, call = _load_in_scope(db, p, "applications.crm", application_id)
+    if body.resultado and body.tipo != "contacto":
+        raise HTTPException(422, "El resultado solo se registra en eventos de contacto")
+    ev = ApplicationEvent(application_id=a.id, tipo=body.tipo, canal=body.canal, resultado=body.resultado, resumen=body.resumen.strip(), actor_user_id=p.user.id)
     db.add(ev)
     db.flush()
     audit.record(db, p, "application.event_added", "application", str(a.id), codigo=a.codigo, tipo=body.tipo)
     db.commit()
-    return EventOut(id=ev.id, tipo=ev.tipo, canal=ev.canal, resumen=ev.resumen, actor=p.user.display_name, occurred_at=ev.occurred_at)
+    return EventOut(id=ev.id, tipo=ev.tipo, canal=ev.canal, resultado=ev.resultado, resumen=ev.resumen, actor=p.user.display_name, occurred_at=ev.occurred_at)
 
 
 @router.get("/me/applications", response_model=list[ApplicationSelfView], summary="Candidaturas propias de la persona autenticada")

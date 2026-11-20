@@ -83,10 +83,16 @@ export function Status({ s, label }: { s: string | null | undefined; label?: str
   )
 }
 
-export function Notice({ tone = 'info', children }: { tone?: 'info' | 'warning'; children: ReactNode }) {
+/**
+ * `live` makes screen readers read the message out loud when it appears.
+ * Use 'assertive' for errors (read right away) and 'polite' for normal updates (read when free).
+ */
+export function Notice({ tone = 'info', live, children }: { tone?: 'info' | 'warning'; live?: 'polite' | 'assertive'; children: ReactNode }) {
   const Icon = tone === 'warning' ? TriangleAlert : Info
+  const role = live === 'assertive' ? 'alert' : live === 'polite' ? 'status' : undefined
   return (
     <div
+      role={role}
       className={`my-4 flex gap-3 rounded-xl border px-4 py-3 text-sm leading-relaxed ${
         tone === 'warning' ? 'border-amber-200 bg-amber-50/70 text-amber-950' : 'border-teal-200 bg-teal-50/60 text-teal-950'
       }`}

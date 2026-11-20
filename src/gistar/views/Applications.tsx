@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Search, Signature, ChevronRight } from 'lucide-react'
 import { APP_STATES, FINAL_STATES, humanize } from '../config'
 import { useGistar } from '../store'
+import { RequirementReviewPanel } from '../components/RequirementReviewPanel'
+import { REQUIREMENT_EXAMPLES } from '../demo/requirementExamples'
 import type { Candidatura } from '../types'
 import { Button, Card, Field, Notice, PageTitle, Status, Table, inputCls } from '../ui'
 
@@ -99,6 +101,9 @@ function ApplicationDetail({ app }: { app: Candidatura }) {
         {programa?.nombre} · {app.email_demo}
       </p>
       <div className="my-5 border-t border-line" />
+      <div className="mb-6">
+        <RequirementReviewPanel checks={REQUIREMENT_EXAMPLES[app.id] ?? []} source="demo" />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {CHECK_FIELDS.map((k) => (
           <Field key={k} label={humanize(k)} htmlFor={`f-${k}`}>
