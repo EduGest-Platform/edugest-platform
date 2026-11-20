@@ -1,6 +1,6 @@
 # KAN-205 — Scenario results and limits / Resultados y límites de escenarios
 
-KAN-205 deadline **30/11/2026** (not overdue on 20/11). Parent KAN-69 deadline **17/11/2026 — overdue / vencida**. Prepared 20/11 against runner commit `6431894` in #83. No deadline, assignment or Jira state is changed.
+KAN-205 deadline **30/11/2026** (not overdue on 20/11). Parent KAN-69 deadline **17/11/2026 — overdue / vencida**. Prepared 20/11 against runner commit `f3d5ffa` in #83. No deadline, assignment or Jira state is changed.
 
 ## ES — Qué resultado se publica
 
@@ -41,11 +41,13 @@ Production reporting still needs accepted eligibility/catalogue/unit, authentica
 
 Input SHA-256 / SHA-256 de entrada:
 
-- `synthetic-manual-only-100`: `aae0fe8e619e9093778a92e0b5bf9bc5d725215ccafef7ce18193eca8e5f89e6`
-- `synthetic-mixed-100`: `f35c9c83c86d8ee2ec7cd56a3f79a621238a2076b8a824f6ad37ca68ffbcadb3`
+- `synthetic-manual-only-100`: `41d49e280368b7f46554d52162f4d8fd1db4e8b9bf2f4e96244d05f9afed95cf`
+- `synthetic-mixed-100`: `8d4900e5b08099c92c51d374efa250b7bf9d4488421ad0a6fd97149a8064a42e`
 
 ## Reproduction and validation / Reproducción y validación
 
-Use runner `6431894` (or verify compatible later code), generate inputs with metric_examples.py and run both commands from the KAN-199 report. Compare report.json and summary.csv bytes with these committed artifacts. Reformatting the input changes its byte hash even when calculated metrics remain equal.
+Use runner `f3d5ffa` (or verify compatible later code), generate inputs with metric_examples.py and run both commands from the KAN-199 report. Compare report.json and summary.csv bytes with these committed artifacts. Reformatting the input changes its byte hash even when calculated metrics remain equal.
 
-Both CLIs executed locally; 44 automation tests PASS in KAN-199. Artifact byte equality, JSON/CSV agreement, source links and whitespace checked here. Current-head CI recorded in the PR. This PR adds only report/artifacts and is stacked on #83: integrate the runner first, retarget to dev and repeat checks. Elizabeth reviews interpretation/acceptance; David checks evidence boundaries. No Jira mutation, deployment, data migration or task-completion claim.
+Both CLIs executed locally; 45 automation tests PASS in KAN-199. Artifact byte equality, JSON/CSV agreement, source links and whitespace checked here. Current-head CI recorded in the PR. This PR adds only report/artifacts and is stacked on #83: integrate the runner first, retarget to dev and repeat checks. Elizabeth reviews interpretation/acceptance; David checks evidence boundaries. No Jira mutation, deployment, data migration or task-completion claim.
+
+Inputs/reports regenerated with explicit LF bytes (runner f3d5ffa): the same example bytes and hashes are reproducible on Windows/Linux. / Entradas e informes regenerados con LF explícito para reproducibilidad de bytes/hashes en Windows/Linux.

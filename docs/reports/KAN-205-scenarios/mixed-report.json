@@ -1,7 +1,7 @@
 {
   "catalogue_approval": "hypothetical_not_approved",
   "catalogue_unit": "per_task_occurrence",
-  "input_sha256": "f35c9c83c86d8ee2ec7cd56a3f79a621238a2076b8a824f6ad37ca68ffbcadb3",
+  "input_sha256": "8d4900e5b08099c92c51d374efa250b7bf9d4488421ad0a6fd97149a8064a42e",
   "metric": {
     "automated_task_count": 150,
     "baseline_manual_minutes": 3000.0,
