@@ -26,7 +26,7 @@ Todos los permisos del personal se conceden **por ámbito** (programa, convocato
 | **Selección** | Colaboradores del proceso de selección | Invitación de administración |
 | **Docente** | Profesorado de una cohorte | Invitación de administración |
 | **Coder** | Alumnado matriculado | Invitación del equipo **al matricularse** tras la admisión |
-| **Aspirante** | Persona interesada | **Sin cuenta ni acceso**: rellena el formulario público y se crea su ficha en el CRM |
+| **Aspirante** | Persona interesada (estado de `Person`, no rol de personal) | Formulario público (también sin sesión); con cuenta, ve **solo sus propias candidaturas**. Decisión PO 20/11: se mantiene |
 
 ## 2. Funciones por rol (valores por defecto) / Features by role (defaults)
 
@@ -40,6 +40,7 @@ Todos los permisos del personal se conceden **por ámbito** (programa, convocato
 | | Plantillas de correo y reglas de automatización | ✅ | ✅ | ⚙️ | ⚙️ | — | — | — |
 | | Política de silencio de una convocatoria | ✅ | ✅ | ✅ | ⚙️ | — | — | — |
 | **Inscripción y CRM** | Inscribirse en el formulario público | — | — | — | — | — | — | ✅ |
+| | Ver mis propias candidaturas (sin notas internas) | — | — | — | — | — | 👤 | 👤 |
 | | Ver y editar fichas y expedientes | ✅ | ✅ | ✅ | ✅ | ⚙️ | — | 🔒 |
 | | Registrar correos, llamadas, resultado y próximo paso | ✅ | ✅ | ✅ | ✅ | ⚙️ | — | — |
 | | Revisar requisitos (cumple / no cumple) | ✅ | ✅ | ✅ | ✅ | ⚙️ | — | — |
@@ -76,7 +77,7 @@ Todos los permisos del personal se conceden **por ámbito** (programa, convocato
 | Ninguna decisión de admisión, exclusión, no admisión o baja es automática | Constitución y AGENTS.md: decisión humana siempre |
 | Nadie se concede permisos a sí mismo ni concede lo que no tiene | Evitar la escalada de privilegios |
 | Coordinación no crea usuarios | Decisión PO 19/11 |
-| El aspirante no tiene cuenta ni acceso a la plataforma | Decisión PO 19/11 |
+| El aspirante solo ve sus propias candidaturas; nunca expedientes ajenos, CRM ni notas internas | Decisión PO 20/11 (revierte D1 del 19/11) |
 | El coder solo ve lo suyo | Privacidad del alumnado |
 | Todo cambio de permisos, decisión, corrección y acceso denegado queda auditado, sin datos personales | Trazabilidad |
 | El asistente no ejecuta SQL ni elige su ámbito | AGENTS.md §5 |
@@ -89,4 +90,4 @@ Todos los permisos del personal se conceden **por ámbito** (programa, convocato
 
 ## English summary
 
-Target model agreed by the PO on 19/11/2026, not the current code. Administration is general management; coordination has the same features except creating users; captación, selección and docente work within their scopes; coders join by invitation at enrolment and see only their own data; applicants have no account (the public form creates their CRM profile). The table lists each role's default; almost everything is configurable by administration, except fixed rules: no automated admission or exclusion decisions, no self-granted or unheld permissions, coordination never creates users, applicants never get access, learners see only their own data, everything is audited, synthetic data only. Pending: board automation rules, the number of admission signatures, and Melissa's written confirmation of status emails.
+Target model agreed by the PO on 19/11/2026, not the current code. Administration is general management; coordination has the same features except creating users; captación, selección and docente work within their scopes; coders join by invitation at enrolment and see only their own data; applicants keep an account limited to their own applications (the public form creates their CRM profile; PO decision of 20/11 reverting D1). The table lists each role's default; almost everything is configurable by administration, except fixed rules: no automated admission or exclusion decisions, no self-granted or unheld permissions, coordination never creates users, applicants never see other people's data or internal notes, learners see only their own data, everything is audited, synthetic data only. Pending: board automation rules, the number of admission signatures, and Melissa's written confirmation of status emails.
