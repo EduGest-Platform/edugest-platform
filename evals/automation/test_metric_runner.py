@@ -112,6 +112,8 @@ class MetricRunnerTests(unittest.TestCase):
             with (root / "one" / "summary.csv").open(encoding="utf-8", newline="") as stream:
                 row = next(csv.DictReader(stream))
             self.assertEqual(row["percentage"], "undefined")
+            self.assertEqual(row["status"], "HYPOTHETICAL_SCENARIO_NOT_MEASURED_SAVINGS")
+            self.assertEqual(row["metric_status"], first["metric"]["status"])
             self.assertIsNone(json.loads((root / "one" / "report.json").read_text())["metric"]["percentage"])
 
     def test_duplicate_json_keys_nonfinite_json_and_size_limit_do_not_create_outputs(self):
