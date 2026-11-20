@@ -1,13 +1,17 @@
 """KAN-55: attendance 1 / 0.5, late, justified vs unjustified, "sin dato", audited corrections, cohort time zone and scope."""
 
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import func, select, text
+from fastapi.testclient import TestClient
 from sqlalchemy.exc import DBAPIError
 
 from app.core.config import settings
 from app.core.db import utcnow
+from app.main import app
 from app.modules.attendance import service
 from app.modules.attendance.models import AttendanceRecordRevision, AttendanceSession
 from app.modules.audit.models import AuditEvent
@@ -77,6 +81,39 @@ def test_duplicate_and_overlapping_sessions_are_rejected(client, teacher):
     half = client.post(f"/api/v1/cohorts/{COHORT}/attendance-sessions", json={"session_date": day(-1), "shift": "manana"}, headers=teacher)
     assert again.status_code == 409 and again.json()["code"] == "session_exists"
     assert half.status_code == 409 and half.json()["code"] == "session_overlaps"
+
+
+@pytest.mark.parametrize(("first", "second"), [("completa", "manana"), ("tarde", "completa")])
+def test_concurrent_overlapping_sessions_produce_exactly_one(db, monkeypatch, first, second):
+    """Regression: the overlap check and the insert must be serialized per cohort.
+
+    Both requests are held right after their overlap check. Without the cohort lock both see no overlap and both insert;
+    with it, the second waits for the first to commit and then sees the overlap.
+    """
+    original = service._overlaps
+    gate = threading.Barrier(2, timeout=2)
+
+    def held_after_check(*args):
+        found = original(*args)
+        try:
+            gate.wait()
+        except threading.BrokenBarrierError:
+            pass  # expected with the lock: the other request is blocked before its check
+        return found
+
+    monkeypatch.setattr(service, "_overlaps", held_after_check)
+    with TestClient(app) as one, TestClient(app) as two:
+        headers = [login(one, DOCENTE), login(two, DOCENTE)]
+
+        def create(client, who, shift):
+            return client.post(f"/api/v1/cohorts/{COHORT}/attendance-sessions", json={"session_date": day(-3), "shift": shift}, headers=who).status_code
+
+        with ThreadPoolExecutor(2) as pool:
+            codes = sorted(pool.map(create, [one, two], headers, [first, second]))
+    assert codes == [201, 409]
+    db.expire_all()
+    when = utcnow().date() - timedelta(days=3)
+    assert db.scalar(select(func.count()).select_from(AttendanceSession).where(AttendanceSession.cohort_id == COHORT, AttendanceSession.session_date == when)) == 1
 
 
 def test_session_outside_cohort_dates_is_rejected(client, teacher):
@@ -157,6 +194,26 @@ def test_correction_needs_a_reason_and_keeps_every_version(client, db, teacher):
     assert history[1]["changed_by"] == "Docente demo"
     audit = db.scalar(select(AuditEvent).where(AuditEvent.action == "attendance.corrected"))
     assert audit.meta["from_status"] == "ausente" and "reason" not in audit.meta  # free text never goes to the audit log
+
+
+@pytest.mark.parametrize("estado", ["baja_voluntaria", "finalizada"])
+def test_no_new_attendance_after_withdrawal_but_earlier_records_can_be_corrected(client, db, teacher, estado):
+    """PO decision 19/11/2026 (#61): reject new attendance once the enrollment is not active; corrections stay possible."""
+    before, after = new_session(client, teacher, offset=-2), new_session(client, teacher, offset=-1)
+    enrollment = enrollment_of(db)
+    assert put(client, teacher, before["id"], enrollment, UNJUSTIFIED).status_code == 200
+    row = db.get(Enrollment, enrollment)
+    previous_state, row.estado = row.estado, estado
+    db.commit()
+    try:
+        rejected = put(client, teacher, after["id"], enrollment, PRESENT)
+        assert rejected.status_code == 409 and rejected.json()["code"] == "enrollment_not_active"
+        assert "matrícula" in rejected.json()["detail"]
+        corrected = put(client, teacher, before["id"], enrollment, {**JUSTIFIED, "reason": "Justificante entregado antes de la baja"})
+        assert corrected.status_code == 200 and corrected.json()["version"] == 2
+    finally:
+        row.estado = previous_state
+        db.commit()
 
 
 def test_saving_the_same_values_again_is_not_a_correction(client, db, teacher):

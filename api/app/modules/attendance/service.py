@@ -52,7 +52,17 @@ def _overlaps(db: Session, cohort_id: str, day: date, shift: str) -> bool:
     return db.scalar(query) is not None
 
 
+def _lock_cohort(db: Session, cohort_id: str) -> None:
+    """Serializes session creation per cohort: the overlap check and the insert run under the same row lock.
+
+    The unique constraint only covers identical shifts; without this lock two concurrent requests for a full day and
+    a morning of the same date could both pass the overlap check and both insert.
+    """
+    db.execute(select(Cohort.id).where(Cohort.id == cohort_id).with_for_update())
+
+
 def create_session(db: Session, p: Principal, cohort: Cohort, body: SessionWrite) -> AttendanceSession:
+    _lock_cohort(db, cohort.id)
     if not cohort.inicio <= body.session_date <= cohort.fin:
         raise _conflict("session_outside_cohort", "La fecha está fuera de las fechas de la cohorte. Elige un día entre su inicio y su fin.")
     if _overlaps(db, cohort.id, body.session_date, body.shift):
@@ -104,8 +114,23 @@ def save_record(db: Session, p: Principal, cohort: Cohort, session: AttendanceSe
     query = select(AttendanceRecord).where(AttendanceRecord.session_id == session.id, AttendanceRecord.enrollment_id == enrollment.id)
     record = db.scalar(query.with_for_update())
     if record is None:
+        _check_enrollment_is_active(enrollment)
         return _register(db, p, session, enrollment, body)
     return _correct(db, p, record, body)
+
+
+def _check_enrollment_is_active(enrollment: Enrollment) -> None:
+    """PO decision 19/11/2026: no new attendance after a withdrawal or once the enrollment has finished.
+
+    Corrections of records taken while it was active stay possible (with a reason and audit), so this check only
+    applies to the first record of a session.
+    """
+    if enrollment.estado != "activa":
+        raise _conflict(
+            "enrollment_not_active",
+            "Esta matrícula ya no está activa (baja o finalizada), así que no se registra asistencia nueva. "
+            "Si hay que corregir un registro anterior, ábrelo y corrígelo con un motivo.",
+        )
 
 
 def _register(db: Session, p: Principal, session: AttendanceSession, enrollment: Enrollment, body: RecordWrite) -> AttendanceRecord:
