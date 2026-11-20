@@ -102,7 +102,7 @@ def evaluate_file(input_path, output_dir):
     report["input_sha256"] = hashlib.sha256(raw).hexdigest()
     # Validate before creating either output. Outputs contain aggregate synthetic results only.
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "report.json").write_text(json.dumps(report, sort_keys=True, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    (output_dir / "report.json").write_text(json.dumps(report, sort_keys=True, indent=2, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     csv_row = {key: value for key, value in report.items() if key != "metric"}
     csv_row.update(report["metric"])
     with (output_dir / "summary.csv").open("w", encoding="utf-8", newline="") as stream:

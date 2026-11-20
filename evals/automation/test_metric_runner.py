@@ -134,3 +134,16 @@ class MetricRunnerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertNotIn("Synthetic-Private-Canary", result.stdout + result.stderr)
             self.assertFalse((root / "bad").exists())
+
+
+    def test_generated_inputs_and_reports_use_portable_lf_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = subprocess.run([sys.executable, str(Path(__file__).with_name("metric_examples.py")),
+                                     "--out", str(root / "inputs")], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = root / "inputs" / "synthetic-mixed-100.json"
+            self.assertNotIn(b"\r\n", source.read_bytes())
+            evaluate_file(source, root / "report")
+            for filename in ("report.json", "summary.csv"):
+                self.assertNotIn(b"\r\n", (root / "report" / filename).read_bytes())
