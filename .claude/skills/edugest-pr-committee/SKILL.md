@@ -9,7 +9,7 @@ Review a change the way a small, fair committee would: five reviewers, each with
 
 ## Hard rules (never break)
 
-- **Read-only.** Never approve, request changes, merge, push, comment on GitHub or edit Jira. Only use read-only commands (`gh pr view`, `gh pr diff`, `gh pr checks`, `git diff`, `git log`). The user posts the comment themselves.
+- **Read-only.** Never approve, request changes, merge, push, comment on GitHub or edit Jira. Read GitHub without mutating it. Local verification may write only in the isolated review worktree, its Python environment and its disposable database. The user posts the comment themselves.
 - **Say what you verified.** Write "read the diff" or "ran `pytest`" for each claim. Not run = not verified. Never call something green that you did not see pass.
 - **Only the change.** Review the lines that changed and what they directly affect. No rewriting whole files. No style comments the linter (ruff, oxfmt) already covers.
 - **Respect owners.** Suggest, never edit, other people's areas: Elizabeth = API/DB/contracts, Anas = frontend, David = RAG/feedback, Abdur = dropout ML only, Yohanna = automation/CI. Do not reassign work.
@@ -20,8 +20,8 @@ Review a change the way a small, fair committee would: five reviewers, each with
 
 Accept any of: a PR number or URL, a branch name, or a pasted diff.
 
-- PR: `gh pr view <n> --json title,body,author,headRefName,baseRefName,files,additions,deletions` then `gh pr diff <n>` and `gh pr checks <n>`.
-- Branch: `git fetch` then `git diff origin/dev...origin/<branch>` and `git log origin/dev..origin/<branch> --oneline`.
+- PR: `gh pr view <n> --json title,body,author,headRefOid,headRefName,baseRefName,files,additions,deletions` then `gh pr diff <n>` and `gh pr checks <n>`.
+- Branch: fetch the branch and its actual base, then use `git diff <base>...<head>` and `git log <base>..<head> --oneline`. Use the PR base for stacked work. For a branch without a PR, use a supplied base or confirm it if ambiguous.
 - Pasted diff: use it as-is. Say lines may be cut off; mark anything you cannot see as "please confirm" instead of guessing.
 
 If `gh` is not logged in, fall back to git, or ask for the diff.
@@ -34,7 +34,26 @@ Read the parts that apply to this change: `CONSTITUTION.md`, `AGENTS.md`, `CLAUD
 
 If the change is over ~400 changed lines (ignoring lockfiles and generated `schema.gen.ts`), say so first and suggest how to split it. If the diff is mostly line-ending noise (CRLF/LF), say that and stop.
 
-## Step 4 · The five reviewers
+## Step 4 · Verify locally where it matters
+
+Record the exact reviewed SHA and the actual base. Read changed scripts, hooks and dependency manifests before running branch code. If a check cannot run, report **NOT RUN** with the specific reason.
+
+- For a GitHub PR, run `bash <skill>/scripts/review-worktree.sh <PR> <new-path>` from the main checkout. It fetches the PR head and actual base, checks the SHA and creates a detached worktree. For a local branch, create a detached worktree at its reviewed SHA.
+- Run checks from the new worktree, with no real `.env`, credentials or application data. Inspect the tree before loading any scripts or environment files. Do not reuse the project database or alter the original checkout.
+- Record each check as **command · PASS / FAIL / NOT RUN · evidence or reason**. For mixed changes run each applicable row.
+
+| Change | Verification |
+|---|---|
+| Documentation only | Compare claims with the relevant base/head code and check changed references. |
+| Web | `bash <skill>/scripts/review-web.sh`. For visual or interaction changes, check the affected browser path, including keyboard and contrast when applicable. |
+| API or migrations | Activate a separate Python environment with the reviewed API's dev dependencies and Ruff. Run `bash <skill>/scripts/review-api.sh`. It starts a disposable PostgreSQL 16 + pgvector container on a free loopback port, runs migration checks and pytest, and stops that container when it exits. |
+| CI or infrastructure | Read the diff and compare it with the pipeline settings. For Compose changes, run `docker compose -f infra/compose.yaml config --quiet` using synthetic values. |
+
+Run locally from a trusted checkout of these scripts. Keep the reviewed worktree only while gathering evidence. Remove it with `git worktree remove <new-path>` after checking that it contains no work to preserve.
+
+**ES:** verifica el SHA en un worktree aislado y usa solo datos sintéticos. Ejecuta las comprobaciones por tipo de cambio y deja constancia del comando, resultado y motivo cuando no se pueda ejecutar. La revisión sigue sin publicar ni fusionar nada automáticamente.
+
+## Step 5 · The five reviewers
 
 Run each reviewer on the change. For big or risky PRs (auth, RBAC, admission decision, enrolment, CI/secrets), run each reviewer as a separate subagent that does not see the others' notes, then merge. For small PRs, do them yourself in order.
 
@@ -66,11 +85,11 @@ Run each reviewer on the change. For big or risky PRs (auth, RBAC, admission dec
 - Empty, loading and 401/403 states exist. No dead ends.
 - Respects `prefers-reduced-motion`.
 
-## Step 5 · Check before you report
+## Step 6 · Check before you report
 
 For every finding, look at the actual code again and confirm it is real. Drop anything you cannot confirm, or mark it "please confirm". Merge duplicates from different reviewers. Fewer, true findings beat many guesses.
 
-## Step 6 · Output
+## Step 7 · Output
 
 Use exactly this shape, in the user's language (English or Spanish):
 
