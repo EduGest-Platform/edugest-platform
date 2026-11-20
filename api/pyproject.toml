@@ -13,10 +13,11 @@ dependencies = [
   "pydantic-settings>=2.3",
   "pgvector>=0.4",
   "tzdata",
+  "httpx>=0.27",  # Gemini embeddings client (KAN-130); also used by the FastAPI test client
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27"]
+dev = ["pytest>=8"]
 
 [build-system]
 requires = ["setuptools>=69"]
