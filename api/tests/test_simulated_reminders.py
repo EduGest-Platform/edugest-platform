@@ -15,6 +15,7 @@ from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.audit.models import AuditEvent
 from app.modules.automation.models import SimulatedReminder
 from app.modules.learning.models import Enrollment
+from app.modules.identity.models import User
 from tests.conftest import ADMIN, API_DIR, ASPIRANTE, CAPT_DATA, CAPT_IA, CODER, COORD, DOCENTE, SEL_IA, login
 
 
@@ -157,3 +158,64 @@ def test_reminder_migration_roundtrip_preserves_existing_tables():
     finally:
         command.upgrade(cfg, "head")
     assert "simulated_reminder" in inspect(engine).get_table_names()
+
+
+@pytest.mark.parametrize("task_ref", [
+    "12345678Z", "612345678", "person@example.test", "docs-v1", "synthetic-12345678z",
+    "synthetic-docs12345678z", "synthetic-doc-612345678", "synthetic-doc-612-345-678",
+    "synthetic-doc-x1234567l", "synthetic-doc-0034-612-345-678", "synthetic-", "SYNTHETIC-docs-v1",
+    "synthetic-docs_v1", "synthetic-" + "x" * 71,
+])
+def test_new_reference_contract_rejects_personal_shapes_without_echo_or_persistence(client, db, simulation, task_ref):
+    _, url = simulation
+    response = client.post(url, headers=login(client, ADMIN), json=payload(task_ref=task_ref))
+    assert response.status_code == 422
+    assert all("input" not in error and "ctx" not in error for error in response.json()["detail"])
+    if task_ref != "synthetic-":  # The public regex itself contains this prefix.
+        assert task_ref not in response.text
+    assert response.headers["X-Request-ID"] == response.json()["request_id"]
+    assert counts(db) == (0, 0)
+
+
+@pytest.mark.parametrize("task_ref", ["synthetic-docs-v1", "synthetic-exercise-42", "  synthetic-docs-v1  ", "synthetic-" + "a" * 70])
+def test_valid_reference_normalization_preserves_retry_identity(client, db, simulation, task_ref):
+    _, url = simulation
+    headers = login(client, ADMIN)
+    first = client.post(url, headers=headers, json=payload(task_ref=task_ref))
+    assert first.status_code == 201, first.text
+    assert first.json()["reminder"]["task_ref"] == task_ref.strip()
+    retry = client.post(url, headers=headers, json=payload(task_ref=task_ref.strip()))
+    assert retry.status_code == 200 and retry.json() == first.json()
+    assert counts(db) == (1, 1)
+
+
+@pytest.mark.parametrize("stage", ["convocada", "evaluacion_en_curso", "pendiente_decision_humana",
+                                    "admitida", "lista_espera", "no_admitida", "retirada"])
+def test_outside_preselection_has_stable_user_facing_code_without_writes(client, db, simulation, stage):
+    application, url = simulation
+    application.stage = stage
+    db.commit()
+    response = client.post(url, headers=login(client, ADMIN), json=payload())
+    assert response.status_code == 409
+    assert response.json()["code"] == "simulation_outside_preselection"
+    assert "Consulta su historial" in response.json()["detail"]
+    assert response.json()["request_id"] == response.headers["X-Request-ID"]
+    assert counts(db) == (0, 0)
+    assert db.get(Application, application.id).stage == stage
+
+
+def test_legacy_reference_is_readable_but_cannot_be_created_again(client, db, simulation):
+    application, url = simulation
+    row = SimulatedReminder(application_id=application.id, call_id=application.call_id,
+                            task_ref="legacy-doc-reference", kind="documentation",
+                            due_at=datetime(2026, 11, 19, 12, tzinfo=timezone.utc),
+                            simulated_at=datetime(2026, 11, 19, 12, tzinfo=timezone.utc),
+                            rule_version="staff-simulation-v1", idempotency_key="f" * 64,
+                            recorded_by=db.scalar(select(User.id).where(User.email == ADMIN)))
+    db.add(row)
+    db.commit()
+    headers = login(client, ADMIN)
+    history = client.get(url, headers=headers)
+    assert history.status_code == 200 and history.json()["items"][0]["task_ref"] == "legacy-doc-reference"
+    assert client.post(url, headers=headers, json=payload(task_ref="legacy-doc-reference")).status_code == 422
+    assert counts(db) == (1, 0)

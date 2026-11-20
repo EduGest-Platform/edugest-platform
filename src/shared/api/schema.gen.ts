@@ -1517,7 +1517,10 @@ export interface components {
              * @constant
              */
             synthetic_only: true;
-            /** Task Ref */
+            /**
+             * Task Ref
+             * @description Referencia técnica sintética, p. ej. synthetic-docs-v1. No incluir nombres, teléfonos ni documentos personales.
+             */
             task_ref: string;
         };
         /** ReminderSimulationResult */
@@ -2509,7 +2512,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Fuera de preselección */
+            /** @description Fuera de preselección (simulation_outside_preselection) */
             409: {
                 headers: {
                     [name: string]: unknown;

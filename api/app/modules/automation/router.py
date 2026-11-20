@@ -49,7 +49,7 @@ def list_executions(application_id: uuid.UUID, p: CurrentPrincipal, db: DB,
 
 @router.post("/applications/{application_id}/simulated-reminders", response_model=ReminderSimulationResult,
              status_code=201, responses={**ERRORS, 200: {"model": ReminderSimulationResult},
-                                        409: {"description": "Fuera de preselección"}},
+                                        409: {"description": "Fuera de preselección (simulation_outside_preselection)"}},
              summary="Simular recordatorio con fecha introducida por personal, sin enviar ni resolver tareas")
 def create_simulated_reminder(application_id: uuid.UUID, body: ReminderSimulationRequest,
                               response: Response, p: CurrentPrincipal, db: DB) -> ReminderSimulationResult:

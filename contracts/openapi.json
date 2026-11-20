@@ -2216,9 +2216,10 @@
             "type": "boolean"
           },
           "task_ref": {
+            "description": "Referencia técnica sintética, p. ej. synthetic-docs-v1. No incluir nombres, teléfonos ni documentos personales.",
             "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "minLength": 11,
+            "pattern": "^synthetic-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
             "title": "Task Ref",
             "type": "string"
           }
@@ -3983,7 +3984,7 @@
             "description": "Candidatura o requisito desconocido"
           },
           "409": {
-            "description": "Fuera de preselección"
+            "description": "Fuera de preselección (simulation_outside_preselection)"
           },
           "422": {
             "content": {
