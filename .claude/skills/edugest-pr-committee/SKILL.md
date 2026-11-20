@@ -52,10 +52,10 @@ Some problems only show up when you run the code (for example a focus ring with 
 |---|---|
 | Docs only (`*.md`, `docs/`) | Read only; check the document's claims against the base with `git grep <term> origin/<base>` |
 | Web (`src/`, `package.json`, Vite config) | `scripts/review-web.sh <worktree>`: install with the lockfile, `tsc`, `pnpm test`, `pnpm build`, API types up to date. If colours change: `node scripts/contrast.mjs <colour> <background>` for every new pair, including dark areas like the navy sidebar |
-| API / DB (`api/`, `alembic/`, `contracts/`) | `scripts/review-api.sh <worktree>`: throwaway `pgvector/pgvector:pg16` on port 55432, throwaway virtualenv, `ruff`, `alembic upgrade head && alembic check && alembic downgrade base && alembic upgrade head`, `pytest`. The container is always removed |
+| API / DB (`api/`, `alembic/`, `contracts/`) | `scripts/review-api.sh <worktree>`: local Docker only; throwaway `pgvector/pgvector:pg16` on a free port Docker picks on `127.0.0.1`, and Alembic and pytest use the URL built from that container's port, so the downgrade only touches this review's database. Throwaway virtualenv, `ruff`, `alembic upgrade head && alembic check && alembic downgrade base && alembic upgrade head`, `pytest`. The script removes only the container it created |
 | CI / infra (`.github/`, `infra/`, Dockerfile, `render.yaml`) | Careful read; `scripts/review-ci.sh <worktree>` (`docker compose config` with the example env file) |
 
-3. **Clean up:** `scripts/review-cleanup.sh <worktree>` removes the worktree, the `review/` branch and any leftover review database.
+3. **Clean up:** `scripts/review-cleanup.sh <worktree>` only accepts a worktree made by `review-worktree.sh`, stops if it has any change, and removes it and its `review/` branch without forcing (if git will not delete the branch, it is kept and the script says so). Database containers are not its job: `review-api.sh` removes its own.
 
 If a tool is missing (no Docker, no pnpm, no network), the check is NOT RUN with that reason. Never replace it with a guess.
 
