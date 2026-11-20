@@ -1,0 +1,660 @@
+{
+  "components": {
+    "schemas": {
+      "AttendanceRecordOut": {
+        "properties": {
+          "absence_days": {
+            "title": "Absence Days",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "justified": {
+            "title": "Justified",
+            "type": "boolean"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "present",
+              "full_absence",
+              "morning_absence",
+              "afternoon_absence"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "enrollment_id",
+          "status",
+          "justified",
+          "absence_days",
+          "recorded_at",
+          "version"
+        ],
+        "title": "AttendanceRecordOut",
+        "type": "object"
+      },
+      "AttendanceRecordWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "correction_reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Obligatorio solo al corregir (con expected_version). Motivo operativo; no incluir datos de salud ni situación personal; no se expone al asistente.",
+            "title": "Correction Reason"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version"
+          },
+          "justified": {
+            "title": "Justified",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "present",
+              "full_absence",
+              "morning_absence",
+              "afternoon_absence"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "justified"
+        ],
+        "title": "AttendanceRecordWrite",
+        "type": "object"
+      },
+      "AttendanceSessionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "modality": {
+            "enum": [
+              "in_person",
+              "online"
+            ],
+            "title": "Modality",
+            "type": "string"
+          },
+          "period": {
+            "enum": [
+              "full_day",
+              "morning",
+              "afternoon"
+            ],
+            "title": "Period",
+            "type": "string"
+          },
+          "session_date": {
+            "format": "date",
+            "title": "Session Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_date",
+          "period",
+          "modality"
+        ],
+        "title": "AttendanceSessionCreate",
+        "type": "object"
+      },
+      "AttendanceSessionOut": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "duration_fraction": {
+            "title": "Duration Fraction",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "modality": {
+            "enum": [
+              "in_person",
+              "online"
+            ],
+            "title": "Modality",
+            "type": "string"
+          },
+          "period": {
+            "enum": [
+              "full_day",
+              "morning",
+              "afternoon"
+            ],
+            "title": "Period",
+            "type": "string"
+          },
+          "session_date": {
+            "format": "date",
+            "title": "Session Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cohort_id",
+          "session_date",
+          "period",
+          "duration_fraction",
+          "modality"
+        ],
+        "title": "AttendanceSessionOut",
+        "type": "object"
+      },
+      "AttendanceSummary": {
+        "description": "Only recorded amounts; data_state/unknown duration describe their coverage.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "counting_rule": {
+            "const": "full_absence=1; morning_absence=0.5; afternoon_absence=0.5; missing=unknown",
+            "default": "full_absence=1; morning_absence=0.5; afternoon_absence=0.5; missing=unknown",
+            "title": "Counting Rule",
+            "type": "string"
+          },
+          "data_state": {
+            "enum": [
+              "no_data",
+              "partial",
+              "complete"
+            ],
+            "title": "Data State",
+            "type": "string"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "held_sessions": {
+            "title": "Held Sessions",
+            "type": "integer"
+          },
+          "justified_absence_days": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justified Absence Days"
+          },
+          "latest_recorded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Recorded At"
+          },
+          "period_timezone": {
+            "const": "Europe/Madrid",
+            "default": "Europe/Madrid",
+            "title": "Period Timezone",
+            "type": "string"
+          },
+          "recorded_absence_days": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded Absence Days"
+          },
+          "recorded_days": {
+            "title": "Recorded Days",
+            "type": "string"
+          },
+          "recorded_sessions": {
+            "title": "Recorded Sessions",
+            "type": "integer"
+          },
+          "scheduled_days": {
+            "title": "Scheduled Days",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "postgresql",
+              "synthetic_fixture"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "unit": {
+            "const": "equivalent_days",
+            "default": "equivalent_days",
+            "title": "Unit",
+            "type": "string"
+          },
+          "unjustified_absence_days": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unjustified Absence Days"
+          },
+          "unknown_days": {
+            "title": "Unknown Days",
+            "type": "string"
+          },
+          "unrecorded_sessions": {
+            "title": "Unrecorded Sessions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "cohort_id",
+          "date_from",
+          "date_to",
+          "as_of",
+          "source",
+          "data_state",
+          "held_sessions",
+          "recorded_sessions",
+          "unrecorded_sessions",
+          "scheduled_days",
+          "recorded_days",
+          "unknown_days",
+          "recorded_absence_days",
+          "justified_absence_days",
+          "unjustified_absence_days",
+          "latest_recorded_at"
+        ],
+        "title": "AttendanceSummary",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "description": "Token opaco obtenido en POST /api/v1/auth/login",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "PROPOSED academic attendance contract",
+    "version": "0.0.0-proposed"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/attendance-sessions/{session_id}/records/{enrollment_id}": {
+      "put": {
+        "operationId": "put_attendance_record_api_v1_attendance_sessions__session_id__records__enrollment_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceRecordWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceRecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceRecordOut"
+                }
+              }
+            },
+            "description": "Primer registro creado"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito (explicado y auditado)"
+          },
+          "404": {
+            "description": "Sesión o matrícula no encontrada"
+          },
+          "409": {
+            "description": "Versión desfasada, sesión futura o matrícula no activa"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Persistencia no habilitada"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar o corregir asistencia con versión esperada e historial",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/attendance-sessions": {
+      "post": {
+        "operationId": "create_attendance_session_api_v1_cohorts__cohort_id__attendance_sessions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceSessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito (explicado y auditado)"
+          },
+          "404": {
+            "description": "Cohorte no encontrada"
+          },
+          "409": {
+            "description": "Sesión duplicada o solapada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Persistencia no habilitada"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preparar una sesión lectiva de la cohorte, sin convertir registros ausentes en asistencia",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/attendance-summary": {
+      "get": {
+        "description": "No interpreta un registro ausente como cero faltas. El ámbito se deriva de la matrícula y la sesión autenticada, nunca del modelo.",
+        "operationId": "read_attendance_summary_api_v1_enrollments__enrollment_id__attendance_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión no válida"
+          },
+          "403": {
+            "description": "Sin permiso académico o matrícula fuera de ámbito (explicado y auditado)"
+          },
+          "404": {
+            "description": "Matrícula no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Persistencia académica no habilitada"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resumen de asistencia registrado, con periodo, cobertura y datos desconocidos",
+        "tags": [
+          "attendance"
+        ]
+      }
+    }
+  },
+  "x-status": "PROPOSED_NOT_MOUNTED"
+}

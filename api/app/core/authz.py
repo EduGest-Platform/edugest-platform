@@ -13,6 +13,11 @@ REQUIREMENT_REVIEW_PERMISSIONS = {*REQUIREMENT_EXCEPTION_PERMISSIONS, "requireme
 PRESELECTION_PERMISSIONS = {"preselection.read", "preselection.decide"}
 # PO decision 19/11/2026: administration (wildcard) and captación edit the per-call silence policy.
 PRESELECTION_POLICY_PERMISSION = "preselection.configure"
+# Attendance (KAN-55, prepared; routes not mounted yet). PO decision 19/11/2026: the cohort teacher records and
+# corrects; coordination and administration read and correct; the learner reads only their own enrollment.
+ATTENDANCE_RECORD = "attendance.record"
+ATTENDANCE_CORRECT = "attendance.correct"
+ATTENDANCE_READ = "attendance.read"
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
@@ -21,9 +26,9 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
     "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS},
     # Coordinación: aggregated indicators, plus reading and recording requirement exceptions (KAN-128).
-    "coordinacion": {"calls.aggregate", *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
+    "coordinacion": {"calls.aggregate", *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, ATTENDANCE_READ, ATTENDANCE_CORRECT},
     # Docente: no access to admissions, except reading and recording requirement exceptions (KAN-128).
-    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
+    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, ATTENDANCE_RECORD, ATTENDANCE_CORRECT, ATTENDANCE_READ},
 }
 
 
