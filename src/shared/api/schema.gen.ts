@@ -46,7 +46,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Historial de evaluaciones del Ã¡mbito; total explÃ­cito si el lÃ­mite trunca la lista */
+        /** Historial de evaluaciones del ámbito; total explícito si el límite trunca la lista */
         get: operations["list_executions_api_v1_applications__application_id__automation_executions_get"];
         put?: never;
         post?: never;
@@ -67,7 +67,7 @@ export interface paths {
         put?: never;
         /**
          * Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios
-         * @description Solo personal con requirements.review. Resultado, clave y dÃ­a UTC calculados por el servidor. Otro dÃ­a registra una nueva evaluaciÃ³n. Un registro es evidencia de evaluaciÃ³n, no tarea completada ni ahorro.
+         * @description Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.
          */
         post: operations["record_execution_api_v1_applications__application_id__automation_executions_requirement_prefilter_post"];
         delete?: never;
@@ -1395,7 +1395,7 @@ export interface operations {
                     "application/json": components["schemas"]["AutomationExecutionList"];
                 };
             };
-            /** @description Sin permiso o fuera de Ã¡mbito */
+            /** @description Sin permiso o fuera de ámbito */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1435,7 +1435,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Mismo snapshot y dÃ­a UTC: reintento sin duplicado */
+            /** @description Mismo snapshot y día UTC: reintento sin duplicado */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1453,7 +1453,7 @@ export interface operations {
                     "application/json": components["schemas"]["AutomationExecutionOut"];
                 };
             };
-            /** @description Sin permiso o fuera de Ã¡mbito */
+            /** @description Sin permiso o fuera de ámbito */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1842,7 +1842,7 @@ export interface operations {
                     "application/json": components["schemas"]["SimulatedReminderList"];
                 };
             };
-            /** @description Sin permiso o fuera de Ã¡mbito */
+            /** @description Sin permiso o fuera de ámbito */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1900,7 +1900,7 @@ export interface operations {
                     "application/json": components["schemas"]["ReminderSimulationResult"];
                 };
             };
-            /** @description Sin permiso o fuera de Ã¡mbito */
+            /** @description Sin permiso o fuera de ámbito */
             403: {
                 headers: {
                     [name: string]: unknown;

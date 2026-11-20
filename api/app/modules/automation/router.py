@@ -16,14 +16,14 @@ from app.modules.requirements.schemas import PrefilterRequest
 from app.modules.requirements.service import load_application, require_access
 
 router = APIRouter(tags=["automation"])
-ERRORS = {403: {"description": "Sin permiso o fuera de Ã¡mbito"}, 404: {"description": "Candidatura o requisito desconocido"}}
+ERRORS = {403: {"description": "Sin permiso o fuera de ámbito"}, 404: {"description": "Candidatura o requisito desconocido"}}
 
 
 @router.post("/applications/{application_id}/automation-executions/requirement-prefilter",
              response_model=AutomationExecutionOut, status_code=201,
-             responses={**ERRORS, 200: {"model": AutomationExecutionOut, "description": "Mismo snapshot y dÃ­a UTC: reintento sin duplicado"}},
+             responses={**ERRORS, 200: {"model": AutomationExecutionOut, "description": "Mismo snapshot y día UTC: reintento sin duplicado"}},
              summary="Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios",
-             description="Solo personal con requirements.review. Resultado, clave y dÃ­a UTC calculados por el servidor. Otro dÃ­a registra una nueva evaluaciÃ³n. Un registro es evidencia de evaluaciÃ³n, no tarea completada ni ahorro.")
+             description="Solo personal con requirements.review. Resultado, clave y día UTC calculados por el servidor. Otro día registra una nueva evaluación. Un registro es evidencia de evaluación, no tarea completada ni ahorro.")
 def record_execution(application_id: uuid.UUID, body: PrefilterRequest, response: Response, p: CurrentPrincipal, db: DB) -> AutomationExecutionOut:
     execution, created = record_requirement_execution(db, p, application_id, body)
     if not created:
@@ -32,7 +32,7 @@ def record_execution(application_id: uuid.UUID, body: PrefilterRequest, response
 
 
 @router.get("/applications/{application_id}/automation-executions", response_model=AutomationExecutionList,
-            responses=ERRORS, summary="Historial de evaluaciones del Ã¡mbito; total explÃ­cito si el lÃ­mite trunca la lista")
+            responses=ERRORS, summary="Historial de evaluaciones del ámbito; total explícito si el límite trunca la lista")
 def list_executions(application_id: uuid.UUID, p: CurrentPrincipal, db: DB,
                     limit: int = Query(50, ge=1, le=100)) -> AutomationExecutionList:
     application, call = load_application(db, application_id)
