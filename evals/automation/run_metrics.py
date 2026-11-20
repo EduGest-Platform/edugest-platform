@@ -104,7 +104,7 @@ def evaluate_file(input_path, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "report.json").write_text(json.dumps(report, sort_keys=True, indent=2, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     csv_row = {key: value for key, value in report.items() if key != "metric"}
-    csv_row.update(report["metric"])
+    csv_row.update({("metric_status" if key == "status" else key): value for key, value in report["metric"].items()})
     with (output_dir / "summary.csv").open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(csv_row), lineterminator="\n")
         writer.writeheader()
