@@ -1,6 +1,6 @@
 ---
-name: "edugest-pr-committee"
-description: "Review an EduGest pull request, branch or pasted diff as a 5-member committee (product, security, code, tests, UX) and return a verdict plus a ready-to-paste GitHub comment. Use for 'review this PR', 'self-review', or a pasted diff."
+name: edugest-pr-committee
+description: Review an EduGest pull request, branch or pasted diff as a 5-member committee (product, security, code, tests, UX) and return a verdict plus a ready-to-paste GitHub comment. Use for 'review this PR', 'self-review', or a pasted diff.
 ---
 
 # EduGest PR committee
@@ -9,8 +9,10 @@ Review a change the way a small, fair committee would: five reviewers, each with
 
 ## Hard rules (never break)
 
-- **Read-only.** Never approve, request changes, merge, push, comment on GitHub or edit Jira. Only use read-only commands (`gh pr view`, `gh pr diff`, `gh pr checks`, `git diff`, `git log`). The user posts the comment themselves.
-- **Say what you verified.** Write "read the diff" or "ran `pytest`" for each claim. Not run = not verified. Never call something green that you did not see pass.
+- **Advise only.** Never approve, request changes, merge, push, comment on GitHub or edit Jira. The user posts the comment themselves.
+- **Verify in isolation.** Local checks run only in a separate review worktree made by `scripts/review-worktree.sh`. Never check out over someone's working branch. Never use the dev database or a real `.env`; synthetic data only; Python dependencies in a throwaway virtualenv.
+- **Read before you run.** If the PR adds or changes a script (`*.sh`, `scripts/`, `package.json` scripts, migrations), read it before running any check.
+- **Say what you verified.** Every check is PASS, FAIL or NOT RUN with a reason. Not run = not verified. Never call something green that you did not see pass.
 - **Only the change.** Review the lines that changed and what they directly affect. No rewriting whole files. No style comments the linter (ruff, oxfmt) already covers.
 - **Respect owners.** Suggest, never edit, other people's areas: Elizabeth = API/DB/contracts, Anas = frontend, David = RAG/feedback, Abdur = dropout ML only, Yohanna = automation/CI. Do not reassign work.
 - **Synthetic data only.** Flag anything that loads, logs or asks for real student data.
@@ -20,9 +22,14 @@ Review a change the way a small, fair committee would: five reviewers, each with
 
 Accept any of: a PR number or URL, a branch name, or a pasted diff.
 
-- PR: `gh pr view <n> --json title,body,author,headRefName,baseRefName,files,additions,deletions` then `gh pr diff <n>` and `gh pr checks <n>`.
-- Branch: `git fetch` then `git diff origin/dev...origin/<branch>` and `git log origin/dev..origin/<branch> --oneline`.
-- Pasted diff: use it as-is. Say lines may be cut off; mark anything you cannot see as "please confirm" instead of guessing.
+- PR: `gh pr view <n> --json title,body,author,headRefName,baseRefName,headRefOid,files,additions,deletions`, then `gh pr diff <n>` and `gh pr checks <n>`.
+- Branch: compare with its **real base**, not always `dev`. Stacked PRs (for example #46 on top of #40) must be compared with the parent branch, or the parent's changes are blamed on the child.
+  1. Base given by the user → use it.
+  2. Else the base of the open PR for that branch: `gh pr list --head <branch> --json baseRefName`.
+  3. Else `dev`, and say in the report that the base was assumed and the user can give another.
+
+  Then `git fetch origin`, `git diff origin/<base>...origin/<branch>` and `git log origin/<base>..origin/<branch> --oneline`.
+- Pasted diff: use it as-is. Say lines may be cut off; mark anything you cannot see as "please confirm" instead of guessing. Local checks are NOT RUN (no code to run).
 
 If `gh` is not logged in, fall back to git, or ask for the diff.
 
@@ -34,9 +41,27 @@ Read the parts that apply to this change: `CONSTITUTION.md`, `AGENTS.md`, `CLAUD
 
 If the change is over ~400 changed lines (ignoring lockfiles and generated `schema.gen.ts`), say so first and suggest how to split it. If the diff is mostly line-ending noise (CRLF/LF), say that and stop.
 
-## Step 4 · The five reviewers
+## Step 4 · Verify locally
 
-Run each reviewer on the change. For big or risky PRs (auth, RBAC, admission decision, enrolment, CI/secrets), run each reviewer as a separate subagent that does not see the others' notes, then merge. For small PRs, do them yourself in order.
+Some problems only show up when you run the code (for example a focus ring with too little contrast that no test or CI catches). Use the scripts next to this skill, so every teammate runs the same checks. Do not improvise other commands.
+
+1. **Isolate:** `.claude/skills/edugest-pr-committee/scripts/review-worktree.sh <pr-number|branch> [base]`. It fetches the PR into `review/pr-<n>`, makes a worktree next to the repository, chooses the base (yours, then GitHub's, then `dev` with a warning), prints the **reviewed SHA** and says which checks apply. Write the SHA in the report.
+2. **Run the checks for the type of change.** Mixed PRs use the strictest row.
+
+| Change | Local verification |
+|---|---|
+| Docs only (`*.md`, `docs/`) | Read only; check the document's claims against the base with `git grep <term> origin/<base>` |
+| Web (`src/`, `package.json`, Vite config) | `scripts/review-web.sh <worktree>`: install with the lockfile, `tsc`, `pnpm test`, `pnpm build`, API types up to date. If colours change: `node scripts/contrast.mjs <colour> <background>` for every new pair, including dark areas like the navy sidebar |
+| API / DB (`api/`, `alembic/`, `contracts/`) | `scripts/review-api.sh <worktree>`: throwaway `pgvector/pgvector:pg16` on port 55432, throwaway virtualenv, `ruff`, `alembic upgrade head && alembic check && alembic downgrade base && alembic upgrade head`, `pytest`. The container is always removed |
+| CI / infra (`.github/`, `infra/`, Dockerfile, `render.yaml`) | Careful read; `scripts/review-ci.sh <worktree>` (`docker compose config` with the example env file) |
+
+3. **Clean up:** `scripts/review-cleanup.sh <worktree>` removes the worktree, the `review/` branch and any leftover review database.
+
+If a tool is missing (no Docker, no pnpm, no network), the check is NOT RUN with that reason. Never replace it with a guess.
+
+## Step 5 · The five reviewers
+
+Run each reviewer on the change, using what Step 4 showed. For big or risky PRs (auth, RBAC, admission decision, enrolment, CI/secrets), run each reviewer as a separate subagent that does not see the others' notes, then merge. For small PRs, do them yourself in order.
 
 **1. Product and briefing**
 - Does it do what its Jira ticket says? Is the KAN key there?
@@ -56,27 +81,31 @@ Run each reviewer on the change. For big or risky PRs (auth, RBAC, admission dec
 
 **4. Tests and evidence**
 - CI green (`gh pr checks`). If not, which job and why.
+- Local checks from Step 4 match CI. If they differ, say so.
 - New logic has tests. Permission changes have one positive and one negative test.
-- Migrations: `alembic upgrade head && alembic check` would pass.
 - The PR says which commands were run and their result. Missing evidence = blocked, not green.
 
 **5. UX and accessibility** (only if `src/` changed)
-- Works with the keyboard; labels on every field; visible focus; good contrast.
+- Works with the keyboard; labels on every field; visible focus on every background (light and dark); good contrast.
 - Plain Spanish UI text using *tú*; errors say what to do next.
 - Empty, loading and 401/403 states exist. No dead ends.
 - Respects `prefers-reduced-motion`.
 
-## Step 5 · Check before you report
+## Step 6 · Check before you report
 
 For every finding, look at the actual code again and confirm it is real. Drop anything you cannot confirm, or mark it "please confirm". Merge duplicates from different reviewers. Fewer, true findings beat many guesses.
 
-## Step 6 · Output
+## Step 7 · Output
 
 Use exactly this shape, in the user's language (English or Spanish):
 
 ```
 **Verdict:** ✅ Approve | 🟡 Approve with small fixes | 🔴 Changes needed
-**Checked:** what you read and what you ran (be specific)
+**Reviewed:** <SHA> compared with origin/<base> (<how the base was chosen>)
+
+| Check | Command | Result |
+|---|---|---|
+| ... | ... | PASS / FAIL / NOT RUN: reason |
 
 **What's good:** 1–3 lines
 
@@ -87,8 +116,8 @@ Use exactly this shape, in the user's language (English or Spanish):
 **Committee scores (1–5):** Product · Security · Code · Tests · UX (or n/a)
 ```
 
-Then a **ready-to-paste GitHub comment**: short, friendly, starts with thanks or what is good, lists must-fix items with code snippets, ends with follow-ups. Mention people only by their real GitHub handle when the user gave it.
+Then a **ready-to-paste GitHub comment**: short, friendly, starts with thanks or what is good, lists must-fix items with code snippets, includes the checks table, ends with follow-ups. Mention people only by their real GitHub handle when the user gave it.
 
 ## Self-review mode
 
-If the user asks to review their *own* work before opening a PR, use the same steps but write the output as a to-do list for them, and skip the GitHub comment.
+If the user asks to review their *own* work before opening a PR, use the same steps (Step 4 can run on their branch with `review-worktree.sh <branch> <base>`) but write the output as a to-do list for them, and skip the GitHub comment.
