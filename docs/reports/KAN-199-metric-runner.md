@@ -37,4 +37,6 @@ Compare report.json and summary.csv bytes when rerunning the same input. The sam
 
 ## Validation / Validación
 
-Local: ruff PASS; **44 automation tests PASS** (11 new runner tests); both CLI examples actually generated. Known arithmetic: manual-only 0/3000 minutes; mixed 2000/3000, 66.67% under fictitious assumptions. Neither value is measured production savings or proof of client acceptance. Tests cover weighting, 100 eligible cases, noncompletion evidence, binding/reuse, scope exclusion, strict catalogue/schema/flags, invalid IDs/minutes, undefined results, deterministic artifacts and CLI failure without input echo. Current-head CI recorded in PR.
+Local: ruff PASS; **45 automation tests PASS** (12 new runner tests); both CLI examples actually generated. Known arithmetic: manual-only 0/3000 minutes; mixed 2000/3000, 66.67% under fictitious assumptions. Neither value is measured production savings or proof of client acceptance. Tests cover weighting, 100 eligible cases, noncompletion evidence, binding/reuse, scope exclusion, strict catalogue/schema/flags, invalid IDs/minutes, undefined results, deterministic artifacts and CLI failure without input echo. Current-head CI recorded in PR.
+
+Generated example inputs and reports use explicit LF bytes on Windows and Linux, so their hashes and committed artifacts remain portable. / Entradas de ejemplo e informes usan LF explícito en Windows y Linux para conservar hashes y artefactos portables.

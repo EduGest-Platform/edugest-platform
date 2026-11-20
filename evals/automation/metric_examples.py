@@ -34,7 +34,7 @@ def main():
     for mixed in (False, True):
         payload = scenario(mixed)
         (args.out / (payload["scenario_id"] + ".json")).write_text(
-            json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+            json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":
