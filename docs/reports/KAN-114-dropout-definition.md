@@ -5,8 +5,8 @@ Spanish: [KAN-114-dropout-definition.es.md](KAN-114-dropout-definition.es.md).
 - Jira: [KAN-114](https://anasfady87-1789923749606.atlassian.net/browse/KAN-114), parent KAN-65.
 - **Deadline: 2026-11-16**, from Jira `duedate`; the description still mentions a proposed 17/11. This document does not change the deadline or claim on-time completion.
 - Prepared: 2026-11-17. Owner: Abdur; reviewer: David; schema/acceptance: Elizabeth. No reassignment or approval is implied.
-- Status: **PROPOSED** specification; source inspection completed. No trained model, dataset generation or runtime certification.
-- Inspected `dev`: `6afd140feb948b570ed710b8a666e84abc58dbed`; foundation reference: `441772b5421a44d9f1733c6a738f4f844aba60b3`.
+- Status: **PROPOSED** target/feature specification. Academic-schema alignment updated 2026-11-20 against dev `5ca5194` (#67/#78/#57 integrated). The synthetic experiment exists separately; this document does not validate a model for people or certify a PostgreSQL-to-ML adapter.
+- Original inspection: `6afd140feb948b570ed710b8a666e84abc58dbed`; foundation reference: `441772b5421a44d9f1733c6a738f4f844aba60b3`. Current field mapping below supersedes the old claim that EDU-02/04 tables were absent. No target/horizon/threshold approval is inferred.
 
 ## 1. Intended decision support
 
@@ -28,28 +28,37 @@ Proposed observation window: `[t - 14 days, t]`, clipped to enrollment start. Ru
 
 ## 3. Feature dictionary and schema alignment
 
-All values are per enrollment and authorized cohort. IDs join records and group splits, never enter the estimator. The planned EDU-02/EDU-04 sources below do not exist in the current backend.
+All values remain per enrollment and authorized cohort. IDs join records and group splits, never enter the estimator. Integrated migration `0008_attendance_and_competencies.py` now supplies EDU-02/04 tables. Mapping is **CODE_PRESENT_NOT_RUN** source inspection, not implementation of historical ML extraction.
 
-| Feature | Unit / calculation | Source and availability |
+| Feature | Integrated source / proposed derivation | Remaining semantic constraint |
 |---|---|---|
-| `days_since_enrollment` | Elapsed calendar days at cutoff; nonnegative | Enrollment start needs explicit agreement; current `created_at` is record creation, not necessarily course entry |
-| `scheduled_day_equivalents` | Sum of held session fractions in window | Planned EDU-02 `AttendanceSession.duration_fraction`; exclude future sessions |
-| `unjustified_absence_days` | Sum fractions for confirmed unjustified absences | Planned EDU-02 records; 0.5 half-day, 1 full-day; deduplicate enrollment/session |
-| `justified_absence_days` | Separate sum of confirmed justified absences | Planned EDU-02; context for support, never a sanction |
-| `attendance_unknown_fraction` | Unrecorded held exposure / held exposure | Planned EDU-02; zero exposure yields null, never zero absence |
-| `unjustified_absence_rate` | Unjustified absence days / held day equivalents | Planned EDU-02; null on zero denominator; report missingness alongside rate |
-| `absence_rule_signal` | Boolean: at least 3 absences in last 6 registered sessions | Existing local `applyAbsenceRule`; planned server equivalent requires parity tests; pending is excluded, and half-day policy needs agreement |
-| `assessed_competency_fraction` | Distinct assessed active competencies / effective active competencies | Planned EDU-04; dynamic bootcamp/cohort catalog, no fixed C1–C10 feature columns; null if denominator zero |
-| `mean_competency_level` | Mean latest published level 1–3 per assessed competency as of cutoff | Planned EDU-04 versioned evaluations; no evaluation means null, not level 0; compare only compatible rubric versions |
-| `competency_missing_fraction` | Unassessed active competencies / active competencies | Planned EDU-04; report denominator and missingness |
+| `days_since_enrollment` | `Enrollment.created_at` exists; `Cohort.inicio`/`fin` are course dates. | Neither proves a person's effective start. Do not silently use either as ground truth; agree the start definition or keep this feature unavailable. |
+| `scheduled_day_equivalents` | `AttendanceSession.cohort_id`, `session_date`, `shift`, `duration_fraction`, `created_at`; sum eligible held fractions, 0.5/1. | Date/shift is not an occurrence timestamp. Define cohort timezone and when a slot counts as completed; exclude sessions created after cutoff and future/uncompleted slots. |
+| `unjustified_absence_days` | Join session -> `AttendanceRecord.session_id`/`enrollment_id`; `status=ausente`, `justification=no_justificada`; sum fractions. | Historical state must use eligible `AttendanceRecordRevision` rows at cutoff, not today's current record. |
+| `justified_absence_days` | Same join, `status=ausente`, `justification=justificada`; sum separately. | Never merge justified and unjustified absences or use justification text as a feature. |
+| `attendance_unknown_fraction` | Held exposure without a visible registered revision / held exposure. | No record at cutoff is unknown, not present or absent. Zero held exposure yields null. `presente` and `retraso` are attended in the current service. |
+| `unjustified_absence_rate` | Unjustified day equivalents / held day equivalents. | Define the denominator with the same window/slot rules as unknown exposure; return null on zero. |
+| `absence_rule_signal` | Legacy `applyAbsenceRule`: 3 absences among last 6 registered sessions. Existing synthetic ML abstains if those sessions include half days. | Session counts are not day equivalents. Require parity and accepted half-day policy before a DB signal; never derive target labels from this rule. |
+| `assessed_competency_fraction` | `CohortCompetencyFramework.framework_id` -> `Competency.framework_id`; distinct assessed competencies / effective catalogue. | Reconstruct the assigned framework at cutoff, not just its current link. Missing/unknown effective assignment means unavailable denominator, not zero. |
+| `mean_competency_level` | `CompetencyAssessment.enrollment_id`, `competency_id`, `level`, `assessed_at`; latest eligible assessment per competency, levels 1–3. | Assessments have no per-row published flag or separate occurred/recorded timestamps. Use an accepted cutoff rule and compatible framework versions; do not join future rows or average every revision. |
+| `competency_missing_fraction` | Unassessed competencies in the effective framework / catalogue size. | Null when the effective catalogue is unknown/empty. No assessment is missing, never level 0. |
 
-Candidate delivery features are deferred to the Activity/Submission contract; do not invent a database column or infer an overdue submission from missing data. No real names, email, contact data, sensitive attributes, raw notes, future decisions, risk alerts, final status or target-derived values enter model features. Cohort/program IDs remain metadata for scope, evaluation and splits.
+### 3.1 Historical reconstruction and unresolved gaps
 
-Current evidence: `api/app/modules/learning/models.py` has Enrollment with `person_id`, `cohort_id`, `estado`, `created_at`; `api/app/modules/catalog/models.py` has Cohort dates `inicio`/`fin`. `src/gistar/types.ts` and `domain.ts` are local demo semantics, not persisted academic data. Only migration `0001` exists at the inspected base. The legacy rule counts sessions, **not** day-equivalent absences: do not silently replace 3/6 with a different threshold.
+- Attendance current records expose `updated_at` and `version`. Their append-only revisions expose `record_id`, `version`, `status`, `modality`, `justification`, `changed_at`; revision 1 is the first registration. For as-of features, consider only revisions recorded by cutoff, then select the last by time/version for each record. A correction after cutoff must not rewrite a prior feature snapshot. `reason`, `changed_by` and free text are never predictors.
+- Session `created_at` is schedule-record creation, while `session_date`/`shift` describe teaching slots. Existing attendance summaries report the current view, not an arbitrary historical as-of extraction. They must not be passed to ML as historical features without reconstructing revisions and defining slot completion/timezone.
+- Cohort/framework assignment overwrites `CohortCompetencyFramework.framework_id`/`assigned_at` on reassignment. Its audit event records previous/current framework IDs. A future adapter must validate a reconstruction using that evidence and `CompetencyFramework.published_at`; today's assignment alone is insufficient. `estado=archivada` today does not by itself establish whether a framework was effective at an earlier cutoff.
+- Assessments are append-only, stamped by the server in `assessed_at`; framework-level publication is distinct from a hypothetical assessment publication time. The synthetic `published` flag in `ml/dropout/data.py` is NOT a column in this schema. Define deterministic tie handling and verify catalogue compatibility rather than copying synthetic-event fields into SQL queries.
+- `Enrollment.estado` still has no effective start/withdrawal event timestamp, reason or complete follow-up history. Current state cannot produce future labels. Preselection `retirada_expresa`/`silencio_confirmado` are application decisions, not academic voluntary-withdrawal labels. Do not substitute them.
+- Integrated #78 provides synthetic academic demo data and 100 submitted applications. It does not certify chronological completeness, label validity or population size for ML: applicants are not necessarily enrolled coders. The standalone synthetic experiment (#53–#56) remains isolated from PostgreSQL.
+
+Sources: [attendance models](../../api/app/modules/attendance/models.py), [attendance service](../../api/app/modules/attendance/service.py), [competency models](../../api/app/modules/competencies/models.py), [competency service](../../api/app/modules/competencies/service.py), [enrollment](../../api/app/modules/learning/models.py), [academic seed](../../api/app/seed_academic.py), [ML protocol](../../ml/README.md).
+
+Delivery features remain deferred to an accepted Activity/Submission contract. No real names, email, sensitive attributes, raw notes, future decisions, risk alerts, final status or target-derived values enter predictors. Scope/IDs remain metadata. All development/demo data stays synthetic.
 
 ## 4. Synthetic evaluation protocol
 
-Abdur owns the subsequent fixed-seed generator, dataset version and model card. Generate longitudinal synthetic events and independent documented latent outcomes; do not define labels directly as the same absence threshold used as a feature. These labels demonstrate a pipeline, not real-world validity or fairness.
+Abdur owns the ML work. The fixed-seed generator, evaluation, offline scoring/model card and local tracking are already integrated (#53–#56); see [ML documentation](../../ml/README.md). These establish a synthetic demonstration pipeline, not accepted target semantics or a DB feature adapter. Generate longitudinal synthetic events and independent documented latent outcomes; do not define labels directly as the same absence threshold used as a feature. These labels demonstrate a pipeline, not real-world validity or fairness.
 
 Compare `DummyClassifier` with `LogisticRegression`; fit imputation/scaling on training folds only and retain missingness indicators. Keep all snapshots of the same synthetic person in one split, including reenrollments. Use temporal train/validation/test partitions with a horizon gap so training labels cannot observe validation outcomes. Reserve held-out cohorts when enough groups exist; otherwise state the limitation. Publish positive prevalence, support, confusion matrix, precision, recall, F1, PR-AUC and calibration/Brier score when defined; report undefined metrics and one-class folds explicitly. Choose any teacher-alert threshold on validation only and document review capacity; do not use it as a dropout decision. Synthetic subgroup analysis cannot certify fairness.
 
@@ -64,15 +73,19 @@ Compare `DummyClassifier` with `LogisticRegression`; fit imputation/scaling on t
 7. The 3/6 local rule remains advisory and never supplies the target label or alters enrollment.
 8. Authorized teacher can request in-scope risk; another cohort returns 403 in the future API adapter. The model never chooses scope.
 
-These are required future tests, not executed tests in this documentation PR.
+These remain acceptance criteria for a future PostgreSQL-to-ML adapter. Component attendance/competency and standalone synthetic tests already exist, but this documentation PR does not execute or certify the complete as-of/label flow.
 
 ## 6. Approval and handoff
 
 | Decision | Accountable person | State |
 |---|---|---|
 | Voluntary-withdrawal proxy, 14-day horizon/window, weekly cadence and censoring | Abdur + Elizabeth | Pending |
-| Enrollment start, withdrawal event history and EDU-02/04 field mapping | Elizabeth, reviewed with Abdur | Pending; blocks DB adapter and reliable labels |
+| Enrollment start, withdrawal history and historical EDU-02/04 extraction | Elizabeth, reviewed with Abdur | Integrated fields mapped above; temporal semantics/reconstruction still pending and block a reliable DB adapter/labels |
 | Missingness/abstention policy, rule parity and threshold for support | Abdur + Elizabeth; Anas for existing-rule semantics | Pending |
 | Technical cross-review, leakage/split protocol | David | Pending |
 
 This PR supplies the reviewable definition deliverable. Do not mark KAN-114 Done until cross-review and the decisions above are recorded. No meeting, client acceptance or model performance is fabricated. No Jira changes, migrations or deployment are included.
+
+## 7. Mapping validation (2026-11-20)
+
+Checked named ORM fields, source links and migration availability locally; no database connection or data mutation. Current-head CI is recorded in the PR. Target, horizon, observation window, cadence and threshold remain PROPOSED. No ML source, model artifacts, migrations, seed, permissions or Jira assignments changed. Abdur remains task owner; Yohanna prepared this reconciliation at the user's request. Elizabeth reviews data contracts and David reviews leakage/methodology, with Abdur's confirmation of the ML boundary.
