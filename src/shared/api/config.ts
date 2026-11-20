@@ -7,3 +7,13 @@ export const API_MODE = !!API_URL
 
 /** Views whose data already comes from the API in API mode (increment F1). */
 export const API_VIEWS = new Set(['inscripcion', 'candidatura', 'candidaturas', 'auditoria'])
+
+export type DataSource = 'api' | 'local'
+
+/**
+ * Where a view reads and writes its data. Local mode: every view is local (localStorage).
+ * API mode: only the migrated views in API_VIEWS use the API; a view never mixes both sources (ADR-0004).
+ */
+export function dataSourceFor(view: string, apiMode: boolean = API_MODE): DataSource {
+  return apiMode && API_VIEWS.has(view) ? 'api' : 'local'
+}

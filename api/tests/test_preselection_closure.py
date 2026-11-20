@@ -13,7 +13,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, inspect, select
 from sqlalchemy.exc import IntegrityError
 
-from app.core.db import engine, utcnow
+from app.core import audit
+from app.core.db import SessionLocal, engine, utcnow
 from app.main import app
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.audit.models import AuditEvent
@@ -84,6 +85,23 @@ def snapshot(db, application) -> tuple:
 def stage_of(db, application) -> str:
     db.expire_all()
     return db.get(Application, application.id).stage
+
+
+def test_audit_failure_rolls_back_stage_decision_and_crm(db, monkeypatch):
+    target = make_application(db)
+    before = snapshot(db, target)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        actor = login(client, ADMIN)
+
+        def fail_audit(*_args, **_kwargs):
+            raise RuntimeError("Synthetic audit failure")
+
+        with monkeypatch.context() as patch:
+            patch.setattr(audit, "record", fail_audit)
+            assert decide(client, actor, target.id).status_code == 500
+    # Verify persisted rollback through a session independent of the failed request.
+    with SessionLocal() as verification:
+        assert snapshot(verification, target) == before
 
 
 # ---------- permissions: five internal profiles, each inside its own scope ----------

@@ -35,12 +35,13 @@ def test_401_keeps_detail_and_adds_request_id(client):
 
 
 def test_403_keeps_detail_and_adds_request_id(client):
+    """PO decision 19/11/2026: out of scope is a 403 that explains why and what to do."""
     ia_headers = login(client, CAPT_IA)
     other = login(client, ADMIN)
     data_app = next(a for a in client.get("/api/v1/applications", headers=other, params={"limit": 200}).json()["items"] if a["program_id"] == "P-DATA")
     r = client.get(f"/api/v1/applications/{data_app['id']}", headers=ia_headers)
     assert r.status_code == 403
-    assert r.json()["detail"] == "No tienes permiso sobre este ámbito"
+    assert "no tienes asignada" in r.json()["detail"] and "administración" in r.json()["detail"]
     assert_correlated(r)
 
 
