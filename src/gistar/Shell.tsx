@@ -80,7 +80,7 @@ export function Shell() {
 
   return (
     <div className="min-h-screen md:flex">
-      <aside className="bg-navy md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:py-6">
+      <aside className="app-sidebar bg-navy md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:py-6">
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
         </div>
