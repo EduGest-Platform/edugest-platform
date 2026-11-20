@@ -140,7 +140,7 @@ function TeacherDashboard() {
             notes={g.evo.map((p) => `${p.mastered}/${p.evaluated}`)}
             series={[
               { key: 'm', label: '% evaluados en nivel 2–3', color: '#0f6e67', values: g.evo.map((p) => p.mastery) },
-              { key: 'c', label: 'Cobertura', color: '#246a92', dashed: true, values: g.evo.map((p) => p.coverage) },
+              { key: 'c', label: 'Cobertura', color: '#4f38e0', dashed: true, values: g.evo.map((p) => p.coverage) },
             ]}
           />
           <Button variant="ghost" size="sm" className="mt-3" onClick={() => navigate('analitica')}>

@@ -27,3 +27,22 @@ class AutomationExecution(Base):
     snapshot: Mapped[dict] = mapped_column(JSONB)
     recorded_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SimulatedReminder(Base):
+    """Staff-requested simulation, never a delivery receipt or completion claim."""
+    __tablename__ = "simulated_reminder"
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_simulated_reminder_key"),
+        CheckConstraint("kind IN ('documentation', 'exercises')", name="ck_simulated_reminder_kind"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), index=True)
+    call_id: Mapped[str] = mapped_column(ForeignKey("call.id"))
+    task_ref: Mapped[str] = mapped_column(String(80))
+    kind: Mapped[str] = mapped_column(String(40))
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    rule_version: Mapped[str] = mapped_column(String(40))
+    idempotency_key: Mapped[str] = mapped_column(String(64))
+    recorded_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))
+    simulated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

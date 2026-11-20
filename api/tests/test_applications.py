@@ -16,10 +16,11 @@ def count(db, model):
 
 def test_public_inscription_creates_person_application_event_and_audit(client, db):
     persons = count(db, Person)
+    ia_before = db.scalar(select(func.count()).select_from(Application).where(Application.call_id == "CONV-IA-2027A"))
     r = client.post("/api/v1/applications", json=new_application())
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["codigo"] == "IA27A-0007" and body["stage"] == "enviada"
+    assert body["codigo"] == f"IA27A-{ia_before + 1:04d}" and body["stage"] == "enviada"
     assert "email" not in body  # receipt does not echo personal data
     assert count(db, Person) == persons + 1
     app_id = body["id"]
