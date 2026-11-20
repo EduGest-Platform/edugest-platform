@@ -2194,6 +2194,78 @@
         "title": "RecordWrite",
         "type": "object"
       },
+      "ReminderSimulationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "documentation",
+              "exercises"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "synthetic_only": {
+            "const": true,
+            "title": "Synthetic Only",
+            "type": "boolean"
+          },
+          "task_ref": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "title": "Task Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_ref",
+          "kind",
+          "due_at",
+          "synthetic_only"
+        ],
+        "title": "ReminderSimulationRequest",
+        "type": "object"
+      },
+      "ReminderSimulationResult": {
+        "properties": {
+          "outcome": {
+            "enum": [
+              "simulated_reminder",
+              "not_due"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulatedReminderOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "simulated_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulated Only",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "outcome",
+          "reminder"
+        ],
+        "title": "ReminderSimulationResult",
+        "type": "object"
+      },
       "RequirementReviewHistory": {
         "properties": {
           "items": {
@@ -2805,6 +2877,106 @@
           "items"
         ],
         "title": "SilenceReviewList",
+        "type": "object"
+      },
+      "SimulatedReminderList": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SimulatedReminderOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "application_id",
+          "items",
+          "total",
+          "limit"
+        ],
+        "title": "SimulatedReminderList",
+        "type": "object"
+      },
+      "SimulatedReminderOut": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "documentation",
+              "exercises"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "rule_version": {
+            "title": "Rule Version",
+            "type": "string"
+          },
+          "schedule_source": {
+            "const": "staff_entered",
+            "default": "staff_entered",
+            "title": "Schedule Source",
+            "type": "string"
+          },
+          "simulated_at": {
+            "format": "date-time",
+            "title": "Simulated At",
+            "type": "string"
+          },
+          "simulated_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulated Only",
+            "type": "boolean"
+          },
+          "task_ref": {
+            "title": "Task Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "call_id",
+          "task_ref",
+          "kind",
+          "due_at",
+          "rule_version",
+          "simulated_at"
+        ],
+        "title": "SimulatedReminderOut",
         "type": "object"
       },
       "StageCount": {
@@ -3691,6 +3863,147 @@
         "summary": "Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión",
         "tags": [
           "requirements"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/simulated-reminders": {
+      "get": {
+        "operationId": "list_simulated_reminders_api_v1_applications__application_id__simulated_reminders_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatedReminderList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito"
+          },
+          "404": {
+            "description": "Candidatura o requisito desconocido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial de simulaciones, nunca recibos de entrega",
+        "tags": [
+          "automation"
+        ]
+      },
+      "post": {
+        "operationId": "create_simulated_reminder_api_v1_applications__application_id__simulated_reminders_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderSimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSimulationResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderSimulationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso o fuera de ámbito"
+          },
+          "404": {
+            "description": "Candidatura o requisito desconocido"
+          },
+          "409": {
+            "description": "Fuera de preselección"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Simular recordatorio con fecha introducida por personal, sin enviar ni resolver tareas",
+        "tags": [
+          "automation"
         ]
       }
     },
