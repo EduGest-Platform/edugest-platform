@@ -41,7 +41,7 @@ export function LoginScreen() {
               <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" />
             </svg>
           </span>
-          <span className="text-2xl font-extrabold tracking-tight text-navy">Gistar</span>
+          <span className="text-2xl font-extrabold tracking-tight text-navy">EduGest</span>
           <span className="ml-auto rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold text-[#6d5014]">DEMO · Datos sintéticos</span>
         </div>
         {notice && !apiDown && (

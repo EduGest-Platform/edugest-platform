@@ -1,6 +1,6 @@
-# Project Constitution — Gistar (working name) · Somos F5 Final Project 2
+# Project Constitution — EduGest · Somos F5 Final Project 2
 
-> **Version 1.0 · 2026-11-11 · Canonical language: English.** Spanish translation: [CONSTITUTION.es.md](CONSTITUTION.es.md). If the versions ever disagree, this file prevails.
+> **Version 1.1 · 2026-11-19 · Canonical language: English.** Spanish translation: [CONSTITUTION.es.md](CONSTITUTION.es.md). If the versions ever disagree, this file prevails.
 >
 > This constitution is the top of the documentation hierarchy. Operational detail lives in [AGENTS.md](AGENTS.md) (AI agents), [contribution.md](contribution.md) (human workflow), [commands.md](commands.md) (commands), [projectplan.md](projectplan.md) (roadmap) and [README.md](README.md) (entry point). Those documents refine this one; they must never contradict it.
 
@@ -72,12 +72,14 @@ Explicit guardrails for Claude, Codex and any other agent (operational detail in
 
 ## G. Product identity and legal
 
+- Product name: **EduGest** (confirmed by the Product Owner on 2026-11-19; it replaces the working name "Gistar"). Technical identifiers that still say `gistar` (the `src/gistar/` folder, the `GISTAR_` environment prefix, the Python package and database names) stay as they are to avoid breaking changes; user-facing text says EduGest.
 - Own product name and artwork. **Do not use the Somos F5 name or logo as the product brand**; colour inspiration only. No licensed material or proprietary screenshots.
-- This repository declares **no license** until the Product Owner and Somos F5 approve one; absence of a license means all rights reserved.
+- Licence: **MIT** ([LICENSE](LICENSE)), chosen by the Product Owner on 2026-11-19. The copyright notice credits the EduGest team and states that the project is the final project of Fundación Somos F5's 1,250-hour AI and Big Data Bootcamp (2026), with a link to the original repository (https://github.com/EduGest-Platform/edugest-platform); that attribution must be kept in every copy. MIT allows reuse, including commercial use. The licence grants no right to use the Somos F5 name or logo. Somos F5's approval, which this section required, is recorded as pending until it is confirmed.
 
 ## H. Documentation and language policy
 
 - Repository documentation is **bilingual Spanish/English**: either paired sections inside one file or a canonical file plus a clearly marked translation (`NAME.md` canonical + `NAME.es.md`), cross-linked.
 - One canonical source per rule; translations never introduce rules of their own.
+- **High-rank documents** (this constitution, `AGENTS.md`, ADRs and policies that set rules) use **English as the canonical version** plus a Spanish translation (`NAME.es.md`) or paired sections; if they disagree, English prevails (confirmed by the Product Owner on 2026-11-19).
 - Code identifiers, paths, commands and API names are never translated.
 - Documentation always distinguishes implemented, simulated, pending and verified functionality.

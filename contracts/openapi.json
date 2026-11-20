@@ -342,6 +342,171 @@
         "title": "ApplicationSummary",
         "type": "object"
       },
+      "AssessmentOut": {
+        "properties": {
+          "assessed_at": {
+            "format": "date-time",
+            "title": "Assessed At",
+            "type": "string"
+          },
+          "assessed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessed By"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "competency_id": {
+            "format": "uuid",
+            "title": "Competency Id",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "evidence": {
+            "title": "Evidence",
+            "type": "string"
+          },
+          "framework_version": {
+            "title": "Framework Version",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "enrollment_id",
+          "competency_id",
+          "codigo",
+          "framework_version",
+          "level",
+          "evidence",
+          "assessed_by",
+          "assessed_at"
+        ],
+        "title": "AssessmentOut",
+        "type": "object"
+      },
+      "AssessmentWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "competency_id": {
+            "format": "uuid",
+            "title": "Competency Id",
+            "type": "string"
+          },
+          "evidence": {
+            "description": "En qué se basa el nivel (entrega, observación…). Sin datos personales.",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Level",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "competency_id",
+          "level",
+          "evidence"
+        ],
+        "title": "AssessmentWrite",
+        "type": "object"
+      },
+      "AttendanceSummary": {
+        "description": "Contract of get_attendance_summary for the assistant: totals only, no names.",
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "cohort_totals": {
+            "$ref": "#/components/schemas/CohortAttendance"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "items": {
+            "description": "Totales por matrícula. Vacío para coordinación, que solo ve el agregado",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentAttendance"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "rule": {
+            "default": "Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.",
+            "title": "Rule",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "timezone",
+          "date_from",
+          "date_to",
+          "items",
+          "cohort_totals"
+        ],
+        "title": "AttendanceSummary",
+        "type": "object"
+      },
       "AuditEventOut": {
         "properties": {
           "action": {
@@ -751,6 +916,412 @@
         "title": "CallSummaryOut",
         "type": "object"
       },
+      "CohortAttendance": {
+        "description": "Cohort-level totals for coordination. All values are null when the group is too small to show.",
+        "properties": {
+          "attendance_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Rate"
+          },
+          "attended_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attended Days"
+          },
+          "enrollments": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollments"
+          },
+          "justified_absence_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justified Absence Days"
+          },
+          "late_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Late Days"
+          },
+          "min_group_size": {
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          },
+          "unjustified_absence_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unjustified Absence Days"
+          },
+          "unrecorded_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrecorded Days"
+          }
+        },
+        "required": [
+          "enrollments",
+          "suppressed",
+          "min_group_size"
+        ],
+        "title": "CohortAttendance",
+        "type": "object"
+      },
+      "CohortCompetencies": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "framework": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FrameworkOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versión del árbol que usa la cohorte. Nulo si aún no tiene ninguna"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "framework"
+        ],
+        "title": "CohortCompetencies",
+        "type": "object"
+      },
+      "CohortFrameworkWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "framework_id": {
+            "format": "uuid",
+            "title": "Framework Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "framework_id"
+        ],
+        "title": "CohortFrameworkWrite",
+        "type": "object"
+      },
+      "CompetencyOut": {
+        "properties": {
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "descripcion": {
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "level_1": {
+            "title": "Level 1",
+            "type": "string"
+          },
+          "level_2": {
+            "title": "Level 2",
+            "type": "string"
+          },
+          "level_3": {
+            "title": "Level 3",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "orden": {
+            "title": "Orden",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "descripcion",
+          "level_1",
+          "level_2",
+          "level_3",
+          "orden"
+        ],
+        "title": "CompetencyOut",
+        "type": "object"
+      },
+      "CompetencyWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "codigo": {
+            "description": "C1, C2… como en el briefing",
+            "pattern": "^C[1-9][0-9]?$",
+            "title": "Codigo",
+            "type": "string"
+          },
+          "descripcion": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Descripcion",
+            "type": "string"
+          },
+          "level_1": {
+            "description": "Qué demuestra un coder en el nivel 1",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Level 1",
+            "type": "string"
+          },
+          "level_2": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Level 2",
+            "type": "string"
+          },
+          "level_3": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Level 3",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "nombre",
+          "level_1",
+          "level_2",
+          "level_3"
+        ],
+        "title": "CompetencyWrite",
+        "type": "object"
+      },
+      "CurrentLevel": {
+        "properties": {
+          "assessed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessed At"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "competency_id": {
+            "format": "uuid",
+            "title": "Competency Id",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  1,
+                  2,
+                  3
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Último nivel evaluado. Nulo = sin evaluar (nunca nivel 0)",
+            "title": "Level"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "competency_id",
+          "codigo",
+          "nombre",
+          "level",
+          "assessed_at"
+        ],
+        "title": "CurrentLevel",
+        "type": "object"
+      },
+      "EnrollmentAssessments": {
+        "properties": {
+          "current": {
+            "items": {
+              "$ref": "#/components/schemas/CurrentLevel"
+            },
+            "title": "Current",
+            "type": "array"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "framework_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Framework Version"
+          },
+          "history": {
+            "description": "Todas las evaluaciones, también de versiones anteriores del árbol",
+            "items": {
+              "$ref": "#/components/schemas/AssessmentOut"
+            },
+            "title": "History",
+            "type": "array"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "framework_version",
+          "current",
+          "history"
+        ],
+        "title": "EnrollmentAssessments",
+        "type": "object"
+      },
+      "EnrollmentAttendance": {
+        "properties": {
+          "attendance_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Asistido / registrado. Nulo si no hay registros",
+            "title": "Attendance Rate"
+          },
+          "attended_days": {
+            "description": "Asistencia a tiempo más con retraso",
+            "title": "Attended Days",
+            "type": "number"
+          },
+          "attended_in_person_days": {
+            "title": "Attended In Person Days",
+            "type": "number"
+          },
+          "attended_online_days": {
+            "title": "Attended Online Days",
+            "type": "number"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "held_days": {
+            "description": "Suma de fracciones de las sesiones celebradas",
+            "title": "Held Days",
+            "type": "number"
+          },
+          "justified_absence_days": {
+            "title": "Justified Absence Days",
+            "type": "number"
+          },
+          "late_days": {
+            "description": "Parte de attended_days en la que llegó con retraso",
+            "title": "Late Days",
+            "type": "number"
+          },
+          "unjustified_absence_days": {
+            "title": "Unjustified Absence Days",
+            "type": "number"
+          },
+          "unrecorded_days": {
+            "description": "Sesiones celebradas sin registro (sin dato)",
+            "title": "Unrecorded Days",
+            "type": "number"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "held_days",
+          "attended_days",
+          "late_days",
+          "attended_in_person_days",
+          "attended_online_days",
+          "justified_absence_days",
+          "unjustified_absence_days",
+          "unrecorded_days",
+          "attendance_rate"
+        ],
+        "title": "EnrollmentAttendance",
+        "type": "object"
+      },
       "EnrollmentOut": {
         "properties": {
           "cohort_id": {
@@ -892,6 +1463,108 @@
           "occurred_at"
         ],
         "title": "EventOut",
+        "type": "object"
+      },
+      "FrameworkList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "items"
+        ],
+        "title": "FrameworkList",
+        "type": "object"
+      },
+      "FrameworkOut": {
+        "properties": {
+          "competencies": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyOut"
+            },
+            "title": "Competencies",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "estado": {
+            "enum": [
+              "borrador",
+              "publicada",
+              "archivada"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "program_id",
+          "version",
+          "estado",
+          "created_at",
+          "published_at",
+          "competencies"
+        ],
+        "title": "FrameworkOut",
+        "type": "object"
+      },
+      "FrameworkWrite": {
+        "additionalProperties": false,
+        "description": "The full list of competencies of a draft version. Order in the list is the display order.",
+        "properties": {
+          "competencies": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyWrite"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Competencies",
+            "type": "array"
+          }
+        },
+        "required": [
+          "competencies"
+        ],
+        "title": "FrameworkWrite",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1378,6 +2051,149 @@
         "title": "PreselectionPolicy",
         "type": "object"
       },
+      "RecordOut": {
+        "properties": {
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "justification": {
+            "anyOf": [
+              {
+                "enum": [
+                  "justificada",
+                  "no_justificada"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justification"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "presencial",
+                  "online"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "presente",
+              "retraso",
+              "ausente"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "enrollment_id",
+          "status",
+          "modality",
+          "justification",
+          "version",
+          "updated_at"
+        ],
+        "title": "RecordOut",
+        "type": "object"
+      },
+      "RecordWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "justification": {
+            "anyOf": [
+              {
+                "enum": [
+                  "justificada",
+                  "no_justificada"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Obligatoria si está ausente; vacía si asistió",
+            "title": "Justification"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "presencial",
+                  "online"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Obligatoria si asistió (presente o retraso); vacía si está ausente",
+            "title": "Modality"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Motivo de la corrección. Obligatorio al cambiar un registro. Sin datos de salud ni personales.",
+            "title": "Reason"
+          },
+          "status": {
+            "enum": [
+              "presente",
+              "retraso",
+              "ausente"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "RecordWrite",
+        "type": "object"
+      },
       "ReminderSimulationRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1693,6 +2509,113 @@
         "title": "RequirementRevisionOut",
         "type": "object"
       },
+      "RevisionList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RevisionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "record_id": {
+            "format": "uuid",
+            "title": "Record Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id",
+          "items"
+        ],
+        "title": "RevisionList",
+        "type": "object"
+      },
+      "RevisionOut": {
+        "properties": {
+          "changed_at": {
+            "format": "date-time",
+            "title": "Changed At",
+            "type": "string"
+          },
+          "changed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed By"
+          },
+          "justification": {
+            "anyOf": [
+              {
+                "enum": [
+                  "justificada",
+                  "no_justificada"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justification"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "presencial",
+                  "online"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modality"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "enum": [
+              "presente",
+              "retraso",
+              "ausente"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "modality",
+          "justification",
+          "reason",
+          "changed_by",
+          "changed_at"
+        ],
+        "title": "RevisionOut",
+        "type": "object"
+      },
       "RoleAssignmentOut": {
         "properties": {
           "role": {
@@ -1721,6 +2644,107 @@
           "scope_id"
         ],
         "title": "RoleAssignmentOut",
+        "type": "object"
+      },
+      "SessionList": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SessionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "items"
+        ],
+        "title": "SessionList",
+        "type": "object"
+      },
+      "SessionOut": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "duration_fraction": {
+            "title": "Duration Fraction",
+            "type": "number"
+          },
+          "held": {
+            "description": "La sesión ya se ha celebrado (fecha anterior o igual a hoy en la zona horaria de la cohorte)",
+            "title": "Held",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/RecordOut"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "session_date": {
+            "format": "date",
+            "title": "Session Date",
+            "type": "string"
+          },
+          "shift": {
+            "enum": [
+              "manana",
+              "tarde",
+              "completa"
+            ],
+            "title": "Shift",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cohort_id",
+          "session_date",
+          "shift",
+          "duration_fraction",
+          "held",
+          "records"
+        ],
+        "title": "SessionOut",
+        "type": "object"
+      },
+      "SessionWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "session_date": {
+            "format": "date",
+            "title": "Session Date",
+            "type": "string"
+          },
+          "shift": {
+            "description": "manana o tarde pesan 0,5; completa pesa 1",
+            "enum": [
+              "manana",
+              "tarde",
+              "completa"
+            ],
+            "title": "Shift",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_date",
+          "shift"
+        ],
+        "title": "SessionWrite",
         "type": "object"
       },
       "SilenceEvidence": {
@@ -2036,7 +3060,7 @@
   },
   "info": {
     "description": "API del Proyecto Final 2 · Fundación Somos F5. **Datos exclusivamente sintéticos.** La autorización se comprueba en el servidor por rol y ámbito (programa, convocatoria o cohorte). La plataforma no toma decisiones automáticas de admisión, exclusión ni baja.",
-    "title": "Gistar API (nombre provisional)",
+    "title": "EduGest API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
@@ -2983,6 +4007,130 @@
         ]
       }
     },
+    "/api/v1/attendance-records/{record_id}/revisions": {
+      "get": {
+        "operationId": "list_revisions_api_v1_attendance_records__record_id__revisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "record_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Record Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial de un registro de asistencia: valor inicial y cada corrección con autor, fecha y motivo",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/records/{enrollment_id}": {
+      "put": {
+        "operationId": "put_record_api_v1_attendance_sessions__session_id__records__enrollment_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Sesión futura o matrícula de otra cohorte"
+          },
+          "422": {
+            "description": "Datos incoherentes o falta el motivo de la corrección"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar o corregir la asistencia de una persona en una sesión",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
     "/api/v1/audit-events": {
       "get": {
         "operationId": "list_audit_api_v1_audit_events_get",
@@ -3553,6 +4701,628 @@
         ]
       }
     },
+    "/api/v1/cohorts/{cohort_id}/attendance-sessions": {
+      "get": {
+        "operationId": "list_sessions_api_v1_cohorts__cohort_id__attendance_sessions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sesiones de asistencia de una cohorte con sus registros",
+        "tags": [
+          "attendance"
+        ]
+      },
+      "post": {
+        "operationId": "post_session_api_v1_cohorts__cohort_id__attendance_sessions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Sesión duplicada, solapada o fuera de fechas"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Crear una sesión de asistencia (mañana, tarde o día completo)",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/attendance-summary": {
+      "get": {
+        "operationId": "get_attendance_summary_api_v1_cohorts__cohort_id__attendance_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "enrollment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Totales de asistencia por matrícula y de la cohorte (contrato get_attendance_summary del asistente)",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/competencies": {
+      "get": {
+        "operationId": "get_cohort_competencies_api_v1_cohorts__cohort_id__competencies_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohortCompetencies"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Competencias que se evalúan en una cohorte (versión del árbol asignada)",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/competency-framework": {
+      "put": {
+        "operationId": "put_cohort_framework_api_v1_cohorts__cohort_id__competency_framework_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CohortFrameworkWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CohortCompetencies"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La operación no es válida en el estado actual"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Elegir la versión publicada del árbol que usa una cohorte",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
+    "/api/v1/competency-frameworks/{framework_id}/competencies": {
+      "put": {
+        "operationId": "put_framework_competencies_api_v1_competency_frameworks__framework_id__competencies_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FrameworkWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La operación no es válida en el estado actual"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sustituir las competencias de un borrador (las versiones publicadas no se editan)",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
+    "/api/v1/competency-frameworks/{framework_id}/publish": {
+      "post": {
+        "operationId": "post_publish_api_v1_competency_frameworks__framework_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "framework_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Framework Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La operación no es válida en el estado actual"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publicar un borrador; la versión publicada anterior pasa a archivada y sigue consultable",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/assessments": {
+      "get": {
+        "operationId": "list_assessments_api_v1_enrollments__enrollment_id__assessments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentAssessments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Nivel actual por competencia y todo el historial de evaluaciones de una matrícula",
+        "tags": [
+          "competencies"
+        ]
+      },
+      "post": {
+        "operationId": "post_assessment_api_v1_enrollments__enrollment_id__assessments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La operación no es válida en el estado actual"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar el nivel 1–3 de un coder en una competencia, con evidencia",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
     "/api/v1/me/applications": {
       "get": {
         "operationId": "my_applications_api_v1_me_applications_get",
@@ -3580,6 +5350,125 @@
         "summary": "Candidaturas propias de la persona autenticada",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}/competency-frameworks": {
+      "get": {
+        "operationId": "list_frameworks_api_v1_programs__program_id__competency_frameworks_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Versiones del árbol de competencias de un bootcamp (borrador, publicada y archivadas)",
+        "tags": [
+          "competencies"
+        ]
+      },
+      "post": {
+        "operationId": "post_framework_api_v1_programs__program_id__competency_frameworks_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "program_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Program Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FrameworkWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrameworkOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La operación no es válida en el estado actual"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Crear una versión borrador del árbol de competencias de un bootcamp",
+        "tags": [
+          "competencies"
         ]
       }
     },
