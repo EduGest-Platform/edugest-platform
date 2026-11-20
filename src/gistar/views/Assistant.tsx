@@ -36,7 +36,7 @@ export function Assistant() {
 
   return (
     <>
-      <PageTitle title="Pregunta a Gistar" sub="Asistente documental simulado · respuestas con citas a documentos ficticios." />
+      <PageTitle title="Pregunta a EduGest" sub="Asistente documental simulado · respuestas con citas a documentos ficticios." />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Card title="Chat documental">
           <Notice>No existe conexión a un LLM ni búsqueda vectorial real. Las respuestas son deterministas.</Notice>
