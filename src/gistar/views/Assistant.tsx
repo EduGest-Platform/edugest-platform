@@ -46,7 +46,7 @@ export function Assistant() {
                 key={r.clave}
                 type="button"
                 onClick={() => ask(r.pregunta)}
-                className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 text-left text-[13px] text-[#255c81] transition-colors hover:border-blue/40 hover:bg-mist"
+                className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 text-left text-[13px] text-[#15295a] transition-colors hover:border-blue/40 hover:bg-mist"
               >
                 {r.pregunta}
               </button>

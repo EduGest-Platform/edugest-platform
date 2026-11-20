@@ -143,7 +143,7 @@ export function ReviewModal({ entregaId, onClose }: { entregaId: string; onClose
                         {k.competencias.map((cid) => {
                           const c = data.competencias.find((x) => x.id === cid)
                           return (
-                            <span key={cid} className="rounded-md bg-mist px-1.5 py-0.5 text-[11px] font-medium text-[#255c81]">
+                            <span key={cid} className="rounded-md bg-mist px-1.5 py-0.5 text-[11px] font-medium text-[#15295a]">
                               {c?.codigo} · {c?.nombre}
                             </span>
                           )
