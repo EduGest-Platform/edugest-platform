@@ -20,7 +20,7 @@
 | **Coordinación** (`coordinacion`) | Agregados por convocatoria sin datos nominales; leer y registrar **excepciones** de requisitos; ver y decidir el cierre de la preselección; ver alertas de silencio | — | Inicio, calendario, cohortes |
 | **Docente** (`docente`) | Solo convocatorias que alimentan **su cohorte**: excepciones de requisitos, cierre de la preselección y alertas. **Nada académico todavía** (asistencia, entregas y competencias no tienen tablas) | — | Analítica, alumnado, ficha, competencias, rúbricas, entregas, asistencia, alertas, asistente |
 | **Coder** (persona matriculada) | Ver sus propias candidaturas y su sesión (`/me`) | — | Progreso, entregas, asistente |
-| **Aspirante** (persona sin rol) | Inscribirse (también sin sesión) y ver sus propias candidaturas. **Decisión PO 19/11: pasará a no tener acceso** (solo formulario y ficha en el CRM) | Inscripción, mi candidatura | Inicio, calendario |
+| **Aspirante** (persona sin rol) | Inscribirse (también sin sesión) y ver sus propias candidaturas. **Decisión PO 20/11: se mantiene** (revierte D1 del 19/11); sin permisos internos | Inscripción, mi candidatura | Inicio, calendario |
 | **Sin sesión** | Ver la oferta de convocatorias, inscribirse, iniciar sesión | Inscripción | — |
 
 ## 2. Detalle de la API por función / API detail by feature
