@@ -194,10 +194,10 @@ def test_a_failed_new_version_never_retires_the_current_one(db, corpus, monkeypa
     update_entry(corpus, "A2", version="v3")
     real = ingest_module.ingest_document
 
-    def fails_for_a2(session, doc, names):
+    def fails_for_a2(session, doc, names, embedder=None):
         if doc.source_key == "A2":
             raise SQLAlchemyError("synthetic failure")
-        return real(session, doc, names)
+        return real(session, doc, names, embedder)
 
     monkeypatch.setattr(ingest_module, "ingest_document", fails_for_a2)
     assert actions(run_ingest(db, str(corpus)))[("A2", "v3")] == "failed"

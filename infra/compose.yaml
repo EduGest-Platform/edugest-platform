@@ -38,6 +38,7 @@ services:
     ports: ["127.0.0.1:8000:8000"]
     volumes:
       - ../src/gistar/seed.json:/data/seed.json:ro
+      - ../evals/rag/corpus:/data/corpus:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
       interval: 5s
