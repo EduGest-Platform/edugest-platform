@@ -6,7 +6,7 @@
 
 | # | Tema | Decisión |
 |---|---|---|
-| D1 | Aspirante | **No tiene rol ni acceso a la plataforma.** Registra su interés en el formulario público y se crea automáticamente su perfil en el CRM. No recibe invitación |
+| D1 | Aspirante | **REVERTIDA el 20/11/2026 por la PO: el aspirante se mantiene.** Es una persona (estado de `Person`), no un rol de personal. Puede inscribirse en el formulario público (también sin sesión), se crea su ficha en el CRM y, si tiene cuenta, inicia sesión y ve **solo sus propias candidaturas** (`GET /me/applications`, sin notas internas). Sin permisos internos ni de personal. No recibe invitación de personal. *Texto original del 19/11 (sin cuenta ni acceso): sustituido.* |
 | D2 | Coder (alumnado) | Rol con acceso. **El equipo lo invita por correo al matricularlo** (tras la admisión) |
 | D3 | Personal | Administración, coordinación, captación, selección y docente **entran por invitación de administración** (administración puede cambiar quién invita) |
 | D4 | Administración | Corresponde a **dirección general**. Tiene un **panel para dar, modificar y quitar permisos** |
@@ -23,7 +23,7 @@
 
 | Decisión | Hoy en `dev` | Cambio necesario |
 |---|---|---|
-| D1 | La cuenta sintética `aspirante-01` puede iniciar sesión y ver `GET /me/applications`; la interfaz muestra «aspirante» como si fuera un rol | Quitar el acceso del aspirante: solo formulario público. Revisar seed, `/me/applications`, menús y E2E |
+| D1 (revertida 20/11) | La cuenta sintética `aspirante-01` inicia sesión y ve `GET /me/applications`; la interfaz muestra el perfil «aspirante» | **Ningún cambio**: se conservan seed, `/me/applications`, menús y E2E. Mantener los tests negativos: el aspirante no accede a expedientes, CRM ni notas internas |
 | D2, D3 | No hay invitaciones; cuentas creadas por el seed | Invitaciones con caducidad, reenvío y revocación (KAN-38, KAN-223, KAN-225, KAN-222) |
 | D4, D5 | No hay panel; permisos por asignación en base de datos. Coordinación solo ve agregados y excepciones | Panel de permisos (KAN-36, KAN-257). Ampliar coordinación a las funciones de administración salvo alta de usuarios: **cambio grande de permisos** que conviene probar como la matriz RBAC |
 | D6 | Envíos simulados de recordatorios en revisión (PR #57, KAN-129) | Plantillas de estado; en la demo, bandeja simulada sin envío real. «Esta vez no» con revisión humana antes de enviar (KAN-50) |
@@ -63,9 +63,9 @@
 
 ## 5. Propuesta de alcance hasta el 04/12 / Scope proposal to 04/12
 
-**MVP:** tablero con columnas mapeadas a etapas, comentarios y etiquetas, invitaciones de personal y coder, panel de permisos básico, correos de estado simulados, quitar acceso al aspirante, código numérico.
+**MVP:** tablero con columnas mapeadas a etapas, comentarios y etiquetas, invitaciones de personal y coder, panel de permisos básico, correos de estado simulados, código numérico. El acceso del aspirante a sus propias candidaturas se mantiene (D1 revertida 20/11).
 **Después:** menciones, revisión periódica de accesos, permisos totalmente configurables, envío real de correos.
 
 ## English summary
 
-Applicants have no role or platform access: the public form creates their CRM profile. Learners (coders) and all staff join by invitation (staff invited by admin, coders by the team at enrolment). Admin is general management with a permissions panel; coordination gets the same features except adding users. Automatic application-status emails are a PO decision; the PO reports Melissa confirmed them on 19/11, but the Drive review found no written answer yet. Application codes become year + number (e.g. `2027-00123`). A shared coordination board has seven columns mapped to real stages, editable by the team; which moves are automated and which require a human decision is pending. Tags and team-visible comments, CRM tracking of emails and calls, and admission decided by selection and coordination by default, all configurable. Proposed MVP and later items are listed above.
+Applicants keep their limited access (D1 reverted by the PO on 20/11/2026): the public form creates their CRM profile and, with an account, they sign in and see only their own applications; they hold no staff role or internal permission. Learners (coders) and all staff join by invitation (staff invited by admin, coders by the team at enrolment). Admin is general management with a permissions panel; coordination gets the same features except adding users. Automatic application-status emails are a PO decision; the PO reports Melissa confirmed them on 19/11, but the Drive review found no written answer yet. Application codes become year + number (e.g. `2027-00123`). A shared coordination board has seven columns mapped to real stages, editable by the team; which moves are automated and which require a human decision is pending. Tags and team-visible comments, CRM tracking of emails and calls, and admission decided by selection and coordination by default, all configurable. Proposed MVP and later items are listed above.
