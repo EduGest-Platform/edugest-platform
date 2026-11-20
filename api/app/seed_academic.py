@@ -5,7 +5,11 @@ same story: each program's competency catalogue becomes one published framework 
 become dated assessments (plus the synthetic sprint 1); attendance counters become half-day sessions and records with
 the same absence pattern. The #67 model also needs every absence to be justified or not: that split uses the
 latent-risk parameters of the dropout generator (ml/dropout/data.py), so a coder who misses more sessions has a higher
-share of unjustified absences. Deterministic (fixed seed). Loaded once: skipped when a competency framework exists.
+share of unjustified absences. Deterministic (fixed seed).
+
+Reconciled, not loaded once: each fixture is created only when it is missing, and existing rows are never changed. A
+database where the #67 endpoints were already used (a draft framework, a session, an assessment) still receives the
+rest and never fails on a unique key, so the API entrypoint can always run it. A second run creates nothing.
 If migrate.ts changes these rules, change them here too; tests/test_seed_academic.py checks the totals.
 """
 
@@ -18,7 +22,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.attendance.models import AttendanceRecord, AttendanceRecordRevision, AttendanceSession
@@ -65,10 +69,8 @@ SESSION_PLAN = {
 DEFAULT_PLAN = SessionPlan((0, 2), time(10, 0), time(14, 0), "manana")
 
 
-def load_academic(db: Session, data: dict) -> dict[str, int] | None:
-    """Loads frameworks, assessments and attendance once. Returns the counts, or None when already present."""
-    if db.scalar(select(CompetencyFramework.id).limit(1)) is not None:
-        return None
+def load_academic(db: Session, data: dict) -> dict[str, int]:
+    """Creates the missing academic fixtures and returns how many rows of each kind it created (all 0 on a rerun)."""
     teacher = db.scalar(select(User).where(User.email == TEACHER_EMAIL))
     if teacher is None:
         raise RuntimeError("The academic seed needs the base seed first (teacher account not found)")
@@ -77,39 +79,52 @@ def load_academic(db: Session, data: dict) -> dict[str, int] | None:
         ref: enrollment
         for ref, enrollment in db.execute(select(Person.legacy_ref, Enrollment).join(Enrollment, Enrollment.person_id == Person.id))
     }
-    competencies, frameworks = _frameworks(db, data, cohorts, teacher)
-    assessments = _assessments(db, data, competencies, enrollments, teacher)
+    frameworks, pins = _frameworks(db, data, cohorts, teacher)
+    assessments = _assessments(db, data, enrollments, teacher)
     sessions, records = _attendance(db, data, cohorts, enrollments, teacher)
     db.commit()
-    return {"frameworks": frameworks, "assessments": assessments, "sessions": sessions, "records": records}
+    return {"frameworks": frameworks, "pins": pins, "assessments": assessments, "sessions": sessions, "records": records}
 
 
-def _frameworks(db: Session, data: dict, cohorts: list[Cohort], teacher: User) -> tuple[dict[str, Competency], int]:
+def _frameworks(db: Session, data: dict, cohorts: list[Cohort], teacher: User) -> tuple[int, int]:
+    """Publishes the seed tree only for a program without a published version; pins only cohorts without a framework."""
     by_program: dict[str, list[dict]] = {}
     for item in data["competencias"]:
         by_program.setdefault(item["programa_id"], []).append(item)
-    competencies: dict[str, Competency] = {}
+    created = pinned = 0
     for program_id, items in sorted(by_program.items()):
-        starts = [c.inicio for c in cohorts if c.program_id == program_id]
-        published_at = datetime.combine(min(starts) if starts else LEGACY_CUTOFF, time(9), MADRID)
-        framework = CompetencyFramework(program_id=program_id, version=1, estado="borrador", created_by=teacher.id, created_at=published_at)
-        db.add(framework)
-        db.flush()
-        for order, item in enumerate(items, start=1):
-            competency = Competency(
-                framework_id=framework.id, codigo=item["codigo"], nombre=item["nombre"],
-                descripcion=item.get("descripcion") or f"Competencia «{item['nombre']}» del catálogo del programa (descripción sintética).",
-                level_1=_level(item, "1"), level_2=_level(item, "2"), level_3=_level(item, "3"), orden=item.get("orden", order),
-            )
-            db.add(competency)
-            competencies[item["id"]] = competency
-        db.flush()  # insert while still a draft: the frozen-competency trigger rejects changes to published trees
-        framework.estado, framework.published_at = "publicada", published_at
+        framework = db.scalar(select(CompetencyFramework).where(
+            CompetencyFramework.program_id == program_id, CompetencyFramework.estado == "publicada"))
+        if framework is None:  # drafts and archived versions are left untouched
+            framework = _publish(db, program_id, items, cohorts, teacher)
+            created += 1
         for cohort in cohorts:
-            if cohort.program_id == program_id:
-                db.add(CohortCompetencyFramework(cohort_id=cohort.id, framework_id=framework.id, assigned_by=teacher.id, assigned_at=published_at))
+            if cohort.program_id == program_id and db.get(CohortCompetencyFramework, cohort.id) is None:
+                db.add(CohortCompetencyFramework(cohort_id=cohort.id, framework_id=framework.id, assigned_by=teacher.id,
+                                                 assigned_at=framework.published_at))
+                pinned += 1
     db.flush()
-    return competencies, len(by_program)
+    return created, pinned
+
+
+def _publish(db: Session, program_id: str, items: list[dict], cohorts: list[Cohort], teacher: User) -> CompetencyFramework:
+    starts = [c.inicio for c in cohorts if c.program_id == program_id]
+    published_at = datetime.combine(min(starts) if starts else LEGACY_CUTOFF, time(9), MADRID)
+    latest = db.scalar(select(func.max(CompetencyFramework.version)).where(CompetencyFramework.program_id == program_id))
+    framework = CompetencyFramework(program_id=program_id, version=(latest or 0) + 1, estado="borrador",
+                                    created_by=teacher.id, created_at=published_at)
+    db.add(framework)
+    db.flush()
+    for order, item in enumerate(items, start=1):
+        db.add(Competency(
+            framework_id=framework.id, codigo=item["codigo"], nombre=item["nombre"],
+            descripcion=item.get("descripcion") or f"Competencia «{item['nombre']}» del catálogo del programa (descripción sintética).",
+            level_1=_level(item, "1"), level_2=_level(item, "2"), level_3=_level(item, "3"), orden=item.get("orden", order),
+        ))
+    db.flush()  # insert while still a draft: the frozen-competency trigger rejects changes to published trees
+    framework.estado, framework.published_at = "publicada", published_at
+    db.flush()
+    return framework
 
 
 def _level(item: dict, key: str) -> str:
@@ -123,7 +138,14 @@ def _sprint_level(legacy: int | None) -> int | None:
     return legacy - 1 if legacy >= 2 else 1
 
 
-def _assessments(db: Session, data: dict, competencies: dict[str, Competency], enrollments: dict, teacher: User) -> int:
+def _assessments(db: Session, data: dict, enrollments: dict, teacher: User) -> int:
+    """Uses the cohort's pinned framework, matched by competency code; skips coder/competency pairs already assessed."""
+    codes = {c["id"]: c["codigo"] for c in data["competencias"]}
+    pins = dict(db.execute(select(CohortCompetencyFramework.cohort_id, CohortCompetencyFramework.framework_id)).all())
+    trees: dict[uuid.UUID, dict[str, Competency]] = {}
+    for competency in db.scalars(select(Competency).where(Competency.framework_id.in_(list(pins.values())))):
+        trees.setdefault(competency.framework_id, {})[competency.codigo] = competency
+    assessed = {(e, c) for e, c in db.execute(select(CompetencyAssessment.enrollment_id, CompetencyAssessment.competency_id))}
     legacy = {(e["coder_id"], e["competencia_id"]): e["nivel_validado"] for e in data["evaluaciones_competencia"]}
     rows = []
     for cohort_id, reviewed, competency_ids in SPRINTS:
@@ -139,8 +161,11 @@ def _assessments(db: Session, data: dict, competencies: dict[str, Competency], e
             rows.append((coder_id, competency_id, level, LEGACY_CUTOFF, LEGACY_EVIDENCE))
     count = 0
     for coder_id, competency_id, level, day, evidence in rows:
-        enrollment, competency = enrollments.get(coder_id), competencies.get(competency_id)
-        if enrollment is None or competency is None:
+        enrollment = enrollments.get(coder_id)
+        if enrollment is None:
+            continue
+        competency = trees.get(pins.get(enrollment.cohort_id), {}).get(codes.get(competency_id))
+        if competency is None or (enrollment.id, competency.id) in assessed:
             continue
         db.add(CompetencyAssessment(
             enrollment_id=enrollment.id, competency_id=competency.id, level=level, evidence=evidence,
@@ -152,6 +177,7 @@ def _assessments(db: Session, data: dict, competencies: dict[str, Competency], e
 
 
 def _attendance(db: Session, data: dict, cohorts: list[Cohort], enrollments: dict, teacher: User) -> tuple[int, int]:
+    """Reuses an existing session in the same slot and never adds a second record for a coder in a session."""
     simulated_now = datetime.fromisoformat(f"{data['meta']['fecha_simulada']}T12:00")  # wall clock, as in migrate.ts
     summaries = {s["coder_id"]: s for s in data["asistencias_resumen"]}
     coder_cohort = {c["id"]: c["cohorte_id"] for c in data["coders"]}
@@ -159,14 +185,23 @@ def _attendance(db: Session, data: dict, cohorts: list[Cohort], enrollments: dic
     for cohort in cohorts:
         plan = SESSION_PLAN.get(cohort.id, DEFAULT_PLAN)
         days = [d for d in _days(cohort.inicio, cohort.fin) if d.weekday() in plan.weekdays and d not in HOLIDAYS]
-        sessions = [
-            AttendanceSession(cohort_id=cohort.id, session_date=day, shift=plan.shift, duration_fraction=Decimal("0.5"),
-                              created_by=teacher.id, created_at=datetime.combine(cohort.inicio, time(8), MADRID))
-            for day in days
-        ]
-        db.add_all(sessions)
+        existing = {(s.session_date, s.shift): s for s in db.scalars(select(AttendanceSession).where(AttendanceSession.cohort_id == cohort.id))}
+        sessions = []
+        for day in days:
+            session = existing.get((day, plan.shift))
+            if session is None:
+                session = AttendanceSession(cohort_id=cohort.id, session_date=day, shift=plan.shift, duration_fraction=Decimal("0.5"),
+                                            created_by=teacher.id, created_at=datetime.combine(cohort.inicio, time(8), MADRID))
+                db.add(session)
+                session_count += 1
+            sessions.append(session)
         db.flush()
-        session_count += len(sessions)
+        recorded = {
+            (s, e) for s, e in db.execute(
+                select(AttendanceRecord.session_id, AttendanceRecord.enrollment_id)
+                .join(AttendanceSession, AttendanceSession.id == AttendanceRecord.session_id)
+                .where(AttendanceSession.cohort_id == cohort.id))
+        }
         past = [s for s in sessions if datetime.combine(s.session_date, plan.start) <= simulated_now]
         cohort_summaries = [summaries[c] for c in sorted(summaries) if coder_cohort.get(c) == cohort.id]
         inherited = min(len(past), max((s["sesiones_totales"] for s in cohort_summaries), default=0))
@@ -180,10 +215,12 @@ def _attendance(db: Session, data: dict, cohorts: list[Cohort], enrollments: dic
             unjustified = _unjustified_probability(summary)
             for index in range(total):
                 session = past[index]
-                if index in absent:
+                if index in absent:  # draw before skipping, so the sequence never depends on what already exists
                     values = ("ausente", None, "no_justificada" if rng.random() < unjustified else "justificada")
                 else:
                     values = ("presente", "presencial", None)
+                if (session.id, enrollment.id) in recorded:
+                    continue
                 _record(db, session, enrollment, values, teacher, datetime.combine(session.session_date, plan.end, MADRID))
                 record_count += 1
     db.flush()

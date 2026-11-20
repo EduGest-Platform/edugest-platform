@@ -23,8 +23,20 @@ python -m app.seed
 ```
 
 - If the database is empty, it loads the base data and then the academic data.
-- If the base data already exists, it only loads the academic data.
-- If the academic data already exists (there is a competency framework), it does nothing. So it can run as many times as needed, and staging gets the data without wiping the database.
+- If the base data already exists, it leaves it as it is and only completes the academic data.
+- The academic data is completed piece by piece: only what is missing is created and nothing that exists is changed. A draft framework, a session or an assessment created through the API is kept as it is and does not make the startup fail. Running it again creates nothing.
+
+**Staging (an existing database):** it only receives the academic data. **It does not receive the 88 generated applications**, because the base data is not loaded again. Getting them would need `python -m app.seed --reset`, which wipes the whole database: this is not done on staging without the team's agreement.
+
+### How a database that already has data is completed
+
+| Piece | If something already exists |
+|---|---|
+| Competency framework | If the program already has a published version, that one is used. If there are only drafts or archived versions, the seed framework is published with the next version number, and the draft is not touched |
+| Cohort assignment | Only cohorts without a framework are assigned |
+| Assessments | Competencies are matched by code in the framework assigned to the cohort. Nothing is added for a coder who already has an assessment of that competency |
+| Sessions | If there is already a session on that date and shift, it is reused |
+| Attendance records | No record is created for a coder who already has one in that session. So, if someone recorded attendance by hand, the totals may not match `asistencias_resumen` exactly |
 
 To regenerate the applications in `seed.json` (only if the generator rules change):
 
@@ -49,7 +61,7 @@ Each attendance record stores its first version in the correction history, the s
 
 ## Tests
 
-- `api/tests/test_seed_academic.py`: at least 100 applications with synthetic emails, published and assigned frameworks, levels equal to `seed.json`, attendance that matches the summary, repeatable loading and a reproducible result with the same seed.
+- `api/tests/test_seed_academic.py`: at least 100 applications with synthetic emails, published and assigned frameworks, levels equal to `seed.json`, attendance that matches the summary, repeatable loading, a reproducible result with the same seed, and databases with data created through the API (a draft framework and a session with a manual record).
 - `api/tests/test_rbac.py` and `api/tests/test_applications.py` compute the expected numbers from the seeded data instead of using fixed numbers. So they do not break when `seed.json` changes.
 
 ## What it does not do yet

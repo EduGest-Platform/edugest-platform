@@ -111,13 +111,15 @@ def main() -> None:
         else:
             seed(db)
             print("Seed: datos sintéticos cargados")
-        # Separate check, so a database seeded before KAN-173 (staging) also gets the academic data, without a reset.
-        loaded = load_academic(db, load_seed())
-        if loaded is None:
+        # Always reconciled, so a database seeded before KAN-173 (staging) also gets the academic data without a reset.
+        # It never adds the generated applications: those only come with seed() on an empty database.
+        created = load_academic(db, load_seed())
+        if not any(created.values()):
             print("Seed v2: datos académicos ya presentes")
         else:
-            print(f"Seed v2: {loaded['frameworks']} árboles de competencias, {loaded['assessments']} evaluaciones, "
-                  f"{loaded['sessions']} sesiones y {loaded['records']} registros de asistencia")
+            print(f"Seed v2 (solo lo que faltaba): {created['frameworks']} árboles de competencias, "
+                  f"{created['pins']} cohortes asignadas, {created['assessments']} evaluaciones, "
+                  f"{created['sessions']} sesiones y {created['records']} registros de asistencia")
 
 
 if __name__ == "__main__":
