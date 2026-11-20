@@ -1,6 +1,6 @@
 # KAN-205 — Scenario results and limits / Resultados y límites de escenarios
 
-KAN-205 deadline **30/11/2026** (not overdue on 20/11). Parent KAN-69 deadline **17/11/2026 — overdue / vencida**. Prepared 20/11 against runner commit `f3d5ffa` in #83. No deadline, assignment or Jira state is changed.
+KAN-205 deadline **30/11/2026** (not overdue on 20/11). Parent KAN-69 deadline **17/11/2026 — overdue / vencida**. Prepared 20/11 against runner commit `e5943dd` in #83. No deadline, assignment or Jira state is changed.
 
 ## ES — Qué resultado se publica
 
@@ -46,8 +46,8 @@ Input SHA-256 / SHA-256 de entrada:
 
 ## Reproduction and validation / Reproducción y validación
 
-Use runner `f3d5ffa` (or verify compatible later code), generate inputs with metric_examples.py and run both commands from the KAN-199 report. Compare report.json and summary.csv bytes with these committed artifacts. Reformatting the input changes its byte hash even when calculated metrics remain equal.
+Use runner `e5943dd` (or verify compatible later code), generate inputs with metric_examples.py and run both commands from the KAN-199 report. Compare report.json and summary.csv bytes with these committed artifacts. Reformatting the input changes its byte hash even when calculated metrics remain equal.
 
 Both CLIs executed locally; 45 automation tests PASS in KAN-199. Artifact byte equality, JSON/CSV agreement, source links and whitespace checked here. Current-head CI recorded in the PR. This PR adds only report/artifacts and is stacked on #83: integrate the runner first, retarget to dev and repeat checks. Elizabeth reviews interpretation/acceptance; David checks evidence boundaries. No Jira mutation, deployment, data migration or task-completion claim.
 
-Inputs/reports regenerated with explicit LF bytes (runner f3d5ffa): the same example bytes and hashes are reproducible on Windows/Linux. / Entradas e informes regenerados con LF explícito para reproducibilidad de bytes/hashes en Windows/Linux.
+Inputs/reports regenerated with explicit LF bytes (runner e5943dd): the same example bytes and hashes are reproducible on Windows/Linux. / Entradas e informes regenerados con LF explícito para reproducibilidad de bytes/hashes en Windows/Linux.
