@@ -58,7 +58,7 @@ Reglas:
 6. Integridad: además de la FK a `form_version.id`, validar que `form_version.call_id = application.call_id`, idealmente reforzado con integridad compuesta. Rechazar versiones de otra convocatoria, retiradas o no publicadas con 409/422 y tests negativos.
 7. **Cambio de versión mientras se rellena (PO 19/11, diseño):** enviar `form_version_id`; el servidor compara con la versión vigente:
    - **Misma versión** → se acepta.
-   - **Versión nueva compatible** (solo campos/opciones opcionales, sin alterar significado o requeridos) dentro de **24 h desde su publicación/entrada en vigor** → aceptar la anterior y conservar su ID. No ampliar el plazo silenciosamente.
+   - **Versión nueva compatible** (solo campos/opciones opcionales, sin alterar significado o requeridos) dentro de **24 h desde `effective_from` de la versión nueva** (instante de activación, no de aprobación ni de publicación; reloj del servidor, UTC) → aceptar la anterior y conservar su ID. Si `effective_from` es futuro, la ventana **no ha empezado**: la versión nueva aún no es vigente y la anterior sigue siendo la misma versión vigente. Límite: se acepta hasta `effective_from + 24 h` inclusive; después, `409`. Si se aprueba con efecto inmediato, `effective_from = approved_at`. No ampliar el plazo silenciosamente.
    - **En cualquier otro caso** (cambio incompatible, ventana vencida, versión retirada) → `409 form_version_changed` con la definición nueva. La persona **revisa y confirma** la nueva versión; se conservan en el cliente las respuestas de campos con el mismo `field.id`. Nunca se reasignan respuestas a otra versión en silencio.
 
 ### 3.1 Requisito de edad versionado — diseño aceptado PO 18/11, no implementado
@@ -130,6 +130,14 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 | Estadísticas sobre JSONB | Agregados por convocatoria con supresión (ya existe `min_group_size`); materializar columnas solo si se demuestra necesidad |
 | Versión inexistente / cerrada | 409/422 y mensaje claro (patrón ya usado en `create_application`) |
 
+**Casos de aceptación de la ventana de gracia (diseño; los implementa KAN-42).** Versión compatible v2 aprobada el día D con `effective_from` = D+3 a las 10:00 UTC; formulario abierto con v1:
+1. Envío en D+1 → v1 es la vigente: se acepta como misma versión.
+2. Envío en D+3 a las 10:00 UTC + 23 h 59 min → v2 vigente, v1 dentro de la ventana: se acepta v1 y se conserva su ID.
+3. Envío exactamente en `effective_from + 24 h` → se acepta (límite inclusivo).
+4. Envío en `effective_from + 24 h + 1 s` → `409 form_version_changed` con la definición de v2.
+5. Si v2 es incompatible, cualquier envío tras `effective_from` → `409`, sin ventana.
+6. Si v2 se aprueba con efecto inmediato, la ventana cuenta desde `approved_at`.
+
 ## 8. Gestión de permisos dinámicos independiente de las versiones
 
 **Diseño acordado para revisión:** actualizar concesiones de lectura G3/G6 durante una convocatoria **no** cambia `form_version`, `answers`, ni la definición publicada. Se usa el permiso RBAC vigente (`role_assignment`) más la autorización granular y temporal indicada en [Entregable 6](kan-107-6-control-acceso-dinamico.md).
@@ -155,7 +163,7 @@ Si en la versión 3 se renombra la etiqueta "Cabeza de familia monoparental", la
 
 **§3 Rules.** The backend resolves the published, effective version for the same `call_id`. Approved definitions are immutable; retirement is a separate, audited state. Submitted applications keep their version and declared answers. Legacy versions only with an approved backfill plan. The API validates that version and application belong to the same call.
 
-**Rule 7 — version changes while filling (PO 19 November).** Same version accepted; a compatible prior version accepted within 24 hours of the new publication/effect time; otherwise `409 form_version_changed` and user review/reconfirmation. No silent remapping.
+**Rule 7 — version changes while filling (PO 19 November).** Same version accepted; a compatible prior version accepted until `effective_from + 24 h` of the new version (activation instant, not approval or publication; server clock, UTC; inclusive boundary). While `effective_from` is in the future the window has not started and the prior version is still the effective one. Immediate approval sets `effective_from = approved_at`; otherwise `409 form_version_changed` and user review/reconfirmation. No silent remapping.
 
 **§6–§7.** Contract consequences (public read-only `GET /calls/{id}/form`, server-side validation on `POST /applications`, group-filtered `GET /applications/{id}`) and risks (schema-less JSON, client trust, JSONB statistics). Trim before length checks and reject whitespace-only text (KAN-124/#22). B/C fields and option sets must be approved per version, with certificate status and referring entity protected as G6.
 

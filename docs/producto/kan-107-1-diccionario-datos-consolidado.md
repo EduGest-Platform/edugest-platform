@@ -27,7 +27,7 @@
 | Curso de 15 h (formulario B) | **Mixto:** cada fecha concreta crea una candidatura en su convocatoria (`call_id`); «Quiero organizar un curso» y «Avísame de próximas fechas» crean una **solicitud de contacto**, no una candidatura |
 | Fecha de comprobación de la edad | **Inicio del curso.** Con solo el año de nacimiento, los casos dudosos van a revisión humana; nunca exclusión automática |
 | «Más de 16 años» (curso de 15 h) | **16 años o más** (operador `gte`, 16) |
-| Ventana de gracia al cambiar la versión del formulario | **24 horas** desde la publicación de la nueva versión; después se pide rellenar la nueva |
+| Ventana de gracia al cambiar la versión del formulario | **24 horas** desde `effective_from` de la nueva versión (su activación; si se aprueba con efecto inmediato, `approved_at`); después se pide rellenar la nueva. Ver Entregable 2, regla 7 |
 | Acceso a datos G3/G6 en el MVP | **Administración y selección** los ven por defecto; **administración puede conceder o retirar** ese acceso a otros perfiles, con auditoría |
 | Formulario C | **Fuera del MVP** hasta disponer de URL o captura; el certificado de discapacidad sigue clasificado G6 |
 | «¿Cómo nos conociste?» | **Obligatorio**, como en el formulario real |
