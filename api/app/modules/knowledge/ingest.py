@@ -2,7 +2,8 @@
 
 Usage, from api/:  python -m app.modules.knowledge.ingest [--dry-run] [--corpus PATH]
 Repeatable: unchanged documents are skipped by content hash. Prints one line per document and a summary.
-Exit code: 0 all ingested or unchanged · 1 some document rejected or failed · 2 corpus or database unusable.
+Exit code: 0 all ingested or unchanged · 1 some document rejected or failed, or vectors missing · 2 corpus or database unusable.
+Vectors: only with GISTAR_RAG_EMBED=true and GEMINI_API_KEY set. A dry run never calls the provider.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from app.core.config import settings
 from app.core.db import SessionLocal, utcnow
 from app.modules.identity.models import Person
 from app.modules.knowledge.corpus import CorpusError, load_corpus
+from app.modules.knowledge.embedder import Embedder, EmbeddingError, GeminiEmbedder
 from app.modules.knowledge.pipeline import IngestResult, ingest_document, retire_missing
 
 ACTION_LABEL = {
@@ -28,14 +30,14 @@ ACTION_LABEL = {
 TITLE_WIDTH = 30
 
 
-def run_ingest(db: Session, corpus_dir: str, dry_run: bool = False) -> list[IngestResult]:
+def run_ingest(db: Session, corpus_dir: str, dry_run: bool = False, embedder: Embedder | None = None) -> list[IngestResult]:
     """One transaction per document. A dry run does the same work and rolls every transaction back."""
     documents, unreadable = load_corpus(corpus_dir)
     known_names = list(db.scalars(select(Person.display_name)))
     results = [IngestResult(entry.source_key, "-", "rejected", reason=entry.reason) for entry in unreadable]
     for doc in documents:
         try:
-            result = ingest_document(db, doc, known_names)
+            result = ingest_document(db, doc, known_names, embedder)
             _finish(db, dry_run)
         except SQLAlchemyError as exc:
             db.rollback()
@@ -67,6 +69,7 @@ def format_report(results: list[IngestResult], corpus_dir: str, dry_run: bool) -
     summary = " · ".join(f"{counts[action]} {label}" for action, label in ACTION_LABEL.items() if counts[action])
     lines.append(f"Resumen: {len(results)} documentos · {summary or 'nada que hacer'}")
     lines += [f"  {r.source_key}: {r.reason}" for r in results if r.reason]
+    lines += [f"  {r.source_key}: vectores no generados ({r.embedding_error})" for r in results if r.embedding_error]
     return "\n".join(lines)
 
 
@@ -75,17 +78,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--corpus", default=settings.corpus_path, help="folder with corpus.json and the Markdown documents")
     parser.add_argument("--dry-run", action="store_true", help="validate and report without saving anything")
     args = parser.parse_args(argv)
+    embedder, setup_error = build_embedder(args.dry_run)
+    if setup_error:
+        print(f"Ingesta RAG: vectores desactivados ({setup_error}); se guarda el texto sin vectores", file=sys.stderr)
     try:
         with SessionLocal() as db:
-            results = run_ingest(db, args.corpus, dry_run=args.dry_run)
+            results = run_ingest(db, args.corpus, dry_run=args.dry_run, embedder=embedder)
     except CorpusError as exc:
         print(f"Ingesta RAG: el corpus no se puede usar: {exc}", file=sys.stderr)
         return 2
     except SQLAlchemyError as exc:
         print(f"Ingesta RAG: la base de datos no está disponible ({type(exc).__name__})", file=sys.stderr)
         return 2
+    finally:
+        if isinstance(embedder, GeminiEmbedder):
+            embedder.close()
     print(format_report(results, args.corpus, args.dry_run))
-    return 1 if any(r.action in ("rejected", "failed") for r in results) else 0
+    incomplete = setup_error or any(r.embedding_error for r in results)
+    return 1 if incomplete or any(r.action in ("rejected", "failed") for r in results) else 0
+
+
+def build_embedder(dry_run: bool) -> tuple[Embedder | None, str | None]:
+    """The provider, or None when vectors are off. The second value is a safe code when they should be on but cannot."""
+    if dry_run or not settings.rag_embed:
+        return None, None
+    key = settings.gemini_api_key.get_secret_value() if settings.gemini_api_key else ""
+    try:
+        return GeminiEmbedder(key), None
+    except EmbeddingError as exc:
+        return None, exc.code
 
 
 def _finish(db: Session, dry_run: bool) -> None:
