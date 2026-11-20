@@ -160,3 +160,30 @@ def test_a_session_created_through_the_api_is_reused_without_touching_its_record
                                                     AttendanceRecord.enrollment_id == enrollment_id))
     assert (kept.status, kept.modality, kept.version) == ("retraso", "online", 1)
     assert count(db, AttendanceRecord, AttendanceRecord.session_id == manual_id) > 1
+
+
+def test_a_full_day_created_through_the_api_is_not_doubled_by_a_half_day(db, data, loaded):
+    session, record = db.execute(
+        select(AttendanceSession, AttendanceRecord).join(AttendanceRecord, AttendanceRecord.session_id == AttendanceSession.id)
+        .where(AttendanceSession.cohort_id == "COH-IA")
+        .order_by(AttendanceSession.session_date, AttendanceRecord.enrollment_id).limit(1)
+    ).one()
+    day, enrollment_id = session.session_date, record.enrollment_id
+    clean_sessions = count(db, AttendanceSession)
+    db.execute(text(f"TRUNCATE {ACADEMIC} CASCADE"))
+    db.commit()
+    full = AttendanceSession(cohort_id="COH-IA", session_date=day, shift="completa", duration_fraction=Decimal("1"),
+                             created_by=teacher_id(db))
+    db.add(full)
+    db.flush()
+    db.add(AttendanceRecord(session_id=full.id, enrollment_id=enrollment_id, status="retraso", modality="online",
+                            justification=None, version=1, recorded_by=teacher_id(db)))
+    db.commit()
+    full_id = full.id
+    created = load_academic(db, data)
+    # the planned morning of that date is skipped: the day is held once, by the existing full day
+    assert count(db, AttendanceSession, AttendanceSession.cohort_id == "COH-IA", AttendanceSession.session_date == day) == 1
+    assert created["sessions"] == clean_sessions - 1
+    kept = db.scalar(select(AttendanceRecord).where(AttendanceRecord.session_id == full_id))
+    assert (kept.status, kept.modality, kept.version) == ("retraso", "online", 1)
+    assert count(db, AttendanceRecord, AttendanceRecord.session_id == full_id) == 1

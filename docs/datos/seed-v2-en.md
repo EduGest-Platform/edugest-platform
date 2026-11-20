@@ -35,7 +35,7 @@ python -m app.seed
 | Competency framework | If the program already has a published version, that one is used. If there are only drafts or archived versions, the seed framework is published with the next version number, and the draft is not touched |
 | Cohort assignment | Only cohorts without a framework are assigned |
 | Assessments | Competencies are matched by code in the framework assigned to the cohort. Nothing is added for a coder who already has an assessment of that competency |
-| Sessions | If there is already a session on that date and shift, it is reused |
+| Sessions | If there is already a session on that date and shift, it is reused. If that day already has an overlapping session (a full day versus a morning or an afternoon), the seed does not create its own: it is the same rule the API applies |
 | Attendance records | No record is created for a coder who already has one in that session. So, if someone recorded attendance by hand, the totals may not match `asistencias_resumen` exactly |
 
 To regenerate the applications in `seed.json` (only if the generator rules change):

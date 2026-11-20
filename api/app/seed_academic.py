@@ -26,6 +26,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.attendance.models import AttendanceRecord, AttendanceRecordRevision, AttendanceSession
+from app.modules.attendance.service import _overlaps
 from app.modules.catalog.models import Cohort
 from app.modules.competencies.models import CohortCompetencyFramework, Competency, CompetencyAssessment, CompetencyFramework
 from app.modules.identity.models import Person, User
@@ -177,7 +178,9 @@ def _assessments(db: Session, data: dict, enrollments: dict, teacher: User) -> i
 
 
 def _attendance(db: Session, data: dict, cohorts: list[Cohort], enrollments: dict, teacher: User) -> tuple[int, int]:
-    """Reuses an existing session in the same slot and never adds a second record for a coder in a session."""
+    """Reuses a session in the same slot, skips a date already covered by an overlapping session (the API rule in
+    attendance.service._overlaps: a full day cannot coexist with a morning or afternoon) and never adds a second
+    record for a coder in a session."""
     simulated_now = datetime.fromisoformat(f"{data['meta']['fecha_simulada']}T12:00")  # wall clock, as in migrate.ts
     summaries = {s["coder_id"]: s for s in data["asistencias_resumen"]}
     coder_cohort = {c["id"]: c["cohorte_id"] for c in data["coders"]}
@@ -190,6 +193,8 @@ def _attendance(db: Session, data: dict, cohorts: list[Cohort], enrollments: dic
         for day in days:
             session = existing.get((day, plan.shift))
             if session is None:
+                if _overlaps(db, cohort.id, day, plan.shift):  # e.g. a full day created through the API
+                    continue
                 session = AttendanceSession(cohort_id=cohort.id, session_date=day, shift=plan.shift, duration_fraction=Decimal("0.5"),
                                             created_by=teacher.id, created_at=datetime.combine(cohort.inicio, time(8), MADRID))
                 db.add(session)

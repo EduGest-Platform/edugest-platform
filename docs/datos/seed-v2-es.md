@@ -35,7 +35,7 @@ python -m app.seed
 | Árbol de competencias | Si el programa ya tiene una versión publicada, se usa esa. Si solo hay borradores o versiones archivadas, se publica la del seed con el número de versión siguiente, y el borrador no se toca |
 | Asignación a la cohorte | Solo se asignan las cohortes que no tienen árbol |
 | Evaluaciones | Se buscan por código de competencia en el árbol asignado a la cohorte. No se añade nada a un coder que ya tenga una evaluación de esa competencia |
-| Sesiones | Si ya hay una sesión en esa fecha y turno, se reutiliza |
+| Sesiones | Si ya hay una sesión en esa fecha y turno, se reutiliza. Si ese día ya tiene una sesión que se solapa (un día completo frente a una mañana o una tarde), el seed no crea la suya: es la misma regla que aplica la API |
 | Registros de asistencia | No se crea el de un coder que ya tenga registro en esa sesión. Por eso, si alguien registró asistencia a mano, los totales pueden no coincidir exactamente con `asistencias_resumen` |
 
 Para regenerar las candidaturas de `seed.json` (solo si cambian las reglas del generador):
