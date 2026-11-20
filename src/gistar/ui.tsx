@@ -38,8 +38,8 @@ export function Card({
 
 type Variant = 'primary' | 'ghost' | 'success' | 'subtle'
 const variants: Record<Variant, string> = {
-  primary: 'bg-blue text-white hover:bg-[#1d5a7d]',
-  ghost: 'bg-mist text-navy hover:bg-[#e1ebf2]',
+  primary: 'bg-blue text-white hover:bg-[#6854e8]',
+  ghost: 'bg-mist text-navy hover:bg-[#e9e5ff]',
   success: 'bg-teal text-white hover:bg-[#0f776f]',
   subtle: 'bg-transparent text-muted hover:bg-mist hover:text-navy',
 }
@@ -70,11 +70,11 @@ const toneByState: Record<string, string> = {
   fuera_de_plazo: 'bg-rose-50 text-rose-800 ring-rose-600/20',
   por_revisar: 'bg-amber-50 text-amber-800 ring-amber-600/25',
   pendiente_decision_humana: 'bg-amber-50 text-amber-800 ring-amber-600/25',
-  lista_espera: 'bg-violet-50 text-violet-800 ring-violet-600/20',
+  lista_espera: 'bg-canvas text-navy ring-navy/20',
   borrador: 'bg-slate-100 text-slate-700 ring-slate-500/20',
 }
 export function Status({ s, label }: { s: string | null | undefined; label?: string }) {
-  const tone = toneByState[s ?? ''] ?? 'bg-mist text-[#255c81] ring-[#255c81]/15'
+  const tone = toneByState[s ?? ''] ?? 'bg-mist text-[#15295a] ring-[#15295a]/15'
   const text = label ?? humanize(s)
   return (
     <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${tone}`}>
@@ -116,7 +116,7 @@ export function Field({ label, htmlFor, children, hint }: { label: string; htmlF
 }
 
 export const inputCls =
-  'w-full rounded-xl border border-[#ced9e3] bg-white px-3 py-2.5 text-sm text-ink placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-500 focus:border-blue focus:outline-none focus:ring-3 focus:ring-blue/15'
+  'w-full rounded-xl border border-[#d3dae4] bg-white px-3 py-2.5 text-sm text-ink placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-500 focus:border-blue focus:outline-none focus:ring-3 focus:ring-blue/15'
 
 export function Table({ head, children }: { head: ReactNode[]; children: ReactNode }) {
   return (
@@ -160,7 +160,7 @@ export function Progress({ value }: { value: number }) {
 }
 
 export function SyntheticBadge() {
-  return <span className="rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#6d5014]">Datos sintéticos</span>
+  return <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">Datos sintéticos</span>
 }
 
 /** Short formula / denominator explanation, always visible as text (also as tooltip). */

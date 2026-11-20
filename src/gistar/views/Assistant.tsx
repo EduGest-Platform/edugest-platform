@@ -36,7 +36,7 @@ export function Assistant() {
 
   return (
     <>
-      <PageTitle title="Pregunta a Gistar" sub="Asistente documental simulado · respuestas con citas a documentos ficticios." />
+      <PageTitle title="Pregunta a EduGest" sub="Asistente documental simulado · respuestas con citas a documentos ficticios." />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Card title="Chat documental">
           <Notice>No existe conexión a un LLM ni búsqueda vectorial real. Las respuestas son deterministas.</Notice>
@@ -46,7 +46,7 @@ export function Assistant() {
                 key={r.clave}
                 type="button"
                 onClick={() => ask(r.pregunta)}
-                className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 text-left text-[13px] text-[#255c81] transition-colors hover:border-blue/40 hover:bg-mist"
+                className="cursor-pointer rounded-full border border-line bg-white px-3.5 py-1.5 text-left text-[13px] text-[#15295a] transition-colors hover:border-blue/40 hover:bg-mist"
               >
                 {r.pregunta}
               </button>

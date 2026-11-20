@@ -1,9 +1,11 @@
 """Import every model so SQLAlchemy metadata (and Alembic) see the full schema."""
 
 from app.modules.admissions.models import Application, ApplicationEvent  # noqa: F401
+from app.modules.attendance.models import AttendanceRecord, AttendanceRecordRevision, AttendanceSession  # noqa: F401
 from app.modules.audit.models import AuditEvent  # noqa: F401
-from app.modules.automation.models import AutomationExecution  # noqa: F401
+from app.modules.automation.models import AutomationExecution, SimulatedReminder  # noqa: F401
 from app.modules.catalog.models import Call, Cohort, Program  # noqa: F401
+from app.modules.competencies.models import CohortCompetencyFramework, Competency, CompetencyAssessment, CompetencyFramework  # noqa: F401
 from app.modules.identity.models import AuthSession, Person, RoleAssignment, User  # noqa: F401
 from app.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument  # noqa: F401
 from app.modules.learning.models import Enrollment  # noqa: F401

@@ -29,7 +29,7 @@ Build one accessible, auditable educational platform for the complete learner jo
 ## 2. Source of truth and evidence / Fuentes
 
 1. Official `Proyectos Final Briefing.pdf` and client answers (Melissa, email 2026-11-06); updated PO decisions 2026-11-10.
-2. Codex read-only audit `AUDITORIA_CODEX_ESTADO_ACTUAL.md` dated 2026-11-10 (**not** a runtime certification).
+2. Codex read-only audit `docs/auditorias/AUDITORIA_CODEX_ESTADO_ACTUAL.md` dated 2026-11-10 (**not** a runtime certification).
 3. Repository code, actual tests and API contracts as reverified on the current working tree; Figma conceptual designs for UX only.
 4. `projectplan.md`, Jira backlog after PO acceptance and ADRs in `docs/adr/`.
 

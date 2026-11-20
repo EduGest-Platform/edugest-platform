@@ -14,16 +14,23 @@ PRESELECTION_PERMISSIONS = {"preselection.read", "preselection.decide"}
 # PO decision 19/11/2026: administration (wildcard) and captación edit the per-call silence policy.
 PRESELECTION_POLICY_PERMISSION = "preselection.configure"
 
+# Academic follow-up (KAN-55, KAN-57): teachers work only on the cohorts they are assigned to.
+ATTENDANCE_PERMISSIONS = {"attendance.read", "attendance.record"}
+# PO 19/11/2026: coordination sees cohort attendance totals only, never per-person rows.
+ATTENDANCE_AGGREGATE_PERMISSION = "attendance.aggregate"
+COMPETENCY_PERMISSIONS = {"competencies.read", "competencies.configure", "competencies.assess"}
+
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
     # Fundación / captación: expedientes and CRM of pre-selection, requirement reviews and exceptions.
     "captacion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS, PRESELECTION_POLICY_PERMISSION},
     # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
     "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS},
-    # Coordinación: aggregated indicators, plus reading and recording requirement exceptions (KAN-128).
-    "coordinacion": {"calls.aggregate", *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
+    # Coordinación: aggregated indicators (calls, cohort attendance), plus reading and recording requirement exceptions (KAN-128).
+    "coordinacion": {"calls.aggregate", ATTENDANCE_AGGREGATE_PERMISSION, *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
     # Docente: no access to admissions, except reading and recording requirement exceptions (KAN-128).
-    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS},
+    # Records attendance and configures/assesses competencies of its own cohorts (KAN-55, KAN-57).
+    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *ATTENDANCE_PERMISSIONS, *COMPETENCY_PERMISSIONS},
 }
 
 

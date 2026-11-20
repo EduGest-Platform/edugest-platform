@@ -150,7 +150,7 @@ export function GroupAnalytics() {
                 notes={g.evo.map((p) => `${p.mastered}/${p.evaluated} evaluados · cobertura ${p.evaluated}/${p.pairs}`)}
                 series={[
                   { key: 'm', label: '% evaluados en nivel 2–3', color: '#0f6e67', values: g.evo.map((p) => p.mastery) },
-                  { key: 'c', label: 'Cobertura de evaluación', color: '#246a92', dashed: true, values: g.evo.map((p) => p.coverage) },
+                  { key: 'c', label: 'Cobertura de evaluación', color: '#4f38e0', dashed: true, values: g.evo.map((p) => p.coverage) },
                 ]}
               />
               <Formula>En cada corte se usa la última evaluación publicada hasta esa fecha; nunca resultados posteriores.</Formula>
@@ -265,7 +265,7 @@ export function GroupAnalytics() {
                   label: fmtDay(w.week),
                   segments: [
                     { key: 'p', value: w.presente, color: '#138c83', label: 'Presentes' },
-                    { key: 'r', value: w.retraso, color: '#e6b348', label: 'Retrasos' },
+                    { key: 'r', value: w.retraso, color: '#6854e8', label: 'Retrasos' },
                     { key: 'a', value: w.ausente, color: '#c2556a', label: 'Ausentes' },
                     { key: 'n', value: w.pendiente, color: '', label: 'Pendientes', pattern: true },
                   ],
@@ -274,7 +274,7 @@ export function GroupAnalytics() {
               <SegmentLegend
                 segments={[
                   { key: 'p', value: g.att.presente, color: '#138c83', label: 'Presentes' },
-                  { key: 'r', value: g.att.retraso, color: '#e6b348', label: 'Retrasos' },
+                  { key: 'r', value: g.att.retraso, color: '#6854e8', label: 'Retrasos' },
                   { key: 'a', value: g.att.ausente, color: '#c2556a', label: 'Ausentes' },
                   { key: 'n', value: g.att.pendiente, color: '', label: 'Pendientes', pattern: true },
                 ]}
@@ -309,7 +309,7 @@ export function GroupAnalytics() {
                 total={g.del.total}
                 segments={[
                   { key: 'at', value: g.del.a_tiempo, color: '#138c83', label: 'A tiempo' },
-                  { key: 'ta', value: g.del.tarde, color: '#e6b348', label: 'Tarde' },
+                  { key: 'ta', value: g.del.tarde, color: '#6854e8', label: 'Tarde' },
                   { key: 'pp', value: g.del.pendiente_en_plazo, color: '#9cc3dc', label: 'Pendiente en plazo' },
                   { key: 'pv', value: g.del.pendiente_vencida, color: '#c2556a', label: 'Pendiente vencida' },
                 ]}
@@ -319,7 +319,7 @@ export function GroupAnalytics() {
                   total={g.del.total}
                   segments={[
                     { key: 'at', value: g.del.a_tiempo, color: '#138c83', label: 'A tiempo' },
-                    { key: 'ta', value: g.del.tarde, color: '#e6b348', label: 'Tarde' },
+                    { key: 'ta', value: g.del.tarde, color: '#6854e8', label: 'Tarde' },
                     { key: 'pp', value: g.del.pendiente_en_plazo, color: '#9cc3dc', label: 'Pendiente en plazo' },
                     { key: 'pv', value: g.del.pendiente_vencida, color: '#c2556a', label: 'Pendiente vencida' },
                   ]}
@@ -340,7 +340,7 @@ export function GroupAnalytics() {
                         {p.sent}/{p.total} · {pct(ratio(p.sent, p.total))}
                       </span>
                     </div>
-                    <StackedBar total={p.total} segments={[{ key: 's', value: p.sent, color: '#246a92', label: 'Enviadas' }]} />
+                    <StackedBar total={p.total} segments={[{ key: 's', value: p.sent, color: '#4f38e0', label: 'Enviadas' }]} />
                   </li>
                 ))}
               </ul>
@@ -378,7 +378,7 @@ export function GroupAnalytics() {
                   notes={exploreEvo.map((p) => `${p.mastered}/${p.evaluated} evaluados de ${p.pairs}`)}
                   series={[
                     { key: 'm', label: '% evaluados en nivel 2–3', color: '#0f6e67', values: exploreEvo.map((p) => p.mastery) },
-                    { key: 'c', label: 'Cobertura', color: '#246a92', dashed: true, values: exploreEvo.map((p) => p.coverage) },
+                    { key: 'c', label: 'Cobertura', color: '#4f38e0', dashed: true, values: exploreEvo.map((p) => p.coverage) },
                   ]}
                 />
               )}

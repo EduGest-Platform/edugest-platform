@@ -23,21 +23,48 @@ Migrations on this snapshot / migraciones en esta instantánea: `0001` and `0003
 
 ## Regenerate / Regenerar
 ```bash
-git fetch origin dev && git ls-tree -r --name-only origin/dev | wc -l   # file count
-git rev-parse 'origin/dev^{tree}'                                      # tree hash
-git ls-tree -r --name-only origin/dev | sha256sum                       # path-list hash
+git ls-tree -r --name-only 8481d0842f2784c51a40fcdde8bd2b5049e78c2e | wc -l
+git rev-parse '8481d0842f2784c51a40fcdde8bd2b5049e78c2e^{tree}'
+git ls-tree -r --name-only 8481d0842f2784c51a40fcdde8bd2b5049e78c2e | sha256sum
 ```
 
 ## Recovery procedure / Procedimiento de recuperación
 1. **ES:** clonar limpio, nunca sobre un directorio con trabajo local: `git clone https://github.com/EduGest-Platform/edugest-platform.git && cd edugest-platform`. **EN:** clone into an empty directory, never over local work.
 2. `git fetch origin && git checkout 8481d0842f2784c51a40fcdde8bd2b5049e78c2e` (or the snapshot commit to reproduce / o el commit de instantánea a reproducir).
 3. **ES:** comparar `git rev-parse HEAD^{tree}` con `9f5732767194c8a28f41f54bea99b3f5610cfe5a`; si coincide, el contenido es idéntico. **EN:** compare the tree hash; a match means identical content.
-4. **ES:** si había trabajo local previo, guardarlo en una rama aparte (`git switch -c backup/<fecha>`) antes de cambiar de commit; no usar `reset --hard` ni `push --force`. **EN:** keep prior local work on a separate branch before switching; no hard reset or force-push.
+4. **ES:** conservar intacto cualquier directorio anterior y sus cambios; todos los comandos de recuperación se ejecutan exclusivamente en el clon nuevo. Crear una rama no guarda por sí solo cambios sin commit ni archivos sin seguimiento. No cambiar de commit en el directorio anterior, ni usar `reset --hard` o `push --force`. **EN:** preserve every existing directory and its changes; run recovery commands exclusively in the new clone. Creating a branch alone does not save uncommitted or untracked work. Do not switch the old checkout, hard-reset or force-push.
 5. **ES:** instalar y validar según `commands.md` (web: `pnpm install`; API: `api/` con PostgreSQL 16 y `alembic upgrade head`). **EN:** install and validate per `commands.md`.
 
 ## Evidence / Evidencia
 - Generated with `git ls-tree` on a fresh fetch of `origin/dev`; no runtime tests (documentation-only) / generado con `git ls-tree` sobre `origin/dev`; sin pruebas de ejecución (solo documentación).
 - Recovery steps are the standard git workflow and were not re-run in a clean clone for this change (KAN-82 validated an equivalent recovery earlier, per Yohanna's 17/11 comment) / los pasos son flujo git estándar y no se reejecutaron en un clon limpio para este cambio (KAN-82 validó una recuperación equivalente según el comentario de Yohanna del 17/11).
+
+### Local re-verification / Reverificación local — 2026-11-19
+
+**VERIFIED_RUNNING:** all 201 listed paths match this pinned commit exactly, without duplicates; path-list SHA-256 and tree SHA-1 match the header. A new local clone (`--no-hardlinks --no-checkout`, then detached checkout of the pinned SHA with `core.autocrlf=false`) recovered all 201 files; each file's bytes match its Git blob hash. Existing checkouts were untouched. This verifies source recovery, not dependency installation or application startup. / Las 201 rutas coinciden exactamente, sin duplicados; hashes de lista y árbol correctos. Un clon local nuevo recuperó los 201 archivos y cada contenido coincide con su objeto Git. No se tocaron directorios existentes. Se verifica recuperación de fuentes, no instalación ni arranque.
+
+**NOT_RUN:** dependency installation, runtime/E2E and migrations in the recovery clone. PR #47 is already integrated; this follow-up verifies source recovery and corrects the preservation instructions. Yohanna reviews this additional evidence. / Instalación, ejecución/E2E y migraciones en ese clon no ejecutados. El PR #47 ya está integrado; este seguimiento verifica recuperación y corrige las instrucciones de conservación. Yohanna revisa esta evidencia adicional.
+
+Run the following from the repository root of the new recovery clone, after checking out the pinned commit above. It only reads files and Git objects. / Ejecutar en la raíz del clon nuevo, situado en el commit fijado. Solo lee archivos y objetos Git:
+
+```python
+import hashlib
+import subprocess
+from pathlib import Path
+
+baseline = "8481d0842f2784c51a40fcdde8bd2b5049e78c2e"
+paths = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", baseline])
+assert len(paths.splitlines()) == 201
+assert hashlib.sha256(paths).hexdigest() == "999300994a17fd63f9170e763764cab4689c8200157a4938b817953edb42f399"
+for entry in subprocess.check_output(["git", "ls-tree", "-r", baseline]).decode().splitlines():
+    metadata, name = entry.split("\t", 1)
+    mode, kind, expected = metadata.split()
+    assert mode == "100644" and kind == "blob"
+    data = Path(name).read_bytes()
+    actual = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+    assert actual == expected, name
+print("PASS: 201 recovered files and inventory hash match the pinned baseline")
+```
 
 ## Inventory / Inventario
 

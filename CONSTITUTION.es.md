@@ -1,6 +1,6 @@
-# Constitución del proyecto — Gistar (nombre provisional) · Proyecto Final 2 de Somos F5
+# Constitución del proyecto — EduGest · Proyecto Final 2 de Somos F5
 
-> **Versión 1.0 · 2026-11-11 · Traducción al español.** La versión canónica es [CONSTITUTION.md](CONSTITUTION.md) (inglés); si las versiones difieren, prevalece la inglesa.
+> **Versión 1.1 · 2026-11-19 · Traducción al español.** La versión canónica es [CONSTITUTION.md](CONSTITUTION.md) (inglés); si las versiones difieren, prevalece la inglesa.
 >
 > Esta constitución es la cúspide de la jerarquía documental. El detalle operativo está en [AGENTS.md](AGENTS.md) (agentes de IA), [contribution.md](contribution.md) (flujo humano), [commands.md](commands.md) (comandos), [projectplan.md](projectplan.md) (hoja de ruta) y [README.md](README.md) (punto de entrada). Esos documentos desarrollan esta; nunca pueden contradecirla.
 
@@ -72,12 +72,14 @@ Guardarraíles explícitos para Claude, Codex y cualquier otro agente (detalle o
 
 ## G. Identidad del producto y aspectos legales
 
+- Nombre del producto: **EduGest** (confirmado por la Product Owner el 19/11/2026; sustituye al nombre provisional «Gistar»). Los identificadores técnicos que aún dicen `gistar` (carpeta `src/gistar/`, prefijo `GISTAR_` de las variables, paquete Python y nombres de base de datos) se mantienen para no romper nada; los textos visibles dicen EduGest.
 - Nombre y material gráfico propios. **No usar el nombre ni el logotipo de Somos F5 como marca del producto**; solo inspiración cromática. Sin material con licencia ni capturas propietarias.
-- Este repositorio **no declara licencia** hasta que la Product Owner y Somos F5 aprueben una; la ausencia de licencia implica todos los derechos reservados.
+- Licencia: **MIT** ([LICENSE](LICENSE)), elegida por la Product Owner el 19/11/2026. El aviso de copyright reconoce al equipo EduGest e indica que es el proyecto final del Bootcamp IA y Big Data de 1.250 h de la Fundación Somos F5 (2026), con el enlace al repositorio original (https://github.com/EduGest-Platform/edugest-platform); esa atribución debe mantenerse en todas las copias. La MIT permite reutilizarlo, también con fines comerciales. La licencia no da derecho a usar el nombre ni el logotipo de Somos F5. La aprobación de Somos F5, que esta sección exigía, consta como pendiente hasta que se confirme.
 
 ## H. Documentación y política de idiomas
 
 - La documentación del repositorio es **bilingüe español/inglés**: secciones emparejadas dentro de un archivo o un archivo canónico más una traducción claramente marcada (`NOMBRE.md` canónico + `NOMBRE.es.md`), enlazadas entre sí.
 - Una única fuente canónica por regla; las traducciones nunca introducen reglas propias.
+- **Documentos de alto rango** (esta constitución, `AGENTS.md`, ADR y políticas que fijan reglas): el **inglés es la versión canónica**, con traducción al español (`NOMBRE.es.md`) o secciones emparejadas; si difieren, prevalece el inglés (confirmado por la Product Owner el 19/11/2026).
 - Los identificadores de código, rutas, comandos y nombres de API no se traducen.
 - La documentación distingue siempre funcionalidad implementada, simulada, pendiente y verificada.

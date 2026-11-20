@@ -1,6 +1,6 @@
 import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, type ReactElement } from 'react'
-import { API_MODE, API_VIEWS } from '../shared/api/config'
+import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
 import { MENUS, ROLES, VIEWS } from './config'
 import { useGistar } from './store'
@@ -19,7 +19,7 @@ import { Calendar } from './views/Calendar'
 import { GroupAnalytics } from './views/GroupAnalytics'
 import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
-import { ApiApplications, ApiAudit, ApiInscription, ApiMyApplications } from './views/api/ApiAdmissions'
+import { API_SCREENS } from './apiScreens'
 import { LoginScreen } from './components/LoginScreen'
 
 const SCREENS: Record<View, () => ReactElement> = {
@@ -43,14 +43,6 @@ const SCREENS: Record<View, () => ReactElement> = {
   cohortes: Coordination,
 }
 
-/** In API mode these views read/write the FastAPI backend instead of localStorage. */
-const API_SCREENS: Partial<Record<View, () => ReactElement>> = {
-  inscripcion: ApiInscription,
-  candidatura: ApiMyApplications,
-  candidaturas: ApiApplications,
-  auditoria: ApiAudit,
-}
-
 function Logo() {
   return (
     <div className="flex items-center gap-2.5 px-3 text-white">
@@ -59,7 +51,7 @@ function Logo() {
           <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" />
         </svg>
       </span>
-      <span className="text-[22px] font-extrabold tracking-tight">Gistar</span>
+      <span className="text-[22px] font-extrabold tracking-tight">EduGest</span>
     </div>
   )
 }
@@ -68,7 +60,8 @@ export function Shell() {
   const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
   const session = useApiSession()
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
-  const Screen = (API_MODE ? API_SCREENS[view] : undefined) ?? SCREENS[view] ?? Dashboard
+  const source = dataSourceFor(view)
+  const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
 
   // In API mode the role is never free: it comes from the server-side assignments of the session.
   useEffect(() => {
@@ -84,7 +77,7 @@ export function Shell() {
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
         </div>
-        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8fb0c6] md:block">Menú · {ROLES[role]}</p>
+        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">Menú · {ROLES[role]}</p>
         <nav aria-label="Navegación principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
           {MENUS[role].map((v) => {
             const { label, icon: Icon } = VIEWS[v]
@@ -96,17 +89,17 @@ export function Shell() {
                 onClick={() => navigate(v)}
                 aria-current={active ? 'page' : undefined}
                 className={`flex shrink-0 cursor-pointer items-center gap-3 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors ${
-                  active ? 'bg-white/12 text-white' : 'text-[#c4d8e5] hover:bg-white/6 hover:text-white'
+                  active ? 'bg-white/12 text-white' : 'text-[#e9e5ff] hover:bg-white/6 hover:text-white'
                 }`}
               >
-                <Icon className={`size-4 ${active ? 'text-gold' : 'text-[#8fb0c6]'}`} aria-hidden />
+                <Icon className={`size-4 ${active ? 'text-gold' : 'text-[#d2caff]'}`} aria-hidden />
                 {label}
               </button>
             )
           })}
         </nav>
         <footer className="mt-auto hidden px-6 text-xs leading-relaxed text-[#8fb0c6] md:block">
-          Gistar v1 · Datos ficticios
+          EduGest v1 · Datos ficticios
           <br />
           Proyecto 2 · Somos F5
         </footer>
@@ -116,7 +109,7 @@ export function Shell() {
         <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-[15px] font-semibold text-ink">Acompañamos cada trayectoria de aprendizaje</span>
-            <span className="rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#6d5014]">DEMO · Datos sintéticos</span>
+            <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">DEMO · Datos sintéticos</span>
           </div>
           <div className="flex items-center gap-2">
             {allowedRoles && session.me && (
@@ -148,7 +141,7 @@ export function Shell() {
           </div>
         </header>
         <main key={`${role}-${view}`} className="mx-auto max-w-[1400px] px-5 py-8 md:px-8">
-          {API_MODE && !API_VIEWS.has(view) && (
+          {API_MODE && source === 'local' && (
             <p className="mb-5 flex items-center gap-2 rounded-xl border border-dashed border-line bg-white px-4 py-2.5 text-xs text-muted">
               <CloudOff className="size-3.5 shrink-0" aria-hidden />
               Esta vista todavía usa los datos locales de demostración del navegador; se conectará a la API en un incremento posterior.

@@ -43,7 +43,7 @@ Reglas (implementadas en F1 salvo indicación):
 3. `role_assignment` = rol ∈ {admin, captacion, seleccion, docente, coordinacion} + ámbito ∈ {global, program, call, cohort}. Acumulable y revocable.
 4. `application.stage` usa el vocabulario del prototipo + `retirada`; los cambios de etapa solo llegarán por revisión/decisión humana (F2), nunca por CRM ni por reglas.
 5. `audit_event` de solo inserción (trigger PostgreSQL); metadatos con identificadores y códigos, sin nombres, correos ni texto libre.
-6. Pendiente F2: `RequirementReview`, `ScoreRubricVersion`, `AssessmentScore`, `AdmissionDecision` (firmantes + justificación), `WaitlistEntry`. F3: persistir competencias/rúbricas/evaluaciones existentes. F4: `KnowledgeDocument/Chunk`, `FeedbackDraft`, `RiskSignal/Alert`, `Intervention`.
+6. Pendiente F2: `RequirementReview`, `ScoreRubricVersion`, `AssessmentScore`, `AdmissionDecision` (firmantes + justificación), `WaitlistEntry`. F3: competencias versionadas y evaluaciones (KAN-57) y asistencia (KAN-55) ya persistidas, ver [KAN-55/57](reports/KAN-55-57-attendance-competencies-data-model.md); rúbricas por entrega en EDU-03. F4: `KnowledgeDocument/Chunk`, `FeedbackDraft`, `RiskSignal/Alert`, `Intervention`.
 
 ## Autorización
 
@@ -65,7 +65,9 @@ Reglas (implementadas en F1 salvo indicación):
 | `GET /api/v1/me/applications` | la propia persona | **F1** |
 | `GET /api/v1/audit-events` | admin | **F1** |
 | `POST /applications/{id}/reviews` · `/decisions` · `POST /enrollments` | selección + decisión conjunta | F2 |
-| `GET /cohorts/{id}/competencies` · `POST /enrollments/{id}/assessments` · `GET /cohorts/{id}/overview` | docente de la cohorte | F3 |
+| `POST`/`GET /cohorts/{id}/attendance-sessions` · `PUT /attendance-sessions/{id}/records/{enrollment_id}` · `GET /attendance-records/{id}/revisions` · `GET /cohorts/{id}/attendance-summary` | `attendance.*` docente de la cohorte; coordinación solo el agregado | **KAN-55** |
+| `POST`/`GET /programs/{id}/competency-frameworks` · `PUT /competency-frameworks/{id}/competencies` · `POST /competency-frameworks/{id}/publish` · `PUT /cohorts/{id}/competency-framework` · `GET /cohorts/{id}/competencies` · `POST`/`GET /enrollments/{id}/assessments` | `competencies.*` docente de la cohorte | **KAN-57** |
+| `GET /cohorts/{id}/overview` | docente de la cohorte | F3 |
 | `POST /assistant/ask` · `POST /submissions/{id}/feedback-draft` · `GET /cohorts/{id}/risk-alerts` | por ámbito | F4 |
 
 **Definition of Done por endpoint:** esquema Pydantic, autorización con ámbito, prueba happy-path, **prueba de denegación**, auditoría si escribe o lee expedientes, contrato regenerado, revisión de PR.
