@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app import models  # noqa: F401  (registers metadata)
 from app.core.config import settings
@@ -52,7 +55,26 @@ for r in (
     app.include_router(r, prefix=API)
 
 
-@app.get("/health", tags=["ops"], summary="Estado del servicio y de la base de datos")
-def health(db: DB) -> dict:
-    db.execute(text("select 1"))
+logger = logging.getLogger(__name__)
+
+HEALTH_UNAVAILABLE_RESPONSE = {
+    "description": "La API responde pero no alcanza la base de datos",
+    "content": {"application/json": {"example": {"status": "degraded", "database": "unavailable"}}},
+}
+
+
+@app.get(
+    "/health",
+    tags=["ops"],
+    summary="Estado del servicio y de la base de datos",
+    responses={status.HTTP_503_SERVICE_UNAVAILABLE: HEALTH_UNAVAILABLE_RESPONSE},
+)
+def health(db: DB, response: Response) -> dict:
+    """Return 200 when the database answers, 503 (without driver details) when it does not."""
+    try:
+        db.execute(text("select 1"))
+    except SQLAlchemyError:
+        logger.warning("health check: database unavailable")
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "degraded", "database": "unavailable"}
     return {"status": "ok", "database": "ok"}

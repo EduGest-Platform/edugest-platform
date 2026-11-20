@@ -537,7 +537,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Estado del servicio y de la base de datos */
+        /**
+         * Estado del servicio y de la base de datos
+         * @description Return 200 when the database answers, 503 (without driver details) when it does not.
+         */
         get: operations["health_health_get"];
         put?: never;
         post?: never;
@@ -3390,6 +3393,21 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description La API responde pero no alcanza la base de datos */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "database": "unavailable",
+                     *       "status": "degraded"
+                     *     }
+                     */
+                    "application/json": unknown;
                 };
             };
         };

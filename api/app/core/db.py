@@ -6,7 +6,16 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+# Fail fast when PostgreSQL is unreachable instead of waiting for the OS TCP timeout
+# (about two minutes on Windows), so /health answers 503 in seconds.
+# Five seconds leaves margin for a remote managed database.
+DATABASE_CONNECT_TIMEOUT_SECONDS = 5
+
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    connect_args={"connect_timeout": DATABASE_CONNECT_TIMEOUT_SECONDS},
+)
 SessionLocal = sessionmaker(engine, expire_on_commit=False)
 
 
