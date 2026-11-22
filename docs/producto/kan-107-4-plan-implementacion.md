@@ -7,7 +7,7 @@
 
 | Paso | Qué | Responsable propuesto | Depende de | ¿Reversible? |
 |---|---|---|---|---|
-| **0** | Aprobar diseño de inscripción del bootcamp, política de acceso y clasificación pendiente del curso 15 h (candidatura/contacto por opción, según inventario B) y requisito de edad por convocatoria. Acordar qué asuntos legales no bloquean la **demo sintética** pero sí un uso real | PO + Anas; Melissa para requisitos reales | — | — |
+| **0** | Conservar el diseño aprobado del bootcamp y de acceso; aplicar la decisión PO del 19/11 para el curso de 15 h (fecha concreta → candidatura; organizar/avisar → solicitud de contacto) y edad por convocatoria (B: 16+ al inicio). Anas debe completar la revisión cruzada del inventario. Separar asuntos legales pendientes para uso real de la **demo sintética** | PO + Anas; Melissa para requisitos reales | — | — |
 | **A** | `Person`: `first_name`, `last_name` (nullable), `phone`, `birth_year`; `disponibilidad` opcional; `display_name` derivado | Backend | 0 | Sí (migración `downgrade`) |
 | **B** | Diseñar integración de `form_version`, `form_version_id`, instantánea mínima y estado de publicación, sin crear migraciones desde KAN-107 | Backend / KAN-42 | A + coordinación de Alembic | Reversible según diseño real |
 | **C** | API pública de formulario **sin reglas internas**; POST valida versión, convocatoria y vigencia, y admite solo respuestas permitidas | Backend / KAN-42 | B | Sí, con control de compatibilidad |
@@ -106,7 +106,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión docume
 | B1 | **Resuelto en auditoría documental V2:** KAN-92/93/107/112 consultados el 17/11; decisiones PO en KAN-93 contrastadas | Persisten solicitudes de ratificación a Melissa, **no** inaccesibilidad de Jira | PO |
 | B2 | AS-IS y aclaraciones de Melissa (Drive) no accesibles | Se usó lo citado por Anas | PO |
 | B3 | **Verificación documental parcial realizada:** fuentes oficiales EUR-Lex/AEPD consultadas 17/11; sigue pendiente interpretación jurídica para datos reales | No bloquea el análisis sintético, sí cualquier declaración de cumplimiento real | Fundación / DPO |
-| B4 | **Resuelto 18/11:** inventario integrado por #27 en `dev` (`d59ee8c`); #15 retiró su copia | Mantener KAN-92/93 como inventario observado canónico y KAN-107 como gobierno; acordar mínimo común y clasificación de B/C con Anas/PO | Anas / PO |
+| B4 | **Resuelto 18/11:** inventario integrado por #27 en `dev` (`d59ee8c`); #15 retiró su copia | Mantener KAN-92/93 como inventario observado canónico y KAN-107 como gobierno. La PO decidió el enrutamiento B el 19/11; Anas debe revisar el mapeo del inventario. Form C queda fuera del MVP | Anas / PO |
 | B5 | Respuestas del equipo (17/11) pendientes de ratificar por Melissa; D1, D4, D7, D10 fuera de alcance | No bloquea el MVP | Fundación |
 | B6 | Pruebas no ejecutadas en esta revisión | Las marcadas ✅ solo prueban que el código existe | Backend |
 
@@ -126,7 +126,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión docume
 
 **Rule.** KAN-107 creates, edits and reserves no Alembic revisions. Backend coordinates KAN-42 from the current shared head. At `dev@c59d201` (19 November), the integrated chain is `0001 → 0003 → 0004 → 0006 → 0007 → 0005`, single head `0005`; KAN-153 is merged. There is no `0002`, academic or alert migration. Follow `down_revision`, preserve applied revisions and test future schema changes only on authorised disposable synthetic PostgreSQL.
 
-**§1 Order.** Step 0 approve design and access policy (PO + Anas; Melissa for real requirements); A `Person` fields and optional availability; B `form_version` integration design; C public form API and server-side validation; D G3/G6 protection with temporary per-call grants, revocation and audit (no self-grant); E React form from the definition + `pnpm gen:api` (Anas); F tighten required fields and retire `nombre`.
+**§1 Order.** Step 0 retain the approved bootcamp/access design and record the PO's 19 November decisions for course 15 h routing (concrete date → application; organise/notify → contact request) and age per call (B: 16+ at course start); Anas cross-reviews the inventory; real-data legal requirements remain separate. A `Person` fields and optional availability; B `form_version` integration design; C public form API and server-side validation; D G3/G6 protection with temporary per-call grants, revocation and audit (no self-grant); E React form from the definition + `pnpm gen:api` (Anas); F tighten required fields and retire `nombre`.
 
 **Reconciled acceptance.** Test ≥18 and >16 requirements with explicit operators/reference dates and human review; no year-only decisions. Trim before length validation (KAN-124/#22). Protect all G6 fields including proposed C certificate status/referring entity. Align each retention class with KAN-209/#25; periods, purge and provider retention remain unverified/unapproved.
 
@@ -134,6 +134,6 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión docume
 
 **§5 Acceptance of KAN-107 (design task).** Dictionary with traceability ✅; versioning proposal ✅; privacy assessment ✅ (legal analysis pending); implementation plan ✅; PO summary ✅; PO human review ⏳; Melissa ratification ⏳ (does not block the MVP).
 
-**§6 Blockers.** AS-IS/Melissa Drive documents not accessible; legal interpretation for real data pending; B4 resolved: PR #27 merged the canonical inventory into `dev`; #15 removed its copy. PO/Anas still need to agree B/C scope and routing; no code tests were run for this documentation PR.
+**§6 Blockers.** AS-IS/Melissa Drive documents not accessible; legal interpretation for real data pending; B4 resolved: PR #27 merged the canonical inventory into `dev`; #15 removed its copy. The PO decided B routing on 19 November (concrete dates → application; organise/notify → contact request). Anas's cross-review of the source inventory remains pending; Form C stays outside the MVP. No code tests were run for this documentation PR.
 
 **§7 Acceptance cases for dynamic access (not implemented, none is PASS).** Grant, immediate revocation, expiry and wrong `call_id`, no self-grant, audit without values, no leakage through lists/exports/logs, form version unchanged by permission changes.

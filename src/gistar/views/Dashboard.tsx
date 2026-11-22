@@ -40,7 +40,7 @@ function GeneralDashboard() {
   const shortcuts = MENUS[role].filter((v) => v !== 'dashboard').slice(0, 4)
   return (
     <>
-      <PageTitle eyebrow={ROLES[role]} title="Bienvenida a Gistar" sub="Información y acciones de tu entorno de demostración." />
+      <PageTitle eyebrow={ROLES[role]} title="Bienvenida a EduGest" sub="Información y acciones de tu entorno de demostración." />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {personal ? (
           <>
@@ -78,7 +78,7 @@ function GeneralDashboard() {
           </div>
         </Card>
         <ThisWeek />
-        <Card title="Qué hace Gistar">
+        <Card title="Qué hace EduGest">
           <p className="text-sm leading-relaxed text-ink/85">Centraliza admisión, seguimiento competencial, entregas y tutorías, siempre con revisión humana en las decisiones.</p>
           <Notice tone="warning">
             Todas las personas, respuestas de IA e indicadores mostrados son <b>simulados</b>.
@@ -140,7 +140,7 @@ function TeacherDashboard() {
             notes={g.evo.map((p) => `${p.mastered}/${p.evaluated}`)}
             series={[
               { key: 'm', label: '% evaluados en nivel 2–3', color: '#0f6e67', values: g.evo.map((p) => p.mastery) },
-              { key: 'c', label: 'Cobertura', color: '#246a92', dashed: true, values: g.evo.map((p) => p.coverage) },
+              { key: 'c', label: 'Cobertura', color: '#4f38e0', dashed: true, values: g.evo.map((p) => p.coverage) },
             ]}
           />
           <Button variant="ghost" size="sm" className="mt-3" onClick={() => navigate('analitica')}>

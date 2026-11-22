@@ -66,3 +66,9 @@ EN: Intentionally one reminder per task, policy version and normalized content. 
 
 
 ES: Un tipo externo fuera de alcance puede aparecer como no elegible para observar el total, pero nunca aporta tareas, minutos o casos elegibles. Esta lista técnica no equivale a aprobación de Melissa ni valida la clasificación semántica de cada evento: el adaptador debe comprobar origen y etapa. EN: Out-of-scope types can be observed as ineligible, never counted toward eligible tasks/minutes/cases. The technical allow-list does not imply client approval or authenticate event classification; the adapter must check origin/stage.
+
+## Reproducible hypothetical scenarios / Escenarios hipotéticos reproducibles (KAN-199)
+
+EN: [Runner contract and commands](../../docs/reports/KAN-199-metric-runner.md). `run_metrics.py` wraps the same evaluator with strict scenario JSON, explicit hypothetical per-task minutes, input hash and deterministic aggregate JSON/CSV. `metric_examples.py` generates two 100-case examples. The examples are not seed exports or evidence that evaluations/reminders completed work. Only `hypothetical_completion` receipts are accepted; every report states that production evidence is unauthenticated and savings are unmeasured. No default/client-approved catalogue is introduced.
+
+ES: [Contrato y comandos del runner](../../docs/reports/KAN-199-metric-runner.md). Ejecuta escenarios JSON hipotéticos con el mismo evaluador, tiempos por tarea explícitos, hash de entrada y JSON/CSV agregados reproducibles. Los ejemplos de cien casos no exportan el seed ni acreditan tareas completadas por evaluaciones/recordatorios. Los informes mantienen evidencia de producción NO autenticada y ahorro NO medido; el catálogo de ejemplo no es aprobado por el cliente.
