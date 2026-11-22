@@ -53,7 +53,7 @@ uv venv .venv                     # or: python -m venv .venv
 uv pip install -p .venv -e ".[dev]"
 .venv/Scripts/python -m alembic upgrade head   # Windows; .venv/bin/python on Linux/macOS. LOCAL SYNTHETIC DB ONLY
 .venv/Scripts/python -m app.seed
-.venv/Scripts/python -m uvicorn app.main:app --reload   # http://localhost:8000/docs and /health
+.venv/Scripts/python -m uvicorn app.main:app --reload --no-access-log   # http://localhost:8000/docs and /health
 ```
 
 **Tests (API).** `pytest` migrates `base → head` and empties its database on every run. Point `GISTAR_TEST_DATABASE_URL` at a database **only you** use: two runs on the same test database break each other.
@@ -61,10 +61,10 @@ uv pip install -p .venv -e ".[dev]"
 ```bash
 set -a; . ./.env; set +a          # bash: load api/.env without printing it
 export GISTAR_ENVIRONMENT=local
-.venv/Scripts/python -m pytest -p no:cacheprovider --basetemp=<a writable folder>   # pyproject already adds -q; another -q hides the summary
+.venv/Scripts/python -m pytest -p no:cacheprovider --basetemp="$PWD/.pytest-tmp"   # pyproject already adds -q; another -q hides the summary
 ```
 
-- Windows: `--basetemp` avoids a `PermissionError` in the system temp folder; the complete suite takes more than 10 minutes.
+- Windows with Git Bash: `--basetemp="$PWD/.pytest-tmp"` keeps pytest temporary files under the current `api/` working directory instead of the system temp folder. The complete suite takes more than 10 minutes.
 - After changing the API contract: `python -m scripts.export_openapi`, convert `contracts/openapi.json` to LF, then `pnpm gen:api`.
 
 **ES:** no ejecutar Alembic contra una base externa ni de producción; `alembic downgrade base` borra todas las tablas. **EN:** never run Alembic against an external or production database; `downgrade base` drops every table.
