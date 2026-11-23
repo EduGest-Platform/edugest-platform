@@ -2,6 +2,7 @@
 
 import json
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -57,7 +58,9 @@ def test_valid_until_is_optional(tmp_path):
         ({"maintained_by": None}, "missing fields: maintained_by"),  # CA12
         ({"cohort": "Z"}, "has no scope mapping"),  # CA8
         ({"synthetic": False}, "only synthetic documents"),
-        ({"maintained_by": "Persona Sintética"}, "must be a staff role"),  # a role, never a person's name
+        ({"maintained_by": "Persona Sintética"}, "must be docente"),  # a role, never a person's name
+        ({"maintained_by": "coordinacion"}, "must be docente"),  # Q16: only teacher-shared materials
+        ({"maintained_by": "admin"}, "must be docente"),
         ({"status": "borrador"}, "status must be one of"),
         ({"valid_from": "19/11/2026"}, "not an ISO date"),
         ({"valid_until": "2026-10-01"}, "before valid_from"),
@@ -155,3 +158,9 @@ def test_duplicated_compound_ids_are_named_by_position(tmp_path):  # review #51,
     with pytest.raises(CorpusError) as error:
         load_corpus(tmp_path)
     assert "#1, #2" in str(error.value) and "12345678Z" not in str(error.value)
+
+
+def test_the_real_corpus_only_has_teacher_shared_materials():
+    """Melissa, round 3, Q16: the assistant is fed exclusively with materials shared by teachers."""
+    manifest = json.loads((Path(settings.corpus_path) / "corpus.json").read_text(encoding="utf-8"))
+    assert manifest and {entry["maintained_by"] for entry in manifest} == {"docente"}

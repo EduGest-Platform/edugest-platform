@@ -76,7 +76,7 @@ Una entrada de `corpus.json` mal escrita nunca retira la versión que ya estaba 
 
 El `id` sigue el formato del corpus: de 1 a 4 letras y de 1 a 3 cifras (`A1`, `B12`). La `version` es una `v` y de 1 a 3 cifras (`v1`, `v10`). Así ningún identificador puede contener un DNI o un teléfono.
 
-`maintained_by` es el área responsable del documento, expresada como uno de los roles del sistema (`admin`, `captacion`, `seleccion`, `coordinacion` o `docente`). Nunca el nombre de una persona.
+`maintained_by` es el área responsable del documento, expresada como un rol y nunca como el nombre de una persona. Solo se admite `docente`: el asistente se alimenta exclusivamente con los materiales que comparte el perfil docente (Melissa, ronda 3, Q16, y Q15 aprobada por la PO el 23/11/2026). La ingesta rechaza cualquier otro valor con un motivo.
 
 Cada cohorte del corpus se traduce a la cohorte real del seed en `app/modules/knowledge/corpus.py` (`COHORT_SCOPE`). Un test avisa si esas cohortes dejan de existir.
 
