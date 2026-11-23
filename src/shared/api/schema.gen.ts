@@ -376,6 +376,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{call_id}/selection-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plazas de la convocatoria junto a las candidaturas en selección y la lista de espera ordenada (solo lectura) */
+        get: operations["get_selection_overview_api_v1_calls__call_id__selection_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{call_id}/silence-review": {
         parameters: {
             query?: never;
@@ -1698,6 +1715,23 @@ export interface components {
             /** Scope Type */
             scope_type: string;
         };
+        /**
+         * SelectionCandidate
+         * @description An application still in selection, shown next to the places of the call so the team deliberates comparatively.
+         */
+        SelectionCandidate: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Codigo */
+            codigo: string;
+            /** Stage */
+            stage: string;
+            /** Stage Label */
+            stage_label: string;
+        };
         /** SelectionDecisionList */
         SelectionDecisionList: {
             /**
@@ -1766,6 +1800,39 @@ export interface components {
              * @description Motivo operativo. No incluir datos de salud ni situación personal.
              */
             reason: string;
+        };
+        /** SelectionOverview */
+        SelectionOverview: {
+            /** Admitted */
+            admitted: number;
+            /** Call Id */
+            call_id: string;
+            /** Candidates */
+            candidates: components["schemas"]["SelectionCandidate"][];
+            /**
+             * Free Places
+             * @description Plazas sin cubrir (nunca negativo)
+             */
+            free_places: number;
+            /** In Selection */
+            in_selection: number;
+            /** Plazas */
+            plazas: number;
+            /** Waiting */
+            waiting: number;
+            /** Waiting List */
+            waiting_list: components["schemas"]["WaitingListEntry"][];
+            /**
+             * Waiting Order Basis
+             * @description Criterio con el que se ordena la lista de espera. Provisional: la fundación aún no ha confirmado los criterios de prioridad.
+             * @constant
+             */
+            waiting_order_basis: "entrada_en_lista";
+            /**
+             * Waiting Order Confirmed
+             * @description False mientras la fundación no confirme el criterio de prioridad
+             */
+            waiting_order_confirmed: boolean;
         };
         /** SessionList */
         SessionList: {
@@ -1951,6 +2018,32 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WaitingListEntry */
+        WaitingListEntry: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Is Next
+             * @description Primera de la lista: es la que se propone si se libera una plaza. Una persona decide siempre.
+             */
+            is_next: boolean;
+            /**
+             * Position
+             * @description Lugar en la lista según el criterio provisional (orden de entrada en la lista)
+             */
+            position: number;
+            /**
+             * Since
+             * Format: date-time
+             * @description Cuándo entró en la lista de espera
+             */
+            since: string;
         };
     };
     responses: never;
@@ -3113,6 +3206,51 @@ export interface operations {
             };
             /** @description Referencia o versión en conflicto */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_selection_overview_api_v1_calls__call_id__selection_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionOverview"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
