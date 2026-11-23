@@ -31,7 +31,7 @@ Ejecutado localmente con el Python del entorno de revisión: **61 casos correcto
 - Las fuentes y los casos de prueba permiten reproducir cada afirmación de la matriz.
 - Un enlace rechazado no provoca transporte; 404 y errores no se traducen arbitrariamente en actividad cero.
 - La salida no incluye mensajes ni identidades de autores de commits. Sin embargo login, URL y descripción de repositorio pueden identificar personas o contener texto libre: **metadata mínima no es anonimización**.
-- La existencia de README es un booleano: no se ingiere su contenido, archivos, código, issues, PR ni entregas.
+- La salida expone la existencia del README únicamente como `has_readme`. Para comprobarlo, `service.py` llama a `exists("/repos/{owner}/{repo}/readme")`; `exists()` utiliza `_get()` y el transporte por defecto hace GET y lee el cuerpo con `resp.read()`. Por tanto, el cuerpo de la respuesta del README sí se recibe en memoria y después se descarta, sin exponerlo en el snapshot ni persistirlo. No se implementa procesamiento del README ni ingesta de archivos, código, issues, PR o entregas.
 - No se afirma completada la historia de portfolio ni la dependencia PF2-EDU-03.
 
 ## ES — Límites y backlog propuesto (KAN-248)
@@ -57,7 +57,7 @@ This documents the already integrated read-only adapter, not a new portfolio fea
 
 `parse_github_url` extracts an owner/repository and rejects unsupported hosts, credentials and ports before transport. The backend client issues GET requests to a fixed API host and refuses redirects. Repository output contains minimal metadata, README existence and commit-sample dates/count; profile output contains public metadata and recent repository summaries. The service requests one page of 30 commits or 10 repositories without complete pagination: samples are not historical totals or approved business limits.
 
-A commits-only 409 represents an empty repository; metadata conflict stays an error. Other typed errors are documented in the consumer README. No README/file/code content, issues, PRs or submissions are ingested. No commit messages or commit-author identities enter the projection, but login, URL and free-text description may identify people: minimization is not anonymization.
+A commits-only 409 represents an empty repository; metadata conflict stays an error. Other typed errors are documented in the consumer README. The snapshot exposes README existence only as `has_readme`. The check calls `exists("/repos/{owner}/{repo}/readme")`, which uses `_get()`; the default transport performs GET and reads the response body with `resp.read()`. The README response body is therefore received in memory and then discarded, without being exposed in the snapshot or persisted. No README processing or file/code/issue/PR/submission ingestion is implemented. No commit messages or commit-author identities enter the projection, but login, URL and free-text description may identify people: minimization is not anonymization.
 
 The command above passed **61 local fake-transport cases**. `--noconftest` deliberately avoids the global disposable-PostgreSQL fixture for these isolated adapter tests. The default-transport local-server redirect case was excluded and is not claimed as executed. These results do not establish live GitHub integration, product authorization, persistence, release acceptance or CI success. Relative source links were checked and the diff validated; CI completion was not inspected, per user request.
 
