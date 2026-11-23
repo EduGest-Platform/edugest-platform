@@ -61,6 +61,7 @@ function callsHttpClientOutsideApiLayers(imports: SourceImport[]): SourceImport[
   return imports.filter(
     (item) =>
       resolvedTarget(item) === HTTP_CLIENT &&
+      !item.typeOnly &&
       !item.file.startsWith('gistar/views/api/') &&
       !item.file.startsWith('shared/api/'),
   )
@@ -130,6 +131,11 @@ describe('import boundary checker regressions (KAN-96)', () => {
   it('still allows type-only imports from shared/ to gistar/ via the alias', () => {
     const imports = projectImportsOf('shared/ui/Widget.tsx', ["import type { Role } from '@/gistar/types'"])
     expect(sharedRuntimeImportsOfGistar(imports)).toEqual([])
+  })
+
+  it('allows type-only imports of the client (they make no HTTP call)', () => {
+    const imports = projectImportsOf('gistar/__tests__/server.test.ts', ["import type { Schemas } from '../../shared/api/client'"])
+    expect(callsHttpClientOutsideApiLayers(imports)).toEqual([])
   })
 
   it('allows the API layers to use the client through the alias', () => {

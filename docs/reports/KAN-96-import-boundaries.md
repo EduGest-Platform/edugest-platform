@@ -26,7 +26,7 @@ The structure from PR #3 still holds. Growth stayed inside the existing folders,
 
 The test checks the source text, not the compiled bundle. Mutation check: three probe files, one breaking each of rules 1, 3 and 4, made the matching tests fail. After removing them, 53/53 pass.
 
-**Import forms checked (review follow-up):** static `import … from` / `export … from`, side-effect `import 'x'` and dynamic `import('x')` with a literal path. Rules 1, 3 and 4 apply to relative paths **and** to the `@/` alias, resolved to `src/` like `tsconfig.json` and Vite. Five regression tests cover the alias, literal dynamic imports and side-effect imports. Not checked: `require()`, dynamic imports with a computed path, and the checker file itself (its fixtures are strings). Vitest 58/58, `tsc` PASS.
+**Import forms checked (review follow-up):** static `import … from` / `export … from`, side-effect `import 'x'` and dynamic `import('x')` with a literal path. Rules 1, 3 and 4 apply to relative paths **and** to the `@/` alias, resolved to `src/` like `tsconfig.json` and Vite. Six regression tests cover the alias, literal dynamic imports, side-effect imports and type-only imports of the client (allowed: they make no HTTP call). Rule 3 ignores type-only imports. Not checked: `require()`, dynamic imports with a computed path, and the checker file itself (its fixtures are strings). Vitest local 59/59, `tsc` PASS.
 
 ### Findings and decisions (for Anas to confirm)
 
@@ -54,8 +54,8 @@ The test checks the source text, not the compiled bundle. Mutation check: three 
 3. Solo `gistar/views/api/` (y la propia `shared/api/`) usan el cliente HTTP; las vistas locales nunca llaman a la API.
 4. `shared/` no depende de `gistar/` salvo importaciones de solo tipos (hoy una: `Role`).
 
-**Formas comprobadas (tras la revisión):** `import … from`, `export … from`, `import 'x'` e `import('x')` con ruta literal. Las reglas 1, 3 y 4 se aplican a rutas relativas y al alias `@/` (resuelto a `src/`). Cinco pruebas de regresión cubren alias, imports dinámicos y de efecto lateral. No se comprueban `require()`, imports dinámicos con ruta calculada ni el propio archivo de la prueba.
+**Formas comprobadas (tras la revisión):** `import … from`, `export … from`, `import 'x'` e `import('x')` con ruta literal. Las reglas 1, 3 y 4 se aplican a rutas relativas y al alias `@/` (resuelto a `src/`). Seis pruebas de regresión cubren alias, imports dinámicos, de efecto lateral y de solo tipos (la regla 3 ignora los de solo tipos: no hacen llamadas HTTP). No se comprueban `require()`, imports dinámicos con ruta calculada ni el propio archivo de la prueba.
 
 **Hallazgos para que Anas confirme.** El alias `@/` existe pero no se usa: se conserva, sin reescritura masiva. Las importaciones de tres niveles en `ApiAdmissions.tsx` son aceptables por ahora. No hay `src/components/ui/`; el kit de interfaz es `src/gistar/ui.tsx`. El informe y la prueba pueden publicarse: solo contienen rutas y reglas, sin secretos ni datos personales.
 
-**Evidencia.** Vitest 58/58 (tras la revisión; antes 53/53), sondas de mutación fallan como se espera, `tsc` PASS.
+**Evidencia.** Vitest 59/59 (tras la revisión; antes 53/53), sondas de mutación fallan como se espera, `tsc` PASS.
