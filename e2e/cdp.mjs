@@ -82,6 +82,12 @@ export async function newBrowser() {
   }
   const page = {
     ev,
+    blockUrls: async (urls) => {
+      const enabled = await send('Network.enable', {}, s)
+      if (enabled.error) throw new Error(enabled.error.message)
+      const blocked = await send('Network.setBlockedURLs', { urls }, s)
+      if (blocked.error) throw new Error(blocked.error.message)
+    },
     tab: () => pressKey('Tab', 9),
     escape: () => pressKey('Escape', 27),
     shot: async (file, width = 1280, height = 900) => {

@@ -81,7 +81,11 @@ try {
   await checkTabOrder(staff, '#application-call', '#application-stage')
 
   await applicant.goto(web)
+  await applicant.blockUrls(['*/api/v1/calls*'])
   requireCheck('Public registration available', await applicant.click('Quiero inscribirme'))
+  requireCheck('Call catalogue reports a connection failure', await applicant.waitText('No se pudo conectar con el servidor.'))
+  await applicant.blockUrls([])
+  requireCheck('Call catalogue can be retried', await applicant.click('Volver a cargar convocatorias'))
   requireCheck('IA call available', await waitFor(applicant, `!!document.querySelector('#ins-call option[value="CONV-IA-2027A"]')`))
   await checkTabOrder(applicant, '#ins-call', '#ins-name')
   await checkTabOrder(applicant, '#ins-name', '#ins-email')
