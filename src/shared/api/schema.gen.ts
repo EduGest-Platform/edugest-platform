@@ -229,7 +229,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Registrar o reentregar la entrega de una persona (hasta que se revise) */
+        /** Entregar o reentregar (hasta que se revise): el propio coder sobre su matrícula, o el docente de la cohorte */
         put: operations["put_submission_api_v1_assignments__assignment_id__submissions__enrollment_id__put"];
         post?: never;
         delete?: never;
@@ -625,7 +625,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida) */
+        /** Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida): el propio coder o el docente */
         get: operations["list_enrollment_submissions_api_v1_enrollments__enrollment_id__submissions_get"];
         put?: never;
         post?: never;

@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from app.core.db import utcnow
 from app.modules.audit.models import AuditEvent
+from app.modules.identity.models import User
 from app.modules.learning.models import Enrollment
 from app.modules.submissions.models import Submission
 from tests.conftest import CAPT_IA, CODER, COORD, DOCENTE, login
@@ -107,7 +108,7 @@ def test_draft_assignment_is_hidden_and_closed(client, db, teacher):
     assert submit(client, teacher, a["id"], enrollment_of(db)).status_code == 409
 
 
-@pytest.mark.parametrize("account", [CAPT_IA, COORD, CODER])
+@pytest.mark.parametrize("account", [CAPT_IA, COORD])
 def test_non_teachers_cannot_read_or_write_per_person_submissions(client, db, teacher, account):
     a = new_assignment(client, teacher)
     enrollment = enrollment_of(db)
@@ -117,3 +118,81 @@ def test_non_teachers_cannot_read_or_write_per_person_submissions(client, db, te
     assert submit(client, other, a["id"], enrollment).status_code == 403
     assert client.post(f"/api/v1/cohorts/{COHORT}/assignments", json={"title": "x" * 5, "due_at": utcnow().isoformat()}, headers=other).status_code == 403
 
+
+
+# ---------- PR 97 review: coders deliver their own work, never someone else's ----------
+
+
+def own_enrollment(db) -> str:
+    person_id = db.scalar(select(User.person_id).where(User.email == CODER))
+    return str(db.scalar(select(Enrollment.id).where(Enrollment.person_id == person_id)))
+
+
+def test_coder_submits_and_resubmits_their_own_work(client, db, teacher):
+    a = new_assignment(client, teacher)
+    coder = login(client, CODER)
+    mine = own_enrollment(db)
+    first = submit(client, coder, a["id"], mine, portfolio_url="https://example.test/mine-v1")
+    assert first.status_code == 200, first.text
+    second = submit(client, coder, a["id"], mine, portfolio_url="https://example.test/mine-v2")
+    assert second.status_code == 200 and second.json()["id"] == first.json()["id"]
+    assert states(client, coder, mine)[a["id"]] == "on_time"
+
+
+def test_coder_cannot_touch_another_coders_submission(client, db, teacher):
+    a = new_assignment(client, teacher)
+    coder = login(client, CODER)
+    mine = own_enrollment(db)
+    other = str(db.scalar(select(Enrollment.id).where(Enrollment.cohort_id == COHORT, Enrollment.id != mine).order_by(Enrollment.id)))
+    assert submit(client, coder, a["id"], other).status_code == 403
+    assert client.get(f"/api/v1/enrollments/{other}/submissions", headers=coder).status_code == 403
+
+
+def test_coder_cannot_self_report_check_results(client, db, teacher):
+    a = new_assignment(client, teacher)
+    r = submit(client, login(client, CODER), a["id"], own_enrollment(db), check_results={"passed": 10, "total": 10})
+    assert r.status_code == 422 and r.json()["code"] == "check_results_not_allowed"
+
+
+def test_coder_resubmission_keeps_the_teachers_check_results(client, db, teacher):
+    a = new_assignment(client, teacher)
+    mine = own_enrollment(db)
+    submit(client, teacher, a["id"], mine, check_results={"passed": 7, "total": 10})
+    r = submit(client, login(client, CODER), a["id"], mine, portfolio_url="https://example.test/fixed")
+    assert r.json()["check_results"] == {"passed": 7, "total": 10}
+
+
+def test_coder_cannot_resubmit_after_review(client, db, teacher):
+    a = new_assignment(client, teacher)
+    mine = own_enrollment(db)
+    created = submit(client, login(client, CODER), a["id"], mine).json()
+    client.post(f"/api/v1/submissions/{created['id']}/review", headers=teacher)
+    assert submit(client, login(client, CODER), a["id"], mine).status_code == 409
+
+
+def test_inactive_enrollment_cannot_submit(client, db, teacher):
+    a = new_assignment(client, teacher)
+    mine = own_enrollment(db)
+    db.get(Enrollment, mine).estado = "baja_voluntaria"
+    db.commit()
+    assert submit(client, login(client, CODER), a["id"], mine).status_code == 403
+
+
+def test_coder_cannot_review_or_create_assignments(client, db, teacher):
+    a = new_assignment(client, teacher)
+    coder = login(client, CODER)
+    created = submit(client, coder, a["id"], own_enrollment(db)).json()
+    assert client.post(f"/api/v1/submissions/{created['id']}/review", headers=coder).status_code == 403
+    assert client.post(f"/api/v1/cohorts/{COHORT}/assignments", json={"title": "Propia", "due_at": utcnow().isoformat()}, headers=coder).status_code == 403
+
+
+@pytest.mark.parametrize("checks", [{"passed": 11, "total": 10}, {"passed": 0, "total": 0}, {"passed": -1, "total": 5}, {"passed": 1, "total": 20000}])
+def test_inconsistent_check_results_are_rejected(client, db, teacher, checks):
+    a = new_assignment(client, teacher)
+    assert submit(client, teacher, a["id"], enrollment_of(db), check_results=checks).status_code == 422
+
+
+@pytest.mark.parametrize("checks", [{"passed": 0, "total": 1}, {"passed": 10, "total": 10}])
+def test_boundary_check_results_are_accepted(client, db, teacher, checks):
+    a = new_assignment(client, teacher)
+    assert submit(client, teacher, a["id"], enrollment_of(db), check_results=checks).status_code == 200

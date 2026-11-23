@@ -6,7 +6,8 @@ from sqlalchemy import select
 from app.core.db import utcnow
 from app.core.deps import DB, CurrentPrincipal
 from app.core.errors import UserFacingError
-from app.modules.learning.access import require_cohort, require_enrollment
+from app.core.authz import Principal
+from app.modules.learning.access import load_cohort, require_cohort, require_enrollment
 from app.modules.learning.models import Enrollment
 from app.modules.submissions.models import Assignment, Submission
 from app.modules.submissions.schemas import (
@@ -36,6 +37,18 @@ _ERRORS = {403: {"description": "Sin permiso sobre la cohorte"}, 404: {"descript
 _CONFLICT = {409: {"description": "Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada"}}
 
 
+def _is_own_active_enrollment(p: Principal, enrollment: Enrollment) -> bool:
+    """A coder acts on their own enrollment only (PR 97 review): same person and still active."""
+    return p.user.person_id is not None and p.user.person_id == enrollment.person_id and enrollment.estado == "activa"
+
+
+def _load_enrollment(db: DB, enrollment_id: uuid.UUID) -> Enrollment:
+    enrollment = db.get(Enrollment, enrollment_id)
+    if not enrollment:
+        raise UserFacingError(status.HTTP_404_NOT_FOUND, "enrollment_not_found", "No encontramos esta matrícula en la cohorte.")
+    return enrollment
+
+
 def _assignment_out(a: Assignment) -> AssignmentOut:
     return AssignmentOut(id=a.id, cohort_id=a.cohort_id, title=a.title, description=a.description, due_at=a.due_at, rubric=list(a.rubric or []), status=a.status)
 
@@ -55,13 +68,17 @@ def list_assignments(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId) -> 
 
 
 @router.put("/assignments/{assignment_id}/submissions/{enrollment_id}", response_model=SubmissionOut, responses={**_ERRORS, **_CONFLICT},
-            summary="Registrar o reentregar la entrega de una persona (hasta que se revise)")
+            summary="Entregar o reentregar (hasta que se revise): el propio coder sobre su matrícula, o el docente de la cohorte")
 def put_submission(assignment_id: uuid.UUID, enrollment_id: uuid.UUID, body: SubmissionWrite, p: CurrentPrincipal, db: DB) -> SubmissionOut:
     assignment = load_assignment(db, assignment_id)
-    require_cohort(db, p, "submissions.review", assignment.cohort_id)
-    enrollment = db.get(Enrollment, enrollment_id)
-    if not enrollment:
-        raise UserFacingError(status.HTTP_404_NOT_FOUND, "enrollment_not_found", "No encontramos esta matrícula en la cohorte.")
+    enrollment = _load_enrollment(db, enrollment_id)
+    if _is_own_active_enrollment(p, enrollment):
+        if body.check_results is not None:
+            # Pre-computed test results come from the teacher or CI, never self-reported by the coder.
+            raise UserFacingError(status.HTTP_422_UNPROCESSABLE_ENTITY, "check_results_not_allowed",
+                                  "Los resultados de las pruebas los registra el equipo docente. Envía solo el enlace de tu entrega.")
+    else:
+        require_cohort(db, p, "submissions.review", assignment.cohort_id)
     return submission_out(save_submission(db, p, assignment, enrollment, body), assignment)
 
 
@@ -75,9 +92,13 @@ def post_review(submission_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> Submis
 
 
 @router.get("/enrollments/{enrollment_id}/submissions", response_model=EnrollmentSubmissions, responses=_ERRORS,
-            summary="Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida)")
+            summary="Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida): el propio coder o el docente")
 def list_enrollment_submissions(enrollment_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> EnrollmentSubmissions:
-    enrollment, cohort = require_enrollment(db, p, "submissions.read", enrollment_id)
+    enrollment = _load_enrollment(db, enrollment_id)
+    if _is_own_active_enrollment(p, enrollment):
+        cohort = load_cohort(db, enrollment.cohort_id)
+    else:
+        enrollment, cohort = require_enrollment(db, p, "submissions.read", enrollment_id)
     assignments = published_assignments(db, cohort.id)
     ids = [a.id for a in assignments]
     rows = db.scalars(select(Submission).where(Submission.enrollment_id == enrollment.id, Submission.assignment_id.in_(ids))) if ids else []

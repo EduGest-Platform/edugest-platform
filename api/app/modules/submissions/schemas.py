@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 DeliveryState = Literal["on_time", "late", "pending", "overdue"]
 
@@ -61,7 +61,13 @@ class CheckResults(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     passed: int = Field(ge=0)
-    total: int = Field(ge=0)
+    total: int = Field(gt=0, le=10000)
+
+    @model_validator(mode="after")
+    def _passed_within_total(self) -> "CheckResults":
+        if self.passed > self.total:
+            raise ValueError("passed no puede ser mayor que total")
+        return self
 
 
 class SubmissionWrite(BaseModel):

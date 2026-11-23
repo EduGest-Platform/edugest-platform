@@ -1084,7 +1084,8 @@
             "type": "integer"
           },
           "total": {
-            "minimum": 0.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000.0,
             "title": "Total",
             "type": "integer"
           }
@@ -5488,7 +5489,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Registrar o reentregar la entrega de una persona (hasta que se revise)",
+        "summary": "Entregar o reentregar (hasta que se revise): el propio coder sobre su matrícula, o el docente de la cohorte",
         "tags": [
           "submissions"
         ]
@@ -7217,7 +7218,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida)",
+        "summary": "Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida): el propio coder o el docente",
         "tags": [
           "submissions"
         ]

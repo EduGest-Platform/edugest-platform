@@ -85,7 +85,9 @@ def save_submission(db: Session, p: Principal, assignment: Assignment, enrollmen
     else:
         if submission.status == "reviewed":
             raise UserFacingError(status.HTTP_409_CONFLICT, "submission_reviewed", "Esta entrega ya está revisada y no admite reentregas.")
-        submission.portfolio_url, submission.check_results = body.portfolio_url, checks
+        submission.portfolio_url = body.portfolio_url
+        if checks is not None:  # a resubmission without results keeps the ones the teacher recorded
+            submission.check_results = checks
         submission.submitted_at, submission.recorded_by = now, p.user.id
         action = "submission.resubmit"
     try:
