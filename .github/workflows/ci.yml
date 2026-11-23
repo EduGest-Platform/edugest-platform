@@ -52,6 +52,19 @@ jobs:
           python-version: "3.12"
       - run: python -m unittest discover -s evals/automation -v
 
+  feedback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Ejercicio de acceso sintético · corrector y resultados al día (KAN-152)
+        # Solo biblioteca estándar; corrige únicamente las entregas sintéticas del repositorio.
+        run: python -m unittest discover -s evals/feedback -v
+      - name: Linter (ruff) de evals/feedback · solo reglas de errores reales
+        run: pip install ruff==0.17.5 && ruff check evals/feedback --select E4,E7,E9,F
+
   web:
     runs-on: ubuntu-latest
     steps:
