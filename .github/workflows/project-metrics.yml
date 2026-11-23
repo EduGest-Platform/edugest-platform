@@ -1,0 +1,52 @@
+name: Project metrics snapshot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: project-metrics
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Jira and GitHub metrics
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          JIRA_PROJECT_KEY: KAN
+          JIRA_SCOPE_LABEL: pf2-v41
+          JIRA_SPRINT_PREFIX: v41-s
+          JIRA_DONE_STATUS: Finalizada
+        run: python scripts/project-metrics/build_metrics.py
+
+      - name: Publish run summary
+        if: always() && hashFiles('dist/project-metrics/summary.md') != ''
+        run: cat dist/project-metrics/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload dashboard and raw snapshot
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edugest-project-metrics-${{ github.run_number }}
+          path: dist/project-metrics/
+          retention-days: 90
