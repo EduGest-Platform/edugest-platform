@@ -36,9 +36,9 @@ erDiagram
   COHORT ||--o{ ENROLLMENT : "matrícula"
 ```
 
-Diagrama ER completo de la base de datos a fecha 19.11.2026 (las 12 tablas del esquema `public`, con sus claves foráneas), generado con DBeaver desde la base local con datos sintéticos / *Full ER diagram of the database as of 19 Nov 2026 (all 12 tables in the `public` schema with their foreign keys), generated with DBeaver from the local synthetic-data database*:
+Captura parcial del 19.11.2026: diagrama ER de las tablas de admisiones y matrícula (las 12 tablas creadas por la revisión Alembic `0001`, con sus claves foráneas), generado con DBeaver desde una base local con datos sintéticos. No incluye las tablas de migraciones posteriores (p. ej. `knowledge_document`, `knowledge_chunk`, `requirement_review`, `preselection_decision`, asistencia y competencias) / *Partial snapshot from 19 Nov 2026: ER diagram of the admissions and enrollment tables (the 12 tables created by Alembic revision `0001`, with their foreign keys), generated with DBeaver from a local synthetic-data database. It omits tables from later migrations (e.g. `knowledge_document`, `knowledge_chunk`, `requirement_review`, `preselection_decision`, attendance and competencies)*:
 
-![Diagrama ER completo de EduGest (DBeaver)](images/edugest-erd-full-2026-11-19.gif)
+![Diagrama ER parcial de admisiones y matrícula (DBeaver)](images/edugest-erd-full-2026-11-19.gif)
 
 - Vista reducida de las tablas de admisión y matrícula / *Core admissions and enrollment tables*: [edugest-erd-core-tables.png](images/edugest-erd-core-tables.png)
 - Fuente editable en DBeaver (requiere conexión a la base local) / *Editable DBeaver source (needs a local DB connection)*: [edugest-erd-full-2026-11-19.erd](images/edugest-erd-full-2026-11-19.erd)

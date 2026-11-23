@@ -20,9 +20,9 @@ Plataforma para centralizar inscripción, preselección, selección, formación 
 
 ## Modelo de datos / Data model
 
-Diagrama ER de la base de datos a fecha 19.11.2026 (12 tablas, datos sintéticos). Detalle y reglas en [docs/02-arquitectura-y-contratos.md](docs/02-arquitectura-y-contratos.md) / *ER diagram of the database as of 19 Nov 2026 (12 tables, synthetic data). Details and rules in the architecture doc.*
+Captura parcial: diagrama ER de las tablas de admisiones y matrícula (12 tablas de la revisión Alembic `0001`, datos sintéticos). No es el esquema actual completo de `dev`. Detalle y reglas en [docs/02-arquitectura-y-contratos.md](docs/02-arquitectura-y-contratos.md) / *Partial snapshot: ER diagram of the admissions and enrollment tables (12 tables from Alembic revision `0001`, synthetic data). It is not the full current `dev` schema. Details and rules in the architecture doc.*
 
-![Diagrama ER completo de EduGest (DBeaver)](docs/images/edugest-erd-full-2026-11-19.gif)
+![Diagrama ER parcial de admisiones y matrícula (DBeaver)](docs/images/edugest-erd-full-2026-11-19.gif)
 
 ## Comandos
 
