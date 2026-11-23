@@ -22,27 +22,33 @@ unset GISTAR_DATABASE_URL GISTAR_TEST_DATABASE_URL
 
 report_header
 
-# True when Docker talks to this machine (a local socket or Windows named pipe).
-docker_is_local() {
-  local endpoint
-  if [[ -n "${DOCKER_HOST:-}" ]]; then
-    endpoint="$DOCKER_HOST"
+# Resolve the same endpoint Docker would choose, then pin every operation to it.
+resolve_local_docker_endpoint() {
+  if [[ -n "${DOCKER_CONTEXT:-}" ]]; then
+    docker_endpoint="$(docker context inspect "$DOCKER_CONTEXT" --format '{{.Endpoints.docker.Host}}')" || return 1
+  elif [[ -n "${DOCKER_HOST:-}" ]]; then
+    docker_endpoint="$DOCKER_HOST"
   else
-    endpoint="$(docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null)" || return 1
+    docker_endpoint="$(docker context inspect --format '{{.Endpoints.docker.Host}}')" || return 1
   fi
-  [[ "$endpoint" == unix://* || "$endpoint" == npipe://* ]]
+  [[ "$docker_endpoint" == unix://* || "$docker_endpoint" == npipe://* ]]
 }
+
+docker_local() (
+  unset DOCKER_CONTEXT DOCKER_HOST
+  docker --host "$docker_endpoint" "$@"
+)
 
 # Prints the host port Docker gave to the container's 5432, e.g. 49153.
 published_port() {
-  docker port "$1" 5432/tcp 2>/dev/null | grep -m1 '^127\.0\.0\.1:' | cut -d: -f2
+  docker_local port "$1" 5432/tcp 2>/dev/null | grep -m1 '^127\.0\.0\.1:' | cut -d: -f2
 }
 
 if ! command -v docker >/dev/null 2>&1; then
   not_run "database" "docker run pgvector/pgvector:pg16" "Docker is not installed"
   exit 1
 fi
-if ! docker_is_local; then
+if ! resolve_local_docker_endpoint; then
   not_run "database" "docker run pgvector/pgvector:pg16" "Docker is not local (remote context or DOCKER_HOST); reviews only use a local throwaway database"
   exit 1
 fi
@@ -51,14 +57,14 @@ container=""
 venv="$(mktemp -d -t edugest-review-venv-XXXX)"
 cleanup() {
   if [[ -n "$container" ]]; then
-    docker rm --force "$container" >/dev/null 2>&1 || true
+    docker_local rm --force "$container" >/dev/null 2>&1 || true
   fi
   rm -rf "$venv"
 }
 trap cleanup EXIT
 
 # Port 0 on 127.0.0.1: Docker chooses a free port, reachable only from this machine.
-container="$(docker run --detach --rm --name "edugest-review-db-$$" \
+container="$(docker_local run --detach --rm --name "edugest-review-db-$$" \
   -e POSTGRES_USER=review -e POSTGRES_PASSWORD=review -e POSTGRES_DB=gistar_review \
   -p 127.0.0.1::5432 pgvector/pgvector:pg16)" || {
   container=""
@@ -74,7 +80,7 @@ fi
 
 ready=0
 for _ in $(seq 1 30); do
-  if docker exec "$container" pg_isready -U review -d gistar_review >/dev/null 2>&1; then
+  if docker_local exec "$container" pg_isready -U review -d gistar_review >/dev/null 2>&1; then
     ready=1
     break
   fi
