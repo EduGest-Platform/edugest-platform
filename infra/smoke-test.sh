@@ -3,11 +3,13 @@
 #   bash infra/smoke-test.sh
 # Variables opcionales: API_URL, WEB_URL, MLFLOW_URL.
 # La contraseña de las cuentas sintéticas sale de DEMO_PASSWORD o, si no está, de GISTAR_DEMO_PASSWORD en infra/.env.
-set -u
+set -uo pipefail
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 API_URL="${API_URL:-http://127.0.0.1:8000}"
 WEB_URL="${WEB_URL:-http://127.0.0.1:8443}"
 MLFLOW_URL="${MLFLOW_URL:-http://127.0.0.1:5000}"
-ENV_FILE="$(cd "$(dirname "$0")" && pwd)/.env"
+ENV_FILE="$SCRIPT_DIR/.env"
 
 if [ -z "${DEMO_PASSWORD:-}" ] && [ -f "$ENV_FILE" ]; then
   DEMO_PASSWORD="$(grep '^GISTAR_DEMO_PASSWORD=' "$ENV_FILE" | head -n 1 | cut -d= -f2- | tr -d '\r')"
@@ -29,9 +31,13 @@ check "API /docs" curl -fsS "$API_URL/docs"
 check "Web sirve index.html" curl -fsS "$WEB_URL/"
 check "Web: ruta de la SPA devuelve index.html" curl -fsS "$WEB_URL/candidaturas"
 check "MLflow /health" curl -fsS "$MLFLOW_URL/health"
-check "Login sintético (admin)" curl -fsS -X POST "$API_URL/api/v1/auth/login" \
-  -H 'Content-Type: application/json' \
-  -d "{\"email\":\"admin@gistar.example\",\"password\":\"$DEMO_PASSWORD\"}"
+login_check() {
+  printf '%s' "$DEMO_PASSWORD" |
+    "$PYTHON_BIN" "$SCRIPT_DIR/smoke-login-payload.py" |
+    curl -fsS -X POST "$API_URL/api/v1/auth/login" \
+      -H 'Content-Type: application/json' --data-binary @-
+}
+check "Login sintético (admin)" login_check
 
 [ "$fail" -eq 0 ] && echo "RESULTADO: todo en verde" || echo "RESULTADO: hay fallos"
 exit "$fail"

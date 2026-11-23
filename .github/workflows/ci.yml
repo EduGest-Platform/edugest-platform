@@ -51,6 +51,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m unittest discover -s evals/automation -v
+      - name: Local smoke credential regression tests (KAN-212)
+        run: python -m unittest discover -s infra/tests -v
       - name: CI evidence regression tests (KAN-219)
         run: python -m unittest discover -s scripts/ci/tests -v
 

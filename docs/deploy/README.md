@@ -138,3 +138,7 @@ Limits and pending decisions:
 - The free database expires after 30 days: note the creation date of each one.
 - ADR-0008 exception (approved by the PO on 19/11/2026 and noted in the ADR): staging auto-deploys with `checksPass`; production keeps `autoDeployTrigger: "off"`. CI checks both.
 - With `checksPass`, Render waits for the commit's GitHub checks and accepts `success`, **`neutral` and `skipped`** as passing according to the [Render docs](https://render.com/docs/deploys#integrating-with-ci) cited in the review (not verified from this environment). A job skipped by path filters (for example the E2E) or reported as neutral does **not** block the deploy; if that is not enough, make the required jobs mandatory or keep deploys manual.
+
+## Local fallback / Respaldo local
+
+[Operator runbook: preparation, one-command startup and failure handling (KAN-212)](KAN-212-local-fallback.md) / Runbook operativo de preparación, arranque y diagnóstico; distingue instrucciones de ejecución comprobada.
