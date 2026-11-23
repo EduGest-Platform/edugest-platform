@@ -77,6 +77,11 @@ export async function newBrowser() {
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
   const page = {
     ev,
+    tab: async () => {
+      const key = { key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 }
+      await send('Input.dispatchKeyEvent', { ...key, type: 'rawKeyDown' }, s)
+      await send('Input.dispatchKeyEvent', { ...key, type: 'keyUp' }, s)
+    },
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
       await sleep(300)
