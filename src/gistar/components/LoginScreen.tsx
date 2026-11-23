@@ -28,6 +28,7 @@ export function LoginScreen() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setBusy(true)
+    setError(null)
     setError(await login(email, password))
     setBusy(false)
   }
@@ -55,9 +56,12 @@ export function LoginScreen() {
         </div>
         {tab === 'login' ? (
           <Card title="Iniciar sesión">
-            <form onSubmit={submit} className="grid gap-4">
+            <form onSubmit={submit} aria-describedby={error ? 'login-error' : undefined} className="grid gap-4">
               <Field label="Cuenta de demostración" htmlFor="lg-email">
-                <select id="lg-email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)}>
+                <select id="lg-email" className={inputCls} value={email} onChange={(e) => {
+                    setEmail(e.target.value)
+                    setError(null)
+                  }}>
                   {DEMO_ACCOUNTS.map(([e, label]) => (
                     <option key={e} value={e}>
                       {label} — {e}
@@ -65,13 +69,28 @@ export function LoginScreen() {
                   ))}
                 </select>
               </Field>
-              <Field label="Contraseña" htmlFor="lg-pass" hint="Contraseña de las cuentas sintéticas (api/README.md).">
-                <input id="lg-pass" type="password" autoComplete="current-password" className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Field label="Contraseña" htmlFor="lg-pass">
+                <input
+                  id="lg-pass"
+                  type="password"
+                  autoComplete="current-password"
+                  aria-describedby="login-password-help"
+                  className={inputCls}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError(null)
+                  }}
+                  required
+                />
+                <p id="login-password-help" className="text-xs text-muted">Contraseña de las cuentas sintéticas (api/README.md).</p>
               </Field>
               {error && (
-                <Notice tone="warning" live="assertive">
-                  {error}
-                </Notice>
+                <div id="login-error">
+                  <Notice tone="warning" live="assertive">
+                    {error}
+                  </Notice>
+                </div>
               )}
               <div>
                 <Button type="submit" disabled={busy}>

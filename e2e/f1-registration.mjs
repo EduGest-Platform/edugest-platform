@@ -24,6 +24,18 @@ async function waitFor(page, expression, timeout = 10000) {
   return false
 }
 
+async function checkTabOrder(page, start, next) {
+  requireCheck(`Can focus ${start}`, await page.ev(`(() => {
+    const field = document.querySelector(${JSON.stringify(start)})
+    field?.focus()
+    return !!field && document.activeElement === field
+  })()`))
+  await page.tab()
+  requireCheck(`Tab moves visible focus from ${start} to ${next}`, await page.ev(
+    `document.activeElement?.matches(${JSON.stringify(`${next}:focus-visible`)}) === true`,
+  ))
+}
+
 async function submit(page, value) {
   requireCheck('Synthetic name field exists', await page.set('#ins-name', 'Persona E2E Sintética'))
   await page.set('#ins-email', value)
@@ -54,6 +66,7 @@ try {
     return demo?.candidaturas?.some((application) => application.nombre_ficticio === ${JSON.stringify(localOnlyName)}) === true
   })()`)
   requireCheck('Local-only application survives reload', seededLocalApplication && retainedLocalApplication)
+  await checkTabOrder(staff, '#lg-email', '#lg-pass')
   await staff.login('captacion.ia@gistar.example')
   requireCheck('Staff login succeeded', await waitFor(staff, "!!document.querySelector('nav') && !document.querySelector('#lg-email')"))
   requireCheck('Staff navigation', await staff.nav('Candidaturas'))
@@ -64,9 +77,14 @@ try {
     `!!${applicationList}?.querySelector('tbody tr') && !${applicationList}?.innerText.includes(${JSON.stringify(localOnlyName)})`,
   ))
 
+  await checkTabOrder(staff, '#application-search', '#application-call')
+  await checkTabOrder(staff, '#application-call', '#application-stage')
+
   await applicant.goto(web)
   requireCheck('Public registration available', await applicant.click('Quiero inscribirme'))
   requireCheck('IA call available', await waitFor(applicant, `!!document.querySelector('#ins-call option[value="CONV-IA-2027A"]')`))
+  await checkTabOrder(applicant, '#ins-call', '#ins-name')
+  await checkTabOrder(applicant, '#ins-name', '#ins-email')
   await applicant.set('#ins-call', 'CONV-IA-2027A')
   await submit(applicant, email)
   // A repeat run may find this fixture already present. It must still find exactly one persisted dossier.
