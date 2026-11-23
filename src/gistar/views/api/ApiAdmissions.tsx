@@ -22,16 +22,46 @@ export function ServerBadge() {
 
 function useCalls(estado?: 'abierta') {
   const [calls, setCalls] = useState<Call[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+
   useEffect(() => {
-    api.GET('/api/v1/calls', { params: { query: estado ? { estado } : {} } }).then(({ data }) => setCalls(data ?? []))
-  }, [estado])
-  return calls
+    const controller = new AbortController()
+
+    async function loadCalls() {
+      try {
+        const { data, error: apiError, response } = await api.GET('/api/v1/calls', {
+          signal: controller.signal,
+          params: { query: estado ? { estado } : {} },
+        })
+        if (controller.signal.aborted) return
+        setCalls(data ?? [])
+        if (!data) setError(problemText(describeApiError(response.status, apiError)))
+      } catch {
+        if (!controller.signal.aborted) setError('No se pudo conectar con el servidor.')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    void loadCalls()
+    return () => controller.abort()
+  }, [estado, attempt])
+
+  const retry = () => {
+    setError(null)
+    setLoading(true)
+    setAttempt((previous) => previous + 1)
+  }
+
+  return { calls, loading, error, retry }
 }
 
 /** Public inscription form (also used by a logged-in aspirant). Creates or reuses the Person record. */
 export function InscriptionForm({ onViewApplications }: { onViewApplications?: () => void }) {
   const { me, refresh } = useApiSession()
-  const calls = useCalls('abierta')
+  const { calls, loading: callsLoading, error: callsError, retry: retryCalls } = useCalls('abierta')
   const empty = () => ({ call_id: '', nombre: me?.display_name ?? '', email: me?.email ?? '', motivacion: '', disponibilidad: 'Mañana' as 'Mañana' | 'Tarde' | 'Flexible', acepta: false })
   const [f, setF] = useState(empty)
   const [busy, setBusy] = useState(false)
@@ -87,7 +117,8 @@ export function InscriptionForm({ onViewApplications }: { onViewApplications?: (
   return (
     <form onSubmit={submit} className="grid gap-4">
       <Field label="Convocatoria" htmlFor="ins-call">
-        <select id="ins-call" className={inputCls} value={callId} onChange={(e) => setF({ ...f, call_id: e.target.value })} required>
+        <select id="ins-call" className={inputCls} value={callId} onChange={(e) => setF({ ...f, call_id: e.target.value })} disabled={callsLoading || !calls.length} required>
+          {!calls.length && <option value="">Selecciona una convocatoria</option>}
           {calls.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nombre} · {c.plazas} plazas
@@ -95,6 +126,14 @@ export function InscriptionForm({ onViewApplications }: { onViewApplications?: (
           ))}
         </select>
       </Field>
+      {callsLoading && <Notice live="polite">Cargando convocatorias…</Notice>}
+      {callsError && (
+        <div className="grid justify-items-start gap-2">
+          <Notice tone="warning" live="assertive">{callsError}</Notice>
+          <Button type="button" variant="ghost" onClick={retryCalls}>Volver a cargar convocatorias</Button>
+        </div>
+      )}
+      {!callsLoading && !callsError && !calls.length && <Notice live="polite">No hay convocatorias abiertas.</Notice>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nombre (ficticio)" htmlFor="ins-name">
           <input id="ins-name" className={inputCls} required minLength={2} maxLength={120} value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} />
@@ -217,7 +256,7 @@ export function ApiMyApplications() {
 }
 
 export function ApiApplications() {
-  const calls = useCalls()
+  const { calls } = useCalls()
   const [callId, setCallId] = useState('')
   const [stage, setStage] = useState<Stage | ''>('')
   const [q, setQ] = useState('')
