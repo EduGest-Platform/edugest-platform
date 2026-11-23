@@ -13,6 +13,8 @@ REQUIREMENT_REVIEW_PERMISSIONS = {*REQUIREMENT_EXCEPTION_PERMISSIONS, "requireme
 PRESELECTION_PERMISSIONS = {"preselection.read", "preselection.decide"}
 # Admission decision (KAN-48, PO 19/11/2026): selección and coordinación decide by default; administration through the wildcard.
 SELECTION_PERMISSIONS = {"selection.read", "selection.decide"}
+# Melissa round 3 Q11: only administration (wildcard) changes the selection quorum of a call. No role grant on purpose.
+SELECTION_POLICY_PERMISSION = "selection.configure"
 # PO decision 19/11/2026: administration (wildcard) and captación edit the per-call silence policy.
 PRESELECTION_POLICY_PERMISSION = "preselection.configure"
 

@@ -103,3 +103,11 @@ class SelectionOverview(BaseModel):
         description="Criterio con el que se ordena la lista de espera. Provisional: la fundación aún no ha confirmado los criterios de prioridad."
     )
     waiting_order_confirmed: bool = Field(description="False mientras la fundación no confirme el criterio de prioridad")
+
+
+class SelectionPolicy(BaseModel):
+    """Per-call selection rule. Melissa round 3 Q11: two approvals by default; administration may change it, audited."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    selection_quorum: int = Field(ge=1, le=5, description="Personas distintas que deben coincidir en la decisión de selección (por defecto 2)")

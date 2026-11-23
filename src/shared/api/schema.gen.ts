@@ -410,6 +410,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{call_id}/selection-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Regla de decisión de selección de la convocatoria: cuántas personas distintas deben coincidir */
+        get: operations["get_selection_policy_api_v1_calls__call_id__selection_policy_get"];
+        /** Cambiar el quórum de selección de una convocatoria (solo administración, auditado). No cambia decisiones ya tomadas */
+        put: operations["put_selection_policy_api_v1_calls__call_id__selection_policy_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{call_id}/silence-review": {
         parameters: {
             query?: never;
@@ -2280,6 +2298,17 @@ export interface components {
             /** Votes */
             votes: components["schemas"]["SelectionApprovalOut"][];
         };
+        /**
+         * SelectionPolicy
+         * @description Per-call selection rule. Melissa round 3 Q11: two approvals by default; administration may change it, audited.
+         */
+        SelectionPolicy: {
+            /**
+             * Selection Quorum
+             * @description Personas distintas que deben coincidir en la decisión de selección (por defecto 2)
+             */
+            selection_quorum: number;
+        };
         /** SessionList */
         SessionList: {
             /** Cohort Id */
@@ -4034,6 +4063,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SelectionOverview"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_selection_policy_api_v1_calls__call_id__selection_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionPolicy"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_selection_policy_api_v1_calls__call_id__selection_policy_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionPolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionPolicy"];
                 };
             };
             /** @description Sin permiso sobre el ámbito */

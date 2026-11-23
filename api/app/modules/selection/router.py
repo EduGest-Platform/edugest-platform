@@ -4,6 +4,7 @@ from fastapi import APIRouter, Path, Response, status
 from sqlalchemy import select
 
 from app.core import audit
+from app.core.authz import SELECTION_POLICY_PERMISSION, Scope
 from app.core.deps import DB, CurrentPrincipal
 from app.core.errors import UserFacingError
 from app.modules.admissions.models import Application
@@ -11,7 +12,7 @@ from app.modules.catalog.models import Call
 from app.modules.identity.models import User
 from app.modules.selection.models import SelectionApproval, SelectionDecision
 from app.modules.selection.schemas import (
-    SelectionApprovalOut, SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview, SelectionPendingOut,
+    SelectionApprovalOut, SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview, SelectionPendingOut, SelectionPolicy,
 )
 from app.modules.selection.service import decide, pending_approvals, require_selection_access, selection_overview
 
@@ -92,3 +93,34 @@ def get_selection_overview(p: CurrentPrincipal, db: DB, call_id: str = Path(max_
     if not call:
         raise UserFacingError(status.HTTP_404_NOT_FOUND, "call_not_found", "No encontramos esta convocatoria. Vuelve a la lista de convocatorias.")
     return selection_overview(db, p, call)
+
+
+def _load_call(db: DB, call_id: str) -> Call:
+    call = db.get(Call, call_id)
+    if not call:
+        raise UserFacingError(status.HTTP_404_NOT_FOUND, "call_not_found", "No encontramos esta convocatoria. Vuelve a la lista de convocatorias.")
+    return call
+
+
+@router.get("/calls/{call_id}/selection-policy", response_model=SelectionPolicy, responses=_ERRORS,
+            summary="Regla de decisión de selección de la convocatoria: cuántas personas distintas deben coincidir")
+def get_selection_policy(p: CurrentPrincipal, db: DB, call_id: str = Path(max_length=30)) -> SelectionPolicy:
+    call = _load_call(db, call_id)
+    require_selection_access(db, p, "selection.read", call)
+    return SelectionPolicy(selection_quorum=call.selection_quorum)
+
+
+@router.put("/calls/{call_id}/selection-policy", response_model=SelectionPolicy, responses=_ERRORS,
+            summary="Cambiar el quórum de selección de una convocatoria (solo administración, auditado). No cambia decisiones ya tomadas")
+def put_selection_policy(body: SelectionPolicy, p: CurrentPrincipal, db: DB, call_id: str = Path(max_length=30)) -> SelectionPolicy:
+    call = db.scalar(select(Call).where(Call.id == call_id).with_for_update())  # serialized with votes, which lock the call
+    if not call:
+        raise UserFacingError(status.HTTP_404_NOT_FOUND, "call_not_found", "No encontramos esta convocatoria. Vuelve a la lista de convocatorias.")
+    if not p.can(SELECTION_POLICY_PERMISSION, Scope(program_id=call.program_id, call_id=call.id)):
+        raise UserFacingError(status.HTTP_403_FORBIDDEN, "no_policy_permission",
+                              "Solo administración puede cambiar cuántas personas deben coincidir en la decisión de selección.")
+    before = call.selection_quorum
+    call.selection_quorum = body.selection_quorum
+    audit.record(db, p, "call.selection_policy_updated", "call", call.id, selection_quorum_before=before, selection_quorum=body.selection_quorum)
+    db.commit()
+    return body

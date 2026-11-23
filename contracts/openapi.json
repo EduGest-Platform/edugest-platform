@@ -3495,6 +3495,24 @@
         "title": "SelectionPendingOut",
         "type": "object"
       },
+      "SelectionPolicy": {
+        "additionalProperties": false,
+        "description": "Per-call selection rule. Melissa round 3 Q11: two approvals by default; administration may change it, audited.",
+        "properties": {
+          "selection_quorum": {
+            "description": "Personas distintas que deben coincidir en la decisión de selección (por defecto 2)",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Selection Quorum",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "selection_quorum"
+        ],
+        "title": "SelectionPolicy",
+        "type": "object"
+      },
       "SessionList": {
         "properties": {
           "cohort_id": {
@@ -6298,6 +6316,122 @@
           }
         ],
         "summary": "Plazas de la convocatoria junto a las candidaturas en selección y la lista de espera ordenada (solo lectura)",
+        "tags": [
+          "selection"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/selection-policy": {
+      "get": {
+        "operationId": "get_selection_policy_api_v1_calls__call_id__selection_policy_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 30,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Regla de decisión de selección de la convocatoria: cuántas personas distintas deben coincidir",
+        "tags": [
+          "selection"
+        ]
+      },
+      "put": {
+        "operationId": "put_selection_policy_api_v1_calls__call_id__selection_policy_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 30,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cambiar el quórum de selección de una convocatoria (solo administración, auditado). No cambia decisiones ya tomadas",
         "tags": [
           "selection"
         ]

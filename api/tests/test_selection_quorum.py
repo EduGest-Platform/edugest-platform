@@ -8,7 +8,7 @@ from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Call
 from app.modules.learning.models import Enrollment
 from app.modules.selection.models import SelectionApproval, SelectionDecision
-from tests.conftest import ADMIN, COORD, SEL_IA, login
+from tests.conftest import ADMIN, CAPT_IA, COORD, DOCENTE, SEL_IA, login
 from tests.test_selection_decisions import IA_CALL, IA_COHORT, decide, history, make_application, make_cohort
 
 
@@ -106,3 +106,64 @@ def test_full_call_is_rejected_on_the_first_vote(client, db, ready):
     db.commit()
     r = decide(client, login(client, SEL_IA), ready.id)
     assert r.status_code == 409 and r.json()["code"] == "no_places_left"
+
+
+# ---------- PR 98 review follow-ups: quorum configuration and concurrency ----------
+
+
+def test_selection_and_coordination_read_the_policy(client):
+    for account in (SEL_IA, COORD):
+        r = client.get(f"/api/v1/calls/{IA_CALL}/selection-policy", headers=login(client, account))
+        assert r.status_code == 200 and r.json() == {"selection_quorum": 2}
+
+
+def test_only_administration_changes_the_quorum_and_it_is_audited(client, db):
+    for account in (SEL_IA, COORD, CAPT_IA, DOCENTE):
+        r = client.put(f"/api/v1/calls/{IA_CALL}/selection-policy", json={"selection_quorum": 1}, headers=login(client, account))
+        assert r.status_code == 403, account
+    r = client.put(f"/api/v1/calls/{IA_CALL}/selection-policy", json={"selection_quorum": 3}, headers=login(client, ADMIN))
+    assert r.status_code == 200 and r.json() == {"selection_quorum": 3}
+    db.expire_all()
+    assert db.get(Call, IA_CALL).selection_quorum == 3
+    event = db.scalar(select(AuditEvent).where(AuditEvent.action == "call.selection_policy_updated"))
+    assert event.meta == {"selection_quorum_before": 2, "selection_quorum": 3}
+
+
+@pytest.mark.parametrize("value", [0, 6, "dos"])
+def test_quorum_outside_one_to_five_is_rejected(client, value):
+    r = client.put(f"/api/v1/calls/{IA_CALL}/selection-policy", json={"selection_quorum": value}, headers=login(client, ADMIN))
+    assert r.status_code == 422
+
+
+def test_two_simultaneous_agreeing_votes_create_exactly_one_decision_and_enrollment(db, ready):
+    """The application and the call are locked per vote, so the second vote sees the first: one decision, one enrollment."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as one, TestClient(app) as two:
+        who = [login(one, SEL_IA), login(two, COORD)]
+        with ThreadPoolExecutor(2) as pool:
+            codes = sorted(pool.map(lambda c, h: decide(c, h, ready.id).status_code, [one, two], who))
+    assert codes == [201, 202]
+    assert count(db, SelectionDecision, ready) == 1
+    assert db.scalar(select(func.count()).select_from(Enrollment).where(Enrollment.application_id == ready.id)) == 1
+
+
+def test_three_simultaneous_votes_with_quorum_two_still_decide_once(db, ready):
+    from concurrent.futures import ThreadPoolExecutor
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as one, TestClient(app) as two, TestClient(app) as three:
+        clients = [one, two, three]
+        who = [login(one, SEL_IA), login(two, COORD), login(three, ADMIN)]
+        with ThreadPoolExecutor(3) as pool:
+            codes = sorted(pool.map(lambda c, h: decide(c, h, ready.id).status_code, clients, who))
+    assert codes[:2] == [201, 202] and codes[2] == 409  # the third arrives after the decision: selection already ended
+    assert count(db, SelectionDecision, ready) == 1
+    assert db.scalar(select(func.count()).select_from(Enrollment).where(Enrollment.application_id == ready.id)) == 1
