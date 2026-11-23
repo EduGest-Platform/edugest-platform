@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
@@ -27,6 +27,8 @@ export function Modal({
   dirty?: boolean
   size?: 'md' | 'lg' | 'xl'
 }) {
+  const titleId = useId()
+  const subtitleId = useId()
   const ref = useRef<HTMLDivElement>(null)
   const dirtyRef = useRef(dirty)
   dirtyRef.current = dirty
@@ -80,17 +82,18 @@ export function Modal({
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
+        aria-describedby={subtitle ? subtitleId : undefined}
         tabIndex={-1}
         onKeyDown={onKeyDown}
         className={`flex max-h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_64px_rgba(13,31,48,0.35)] outline-none sm:max-h-[90vh] ${width}`}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            <h2 id="modal-title" className="text-lg font-semibold tracking-tight text-ink">
+            <h2 id={titleId} className="text-lg font-semibold tracking-tight text-ink">
               {title}
             </h2>
-            {subtitle && <div className="mt-0.5 text-sm text-muted">{subtitle}</div>}
+            {subtitle && <div id={subtitleId} className="mt-0.5 text-sm text-muted">{subtitle}</div>}
           </div>
           <button type="button" onClick={requestClose} aria-label="Cerrar" className="-mr-2 cursor-pointer rounded-lg p-2 text-muted hover:bg-mist hover:text-ink">
             <X className="size-5" aria-hidden />

@@ -36,3 +36,7 @@ or redirect destinations. A commits-endpoint 409 is handled as zero commits.
 The demo password in `.env.example` is empty and must be configured before startup
 or seeding. This does not remove the fallback in `core/config.py`; backend
 hardening remains part of KAN-101.
+
+## Scope and future work / Alcance y trabajo futuro
+
+See the [verified scope, offline test procedure and proposed backlog](../../../../../docs/reports/KAN-238-248-portfolio-scope.md). / Consultar el alcance comprobado, la prueba offline y los límites propuestos en ese informe.

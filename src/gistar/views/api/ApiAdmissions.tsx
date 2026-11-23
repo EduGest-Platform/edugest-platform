@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { CircleCheck, RefreshCw, Search, Send } from 'lucide-react'
 import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
@@ -22,16 +22,46 @@ export function ServerBadge() {
 
 function useCalls(estado?: 'abierta') {
   const [calls, setCalls] = useState<Call[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
+
   useEffect(() => {
-    api.GET('/api/v1/calls', { params: { query: estado ? { estado } : {} } }).then(({ data }) => setCalls(data ?? []))
-  }, [estado])
-  return calls
+    const controller = new AbortController()
+
+    async function loadCalls() {
+      try {
+        const { data, error: apiError, response } = await api.GET('/api/v1/calls', {
+          signal: controller.signal,
+          params: { query: estado ? { estado } : {} },
+        })
+        if (controller.signal.aborted) return
+        setCalls(data ?? [])
+        if (!data) setError(problemText(describeApiError(response.status, apiError)))
+      } catch {
+        if (!controller.signal.aborted) setError('No se pudo conectar con el servidor.')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    void loadCalls()
+    return () => controller.abort()
+  }, [estado, attempt])
+
+  const retry = () => {
+    setError(null)
+    setLoading(true)
+    setAttempt((previous) => previous + 1)
+  }
+
+  return { calls, loading, error, retry }
 }
 
 /** Public inscription form (also used by a logged-in aspirant). Creates or reuses the Person record. */
-export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void }) {
+export function InscriptionForm({ onViewApplications }: { onViewApplications?: () => void }) {
   const { me, refresh } = useApiSession()
-  const calls = useCalls('abierta')
+  const { calls, loading: callsLoading, error: callsError, retry: retryCalls } = useCalls('abierta')
   const empty = () => ({ call_id: '', nombre: me?.display_name ?? '', email: me?.email ?? '', motivacion: '', disponibilidad: 'Mañana' as 'Mañana' | 'Tarde' | 'Flexible', acepta: false })
   const [f, setF] = useState(empty)
   const [busy, setBusy] = useState(false)
@@ -41,26 +71,36 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
+    if (busy || !callId) return
     setBusy(true)
     setError(null)
-    const { data, error: err, response } = await api.POST('/api/v1/applications', {
-      body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: true },
-    })
-    setBusy(false)
-    if (err || !data) return setError(problemText(describeApiError(response.status, err)))
-    setReceipt(data)
-    await refresh()
-    onDone?.(data.codigo)
+
+    try {
+      const { data, error: err, response } = await api.POST('/api/v1/applications', {
+        body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: true },
+      })
+      if (err || !data) {
+        setError(problemText(describeApiError(response.status, err)))
+        return
+      }
+      setReceipt(data)
+      await refresh()
+    } catch {
+      setError('No se pudo confirmar el envío. Comprueba tu conexión e inténtalo de nuevo.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (receipt)
     return (
       <div className="grid gap-3">
-        <Notice>
+        <Notice live="polite">
           <CircleCheck className="mr-1 inline size-4 align-[-3px] text-teal-700" aria-hidden />
           Candidatura recibida con el código <b className="font-mono">{receipt.codigo}</b>. Se ha registrado en tu expediente único y en el historial.
         </Notice>
-        <div>
+        <div className="flex flex-wrap gap-2">
+          {onViewApplications && <Button onClick={onViewApplications}>Ir a Mi candidatura</Button>}
           <Button
             variant="ghost"
             onClick={() => {
@@ -77,7 +117,8 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
   return (
     <form onSubmit={submit} className="grid gap-4">
       <Field label="Convocatoria" htmlFor="ins-call">
-        <select id="ins-call" className={inputCls} value={callId} onChange={(e) => setF({ ...f, call_id: e.target.value })} required>
+        <select id="ins-call" className={inputCls} value={callId} onChange={(e) => setF({ ...f, call_id: e.target.value })} disabled={callsLoading || !calls.length} required>
+          {!calls.length && <option value="">Selecciona una convocatoria</option>}
           {calls.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nombre} · {c.plazas} plazas
@@ -85,6 +126,14 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
           ))}
         </select>
       </Field>
+      {callsLoading && <Notice live="polite">Cargando convocatorias…</Notice>}
+      {callsError && (
+        <div className="grid justify-items-start gap-2">
+          <Notice tone="warning" live="assertive">{callsError}</Notice>
+          <Button type="button" variant="ghost" onClick={retryCalls}>Volver a cargar convocatorias</Button>
+        </div>
+      )}
+      {!callsLoading && !callsError && !calls.length && <Notice live="polite">No hay convocatorias abiertas.</Notice>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nombre (ficticio)" htmlFor="ins-name">
           <input id="ins-name" className={inputCls} required minLength={2} maxLength={120} value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} />
@@ -127,7 +176,7 @@ export function ApiInscription() {
     <>
       <PageTitle title="Inscripción" sub="Formulario único de solicitud. Se crea o reutiliza tu ficha de persona: nunca se duplica el expediente." />
       <Card title="Solicitud de acceso" action={<ServerBadge />} className="max-w-2xl">
-        <InscriptionForm onDone={() => setTimeout(() => navigate('candidatura'), 1500)} />
+        <InscriptionForm onViewApplications={() => navigate('candidatura')} />
       </Card>
     </>
   )
@@ -207,30 +256,50 @@ export function ApiMyApplications() {
 }
 
 export function ApiApplications() {
-  const calls = useCalls()
+  const { calls } = useCalls()
   const [callId, setCallId] = useState('')
   const [stage, setStage] = useState<Stage | ''>('')
   const [q, setQ] = useState('')
   const [res, setRes] = useState<{ items: Schemas['ApplicationSummary'][]; total: number } | null>(null)
   const [denied, setDenied] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  const activeRequest = useRef<AbortController | null>(null)
 
   const load = useCallback(async () => {
-    const { data, response } = await api.GET('/api/v1/applications', {
-      params: { query: { call_id: callId || undefined, stage: stage || undefined, q: q.trim() || undefined, limit: 200 } },
-    })
-    if (response.status === 403) return setDenied(true)
-    setDenied(false)
-    setRes(data ?? null)
+    activeRequest.current?.abort()
+    const controller = new AbortController()
+    activeRequest.current = controller
+    setLoadError(null)
+
+    try {
+      const { data, error, response } = await api.GET('/api/v1/applications', {
+        signal: controller.signal,
+        params: { query: { call_id: callId || undefined, stage: stage || undefined, q: q.trim() || undefined, limit: 200 } },
+      })
+      if (controller.signal.aborted) return
+      setDenied(response.status === 403)
+      setRes(data ?? null)
+      if (!data && response.status !== 403) {
+        setLoadError(problemText(describeApiError(response.status, error)))
+      }
+    } catch {
+      if (!controller.signal.aborted) {
+        setDenied(false)
+        setRes(null)
+        setLoadError('No se pudo conectar con el servidor. Usa Actualizar para volver a intentar.')
+      }
+    }
   }, [callId, stage, q])
 
   useEffect(() => {
-    const t = setTimeout(load, 250)
-    return () => clearTimeout(t)
-  }, [load])
-  useEffect(() => {
+    const timer = setTimeout(load, 250)
     window.addEventListener('focus', load)
-    return () => window.removeEventListener('focus', load)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('focus', load)
+      activeRequest.current?.abort()
+    }
   }, [load])
 
   if (denied)
@@ -248,7 +317,7 @@ export function ApiApplications() {
         title="Expedientes"
         action={
           <div className="flex items-center gap-2">
-            <span role="status" className="text-xs text-muted">{res ? `${res.total} en tu ámbito` : 'Cargando…'}</span>
+            <span role="status" className="text-xs text-muted">{res ? `${res.total} en tu ámbito` : loadError ? '' : 'Cargando…'}</span>
             <Button size="sm" variant="ghost" onClick={load} aria-label="Actualizar">
               <RefreshCw className="size-3.5" aria-hidden />
             </Button>
@@ -286,7 +355,9 @@ export function ApiApplications() {
             </select>
           </Field>
         </div>
-        {res && !res.items.length ? (
+        {loadError ? (
+          <Notice tone="warning" live="assertive">{loadError}</Notice>
+        ) : res && !res.items.length ? (
           <Empty>No hay expedientes con estos filtros en tu ámbito.</Empty>
         ) : (
           <Table head={['Código', 'Persona', 'Convocatoria', 'Etapa', 'Recibida', '']}>
