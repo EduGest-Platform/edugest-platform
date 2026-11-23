@@ -1,0 +1,1 @@
+- Cuento los presentes y los ausentes y calculo el porcentaje.

@@ -1,0 +1,4 @@
+- Primero valido todos los estados y lanzo ValueError con el valor que falla, para que el error se entienda.
+- Quito las sesiones pendientes antes de calcular, porque todavía no se sabe si hubo asistencia.
+- Si no queda ninguna sesión registrada devuelvo None y no 0, porque 0 % diría que faltó a todo.
+- La alerta mira las 6 últimas sesiones registradas, sin pendientes, porque una pendiente no es una ausencia.

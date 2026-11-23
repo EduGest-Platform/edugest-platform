@@ -1,0 +1,3 @@
+- Quito las pendientes para calcular el porcentaje.
+- Si no hay sesiones devuelvo 0.
+- Para la alerta miro las 6 últimas sesiones.

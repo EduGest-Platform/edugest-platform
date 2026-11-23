@@ -1,0 +1,67 @@
+{
+  "ejercicio": "resumen_asistencia",
+  "sintetico": true,
+  "casos": [
+    {
+      "id": "C1", "criterio": "correccion",
+      "descripcion": "Ejemplo 1 del enunciado: cálculo básico con una pendiente",
+      "entrada": ["presente", "ausente", "retraso", "ausente", "pendiente", "ausente"],
+      "esperado": {"porcentaje": 40.0, "alerta": true}
+    },
+    {
+      "id": "C2", "criterio": "correccion",
+      "descripcion": "Solo cuentan las 6 últimas sesiones registradas para la alerta",
+      "entrada": ["ausente", "ausente", "ausente", "presente", "presente", "presente", "presente", "presente", "presente"],
+      "esperado": {"porcentaje": 66.7, "alerta": false}
+    },
+    {
+      "id": "C3", "criterio": "correccion",
+      "descripcion": "Asistencia completa",
+      "entrada": ["presente", "presente", "presente", "presente"],
+      "esperado": {"porcentaje": 100.0, "alerta": false}
+    },
+    {
+      "id": "C4", "criterio": "correccion",
+      "descripcion": "El retraso cuenta como asistencia",
+      "entrada": ["retraso", "retraso", "ausente"],
+      "esperado": {"porcentaje": 66.7, "alerta": false}
+    },
+    {
+      "id": "C5", "criterio": "correccion",
+      "descripcion": "Exactamente 3 ausencias entre las 6 últimas activa la alerta",
+      "entrada": ["presente", "ausente", "presente", "ausente", "presente", "ausente"],
+      "esperado": {"porcentaje": 50.0, "alerta": true}
+    },
+    {
+      "id": "L1", "criterio": "casos_limite",
+      "descripcion": "Lista vacía: sin sesiones registradas el porcentaje es desconocido, no 0",
+      "entrada": [],
+      "esperado": {"porcentaje": null, "alerta": false}
+    },
+    {
+      "id": "L2", "criterio": "casos_limite",
+      "descripcion": "Solo sesiones pendientes",
+      "entrada": ["pendiente", "pendiente"],
+      "esperado": {"porcentaje": null, "alerta": false}
+    },
+    {
+      "id": "L3", "criterio": "casos_limite",
+      "descripcion": "Las pendientes no ocupan sitio en la ventana de 6 sesiones",
+      "entrada": ["ausente", "ausente", "ausente", "pendiente", "pendiente", "pendiente", "pendiente"],
+      "esperado": {"porcentaje": 0.0, "alerta": true}
+    },
+    {
+      "id": "L4", "criterio": "casos_limite",
+      "descripcion": "Estado no válido (mayúscula): ValueError que nombra el valor",
+      "entrada": ["presente", "Presente"],
+      "esperado": {"error": "ValueError", "mensaje_contiene": "Presente"}
+    },
+    {
+      "id": "L5", "criterio": "casos_limite",
+      "descripcion": "La función no modifica la lista que recibe",
+      "entrada": ["ausente", "pendiente", "presente"],
+      "esperado": {"porcentaje": 50.0, "alerta": false},
+      "comprobar_entrada_intacta": true
+    }
+  ]
+}

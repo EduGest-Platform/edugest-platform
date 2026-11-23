@@ -1,0 +1,379 @@
+{
+  "sintetico": true,
+  "origen": "tests precalculados por evals/feedback/grade.py; no es una evaluación real",
+  "rubrica": {
+    "id": "RUB-ACCESO-ASISTENCIA",
+    "version": 1
+  },
+  "limite_segundos_por_caso": 2,
+  "entregas": [
+    {
+      "id": "s1_correcta",
+      "estado": "evaluada",
+      "motivo": null,
+      "revision_docente_pendiente": true,
+      "criterios": {
+        "correccion": {
+          "nivel": 3,
+          "medicion": "tests",
+          "aprobados": 5,
+          "total": 5
+        },
+        "casos_limite": {
+          "nivel": 3,
+          "medicion": "tests",
+          "aprobados": 5,
+          "total": 5
+        },
+        "legibilidad": {
+          "nivel": null,
+          "medicion": "docente"
+        },
+        "explicacion": {
+          "nivel": null,
+          "medicion": "docente"
+        }
+      },
+      "puntos_automaticos": 65.0,
+      "maximo_automatico": 65,
+      "casos": [
+        {
+          "id": "C1",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C2",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C3",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C4",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C5",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L1",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L2",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L3",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L4",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L5",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        }
+      ]
+    },
+    {
+      "id": "s2_parcial",
+      "estado": "evaluada",
+      "motivo": null,
+      "revision_docente_pendiente": true,
+      "criterios": {
+        "correccion": {
+          "nivel": 3,
+          "medicion": "tests",
+          "aprobados": 5,
+          "total": 5
+        },
+        "casos_limite": {
+          "nivel": 1,
+          "medicion": "tests",
+          "aprobados": 1,
+          "total": 5
+        },
+        "legibilidad": {
+          "nivel": null,
+          "medicion": "docente"
+        },
+        "explicacion": {
+          "nivel": null,
+          "medicion": "docente"
+        }
+      },
+      "puntos_automaticos": 48.3,
+      "maximo_automatico": 65,
+      "casos": [
+        {
+          "id": "C1",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C2",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C3",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C4",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C5",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L1",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": null, \"alerta\": false}, obtenido {\"porcentaje\": 0.0, \"alerta\": false}"
+        },
+        {
+          "id": "L2",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": null, \"alerta\": false}, obtenido {\"porcentaje\": 0.0, \"alerta\": false}"
+        },
+        {
+          "id": "L3",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": 0.0, \"alerta\": true}, obtenido {\"porcentaje\": 0.0, \"alerta\": false}"
+        },
+        {
+          "id": "L4",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado ValueError que nombre 'Presente', obtenido {\"porcentaje\": 50.0, \"alerta\": false}"
+        },
+        {
+          "id": "L5",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        }
+      ]
+    },
+    {
+      "id": "s3_errores",
+      "estado": "evaluada",
+      "motivo": null,
+      "revision_docente_pendiente": true,
+      "criterios": {
+        "correccion": {
+          "nivel": 1,
+          "medicion": "tests",
+          "aprobados": 2,
+          "total": 5
+        },
+        "casos_limite": {
+          "nivel": 1,
+          "medicion": "tests",
+          "aprobados": 1,
+          "total": 5
+        },
+        "legibilidad": {
+          "nivel": null,
+          "medicion": "docente"
+        },
+        "explicacion": {
+          "nivel": null,
+          "medicion": "docente"
+        }
+      },
+      "puntos_automaticos": 21.7,
+      "maximo_automatico": 65,
+      "casos": [
+        {
+          "id": "C1",
+          "criterio": "correccion",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": 40.0, \"alerta\": true}, obtenido {\"porcentaje\": 16.7, \"alerta\": false}"
+        },
+        {
+          "id": "C2",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C3",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C4",
+          "criterio": "correccion",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": 66.7, \"alerta\": false}, obtenido {\"porcentaje\": 0.0, \"alerta\": false}"
+        },
+        {
+          "id": "C5",
+          "criterio": "correccion",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": 50.0, \"alerta\": true}, obtenido {\"porcentaje\": 50.0, \"alerta\": false}"
+        },
+        {
+          "id": "L1",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L2",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": null, \"alerta\": false}, obtenido {\"porcentaje\": 0.0, \"alerta\": false}"
+        },
+        {
+          "id": "L3",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": 0.0, \"alerta\": true}, obtenido {\"porcentaje\": 0.0, \"alerta\": false}"
+        },
+        {
+          "id": "L4",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado ValueError que nombre 'Presente', obtenido {\"porcentaje\": 50.0, \"alerta\": false}"
+        },
+        {
+          "id": "L5",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "esperado {\"porcentaje\": 50.0, \"alerta\": false}, obtenido {\"porcentaje\": 33.3, \"alerta\": false}"
+        }
+      ]
+    },
+    {
+      "id": "s4_colgada",
+      "estado": "evaluada",
+      "motivo": null,
+      "revision_docente_pendiente": true,
+      "criterios": {
+        "correccion": {
+          "nivel": 2,
+          "medicion": "tests",
+          "aprobados": 4,
+          "total": 5
+        },
+        "casos_limite": {
+          "nivel": 1,
+          "medicion": "tests",
+          "aprobados": 2,
+          "total": 5
+        },
+        "legibilidad": {
+          "nivel": null,
+          "medicion": "docente"
+        },
+        "explicacion": {
+          "nivel": null,
+          "medicion": "docente"
+        }
+      },
+      "puntos_automaticos": 35.0,
+      "maximo_automatico": 65,
+      "casos": [
+        {
+          "id": "C1",
+          "criterio": "correccion",
+          "aprobado": false,
+          "detalle": "tiempo agotado (2 s)"
+        },
+        {
+          "id": "C2",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C3",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C4",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "C5",
+          "criterio": "correccion",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L1",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L2",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "tiempo agotado (2 s)"
+        },
+        {
+          "id": "L3",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "tiempo agotado (2 s)"
+        },
+        {
+          "id": "L4",
+          "criterio": "casos_limite",
+          "aprobado": true,
+          "detalle": "ok"
+        },
+        {
+          "id": "L5",
+          "criterio": "casos_limite",
+          "aprobado": false,
+          "detalle": "tiempo agotado (2 s)"
+        }
+      ]
+    }
+  ]
+}

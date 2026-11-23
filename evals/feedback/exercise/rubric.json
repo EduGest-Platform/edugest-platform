@@ -1,0 +1,78 @@
+{
+  "id": "RUB-ACCESO-ASISTENCIA",
+  "nombre": "Rúbrica del ejercicio de acceso · Resumen de asistencia",
+  "version": 1,
+  "sintetico": true,
+  "ticket": "KAN-152",
+  "nota_minima": null,
+  "nota": "Suma puntos extra en la preselección; no es excluyente. Los criterios medidos por docente nunca los decide un test ni la IA: el borrador solo puede sugerirlos.",
+  "puntuacion": {
+    "formula": "suma de peso × nivel / 3",
+    "maximo": 100,
+    "sin_nivel": "Un criterio sin nivel no suma ni resta: la entrega se marca como incompleta y la valora el docente."
+  },
+  "regla_niveles_por_tests": {
+    "3": "pasa todos los casos del criterio",
+    "2": "pasa al menos la mitad de los casos del criterio",
+    "1": "pasa menos de la mitad de los casos del criterio",
+    "sin_nivel": "la entrega no se puede importar, no define resumen_asistencia o su proceso termina de forma inesperada"
+  },
+  "criterios": [
+    {
+      "id": "correccion",
+      "nombre": "Corrección funcional",
+      "definicion": "La función calcula el porcentaje y la alerta como pide el enunciado en los casos normales.",
+      "evidencia": "Casos de prueba del criterio correccion",
+      "medicion": "tests",
+      "peso": 40,
+      "competencias": [],
+      "niveles": {
+        "1": "Pasa menos de la mitad de los casos de corrección.",
+        "2": "Pasa al menos la mitad de los casos de corrección, pero no todos.",
+        "3": "Pasa todos los casos de corrección."
+      }
+    },
+    {
+      "id": "casos_limite",
+      "nombre": "Casos límite y validación de entrada",
+      "definicion": "La función trata bien listas vacías, sesiones pendientes y estados no válidos, y no modifica la lista que recibe.",
+      "evidencia": "Casos de prueba del criterio casos_limite",
+      "medicion": "tests",
+      "peso": 25,
+      "competencias": [],
+      "niveles": {
+        "1": "Pasa menos de la mitad de los casos límite.",
+        "2": "Pasa al menos la mitad de los casos límite, pero no todos.",
+        "3": "Pasa todos los casos límite."
+      }
+    },
+    {
+      "id": "legibilidad",
+      "nombre": "Legibilidad y estructura",
+      "definicion": "Otra persona puede leer el código y entender qué hace sin explicaciones adicionales.",
+      "evidencia": "Lectura del código por el docente",
+      "medicion": "docente",
+      "peso": 20,
+      "competencias": [],
+      "niveles": {
+        "1": "Nombres que no dicen qué contienen (x, a, tmp) o lógica repetida en varios sitios.",
+        "2": "Nombres claros en casi todo el código; queda alguna repetición o un bloque difícil de seguir.",
+        "3": "Nombres que explican qué contienen, sin código duplicado; la regla de la alerta se lee en un solo sitio."
+      }
+    },
+    {
+      "id": "explicacion",
+      "nombre": "Explicación de las decisiones",
+      "definicion": "EXPLICACION.md cuenta qué decisiones se tomaron y por qué. Se valora la claridad, no la redacción.",
+      "evidencia": "EXPLICACION.md leído por el docente",
+      "medicion": "docente",
+      "peso": 15,
+      "competencias": [],
+      "niveles": {
+        "1": "No explica decisiones o solo repite lo que hace el código línea a línea.",
+        "2": "Explica alguna decisión (por ejemplo, las sesiones pendientes) pero no por qué.",
+        "3": "Explica las decisiones clave (pendientes, ventana de 6 sesiones, estados no válidos) y por qué."
+      }
+    }
+  ]
+}
