@@ -1,0 +1,3 @@
+- Valido los estados al principio para dar un error claro.
+- Recorro la lista con un while y me salto las pendientes porque no cuentan.
+- La alerta usa las 6 últimas sesiones registradas.
