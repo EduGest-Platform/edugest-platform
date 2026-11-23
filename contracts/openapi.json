@@ -5475,6 +5475,7 @@
     },
     "/health": {
       "get": {
+        "description": "Return 200 when the database answers, 503 (without driver details) when it does not.",
         "operationId": "health_health_get",
         "responses": {
           "200": {
@@ -5488,6 +5489,17 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "database": "unavailable",
+                  "status": "degraded"
+                }
+              }
+            },
+            "description": "La API responde pero no alcanza la base de datos"
           }
         },
         "summary": "Estado del servicio y de la base de datos",
