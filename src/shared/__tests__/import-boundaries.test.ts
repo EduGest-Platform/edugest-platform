@@ -57,6 +57,12 @@ function resolvedTarget(item: SourceImport): string {
   return /\.(ts|tsx|json|css)$/.test(path) ? path : `${path}.ts`
 }
 
+function isAllowedPackage(item: SourceImport): boolean {
+  const isTestFile = item.file.includes('/__tests__/')
+  const isTestTool = item.target.startsWith('node:') || item.target === 'react-dom/server'
+  return ALLOWED_PACKAGES.has(item.target) || (isTestFile && isTestTool)
+}
+
 function callsHttpClientOutsideApiLayers(imports: SourceImport[]): SourceImport[] {
   return imports.filter(
     (item) =>
@@ -92,8 +98,7 @@ describe('web import boundaries (KAN-96)', () => {
 
   it('uses only the declared runtime packages', () => {
     const packages = ALL_IMPORTS.filter((item) => !isProjectImport(item))
-    const isTestTool = (item: SourceImport) => item.file.includes('/__tests__/') && item.target.startsWith('node:')
-    expect(packages.filter((item) => !ALLOWED_PACKAGES.has(item.target) && !isTestTool(item))).toEqual([])
+    expect(packages.filter((item) => !isAllowedPackage(item))).toEqual([])
   })
 
   it('calls the HTTP client only from API views and the shared API layer', () => {
@@ -108,6 +113,15 @@ describe('web import boundaries (KAN-96)', () => {
 describe('import boundary checker regressions (KAN-96)', () => {
   const projectImportsOf = (file: string, lines: string[]) =>
     parseImports(file, lines.join('\n')).filter(isProjectImport)
+
+  it('allows the React server renderer only in test directories', () => {
+    const statement = "import { renderToStaticMarkup } from 'react-dom/server'"
+    const testImports = parseImports('gistar/__tests__/silenceReview.test.tsx', statement)
+    const runtimeImports = parseImports('gistar/views/Dashboard.tsx', statement)
+
+    expect(testImports.filter(isAllowedPackage)).toHaveLength(1)
+    expect(runtimeImports.filter(isAllowedPackage)).toEqual([])
+  })
 
   it('flags the HTTP client imported through the @/ alias', () => {
     const imports = projectImportsOf('gistar/views/Dashboard.tsx', ["import { api } from '@/shared/api/client'"])
