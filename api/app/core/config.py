@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     seed_path: str = str(REPO_ROOT / "src" / "gistar" / "seed.json")
     # Synthetic course documents for the RAG knowledge ingest (KAN-130): corpus.json plus one Markdown file per document.
     corpus_path: str = str(REPO_ROOT / "evals" / "rag" / "corpus")
+    # RAG embeddings (KAN-130 part B). Off by default, so tests and CI never call the network.
+    rag_embed: bool = False
+    # Read from GEMINI_API_KEY (no GISTAR_ prefix), the name used across the project. Never printed or logged.
+    gemini_api_key: SecretStr | None = Field(default=None, validation_alias="GEMINI_API_KEY")
     # Aggregates for coordination are suppressed below these sizes.
     min_group_size: int = 5
     min_cell_size: int = 3

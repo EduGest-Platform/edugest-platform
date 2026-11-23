@@ -12,5 +12,9 @@ RUN pip install --no-cache-dir .
 # en despliegue (Render) viaja dentro de la imagen.
 COPY src/gistar/seed.json /data/seed.json
 ENV GISTAR_SEED_PATH=/data/seed.json
+# Documentos sintéticos del RAG (KAN-130). Igual que la semilla: Compose los monta encima en local
+# y en despliegue viajan dentro de la imagen.
+COPY evals/rag/corpus /data/corpus
+ENV GISTAR_CORPUS_PATH=/data/corpus
 EXPOSE 8000
 CMD ["sh", "/srv/api/docker-entrypoint.sh"]
