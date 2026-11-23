@@ -247,7 +247,7 @@ export function ApiApplications() {
         title="Expedientes"
         action={
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted">{res ? `${res.total} en tu ámbito` : 'Cargando…'}</span>
+            <span role="status" className="text-xs text-muted">{res ? `${res.total} en tu ámbito` : 'Cargando…'}</span>
             <Button size="sm" variant="ghost" onClick={load} aria-label="Actualizar">
               <RefreshCw className="size-3.5" aria-hidden />
             </Button>
@@ -256,26 +256,34 @@ export function ApiApplications() {
         }
       >
         <div className="mb-4 flex flex-wrap items-end gap-3">
-          <div className="relative min-w-56 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
-            <input aria-label="Buscar expedientes" placeholder="Nombre, correo o código" value={q} onChange={(e) => setQ(e.target.value)} className={`${inputCls} pl-9`} />
+          <div className="min-w-56 flex-1">
+            <Field label="Buscar expedientes" htmlFor="application-search">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+                <input id="application-search" aria-label="Buscar expedientes" placeholder="Nombre, correo o código" value={q} onChange={(e) => setQ(e.target.value)} className={`${inputCls} pl-9`} />
+              </div>
+            </Field>
           </div>
-          <select aria-label="Convocatoria" className={`${inputCls} w-auto`} value={callId} onChange={(e) => setCallId(e.target.value)}>
-            <option value="">Todas las convocatorias</option>
-            {calls.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
-          <select aria-label="Etapa" className={`${inputCls} w-auto`} value={stage} onChange={(e) => setStage(e.target.value as Stage | '')}>
-            <option value="">Todas las etapas</option>
-            {STAGES.map((s) => (
-              <option key={s} value={s}>
-                {humanize(s)}
-              </option>
-            ))}
-          </select>
+          <Field label="Convocatoria" htmlFor="application-call">
+            <select id="application-call" className={`${inputCls} w-auto`} value={callId} onChange={(e) => setCallId(e.target.value)}>
+              <option value="">Todas las convocatorias</option>
+              {calls.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Etapa" htmlFor="application-stage">
+            <select id="application-stage" className={`${inputCls} w-auto`} value={stage} onChange={(e) => setStage(e.target.value as Stage | '')}>
+              <option value="">Todas las etapas</option>
+              {STAGES.map((s) => (
+                <option key={s} value={s}>
+                  {humanize(s)}
+                </option>
+              ))}
+            </select>
+          </Field>
         </div>
         {res && !res.items.length ? (
           <Empty>No hay expedientes con estos filtros en tu ámbito.</Empty>
