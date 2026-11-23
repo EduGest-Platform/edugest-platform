@@ -18,12 +18,6 @@ const HTTP_CLIENT = 'shared/api/client.ts'
 
 type SourceImport = { file: string; target: string; typeOnly: boolean }
 
-/** Node tooling and React's static renderer are test-only; runtime package boundaries stay unchanged. */
-function isTestTool(item: SourceImport): boolean {
-  return item.file.includes('/__tests__/') &&
-    (item.target.startsWith('node:') || item.target === 'react-dom/server')
-}
-
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name)
@@ -63,6 +57,12 @@ function resolvedTarget(item: SourceImport): string {
   return /\.(ts|tsx|json|css)$/.test(path) ? path : `${path}.ts`
 }
 
+function isAllowedPackage(item: SourceImport): boolean {
+  const isTestFile = item.file.includes('/__tests__/')
+  const isTestTool = item.target.startsWith('node:') || item.target === 'react-dom/server'
+  return ALLOWED_PACKAGES.has(item.target) || (isTestFile && isTestTool)
+}
+
 function callsHttpClientOutsideApiLayers(imports: SourceImport[]): SourceImport[] {
   return imports.filter(
     (item) =>
@@ -98,7 +98,7 @@ describe('web import boundaries (KAN-96)', () => {
 
   it('uses only the declared runtime packages', () => {
     const packages = ALL_IMPORTS.filter((item) => !isProjectImport(item))
-    expect(packages.filter((item) => !ALLOWED_PACKAGES.has(item.target) && !isTestTool(item))).toEqual([])
+    expect(packages.filter((item) => !isAllowedPackage(item))).toEqual([])
   })
 
   it('calls the HTTP client only from API views and the shared API layer', () => {
@@ -111,14 +111,22 @@ describe('web import boundaries (KAN-96)', () => {
 })
 
 describe('import boundary checker regressions (KAN-96)', () => {
-  it('permits the declared React static renderer only in tests, without allowing arbitrary packages', () => {
-    expect(isTestTool({ file: 'gistar/__tests__/render.test.tsx', target: 'react-dom/server', typeOnly: false })).toBe(true)
-    expect(isTestTool({ file: 'gistar/views/Render.tsx', target: 'react-dom/server', typeOnly: false })).toBe(false)
-    expect(isTestTool({ file: 'gistar/__tests__/render.test.tsx', target: 'undeclared-package', typeOnly: false })).toBe(false)
+  it('rejects undeclared packages even in test directories', () => {
+    expect(isAllowedPackage({ file: 'gistar/__tests__/render.test.tsx', target: 'undeclared-package', typeOnly: false })).toBe(false)
+    expect(isAllowedPackage({ file: 'gistar/views/Render.tsx', target: 'undeclared-package', typeOnly: false })).toBe(false)
   })
 
   const projectImportsOf = (file: string, lines: string[]) =>
     parseImports(file, lines.join('\n')).filter(isProjectImport)
+
+  it('allows the React server renderer only in test directories', () => {
+    const statement = "import { renderToStaticMarkup } from 'react-dom/server'"
+    const testImports = parseImports('gistar/__tests__/silenceReview.test.tsx', statement)
+    const runtimeImports = parseImports('gistar/views/Dashboard.tsx', statement)
+
+    expect(testImports.filter(isAllowedPackage)).toHaveLength(1)
+    expect(runtimeImports.filter(isAllowedPackage)).toEqual([])
+  })
 
   it('flags the HTTP client imported through the @/ alias', () => {
     const imports = projectImportsOf('gistar/views/Dashboard.tsx', ["import { api } from '@/shared/api/client'"])
