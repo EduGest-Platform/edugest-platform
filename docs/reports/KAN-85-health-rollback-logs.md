@@ -10,7 +10,9 @@ Before, if PostgreSQL was unreachable, `/health` answered a generic **500**. It 
 
 - `api/app/main.py`: `/health` catches `SQLAlchemyError`, answers **503** `{"status":"degraded","database":"unavailable"}` and logs `health check: database unavailable`, with no host, user or driver message. The 503 response is documented in OpenAPI. `contracts/openapi.json` and `src/shared/api/schema.gen.ts` are regenerated (LF).
 - `api/app/core/db.py`: `connect_timeout=5` s on the engine (`DATABASE_CONNECT_TIMEOUT_SECONDS`). This does not change behaviour when the database is reachable.
-- `api/tests/test_health.py`: 200 with the database, and 503 with a failing session. The test asserts that host, user and driver text never reach the response or the logs.
+- `api/app/main.py` (review follow-up): the whole probe (pool checkout, `pool_pre_ping` and `select 1`) runs in a small dedicated thread pool and is bounded by `HEALTH_PROBE_TIMEOUT_SECONDS = 6`. `connect_timeout` alone only bounds **new** connections; a pooled connection to a database that stops answering could otherwise hang the handler.
+- `api/tests/test_health.py`: 200 with the database; 503 with a failing probe (host, user and driver text never reach the response or the logs); 503 within the deadline when the probe hangs.
+- **Remaining gap:** a hung probe thread is not killed; it stays blocked until the OS gives up on the TCP connection. With two probe threads, later probes queue and still answer 503 at the deadline. The hang test simulates a blocked probe; a real half-open TCP connection was not reproduced.
 
 ### Evidence
 
@@ -39,7 +41,7 @@ NOT_RUN: Docker Compose on this machine (the running `infra-*` stack belongs to 
 
 ## ES
 
-**Cambio de código.** Si PostgreSQL no responde, `/health` devuelve **503** `{"status":"degraded","database":"unavailable"}` en lugar de un 500 genérico. El log no incluye host, usuario ni mensaje del driver. El motor tiene `connect_timeout=5`: antes la respuesta tardaba 130 s en Windows, ahora 5,4 s. Contrato OpenAPI y cliente TS regenerados. Nueva prueba `test_health.py`.
+**Cambio de código.** Si PostgreSQL no responde, `/health` devuelve **503** `{"status":"degraded","database":"unavailable"}` en lugar de un 500 genérico. El log no incluye host, usuario ni mensaje del driver. El motor tiene `connect_timeout=5`: antes la respuesta tardaba 130 s en Windows, ahora 5,4 s. Además, toda la sonda (checkout del pool, pre-ping y `select 1`) tiene un límite de 6 s, porque `connect_timeout` solo acota conexiones nuevas. Hueco restante: el hilo de una sonda colgada no se mata y queda bloqueado hasta el timeout TCP del sistema; las sondas siguientes responden 503 en el plazo. Contrato OpenAPI y cliente TS regenerados. Pruebas en `test_health.py`, incluida una sonda colgada simulada (no se reprodujo una conexión TCP medio abierta real).
 
 **Evidencia.**
 - Health OK con base de datos; `/calls` 200; alta de candidatura sintética 201.
