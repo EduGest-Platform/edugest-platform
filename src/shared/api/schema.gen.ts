@@ -238,6 +238,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preguntar a la documentación del curso: respuesta citada o «no consta» */
+        post: operations["ask_api_v1_assistant_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance-records/{record_id}/revisions": {
         parameters: {
             query?: never;
@@ -953,6 +970,55 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AskIn */
+        AskIn: {
+            /**
+             * Cohort Id
+             * @description Opcional: busca solo en una de tus cohortes
+             */
+            cohort_id?: string | null;
+            /**
+             * Question
+             * @description Pregunta sobre la documentación del curso
+             */
+            question: string;
+        };
+        /** AskOut */
+        AskOut: {
+            /** Answer */
+            answer: string;
+            /**
+             * As Of
+             * Format: date
+             * @description Fecha de corte: la vigencia de los documentos se comprueba en esta fecha
+             */
+            as_of: string;
+            /** Citations */
+            citations: components["schemas"]["Citation"][];
+            /**
+             * Mode
+             * @description extractive = fragmento literal del documento (el modo generated llega con T10)
+             * @constant
+             */
+            mode: "extractive";
+            /**
+             * Retrieval
+             * @description hybrid = palabras y significado; keyword = solo palabras
+             * @enum {string}
+             */
+            retrieval: "hybrid" | "keyword";
+            /**
+             * Scope Cohorts
+             * @description Cohortes en las que se ha buscado
+             */
+            scope_cohorts: string[];
+            /**
+             * Status
+             * @description no_source = abstención: no hay fuente en tu ámbito
+             * @enum {string}
+             */
+            status: "answered" | "no_source";
+        };
         /** AssessmentOut */
         AssessmentOut: {
             /**
@@ -1297,6 +1363,24 @@ export interface components {
             passed: number;
             /** Total */
             total: number;
+        };
+        /** Citation */
+        Citation: {
+            /** Excerpt */
+            excerpt: string;
+            /** Source Key */
+            source_key: string;
+            /** Title */
+            title: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid Until */
+            valid_until: string | null;
+            /** Version */
+            version: string;
         };
         /**
          * CohortAttendance
@@ -3612,6 +3696,46 @@ export interface operations {
             };
             /** @description Matrícula de otra cohorte, actividad sin publicar, entrega ya revisada o revisión de una versión anterior */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_api_v1_assistant_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskOut"];
+                };
+            };
+            /** @description Sin documentos en tu ámbito o cohorte ajena */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
