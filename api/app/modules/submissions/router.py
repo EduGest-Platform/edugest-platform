@@ -16,6 +16,7 @@ from app.modules.submissions.schemas import (
     AssignmentWrite,
     EnrollmentDelivery,
     EnrollmentSubmissions,
+    ReviewWrite,
     SubmissionOut,
     SubmissionWrite,
 )
@@ -23,7 +24,7 @@ from app.modules.submissions.service import (
     create_assignment,
     delivery_state,
     load_assignment,
-    load_submission,
+    lock_submission,
     published_assignments,
     review_submission,
     save_submission,
@@ -34,7 +35,7 @@ router = APIRouter(tags=["submissions"])
 
 CohortId = Path(max_length=20)
 _ERRORS = {403: {"description": "Sin permiso sobre la cohorte"}, 404: {"description": "No encontrado"}}
-_CONFLICT = {409: {"description": "Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada"}}
+_CONFLICT = {409: {"description": "Matrícula de otra cohorte, actividad sin publicar, entrega ya revisada o revisión de una versión anterior"}}
 
 
 def _is_own_active_enrollment(p: Principal, enrollment: Enrollment) -> bool:
@@ -84,11 +85,11 @@ def put_submission(assignment_id: uuid.UUID, enrollment_id: uuid.UUID, body: Sub
 
 @router.post("/submissions/{submission_id}/review", response_model=SubmissionOut, responses={**_ERRORS, **_CONFLICT},
              summary="Marcar una entrega como revisada por el docente")
-def post_review(submission_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> SubmissionOut:
-    submission = load_submission(db, submission_id)
+def post_review(submission_id: uuid.UUID, body: ReviewWrite, p: CurrentPrincipal, db: DB) -> SubmissionOut:
+    submission = lock_submission(db, submission_id)
     assignment = load_assignment(db, submission.assignment_id)
     require_cohort(db, p, "submissions.review", assignment.cohort_id)
-    return submission_out(review_submission(db, p, submission), assignment)
+    return submission_out(review_submission(db, p, submission, body.expected_revision), assignment)
 
 
 @router.get("/enrollments/{enrollment_id}/submissions", response_model=EnrollmentSubmissions, responses=_ERRORS,

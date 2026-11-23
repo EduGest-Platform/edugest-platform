@@ -36,6 +36,11 @@ def submit(client, headers, assignment_id, enrollment_id, **body):
     return client.put(f"/api/v1/assignments/{assignment_id}/submissions/{enrollment_id}", json=body, headers=headers)
 
 
+def review(client, headers, submission: dict, revision: int | None = None):
+    body = {"expected_revision": revision or submission["revision"]}
+    return client.post(f"/api/v1/submissions/{submission['id']}/review", json=body, headers=headers)
+
+
 def states(client, headers, enrollment_id) -> dict[str, str]:
     r = client.get(f"/api/v1/enrollments/{enrollment_id}/submissions", headers=headers)
     assert r.status_code == 200, r.text
@@ -50,7 +55,7 @@ def test_pending_then_on_time_then_reviewed(client, db, teacher):
     assert r.status_code == 200, r.text
     assert r.json()["late"] is False and r.json()["status"] == "submitted"
     assert states(client, teacher, enrollment)[a["id"]] == "on_time"
-    reviewed = client.post(f"/api/v1/submissions/{r.json()['id']}/review", headers=teacher)
+    reviewed = review(client, teacher, r.json())
     assert reviewed.status_code == 200 and reviewed.json()["status"] == "reviewed"
     actions = set(db.scalars(select(AuditEvent.action).where(AuditEvent.target_id == r.json()["id"])))
     assert {"submission.create", "submission.review"} <= actions
@@ -73,7 +78,7 @@ def test_resubmission_keeps_one_row_and_the_first_date_until_reviewed(client, db
     assert first["id"] == second["id"] and second["portfolio_url"].endswith("v2")
     assert second["first_submitted_at"] == first["first_submitted_at"]
     assert db.scalar(select(func.count()).select_from(Submission).where(Submission.assignment_id == a["id"])) == 1
-    client.post(f"/api/v1/submissions/{first['id']}/review", headers=teacher)
+    review(client, teacher, second)
     closed = submit(client, teacher, a["id"], enrollment)
     assert closed.status_code == 409 and closed.json()["code"] == "submission_reviewed"
 
@@ -154,19 +159,72 @@ def test_coder_cannot_self_report_check_results(client, db, teacher):
     assert r.status_code == 422 and r.json()["code"] == "check_results_not_allowed"
 
 
-def test_coder_resubmission_keeps_the_teachers_check_results(client, db, teacher):
+def test_resubmitting_the_same_artifact_keeps_the_teachers_check_results(client, db, teacher):
     a = new_assignment(client, teacher)
     mine = own_enrollment(db)
-    submit(client, teacher, a["id"], mine, check_results={"passed": 7, "total": 10})
-    r = submit(client, login(client, CODER), a["id"], mine, portfolio_url="https://example.test/fixed")
-    assert r.json()["check_results"] == {"passed": 7, "total": 10}
+    url = "https://example.test/same"
+    submit(client, teacher, a["id"], mine, portfolio_url=url, check_results={"passed": 7, "total": 10})
+    r = submit(client, login(client, CODER), a["id"], mine, portfolio_url=url)
+    assert r.json()["check_results"] == {"passed": 7, "total": 10} and r.json()["revision"] == 2
+
+
+def test_replacing_the_artifact_clears_results_of_the_previous_one(client, db, teacher):
+    """PR 97 review: results of the old artifact must never be shown as evidence for the new one (nor to the assistant)."""
+    a = new_assignment(client, teacher)
+    mine = own_enrollment(db)
+    first = submit(client, teacher, a["id"], mine, portfolio_url="https://example.test/v1", check_results={"passed": 7, "total": 10}).json()
+    r = submit(client, login(client, CODER), a["id"], mine, portfolio_url="https://example.test/v2").json()
+    assert r["check_results"] is None and r["revision"] == first["revision"] + 1
+    context = client.get(f"/api/v1/tools/submissions/{r['id']}", headers=teacher).json()["data"]
+    assert context["check_results"] is None and context["revision"] == r["revision"]
+    fresh = submit(client, teacher, a["id"], mine, portfolio_url="https://example.test/v2", check_results={"passed": 9, "total": 10}).json()
+    assert fresh["check_results"] == {"passed": 9, "total": 10}
+
+
+def test_review_of_an_older_revision_is_rejected(client, db, teacher):
+    """PR 97 review: a resubmission between the teacher reading and reviewing must not be marked as reviewed."""
+    a = new_assignment(client, teacher)
+    mine = own_enrollment(db)
+    seen = submit(client, login(client, CODER), a["id"], mine, portfolio_url="https://example.test/v1").json()
+    submit(client, login(client, CODER), a["id"], mine, portfolio_url="https://example.test/v2")
+    stale = review(client, teacher, seen)
+    assert stale.status_code == 409 and stale.json()["code"] == "stale_review"
+    db.expire_all()
+    assert db.get(Submission, seen["id"]).status == "submitted"
+    current = client.get(f"/api/v1/enrollments/{mine}/submissions", headers=teacher).json()["items"][0]["submission"]
+    assert review(client, teacher, current).status_code == 200
+
+
+def test_concurrent_review_and_resubmission_never_review_an_unseen_version(db, teacher):
+    """Whatever order the database serializes them in, the outcome is consistent: either the review wins (the
+    resubmission then gets 409) or the resubmission wins (the review then gets stale_review)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as setup:
+        a = new_assignment(setup, teacher)
+        mine = own_enrollment(db)
+        seen = submit(setup, login(setup, CODER), a["id"], mine, portfolio_url="https://example.test/v1").json()
+    with TestClient(app) as one, TestClient(app) as two:
+        teacher_headers, coder_headers = login(one, DOCENTE), login(two, CODER)
+        with ThreadPoolExecutor(2) as pool:
+            reviewed = pool.submit(review, one, teacher_headers, seen)
+            resubmitted = pool.submit(submit, two, coder_headers, a["id"], mine, portfolio_url="https://example.test/v2")
+            codes = {reviewed.result().status_code, resubmitted.result().status_code}
+    assert codes == {200, 409}
+    db.expire_all()
+    row = db.get(Submission, seen["id"])
+    assert (row.status == "reviewed") == (row.portfolio_url == "https://example.test/v1")
 
 
 def test_coder_cannot_resubmit_after_review(client, db, teacher):
     a = new_assignment(client, teacher)
     mine = own_enrollment(db)
     created = submit(client, login(client, CODER), a["id"], mine).json()
-    client.post(f"/api/v1/submissions/{created['id']}/review", headers=teacher)
+    review(client, teacher, created)
     assert submit(client, login(client, CODER), a["id"], mine).status_code == 409
 
 
@@ -182,7 +240,7 @@ def test_coder_cannot_review_or_create_assignments(client, db, teacher):
     a = new_assignment(client, teacher)
     coder = login(client, CODER)
     created = submit(client, coder, a["id"], own_enrollment(db)).json()
-    assert client.post(f"/api/v1/submissions/{created['id']}/review", headers=coder).status_code == 403
+    assert review(client, coder, created).status_code == 403
     assert client.post(f"/api/v1/cohorts/{COHORT}/assignments", json={"title": "Propia", "due_at": utcnow().isoformat()}, headers=coder).status_code == 403
 
 

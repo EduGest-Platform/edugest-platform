@@ -2980,6 +2980,22 @@
         "title": "RequirementRevisionOut",
         "type": "object"
       },
+      "ReviewWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "description": "Versión de la entrega que ha revisado el docente",
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "ReviewWrite",
+        "type": "object"
+      },
       "RevisionList": {
         "properties": {
           "items": {
@@ -3901,6 +3917,11 @@
             "title": "Reviewed",
             "type": "boolean"
           },
+          "revision": {
+            "description": "Versión de la entrega a la que corresponden check_results",
+            "title": "Revision",
+            "type": "integer"
+          },
           "rubric": {
             "items": {
               "type": "string"
@@ -3931,6 +3952,7 @@
           "due_at",
           "state",
           "reviewed",
+          "revision",
           "check_results"
         ],
         "title": "SubmissionContext",
@@ -3995,6 +4017,11 @@
             ],
             "title": "Reviewed At"
           },
+          "revision": {
+            "description": "Sube en cada reentrega; la revisión debe indicar la que vio el docente",
+            "title": "Revision",
+            "type": "integer"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -4012,6 +4039,7 @@
           "portfolio_url",
           "check_results",
           "status",
+          "revision",
           "first_submitted_at",
           "submitted_at",
           "late",
@@ -5601,7 +5629,7 @@
             "description": "No encontrado"
           },
           "409": {
-            "description": "Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada"
+            "description": "Matrícula de otra cohorte, actividad sin publicar, entrega ya revisada o revisión de una versión anterior"
           },
           "422": {
             "content": {
@@ -7518,6 +7546,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -7536,7 +7574,7 @@
             "description": "No encontrado"
           },
           "409": {
-            "description": "Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada"
+            "description": "Matrícula de otra cohorte, actividad sin publicar, entrega ya revisada o revisión de una versión anterior"
           },
           "422": {
             "content": {

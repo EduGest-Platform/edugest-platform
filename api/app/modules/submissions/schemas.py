@@ -94,10 +94,17 @@ class SubmissionOut(BaseModel):
     portfolio_url: str | None
     check_results: CheckResults | None
     status: str
+    revision: int = Field(description="Sube en cada reentrega; la revisión debe indicar la que vio el docente")
     first_submitted_at: datetime
     submitted_at: datetime
     late: bool
     reviewed_at: datetime | None
+
+
+class ReviewWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: int = Field(ge=1, description="Versión de la entrega que ha revisado el docente")
 
 
 class EnrollmentDelivery(BaseModel):

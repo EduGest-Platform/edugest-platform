@@ -88,7 +88,7 @@ def tool_submission_context(submission_id: uuid.UUID, p: CurrentPrincipal, db: D
     now = utcnow()
     context = SubmissionContext(
         submission_id=submission.id, assignment_title=assignment.title, rubric=list(assignment.rubric or []), due_at=assignment.due_at,
-        state=delivery_state(assignment, submission, now), reviewed=submission.status == "reviewed",
+        state=delivery_state(assignment, submission, now), reviewed=submission.status == "reviewed", revision=submission.revision,
         check_results=CheckResults(**submission.check_results) if submission.check_results else None,
     )
     audit.record(db, p, "tools.submission_context", "submission", str(submission.id))

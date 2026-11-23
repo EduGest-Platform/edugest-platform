@@ -76,3 +76,46 @@ def test_teacher_has_the_academic_indicators_but_not_the_admission_decision(clie
     perms = ROLE_PERMISSIONS["docente"]
     assert {"attendance.aggregate", "submissions.aggregate", "competencies.aggregate", "cohort.team.manage"} <= perms
     assert "selection.decide" not in perms
+
+
+def test_concurrent_removals_always_leave_one_teacher(db, monkeypatch):
+    """PR 97 review: in a cohort of two teachers, two simultaneous removals of different people must leave one active.
+
+    Both requests are held right after reading the team. Without the cohort lock both count two and both revoke.
+    """
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.modules.learning import team_router
+
+    teacher_id, colleague_id = user_id(db, DOCENTE), user_id(db, SEL_IA)
+    db.add(RoleAssignment(user_id=colleague_id, role="docente", scope_type="cohort", scope_id=COHORT))
+    db.commit()
+    original = team_router._active_teachers
+    gate = threading.Barrier(2, timeout=2)
+
+    def held_after_read(*args):
+        found = original(*args)
+        try:
+            gate.wait()
+        except threading.BrokenBarrierError:
+            pass  # expected with the lock: the other request waits before reading
+        return found
+
+    monkeypatch.setattr(team_router, "_active_teachers", held_after_read)
+    with TestClient(app) as one, TestClient(app) as two:
+        headers = [login(one, DOCENTE), login(two, SEL_IA)]
+
+        def remove(client, who, target):
+            return client.delete(f"/api/v1/cohorts/{COHORT}/teaching-team/{target}", headers=who).status_code
+
+        with ThreadPoolExecutor(2) as pool:
+            codes = sorted(pool.map(remove, [one, two], headers, [colleague_id, teacher_id]))
+    assert codes == [200, 409]
+    db.expire_all()
+    active = db.scalars(select(RoleAssignment).where(RoleAssignment.scope_id == COHORT, RoleAssignment.role == "docente",
+                                                     RoleAssignment.revoked_at.is_(None))).all()
+    assert len(active) == 1

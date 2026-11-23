@@ -111,6 +111,7 @@ class SubmissionContext(BaseModel):
     due_at: datetime
     state: DeliveryState
     reviewed: bool
+    revision: int = Field(description="Versión de la entrega a la que corresponden check_results")
     check_results: CheckResults | None
 
 

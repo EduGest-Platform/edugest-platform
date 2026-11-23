@@ -2056,6 +2056,14 @@ export interface components {
             /** Revision */
             revision: number;
         };
+        /** ReviewWrite */
+        ReviewWrite: {
+            /**
+             * Expected Revision
+             * @description Versión de la entrega que ha revisado el docente
+             */
+            expected_revision: number;
+        };
         /** RevisionList */
         RevisionList: {
             /** Items */
@@ -2472,6 +2480,11 @@ export interface components {
             due_at: string;
             /** Reviewed */
             reviewed: boolean;
+            /**
+             * Revision
+             * @description Versión de la entrega a la que corresponden check_results
+             */
+            revision: number;
             /** Rubric */
             rubric: string[];
             /**
@@ -2514,6 +2527,11 @@ export interface components {
             portfolio_url: string | null;
             /** Reviewed At */
             reviewed_at: string | null;
+            /**
+             * Revision
+             * @description Sube en cada reentrega; la revisión debe indicar la que vio el docente
+             */
+            revision: number;
             /** Status */
             status: string;
             /**
@@ -3563,7 +3581,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada */
+            /** @description Matrícula de otra cohorte, actividad sin publicar, entrega ya revisada o revisión de una versión anterior */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5002,7 +5020,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewWrite"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -5027,7 +5049,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada */
+            /** @description Matrícula de otra cohorte, actividad sin publicar, entrega ya revisada o revisión de una versión anterior */
             409: {
                 headers: {
                     [name: string]: unknown;

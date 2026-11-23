@@ -4,14 +4,16 @@ Rules (PO 23/11/2026, docs/producto/propuesta-KAN-56-KAN-263-desbloqueo-asistent
 - An assignment belongs to a cohort: its scope and the time zone of its deadline are the cohort's.
 - One submission per (assignment, enrollment). It can be resubmitted until a teacher reviews it; the first date is kept.
 - "On time", "late", "pending", "overdue" and "no data" are derived, never stored (see service.delivery_state).
-- check_results holds pre-computed test results; the platform never runs submitted code.
+- check_results holds pre-computed test results; the platform never runs submitted code. They describe one artifact:
+  revision goes up on every resubmission, and replacing the artifact clears results that were not supplied again.
+- A review names the revision the teacher saw; a review of an older revision is rejected (no stale reviews).
 - Feedback text is not here: it belongs to KAN-191 (feedback_draft), published only after teacher approval.
 """
 
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, utcnow
@@ -45,6 +47,7 @@ class Submission(Base):
         UniqueConstraint("assignment_id", "enrollment_id", name="uq_submission_assignment_enrollment"),
         CheckConstraint(f"status IN {SUBMISSION_STATUSES}", name="ck_submission_status"),
         CheckConstraint("portfolio_url IS NULL OR portfolio_url LIKE 'https://%'", name="ck_submission_portfolio_url"),
+        CheckConstraint("revision >= 1", name="ck_submission_revision"),
         CheckConstraint(
             "(status = 'reviewed' AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL)"
             " OR (status = 'submitted' AND reviewed_by IS NULL AND reviewed_at IS NULL)",
@@ -57,6 +60,7 @@ class Submission(Base):
     portfolio_url: Mapped[str | None] = mapped_column(String(500))
     check_results: Mapped[dict | None] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(10), default="submitted")
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
     first_submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     recorded_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))

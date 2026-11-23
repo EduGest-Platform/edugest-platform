@@ -35,6 +35,7 @@ def upgrade():
         sa.Column("portfolio_url", sa.String(500), nullable=True),
         sa.Column("check_results", sa.JSON(), nullable=True),
         sa.Column("status", sa.String(10), nullable=False),
+        sa.Column("revision", sa.Integer(), nullable=False, server_default=sa.text("1")),
         sa.Column("first_submitted_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("submitted_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("recorded_by", sa.Uuid(), nullable=False),
@@ -47,6 +48,7 @@ def upgrade():
         sa.ForeignKeyConstraint(["reviewed_by"], ["app_user.id"]),
         sa.UniqueConstraint("assignment_id", "enrollment_id", name="uq_submission_assignment_enrollment"),
         sa.CheckConstraint("status IN ('submitted', 'reviewed')", name="ck_submission_status"),
+        sa.CheckConstraint("revision >= 1", name="ck_submission_revision"),
         sa.CheckConstraint("portfolio_url IS NULL OR portfolio_url LIKE 'https://%'", name="ck_submission_portfolio_url"),
         sa.CheckConstraint(
             "(status = 'reviewed' AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL)"

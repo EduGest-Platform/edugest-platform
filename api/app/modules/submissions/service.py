@@ -29,7 +29,7 @@ def submission_out(submission: Submission, assignment: Assignment) -> Submission
         id=submission.id, assignment_id=submission.assignment_id, enrollment_id=submission.enrollment_id,
         portfolio_url=submission.portfolio_url,
         check_results=CheckResults(**submission.check_results) if submission.check_results else None,
-        status=submission.status, first_submitted_at=submission.first_submitted_at, submitted_at=submission.submitted_at,
+        status=submission.status, revision=submission.revision, first_submitted_at=submission.first_submitted_at, submitted_at=submission.submitted_at,
         late=submission.first_submitted_at > assignment.due_at, reviewed_at=submission.reviewed_at,
     )
 
@@ -85,9 +85,10 @@ def save_submission(db: Session, p: Principal, assignment: Assignment, enrollmen
     else:
         if submission.status == "reviewed":
             raise UserFacingError(status.HTTP_409_CONFLICT, "submission_reviewed", "Esta entrega ya está revisada y no admite reentregas.")
+        artifact_changed = body.portfolio_url != submission.portfolio_url
         submission.portfolio_url = body.portfolio_url
-        if checks is not None:  # a resubmission without results keeps the ones the teacher recorded
-            submission.check_results = checks
+        submission.check_results = next_check_results(submission.check_results, checks, artifact_changed)
+        submission.revision += 1
         submission.submitted_at, submission.recorded_by = now, p.user.id
         action = "submission.resubmit"
     try:
@@ -95,15 +96,34 @@ def save_submission(db: Session, p: Principal, assignment: Assignment, enrollmen
     except IntegrityError:  # a concurrent first delivery won the unique slot
         db.rollback()
         raise UserFacingError(status.HTTP_409_CONFLICT, "submission_duplicate", "Ya existe una entrega para esta actividad. Recarga la página.")
-    audit.record(db, p, action, "submission", str(submission.id), assignment_id=str(assignment.id))
+    audit.record(db, p, action, "submission", str(submission.id), assignment_id=str(assignment.id), revision=submission.revision)
     db.commit()
     return submission
 
 
-def review_submission(db: Session, p: Principal, submission: Submission) -> Submission:
+def next_check_results(current: dict | None, supplied: dict | None, artifact_changed: bool) -> dict | None:
+    """Results always describe the current artifact: fresh ones win; old ones survive only if the artifact is the same."""
+    if supplied is not None:
+        return supplied
+    return None if artifact_changed else current
+
+
+def lock_submission(db: Session, submission_id) -> Submission:
+    """Loads the row FOR UPDATE, so review and resubmission of the same submission are serialized."""
+    submission = db.scalar(select(Submission).where(Submission.id == submission_id).with_for_update())
+    if not submission:
+        raise UserFacingError(status.HTTP_404_NOT_FOUND, "submission_not_found", "No encontramos esta entrega.")
+    return submission
+
+
+def review_submission(db: Session, p: Principal, submission: Submission, expected_revision: int) -> Submission:
+    """Marks as reviewed the exact revision the teacher saw. Call with a row from lock_submission."""
     if submission.status == "reviewed":
         raise UserFacingError(status.HTTP_409_CONFLICT, "submission_reviewed", "Esta entrega ya está revisada.")
+    if submission.revision != expected_revision:
+        raise UserFacingError(status.HTTP_409_CONFLICT, "stale_review",
+                              "La persona ha vuelto a entregar mientras la revisabas. Recarga la entrega y revisa la versión nueva.")
     submission.status, submission.reviewed_by, submission.reviewed_at = "reviewed", p.user.id, utcnow()
-    audit.record(db, p, "submission.review", "submission", str(submission.id))
+    audit.record(db, p, "submission.review", "submission", str(submission.id), revision=submission.revision)
     db.commit()
     return submission

@@ -17,6 +17,7 @@ from app.core.authz import TEAM_MANAGE_PERMISSION
 from app.core.db import utcnow
 from app.core.deps import DB, CurrentPrincipal
 from app.core.errors import UserFacingError
+from app.modules.catalog.models import Cohort
 from app.modules.identity.models import RoleAssignment, User
 from app.modules.learning.access import require_cohort
 
@@ -46,6 +47,14 @@ def _active_teachers(db: DB, cohort_id: str) -> list[RoleAssignment]:
     return list(db.scalars(query.order_by(RoleAssignment.created_at)))
 
 
+def _lock_team(db: DB, cohort_id: str) -> None:
+    """Serializes team changes per cohort: the last-teacher check and the revoke run under the cohort row lock.
+
+    Without it, two removals in a cohort of two teachers could each count two and revoke different rows (PR 97 review).
+    """
+    db.execute(select(Cohort.id).where(Cohort.id == cohort_id).with_for_update())
+
+
 def _team(db: DB, cohort_id: str) -> TeachingTeam:
     rows = _active_teachers(db, cohort_id)
     users = {u.id: u for u in db.scalars(select(User).where(User.id.in_({r.user_id for r in rows})))} if rows else {}
@@ -72,6 +81,7 @@ def get_team(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId) -> Teaching
             summary="Añadir una persona del personal como docente de la cohorte")
 def add_teacher(user_id: uuid.UUID, p: CurrentPrincipal, db: DB, cohort_id: str = CohortId) -> TeachingTeam:
     require_cohort(db, p, TEAM_MANAGE_PERMISSION, cohort_id)
+    _lock_team(db, cohort_id)
     user = _staff_user(db, user_id)
     row = db.scalar(select(RoleAssignment).where(RoleAssignment.user_id == user.id, RoleAssignment.role == TEACHER_ROLE,
                                                  RoleAssignment.scope_type == "cohort", RoleAssignment.scope_id == cohort_id))
@@ -88,6 +98,7 @@ def add_teacher(user_id: uuid.UUID, p: CurrentPrincipal, db: DB, cohort_id: str 
                summary="Quitar a una persona del equipo docente de la cohorte")
 def remove_teacher(user_id: uuid.UUID, p: CurrentPrincipal, db: DB, cohort_id: str = CohortId) -> TeachingTeam:
     require_cohort(db, p, TEAM_MANAGE_PERMISSION, cohort_id)
+    _lock_team(db, cohort_id)
     active = _active_teachers(db, cohort_id)
     row = next((r for r in active if r.user_id == user_id), None)
     if row is None:
