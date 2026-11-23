@@ -444,6 +444,164 @@
         "title": "AssessmentWrite",
         "type": "object"
       },
+      "AssignmentList": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "timezone",
+          "items"
+        ],
+        "title": "AssignmentList",
+        "type": "object"
+      },
+      "AssignmentOut": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "rubric": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rubric",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cohort_id",
+          "title",
+          "description",
+          "due_at",
+          "rubric",
+          "status"
+        ],
+        "title": "AssignmentOut",
+        "type": "object"
+      },
+      "AssignmentStatus": {
+        "properties": {
+          "assignment_id": {
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StateCount"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si el grupo es demasiado pequeño para mostrarlo"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "title",
+          "due_at",
+          "counts"
+        ],
+        "title": "AssignmentStatus",
+        "type": "object"
+      },
+      "AssignmentWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "due_at": {
+            "description": "Plazo con zona horaria (ISO 8601)",
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "rubric": {
+            "description": "Criterios de la rúbrica",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Rubric",
+            "type": "array"
+          },
+          "status": {
+            "default": "published",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 3,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "due_at"
+        ],
+        "title": "AssignmentWrite",
+        "type": "object"
+      },
       "AttendanceSummary": {
         "description": "Contract of get_attendance_summary for the assistant: totals only, no names.",
         "properties": {
@@ -916,6 +1074,28 @@
         "title": "CallSummaryOut",
         "type": "object"
       },
+      "CheckResults": {
+        "additionalProperties": false,
+        "description": "Pre-computed automated checks. The platform never runs submitted code.",
+        "properties": {
+          "passed": {
+            "minimum": 0.0,
+            "title": "Passed",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "passed",
+          "total"
+        ],
+        "title": "CheckResults",
+        "type": "object"
+      },
       "CohortAttendance": {
         "description": "Cohort-level totals for coordination. All values are null when the group is too small to show.",
         "properties": {
@@ -1053,6 +1233,36 @@
         "title": "CohortFrameworkWrite",
         "type": "object"
       },
+      "CompetencyDistribution": {
+        "properties": {
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "counts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LevelCount"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si el grupo es demasiado pequeño para mostrarlo"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "nombre",
+          "counts"
+        ],
+        "title": "CompetencyDistribution",
+        "type": "object"
+      },
       "CompetencyOut": {
         "properties": {
           "codigo": {
@@ -1100,6 +1310,53 @@
           "orden"
         ],
         "title": "CompetencyOut",
+        "type": "object"
+      },
+      "CompetencyProgress": {
+        "properties": {
+          "distribution": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyDistribution"
+            },
+            "title": "Distribution",
+            "type": "array"
+          },
+          "framework_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Framework Version"
+          },
+          "items": {
+            "description": "Vacío para coordinación",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentProgress"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "min_group_size": {
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "framework_version",
+          "suppressed",
+          "min_group_size",
+          "distribution",
+          "items"
+        ],
+        "title": "CompetencyProgress",
         "type": "object"
       },
       "CompetencyWrite": {
@@ -1322,6 +1579,59 @@
         "title": "EnrollmentAttendance",
         "type": "object"
       },
+      "EnrollmentDelivery": {
+        "description": "One assignment from one coder's point of view: the derived state plus the submission if there is one.",
+        "properties": {
+          "assignment_id": {
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "reviewed": {
+            "title": "Reviewed",
+            "type": "boolean"
+          },
+          "state": {
+            "enum": [
+              "on_time",
+              "late",
+              "pending",
+              "overdue"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "submission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubmissionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "title",
+          "due_at",
+          "state",
+          "reviewed",
+          "submission"
+        ],
+        "title": "EnrollmentDelivery",
+        "type": "object"
+      },
       "EnrollmentOut": {
         "properties": {
           "cohort_id": {
@@ -1338,6 +1648,97 @@
           "estado"
         ],
         "title": "EnrollmentOut",
+        "type": "object"
+      },
+      "EnrollmentPending": {
+        "properties": {
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "states": {
+            "additionalProperties": {
+              "enum": [
+                "on_time",
+                "late",
+                "pending",
+                "overdue"
+              ],
+              "type": "string"
+            },
+            "description": "Estado por assignment_id",
+            "title": "States",
+            "type": "object"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "states"
+        ],
+        "title": "EnrollmentPending",
+        "type": "object"
+      },
+      "EnrollmentProgress": {
+        "properties": {
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "levels": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Nivel actual 1–3 por código de competencia; nulo = sin evaluar",
+            "title": "Levels",
+            "type": "object"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "levels"
+        ],
+        "title": "EnrollmentProgress",
+        "type": "object"
+      },
+      "EnrollmentSubmissions": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentDelivery"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "rule": {
+            "default": "Plazo en la hora local de la cohorte. Entregada antes del plazo = a tiempo; después = tarde. Sin entrega y plazo abierto = pendiente; sin entrega y plazo vencido = vencida. Se puede reentregar hasta la revisión docente; se conserva la primera fecha.",
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "cohort_id",
+          "items"
+        ],
+        "title": "EnrollmentSubmissions",
         "type": "object"
       },
       "EventCreate": {
@@ -1581,6 +1982,34 @@
         "type": "object"
       },
       "JsonValue": {},
+      "LevelCount": {
+        "properties": {
+          "level_1": {
+            "title": "Level 1",
+            "type": "integer"
+          },
+          "level_2": {
+            "title": "Level 2",
+            "type": "integer"
+          },
+          "level_3": {
+            "title": "Level 3",
+            "type": "integer"
+          },
+          "not_assessed": {
+            "title": "Not Assessed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "level_1",
+          "level_2",
+          "level_3",
+          "not_assessed"
+        ],
+        "title": "LevelCount",
+        "type": "object"
+      },
       "LoginIn": {
         "properties": {
           "email": {
@@ -1690,6 +2119,46 @@
           "enrollments"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "PendingSubmissions": {
+        "properties": {
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentStatus"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "items": {
+            "description": "Vacío para coordinación",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentPending"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "min_group_size": {
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timezone",
+          "suppressed",
+          "min_group_size",
+          "assignments",
+          "items"
+        ],
+        "title": "PendingSubmissions",
         "type": "object"
       },
       "PersonOut": {
@@ -3260,6 +3729,545 @@
         "title": "StageCount",
         "type": "object"
       },
+      "StateCount": {
+        "properties": {
+          "late": {
+            "title": "Late",
+            "type": "integer"
+          },
+          "on_time": {
+            "title": "On Time",
+            "type": "integer"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "reviewed": {
+            "title": "Reviewed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "on_time",
+          "late",
+          "pending",
+          "overdue",
+          "reviewed"
+        ],
+        "title": "StateCount",
+        "type": "object"
+      },
+      "SubmissionContext": {
+        "description": "What a feedback draft may use. Never the portfolio URL or any submitted content (privacy, PO 23/11/2026).",
+        "properties": {
+          "assignment_title": {
+            "title": "Assignment Title",
+            "type": "string"
+          },
+          "check_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "reviewed": {
+            "title": "Reviewed",
+            "type": "boolean"
+          },
+          "rubric": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rubric",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "on_time",
+              "late",
+              "pending",
+              "overdue"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submission_id",
+          "assignment_title",
+          "rubric",
+          "due_at",
+          "state",
+          "reviewed",
+          "check_results"
+        ],
+        "title": "SubmissionContext",
+        "type": "object"
+      },
+      "SubmissionOut": {
+        "properties": {
+          "assignment_id": {
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "check_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "first_submitted_at": {
+            "format": "date-time",
+            "title": "First Submitted At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "late": {
+            "title": "Late",
+            "type": "boolean"
+          },
+          "portfolio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Url"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "assignment_id",
+          "enrollment_id",
+          "portfolio_url",
+          "check_results",
+          "status",
+          "first_submitted_at",
+          "submitted_at",
+          "late",
+          "reviewed_at"
+        ],
+        "title": "SubmissionOut",
+        "type": "object"
+      },
+      "SubmissionWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "check_results": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckResults"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "portfolio_url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opcional; debe empezar por https://",
+            "title": "Portfolio Url"
+          }
+        },
+        "title": "SubmissionWrite",
+        "type": "object"
+      },
+      "TeachingTeam": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/TeamMember"
+            },
+            "title": "Members",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "members"
+        ],
+        "title": "TeachingTeam",
+        "type": "object"
+      },
+      "TeamMember": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "granted_at": {
+            "format": "date-time",
+            "title": "Granted At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "granted_at"
+        ],
+        "title": "TeamMember",
+        "type": "object"
+      },
+      "ToolPeriod": {
+        "properties": {
+          "date_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inicio del periodo; nulo = desde el inicio de la cohorte",
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fin del periodo; nulo = hasta hoy",
+            "title": "Date To"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to"
+        ],
+        "title": "ToolPeriod",
+        "type": "object"
+      },
+      "ToolResponse_AttendanceSummary_": {
+        "properties": {
+          "aggregate_only": {
+            "description": "Verdadero si el rol solo puede ver totales (coordinación)",
+            "title": "Aggregate Only",
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AttendanceSummary"
+          },
+          "generated_at": {
+            "description": "Momento de la consulta: los datos son de este instante",
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "has_data": {
+            "description": "Falso = abstenerse; no hay datos, no son ceros",
+            "title": "Has Data",
+            "type": "boolean"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ToolPeriod"
+          },
+          "rule": {
+            "description": "Regla de cálculo que debe citar el asistente",
+            "title": "Rule",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ToolScope"
+          },
+          "source": {
+            "description": "Tablas de origen",
+            "title": "Source",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "scope",
+          "period",
+          "generated_at",
+          "source",
+          "rule",
+          "aggregate_only",
+          "has_data",
+          "data"
+        ],
+        "title": "ToolResponse[AttendanceSummary]",
+        "type": "object"
+      },
+      "ToolResponse_CompetencyProgress_": {
+        "properties": {
+          "aggregate_only": {
+            "description": "Verdadero si el rol solo puede ver totales (coordinación)",
+            "title": "Aggregate Only",
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CompetencyProgress"
+          },
+          "generated_at": {
+            "description": "Momento de la consulta: los datos son de este instante",
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "has_data": {
+            "description": "Falso = abstenerse; no hay datos, no son ceros",
+            "title": "Has Data",
+            "type": "boolean"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ToolPeriod"
+          },
+          "rule": {
+            "description": "Regla de cálculo que debe citar el asistente",
+            "title": "Rule",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ToolScope"
+          },
+          "source": {
+            "description": "Tablas de origen",
+            "title": "Source",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "scope",
+          "period",
+          "generated_at",
+          "source",
+          "rule",
+          "aggregate_only",
+          "has_data",
+          "data"
+        ],
+        "title": "ToolResponse[CompetencyProgress]",
+        "type": "object"
+      },
+      "ToolResponse_PendingSubmissions_": {
+        "properties": {
+          "aggregate_only": {
+            "description": "Verdadero si el rol solo puede ver totales (coordinación)",
+            "title": "Aggregate Only",
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PendingSubmissions"
+          },
+          "generated_at": {
+            "description": "Momento de la consulta: los datos son de este instante",
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "has_data": {
+            "description": "Falso = abstenerse; no hay datos, no son ceros",
+            "title": "Has Data",
+            "type": "boolean"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ToolPeriod"
+          },
+          "rule": {
+            "description": "Regla de cálculo que debe citar el asistente",
+            "title": "Rule",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ToolScope"
+          },
+          "source": {
+            "description": "Tablas de origen",
+            "title": "Source",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "scope",
+          "period",
+          "generated_at",
+          "source",
+          "rule",
+          "aggregate_only",
+          "has_data",
+          "data"
+        ],
+        "title": "ToolResponse[PendingSubmissions]",
+        "type": "object"
+      },
+      "ToolResponse_SubmissionContext_": {
+        "properties": {
+          "aggregate_only": {
+            "description": "Verdadero si el rol solo puede ver totales (coordinación)",
+            "title": "Aggregate Only",
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SubmissionContext"
+          },
+          "generated_at": {
+            "description": "Momento de la consulta: los datos son de este instante",
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "has_data": {
+            "description": "Falso = abstenerse; no hay datos, no son ceros",
+            "title": "Has Data",
+            "type": "boolean"
+          },
+          "period": {
+            "$ref": "#/components/schemas/ToolPeriod"
+          },
+          "rule": {
+            "description": "Regla de cálculo que debe citar el asistente",
+            "title": "Rule",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ToolScope"
+          },
+          "source": {
+            "description": "Tablas de origen",
+            "title": "Source",
+            "type": "string"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "scope",
+          "period",
+          "generated_at",
+          "source",
+          "rule",
+          "aggregate_only",
+          "has_data",
+          "data"
+        ],
+        "title": "ToolResponse[SubmissionContext]",
+        "type": "object"
+      },
+      "ToolScope": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Id"
+          }
+        },
+        "required": [
+          "cohort_id"
+        ],
+        "title": "ToolScope",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -4409,6 +5417,83 @@
         ]
       }
     },
+    "/api/v1/assignments/{assignment_id}/submissions/{enrollment_id}": {
+      "put": {
+        "operationId": "put_submission_api_v1_assignments__assignment_id__submissions__enrollment_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar o reentregar la entrega de una persona (hasta que se revise)",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
     "/api/v1/attendance-records/{record_id}/revisions": {
       "get": {
         "operationId": "list_revisions_api_v1_attendance_records__record_id__revisions_get",
@@ -4668,6 +5753,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Demasiados intentos fallidos; esperar Retry-After segundos"
           }
         },
         "summary": "Iniciar sesión con una cuenta sintética de demo",
@@ -5157,6 +6245,122 @@
         ]
       }
     },
+    "/api/v1/cohorts/{cohort_id}/assignments": {
+      "get": {
+        "operationId": "list_assignments_api_v1_cohorts__cohort_id__assignments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Actividades publicadas de una cohorte",
+        "tags": [
+          "submissions"
+        ]
+      },
+      "post": {
+        "operationId": "post_assignment_api_v1_cohorts__cohort_id__assignments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Crear una actividad con plazo en una cohorte",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
     "/api/v1/cohorts/{cohort_id}/attendance-sessions": {
       "get": {
         "operationId": "list_sessions_api_v1_cohorts__cohort_id__attendance_sessions_get",
@@ -5536,6 +6740,192 @@
         ]
       }
     },
+    "/api/v1/cohorts/{cohort_id}/teaching-team": {
+      "get": {
+        "operationId": "get_team_api_v1_cohorts__cohort_id__teaching_team_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachingTeam"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Equipo docente de una cohorte",
+        "tags": [
+          "teaching-team"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/teaching-team/{user_id}": {
+      "delete": {
+        "operationId": "remove_teacher_api_v1_cohorts__cohort_id__teaching_team__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachingTeam"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Es la última persona docente de la cohorte"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quitar a una persona del equipo docente de la cohorte",
+        "tags": [
+          "teaching-team"
+        ]
+      },
+      "put": {
+        "operationId": "add_teacher_api_v1_cohorts__cohort_id__teaching_team__user_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachingTeam"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Cuenta de persona, no de personal"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Añadir una persona del personal como docente de la cohorte",
+        "tags": [
+          "teaching-team"
+        ]
+      }
+    },
     "/api/v1/competency-frameworks/{framework_id}/competencies": {
       "put": {
         "operationId": "put_framework_competencies_api_v1_competency_frameworks__framework_id__competencies_put",
@@ -5779,6 +7169,60 @@
         ]
       }
     },
+    "/api/v1/enrollments/{enrollment_id}/submissions": {
+      "get": {
+        "operationId": "list_enrollment_submissions_api_v1_enrollments__enrollment_id__submissions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentSubmissions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida)",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
     "/api/v1/me/applications": {
       "get": {
         "operationId": "my_applications_api_v1_me_applications_get",
@@ -5925,6 +7369,336 @@
         "summary": "Crear una versión borrador del árbol de competencias de un bootcamp",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/submissions/{submission_id}/review": {
+      "post": {
+        "operationId": "post_review_api_v1_submissions__submission_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Submission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Marcar una entrega como revisada por el docente",
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
+    "/api/v1/tools/attendance-summary": {
+      "get": {
+        "operationId": "tool_attendance_summary_api_v1_tools_attendance_summary_get",
+        "parameters": [
+          {
+            "description": "Cohorte consultada",
+            "in": "query",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "description": "Cohorte consultada",
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "enrollment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Enrollment Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolResponse_AttendanceSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Herramienta get_attendance_summary: totales de asistencia con periodo y regla",
+        "tags": [
+          "assistant-tools"
+        ]
+      }
+    },
+    "/api/v1/tools/competency-progress": {
+      "get": {
+        "operationId": "tool_competency_progress_api_v1_tools_competency_progress_get",
+        "parameters": [
+          {
+            "description": "Cohorte consultada",
+            "in": "query",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "description": "Cohorte consultada",
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolResponse_CompetencyProgress_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Herramienta get_competency_progress: nivel actual por competencia y reparto 1/2/3",
+        "tags": [
+          "assistant-tools"
+        ]
+      }
+    },
+    "/api/v1/tools/pending-submissions": {
+      "get": {
+        "operationId": "tool_pending_submissions_api_v1_tools_pending_submissions_get",
+        "parameters": [
+          {
+            "description": "Cohorte consultada",
+            "in": "query",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "description": "Cohorte consultada",
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolResponse_PendingSubmissions_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Herramienta get_pending_submissions: estado de entregas por actividad",
+        "tags": [
+          "assistant-tools"
+        ]
+      }
+    },
+    "/api/v1/tools/submissions/{submission_id}": {
+      "get": {
+        "operationId": "tool_submission_context_api_v1_tools_submissions__submission_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Submission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolResponse_SubmissionContext_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Herramienta get_submission_context: rúbrica y tests precalculados para un borrador de feedback (sin URL ni contenido)",
+        "tags": [
+          "assistant-tools"
         ]
       }
     },

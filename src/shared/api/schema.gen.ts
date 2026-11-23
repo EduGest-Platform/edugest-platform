@@ -221,6 +221,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assignments/{assignment_id}/submissions/{enrollment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Registrar o reentregar la entrega de una persona (hasta que se revise) */
+        put: operations["put_submission_api_v1_assignments__assignment_id__submissions__enrollment_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance-records/{record_id}/revisions": {
         parameters: {
             query?: never;
@@ -427,6 +444,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Actividades publicadas de una cohorte */
+        get: operations["list_assignments_api_v1_cohorts__cohort_id__assignments_get"];
+        put?: never;
+        /** Crear una actividad con plazo en una cohorte */
+        post: operations["post_assignment_api_v1_cohorts__cohort_id__assignments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/attendance-sessions": {
         parameters: {
             query?: never;
@@ -496,6 +531,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/teaching-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Equipo docente de una cohorte */
+        get: operations["get_team_api_v1_cohorts__cohort_id__teaching_team_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/teaching-team/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Añadir una persona del personal como docente de la cohorte */
+        put: operations["add_teacher_api_v1_cohorts__cohort_id__teaching_team__user_id__put"];
+        post?: never;
+        /** Quitar a una persona del equipo docente de la cohorte */
+        delete: operations["remove_teacher_api_v1_cohorts__cohort_id__teaching_team__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/competency-frameworks/{framework_id}/competencies": {
         parameters: {
             query?: never;
@@ -548,6 +618,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/enrollments/{enrollment_id}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida) */
+        get: operations["list_enrollment_submissions_api_v1_enrollments__enrollment_id__submissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/applications": {
         parameters: {
             query?: never;
@@ -577,6 +664,91 @@ export interface paths {
         put?: never;
         /** Crear una versión borrador del árbol de competencias de un bootcamp */
         post: operations["post_framework_api_v1_programs__program_id__competency_frameworks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submission_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marcar una entrega como revisada por el docente */
+        post: operations["post_review_api_v1_submissions__submission_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/attendance-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Herramienta get_attendance_summary: totales de asistencia con periodo y regla */
+        get: operations["tool_attendance_summary_api_v1_tools_attendance_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/competency-progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Herramienta get_competency_progress: nivel actual por competencia y reparto 1/2/3 */
+        get: operations["tool_competency_progress_api_v1_tools_competency_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/pending-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Herramienta get_pending_submissions: estado de entregas por actividad */
+        get: operations["tool_pending_submissions_api_v1_tools_pending_submissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Herramienta get_submission_context: rúbrica y tests precalculados para un borrador de feedback (sin URL ni contenido) */
+        get: operations["tool_submission_context_api_v1_tools_submissions__submission_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -817,6 +989,82 @@ export interface components {
              */
             level: 1 | 2 | 3;
         };
+        /** AssignmentList */
+        AssignmentList: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Items */
+            items: components["schemas"]["AssignmentOut"][];
+            /** Timezone */
+            timezone: string;
+        };
+        /** AssignmentOut */
+        AssignmentOut: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Description */
+            description: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rubric */
+            rubric: string[];
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /** AssignmentStatus */
+        AssignmentStatus: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /** @description Nulo si el grupo es demasiado pequeño para mostrarlo */
+            counts: components["schemas"]["StateCount"] | null;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Title */
+            title: string;
+        };
+        /** AssignmentWrite */
+        AssignmentWrite: {
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Due At
+             * Format: date-time
+             * @description Plazo con zona horaria (ISO 8601)
+             */
+            due_at: string;
+            /**
+             * Rubric
+             * @description Criterios de la rúbrica
+             */
+            rubric?: string[];
+            /**
+             * Status
+             * @default published
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /** Title */
+            title: string;
+        };
         /**
          * AttendanceSummary
          * @description Contract of get_attendance_summary for the assistant: totals only, no names.
@@ -1023,6 +1271,16 @@ export interface components {
             total: number | null;
         };
         /**
+         * CheckResults
+         * @description Pre-computed automated checks. The platform never runs submitted code.
+         */
+        CheckResults: {
+            /** Passed */
+            passed: number;
+            /** Total */
+            total: number;
+        };
+        /**
          * CohortAttendance
          * @description Cohort-level totals for coordination. All values are null when the group is too small to show.
          */
@@ -1061,6 +1319,15 @@ export interface components {
              */
             framework_id: string;
         };
+        /** CompetencyDistribution */
+        CompetencyDistribution: {
+            /** Codigo */
+            codigo: string;
+            /** @description Nulo si el grupo es demasiado pequeño para mostrarlo */
+            counts: components["schemas"]["LevelCount"] | null;
+            /** Nombre */
+            nombre: string;
+        };
         /** CompetencyOut */
         CompetencyOut: {
             /** Codigo */
@@ -1082,6 +1349,22 @@ export interface components {
             nombre: string;
             /** Orden */
             orden: number;
+        };
+        /** CompetencyProgress */
+        CompetencyProgress: {
+            /** Distribution */
+            distribution: components["schemas"]["CompetencyDistribution"][];
+            /** Framework Version */
+            framework_version: number | null;
+            /**
+             * Items
+             * @description Vacío para coordinación
+             */
+            items: components["schemas"]["EnrollmentProgress"][];
+            /** Min Group Size */
+            min_group_size: number;
+            /** Suppressed */
+            suppressed: boolean;
         };
         /** CompetencyWrite */
         CompetencyWrite: {
@@ -1184,12 +1467,85 @@ export interface components {
              */
             unrecorded_days: number;
         };
+        /**
+         * EnrollmentDelivery
+         * @description One assignment from one coder's point of view: the derived state plus the submission if there is one.
+         */
+        EnrollmentDelivery: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Reviewed */
+            reviewed: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "on_time" | "late" | "pending" | "overdue";
+            submission: components["schemas"]["SubmissionOut"] | null;
+            /** Title */
+            title: string;
+        };
         /** EnrollmentOut */
         EnrollmentOut: {
             /** Cohort Id */
             cohort_id: string;
             /** Estado */
             estado: string;
+        };
+        /** EnrollmentPending */
+        EnrollmentPending: {
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * States
+             * @description Estado por assignment_id
+             */
+            states: {
+                [key: string]: "on_time" | "late" | "pending" | "overdue";
+            };
+        };
+        /** EnrollmentProgress */
+        EnrollmentProgress: {
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Levels
+             * @description Nivel actual 1–3 por código de competencia; nulo = sin evaluar
+             */
+            levels: {
+                [key: string]: number | null;
+            };
+        };
+        /** EnrollmentSubmissions */
+        EnrollmentSubmissions: {
+            /** Cohort Id */
+            cohort_id: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** Items */
+            items: components["schemas"]["EnrollmentDelivery"][];
+            /**
+             * Rule
+             * @default Plazo en la hora local de la cohorte. Entregada antes del plazo = a tiempo; después = tarde. Sin entrega y plazo abierto = pendiente; sin entrega y plazo vencido = vencida. Se puede reentregar hasta la revisión docente; se conserva la primera fecha.
+             */
+            rule: string;
         };
         /** EventCreate */
         EventCreate: {
@@ -1281,6 +1637,17 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         JsonValue: unknown;
+        /** LevelCount */
+        LevelCount: {
+            /** Level 1 */
+            level_1: number;
+            /** Level 2 */
+            level_2: number;
+            /** Level 3 */
+            level_3: number;
+            /** Not Assessed */
+            not_assessed: number;
+        };
         /** LoginIn */
         LoginIn: {
             /** Email */
@@ -1323,6 +1690,22 @@ export interface components {
             person_id: string | null;
             /** Roles */
             roles: components["schemas"]["RoleAssignmentOut"][];
+        };
+        /** PendingSubmissions */
+        PendingSubmissions: {
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentStatus"][];
+            /**
+             * Items
+             * @description Vacío para coordinación
+             */
+            items: components["schemas"]["EnrollmentPending"][];
+            /** Min Group Size */
+            min_group_size: number;
+            /** Suppressed */
+            suppressed: boolean;
+            /** Timezone */
+            timezone: string;
         };
         /** PersonOut */
         PersonOut: {
@@ -2005,6 +2388,271 @@ export interface components {
             stage: string;
             /** Suppressed */
             suppressed: boolean;
+        };
+        /** StateCount */
+        StateCount: {
+            /** Late */
+            late: number;
+            /** On Time */
+            on_time: number;
+            /** Overdue */
+            overdue: number;
+            /** Pending */
+            pending: number;
+            /** Reviewed */
+            reviewed: number;
+        };
+        /**
+         * SubmissionContext
+         * @description What a feedback draft may use. Never the portfolio URL or any submitted content (privacy, PO 23/11/2026).
+         */
+        SubmissionContext: {
+            /** Assignment Title */
+            assignment_title: string;
+            check_results: components["schemas"]["CheckResults"] | null;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Reviewed */
+            reviewed: boolean;
+            /** Rubric */
+            rubric: string[];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "on_time" | "late" | "pending" | "overdue";
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+        };
+        /** SubmissionOut */
+        SubmissionOut: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            check_results: components["schemas"]["CheckResults"] | null;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * First Submitted At
+             * Format: date-time
+             */
+            first_submitted_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Late */
+            late: boolean;
+            /** Portfolio Url */
+            portfolio_url: string | null;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
+        /** SubmissionWrite */
+        SubmissionWrite: {
+            check_results?: components["schemas"]["CheckResults"] | null;
+            /**
+             * Portfolio Url
+             * @description Opcional; debe empezar por https://
+             */
+            portfolio_url?: string | null;
+        };
+        /** TeachingTeam */
+        TeachingTeam: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Members */
+            members: components["schemas"]["TeamMember"][];
+        };
+        /** TeamMember */
+        TeamMember: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Granted At
+             * Format: date-time
+             */
+            granted_at: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** ToolPeriod */
+        ToolPeriod: {
+            /**
+             * Date From
+             * @description Inicio del periodo; nulo = desde el inicio de la cohorte
+             */
+            date_from: string | null;
+            /**
+             * Date To
+             * @description Fin del periodo; nulo = hasta hoy
+             */
+            date_to: string | null;
+        };
+        /** ToolResponse[AttendanceSummary] */
+        ToolResponse_AttendanceSummary_: {
+            /**
+             * Aggregate Only
+             * @description Verdadero si el rol solo puede ver totales (coordinación)
+             */
+            aggregate_only: boolean;
+            data: components["schemas"]["AttendanceSummary"];
+            /**
+             * Generated At
+             * Format: date-time
+             * @description Momento de la consulta: los datos son de este instante
+             */
+            generated_at: string;
+            /**
+             * Has Data
+             * @description Falso = abstenerse; no hay datos, no son ceros
+             */
+            has_data: boolean;
+            period: components["schemas"]["ToolPeriod"];
+            /**
+             * Rule
+             * @description Regla de cálculo que debe citar el asistente
+             */
+            rule: string;
+            scope: components["schemas"]["ToolScope"];
+            /**
+             * Source
+             * @description Tablas de origen
+             */
+            source: string;
+            /** Tool */
+            tool: string;
+        };
+        /** ToolResponse[CompetencyProgress] */
+        ToolResponse_CompetencyProgress_: {
+            /**
+             * Aggregate Only
+             * @description Verdadero si el rol solo puede ver totales (coordinación)
+             */
+            aggregate_only: boolean;
+            data: components["schemas"]["CompetencyProgress"];
+            /**
+             * Generated At
+             * Format: date-time
+             * @description Momento de la consulta: los datos son de este instante
+             */
+            generated_at: string;
+            /**
+             * Has Data
+             * @description Falso = abstenerse; no hay datos, no son ceros
+             */
+            has_data: boolean;
+            period: components["schemas"]["ToolPeriod"];
+            /**
+             * Rule
+             * @description Regla de cálculo que debe citar el asistente
+             */
+            rule: string;
+            scope: components["schemas"]["ToolScope"];
+            /**
+             * Source
+             * @description Tablas de origen
+             */
+            source: string;
+            /** Tool */
+            tool: string;
+        };
+        /** ToolResponse[PendingSubmissions] */
+        ToolResponse_PendingSubmissions_: {
+            /**
+             * Aggregate Only
+             * @description Verdadero si el rol solo puede ver totales (coordinación)
+             */
+            aggregate_only: boolean;
+            data: components["schemas"]["PendingSubmissions"];
+            /**
+             * Generated At
+             * Format: date-time
+             * @description Momento de la consulta: los datos son de este instante
+             */
+            generated_at: string;
+            /**
+             * Has Data
+             * @description Falso = abstenerse; no hay datos, no son ceros
+             */
+            has_data: boolean;
+            period: components["schemas"]["ToolPeriod"];
+            /**
+             * Rule
+             * @description Regla de cálculo que debe citar el asistente
+             */
+            rule: string;
+            scope: components["schemas"]["ToolScope"];
+            /**
+             * Source
+             * @description Tablas de origen
+             */
+            source: string;
+            /** Tool */
+            tool: string;
+        };
+        /** ToolResponse[SubmissionContext] */
+        ToolResponse_SubmissionContext_: {
+            /**
+             * Aggregate Only
+             * @description Verdadero si el rol solo puede ver totales (coordinación)
+             */
+            aggregate_only: boolean;
+            data: components["schemas"]["SubmissionContext"];
+            /**
+             * Generated At
+             * Format: date-time
+             * @description Momento de la consulta: los datos son de este instante
+             */
+            generated_at: string;
+            /**
+             * Has Data
+             * @description Falso = abstenerse; no hay datos, no son ceros
+             */
+            has_data: boolean;
+            period: components["schemas"]["ToolPeriod"];
+            /**
+             * Rule
+             * @description Regla de cálculo que debe citar el asistente
+             */
+            rule: string;
+            scope: components["schemas"]["ToolScope"];
+            /**
+             * Source
+             * @description Tablas de origen
+             */
+            source: string;
+            /** Tool */
+            tool: string;
+        };
+        /** ToolScope */
+        ToolScope: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Enrollment Id */
+            enrollment_id?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2812,6 +3460,63 @@ export interface operations {
             };
         };
     };
+    put_submission_api_v1_assignments__assignment_id__submissions__enrollment_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_revisions_api_v1_attendance_records__record_id__revisions_get: {
         parameters: {
             query?: never;
@@ -2976,6 +3681,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Demasiados intentos fallidos; esperar Retry-After segundos */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3343,6 +4055,100 @@ export interface operations {
             };
         };
     };
+    list_assignments_api_v1_cohorts__cohort_id__assignments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentList"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_assignment_api_v1_cohorts__cohort_id__assignments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignmentOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_sessions_api_v1_cohorts__cohort_id__attendance_sessions_get: {
         parameters: {
             query?: {
@@ -3597,6 +4403,157 @@ export interface operations {
             };
         };
     };
+    get_team_api_v1_cohorts__cohort_id__teaching_team_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingTeam"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_teacher_api_v1_cohorts__cohort_id__teaching_team__user_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingTeam"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cuenta de persona, no de personal */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_teacher_api_v1_cohorts__cohort_id__teaching_team__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingTeam"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Es la última persona docente de la cohorte */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     put_framework_competencies_api_v1_competency_frameworks__framework_id__competencies_put: {
         parameters: {
             query?: never;
@@ -3806,6 +4763,51 @@ export interface operations {
             };
         };
     };
+    list_enrollment_submissions_api_v1_enrollments__enrollment_id__submissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentSubmissions"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_applications_api_v1_me_applications_get: {
         parameters: {
             query?: never;
@@ -3911,6 +4913,244 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_review_api_v1_submissions__submission_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Matrícula de otra cohorte, actividad sin publicar o entrega ya revisada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tool_attendance_summary_api_v1_tools_attendance_summary_get: {
+        parameters: {
+            query: {
+                /** @description Cohorte consultada */
+                cohort_id: string;
+                enrollment_id?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolResponse_AttendanceSummary_"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tool_competency_progress_api_v1_tools_competency_progress_get: {
+        parameters: {
+            query: {
+                /** @description Cohorte consultada */
+                cohort_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolResponse_CompetencyProgress_"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tool_pending_submissions_api_v1_tools_pending_submissions_get: {
+        parameters: {
+            query: {
+                /** @description Cohorte consultada */
+                cohort_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolResponse_PendingSubmissions_"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tool_submission_context_api_v1_tools_submissions__submission_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolResponse_SubmissionContext_"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
