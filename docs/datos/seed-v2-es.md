@@ -66,5 +66,5 @@ Cada registro de asistencia guarda su primera versión en el historial de correc
 
 ## Qué no hace todavía
 
-- No genera entregas de proyectos. Dependen del modelo de entregas (KAN-56).
+- Entregas (KAN-56): una actividad por tarea de `seed.json` en cada cohorte de su programa, con plazo a las 23:59 hora local. «enviada» se entrega el día anterior al plazo y «fuera_de_plazo» dos días después. Los borradores y E-019 no tienen entrega (salen como pendiente o vencida). E-002, E-006, E-013 y E-017 quedan entregadas sin revisar. `check_results` son resultados de tests sintéticos ya calculados: la plataforma nunca ejecuta código.
 - No cambia los datos base (personas, convocatorias, cohortes y usuarios).

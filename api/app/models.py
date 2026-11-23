@@ -10,5 +10,6 @@ from app.modules.identity.models import AuthSession, Person, RoleAssignment, Use
 from app.modules.knowledge.models import KnowledgeChunk, KnowledgeDocument  # noqa: F401
 from app.modules.learning.models import Enrollment  # noqa: F401
 from app.modules.preselection.models import PreselectionDecision  # noqa: F401
+from app.modules.submissions.models import Assignment, Submission  # noqa: F401
 from app.modules.requirements.models import CallRequirement, RequirementReview, RequirementReviewRevision  # noqa: F401
 from app.modules.selection.models import SelectionDecision  # noqa: F401
