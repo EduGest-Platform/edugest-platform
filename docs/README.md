@@ -12,3 +12,7 @@
 | [reports/F1_GIT_DOCKER_POSTGRES_FASTAPI_REPORT.md](reports/F1_GIT_DOCKER_POSTGRES_FASTAPI_REPORT.md) | Informe F1: Git seguro, Docker, PostgreSQL y FastAPI verificados (11/11/2026) |
 
 Convención: **CONFIRMADO** (ejecutado/leído), **PROPUESTO**, **POR VALIDAR** (requiere Somos F5, Adrián o el equipo).
+
+## Operator manuals / Manuales operativos
+
+[Role procedures and API/demo boundaries (KAN-220)](manuals/KAN-220-roles.md) / Procedimientos por rol y límites actuales entre servidor y demo.
