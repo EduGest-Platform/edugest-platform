@@ -111,6 +111,11 @@ describe('web import boundaries (KAN-96)', () => {
 })
 
 describe('import boundary checker regressions (KAN-96)', () => {
+  it('rejects undeclared packages even in test directories', () => {
+    expect(isAllowedPackage({ file: 'gistar/__tests__/render.test.tsx', target: 'undeclared-package', typeOnly: false })).toBe(false)
+    expect(isAllowedPackage({ file: 'gistar/views/Render.tsx', target: 'undeclared-package', typeOnly: false })).toBe(false)
+  })
+
   const projectImportsOf = (file: string, lines: string[]) =>
     parseImports(file, lines.join('\n')).filter(isProjectImport)
 
