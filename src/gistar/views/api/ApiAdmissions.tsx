@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { CircleCheck, RefreshCw, Search, Send } from 'lucide-react'
 import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
@@ -213,24 +213,44 @@ export function ApiApplications() {
   const [q, setQ] = useState('')
   const [res, setRes] = useState<{ items: Schemas['ApplicationSummary'][]; total: number } | null>(null)
   const [denied, setDenied] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  const activeRequest = useRef<AbortController | null>(null)
 
   const load = useCallback(async () => {
-    const { data, response } = await api.GET('/api/v1/applications', {
-      params: { query: { call_id: callId || undefined, stage: stage || undefined, q: q.trim() || undefined, limit: 200 } },
-    })
-    if (response.status === 403) return setDenied(true)
-    setDenied(false)
-    setRes(data ?? null)
+    activeRequest.current?.abort()
+    const controller = new AbortController()
+    activeRequest.current = controller
+    setLoadError(null)
+
+    try {
+      const { data, error, response } = await api.GET('/api/v1/applications', {
+        signal: controller.signal,
+        params: { query: { call_id: callId || undefined, stage: stage || undefined, q: q.trim() || undefined, limit: 200 } },
+      })
+      if (controller.signal.aborted) return
+      setDenied(response.status === 403)
+      setRes(data ?? null)
+      if (!data && response.status !== 403) {
+        setLoadError(problemText(describeApiError(response.status, error)))
+      }
+    } catch {
+      if (!controller.signal.aborted) {
+        setDenied(false)
+        setRes(null)
+        setLoadError('No se pudo conectar con el servidor. Usa Actualizar para volver a intentar.')
+      }
+    }
   }, [callId, stage, q])
 
   useEffect(() => {
-    const t = setTimeout(load, 250)
-    return () => clearTimeout(t)
-  }, [load])
-  useEffect(() => {
+    const timer = setTimeout(load, 250)
     window.addEventListener('focus', load)
-    return () => window.removeEventListener('focus', load)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('focus', load)
+      activeRequest.current?.abort()
+    }
   }, [load])
 
   if (denied)
@@ -248,7 +268,7 @@ export function ApiApplications() {
         title="Expedientes"
         action={
           <div className="flex items-center gap-2">
-            <span role="status" className="text-xs text-muted">{res ? `${res.total} en tu ámbito` : 'Cargando…'}</span>
+            <span role="status" className="text-xs text-muted">{res ? `${res.total} en tu ámbito` : loadError ? '' : 'Cargando…'}</span>
             <Button size="sm" variant="ghost" onClick={load} aria-label="Actualizar">
               <RefreshCw className="size-3.5" aria-hidden />
             </Button>
@@ -286,7 +306,9 @@ export function ApiApplications() {
             </select>
           </Field>
         </div>
-        {res && !res.items.length ? (
+        {loadError ? (
+          <Notice tone="warning" live="assertive">{loadError}</Notice>
+        ) : res && !res.items.length ? (
           <Empty>No hay expedientes con estos filtros en tu ámbito.</Empty>
         ) : (
           <Table head={['Código', 'Persona', 'Convocatoria', 'Etapa', 'Recibida', '']}>
