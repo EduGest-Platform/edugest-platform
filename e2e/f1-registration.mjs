@@ -65,6 +65,52 @@ try {
   requireCheck('Persisted dossier opens', await staff.waitText('Historial CRM'))
   requireCheck('Dossier contains synthetic registration', (await staff.text()).includes(email))
 
+  // KAN-145: real authorized requirement reads, explicit versions and a refreshed human review.
+  async function authorized(path, token, method = 'GET', body) {
+    const response = await fetch(`${api}/api/v1${path}`, {
+      method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    if (!response.ok) throw new Error(`Synthetic requirement fixture failed: ${method} ${response.status}`)
+    return response.json()
+  }
+  const loginResponse = await fetch(`${api}/api/v1/auth/login`, { method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'admin@gistar.example', password: process.env.GISTAR_DEMO_PASSWORD }) })
+  if (!loginResponse.ok) throw new Error('Synthetic requirement fixture login failed')
+  const adminToken = (await loginResponse.json()).access_token
+  const catalogue = await authorized('/calls/CONV-IA-2027A/requirements', adminToken)
+  for (const version of [1, 2]) {
+    const ref = `e2e-review-v${version}`
+    if (!catalogue.items.some((row) => row.ref === ref)) await authorized('/calls/CONV-IA-2027A/requirements', adminToken, 'POST', {
+      ref, code: 'e2e-review', label: `Requisito E2E sintético ${version}`, kind: 'required', expected_version: version - 1,
+    })
+  }
+  const applications = await authorized(`/applications?q=${encodeURIComponent(email)}`, adminToken)
+  const applicationId = applications.items.find((row) => row.person.email === email)?.id
+  if (!applicationId) throw new Error('Synthetic requirement dossier missing')
+  const reviewPath = `/applications/${applicationId}/requirement-reviews`
+  const previous = (await authorized(reviewPath, adminToken)).items.find((row) => row.requirement_ref === 'e2e-review-v1')
+  const firstReview = await authorized(`${reviewPath}/e2e-review-v1`, adminToken, 'PUT', {
+    result: 'not_met', reason: 'Synthetic E2E human review', ...(previous ? { expected_version: previous.version } : {}),
+  })
+  const panel = `document.querySelector('[data-server-requirements]')`
+  await staff.click('Actualizar requisitos')
+  requireCheck('Server requirement versions loaded', await waitFor(staff, `!!document.querySelector('#requirement-version-e2e-review')`))
+  requireCheck('No latest version selected automatically', await staff.ev(`document.querySelector('#requirement-version-e2e-review').value === ''`))
+  await staff.set('#requirement-version-e2e-review', 'e2e-review-v1')
+  requireCheck('Persisted negative review is visible', await waitFor(staff, `${panel}?.innerText.includes('No cumple')`))
+  await staff.set('#requirement-version-e2e-review', 'e2e-review-v2')
+  requireCheck('Another version does not inherit the review', await waitFor(staff, `${panel}?.innerText.includes('Pendiente') && !${panel}?.innerText.includes('No cumple')`))
+  await authorized(`${reviewPath}/e2e-review-v1`, adminToken, 'PUT', {
+    result: 'met', reason: 'Synthetic E2E reviewed amendment', expected_version: firstReview.version,
+  })
+  await staff.click('Actualizar requisitos')
+  await waitFor(staff, `!!document.querySelector('#requirement-version-e2e-review') && document.querySelector('#requirement-version-e2e-review').value === ''`)
+  await staff.set('#requirement-version-e2e-review', 'e2e-review-v1')
+  requireCheck('Refresh shows amended server review', await waitFor(staff, `${panel}?.innerText.includes('Cumple') && !${panel}?.innerText.includes('No cumple')`))
+
+
   // Independent staff session: search must not expose this other-program application.
   const foreign = await newBrowser()
   await foreign.goto(web)
