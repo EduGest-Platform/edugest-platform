@@ -109,7 +109,22 @@ try {
     `document.querySelectorAll('main tbody tr').length === 1 && document.querySelector('main tbody tr').innerText.includes(${JSON.stringify(email)})`,
   ))
 
-  await staff.ev(`document.querySelector('main tbody tr button').click()`)
+  const dossierButton = "document.querySelector('main tbody tr button')"
+  requireCheck('Dossier trigger can receive focus', await staff.ev(`(() => {
+    const button = ${dossierButton}
+    button?.focus()
+    if (!button || document.activeElement !== button) return false
+    button.click()
+    return true
+  })()`))
+  requireCheck('Opening the dossier moves focus into the dialog', await waitFor(staff,
+    "document.querySelector('[role=dialog]')?.contains(document.activeElement)",
+  ))
+  await staff.escape()
+  requireCheck('Escape closes the dossier and restores focus', await waitFor(staff,
+    `!document.querySelector('[role=dialog]') && document.activeElement === ${dossierButton}`,
+  ))
+  await staff.ev(`${dossierButton}.click()`)
   requireCheck('Persisted dossier opens', await staff.waitText('Historial CRM'))
   requireCheck('Dossier contains synthetic registration', (await staff.text()).includes(email))
 

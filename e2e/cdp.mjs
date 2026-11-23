@@ -75,13 +75,15 @@ export async function newBrowser() {
   await send('Runtime.enable', {}, s)
   await send('Page.enable', {}, s)
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
+  const pressKey = async (name, virtualKeyCode) => {
+    const key = { key: name, code: name, windowsVirtualKeyCode: virtualKeyCode }
+    await send('Input.dispatchKeyEvent', { ...key, type: 'rawKeyDown' }, s)
+    await send('Input.dispatchKeyEvent', { ...key, type: 'keyUp' }, s)
+  }
   const page = {
     ev,
-    tab: async () => {
-      const key = { key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 }
-      await send('Input.dispatchKeyEvent', { ...key, type: 'rawKeyDown' }, s)
-      await send('Input.dispatchKeyEvent', { ...key, type: 'keyUp' }, s)
-    },
+    tab: () => pressKey('Tab', 9),
+    escape: () => pressKey('Escape', 27),
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
       await sleep(300)
