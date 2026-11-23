@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Panel de seguimiento de EduGest con datos de Jira y GitHub.">
+<title>EduGest | Panel de seguimiento</title>
+<style>
+:root{color-scheme:light;--ink:#172033;--muted:#667085;--line:#e5eaf1;--paper:#f5f7fb;--blue:#3157c8;--green:#13835b;--amber:#a86408}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 20px 60px}header,.panel,.metric{background:#fff;border:1px solid var(--line);border-radius:16px}
+header{padding:26px;margin-bottom:18px}h1{font-size:clamp(1.6rem,3vw,2.25rem);margin:0 0 6px}h2{font-size:1.15rem;margin:0 0 16px}
+.muted{color:var(--muted)}.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0}.metric{padding:20px}.metric strong{display:block;font-size:2rem;line-height:1.15;margin:8px 0}.metric span{color:var(--muted);font-size:.9rem}
+.progress{height:10px;background:#edf0f5;border-radius:99px;overflow:hidden;margin:12px 0 6px}.progress i{display:block;height:100%;background:var(--green);width:29.24%}
+.panel{padding:22px;margin:16px 0;overflow:hidden}table{width:100%;border-collapse:collapse;min-width:620px}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:.8rem;color:var(--muted);font-weight:650}.table-wrap{overflow-x:auto}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;background:#eef2ff;color:#3349a5;font-size:.8rem;font-weight:650}
+ul{padding-left:20px;margin:0}li{margin:9px 0}a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+.notice{border-left:4px solid var(--amber);background:#fff8eb;padding:14px 16px;border-radius:8px}footer{font-size:.85rem;color:var(--muted);padding:10px 2px}
+@media(max-width:600px){main{padding:16px 12px 36px}header,.panel{padding:17px}.metric{padding:16px}}
+</style></head><body><main>
+<header><div class="eyebrow">EduGest · Seguimiento de proyecto</div><h1>Estado de ejecución</h1>
+<p class="muted">Corte de datos: 23/11/2026 · Fuentes: Jira KAN y GitHub · Alcance: <code>pf2-v41</code></p>
+<p><a href="https://anasfady87-1789923749606.atlassian.net/issues/?jql=project%20%3D%20KAN%20AND%20issuetype%20in%20subTaskIssueTypes()%20AND%20labels%20%3D%20%22pf2-v41%22">Abrir alcance en Jira</a> · <a href="https://github.com/EduGest-Platform/edugest-platform">Abrir repositorio</a></p></header>
+<section class="grid" aria-label="Indicadores principales">
+<article class="metric"><span>Subtareas en alcance</span><strong>187</strong><span>Proyecto KAN · pf2-v41</span></article>
+<article class="metric"><span>Avance administrativo en sprints</span><strong>29,24 %</strong><span>50 finalizadas de 171 asignadas</span><div class="progress" role="img" aria-label="29,24 por ciento completado"><i></i></div></article>
+<article class="metric"><span>Sin sprint asignado</span><strong>16</strong><span>3 finalizadas · 13 no finalizadas</span></article>
+<article class="metric"><span>PR abiertas hacia dev</span><strong>3</strong><span>#117 · #118 · #121</span></article></section>
+<section class="panel"><h2>Distribución por sprint</h2><p class="muted">El porcentaje se calcula solo sobre subtareas con sprint. Las que no tienen sprint se muestran aparte.</p>
+<div class="table-wrap"><table><thead><tr><th>Sprint</th><th>Total</th><th>Finalizadas</th><th>Idea</th><th>Pruebas</th><th>En curso</th><th>Avance</th></tr></thead><tbody>
+<tr><td>S0</td><td>18</td><td>18</td><td>0</td><td>0</td><td>0</td><td><span class="pill">100 %</span></td></tr>
+<tr><td>S1</td><td>41</td><td>16</td><td>11</td><td>7</td><td>7</td><td>39,02 %</td></tr>
+<tr><td>S2</td><td>61</td><td>12</td><td>35</td><td>11</td><td>3</td><td>19,67 %</td></tr>
+<tr><td>S3a</td><td>37</td><td>3</td><td>30</td><td>4</td><td>0</td><td>8,11 %</td></tr>
+<tr><td>S3b</td><td>14</td><td>1</td><td>12</td><td>0</td><td>1</td><td>7,14 %</td></tr>
+<tr><th>Total con sprint</th><th>171</th><th>50</th><th>88</th><th>22</th><th>11</th><th>29,24 %</th></tr>
+<tr><td>Sin sprint</td><td>16</td><td>3</td><td>12</td><td>1</td><td>0</td><td>—</td></tr>
+<tr><th>Total general</th><th>187</th><th>53</th><th>100</th><th>23</th><th>11</th><th>—</th></tr>
+</tbody></table></div></section>
+<section class="panel"><h2>GitHub · PR abiertas hacia dev</h2><ul>
+<li><a href="https://github.com/EduGest-Platform/edugest-platform/pull/121">PR #121 — IP del cliente detrás del proxy y semilla determinista</a></li>
+<li><a href="https://github.com/EduGest-Platform/edugest-platform/pull/118">PR #118 — Manuales operativos por rol (KAN-220)</a></li>
+<li><a href="https://github.com/EduGest-Platform/edugest-platform/pull/117">PR #117 — Serialización segura del login smoke local (KAN-212)</a></li>
+</ul><p class="muted">La PR #119 del panel automatizado está cerrada; no se cuenta como abierta ni integrada.</p></section>
+<section class="panel"><h2>Último commit detectado</h2><p><strong><a href="https://github.com/EduGest-Platform/edugest-platform/commit/99624a73a30a0c9cac652a3c75ff06b893e9cc13">99624a73</a></strong> · Merge de PR #122 · 23/11/2026 19:30 UTC</p>
+<p class="muted">No se obtuvieron ejecuciones de workflow ni estados CI asociados a este commit; por eso no se presenta CI como verde o validado.</p></section>
+<section class="panel"><h2>Cómo interpretar las cifras</h2><div class="notice"><strong>Avance administrativo, no avance técnico.</strong> El 29,24 % representa subtareas en estado Jira exactamente «Finalizada» sobre las 171 subtareas asignadas a sprint. No equivale a porcentaje de producto terminado ni a aceptación funcional.</div>
+<p>Las PR abiertas no se consideran integradas. «Pruebas» se mantiene separado de «Finalizada». No se calcula avance técnico ponderado porque falta una rúbrica de aceptación con evidencias revisables por sprint.</p></section>
+<footer>Panel estático actualizado manualmente. Refleja el corte indicado y no se refresca automáticamente.</footer>
+</main></body></html>
