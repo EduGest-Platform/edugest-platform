@@ -14,7 +14,7 @@ from app.modules.learning.models import Enrollment
 from app.seed import load_seed
 from app.seed_academic import load_academic
 
-ACADEMIC = "competency_assessment, cohort_competency_framework, competency, competency_framework, " \
+ACADEMIC = "submission, assignment, competency_assessment, cohort_competency_framework, competency, competency_framework, " \
            "attendance_record_revision, attendance_record, attendance_session"
 
 
@@ -187,3 +187,20 @@ def test_a_full_day_created_through_the_api_is_not_doubled_by_a_half_day(db, dat
     kept = db.scalar(select(AttendanceRecord).where(AttendanceRecord.session_id == full_id))
     assert (kept.status, kept.modality, kept.version) == ("retraso", "online", 1)
     assert count(db, AttendanceRecord, AttendanceRecord.session_id == full_id) == 1
+
+
+def test_submissions_follow_the_documented_delivery_cases(db, data, loaded):
+    """KAN-56: E-019 never delivered, E-002/E-006/E-013/E-017 delivered but not reviewed, drafts were never handed in."""
+    from app.modules.submissions.models import Assignment, Submission
+
+    assert loaded["assignments"] == db.scalar(select(func.count()).select_from(Assignment)) >= len(data["tareas"])
+    delivered = {ref: s for ref, s in by_coder(db, Submission)}
+    assert "E-019" not in delivered
+    assert all(delivered[ref].status == "submitted" for ref in ("E-002", "E-006", "E-013", "E-017"))
+    drafts = {e["coder_id"] for e in data["entregas"] if e["estado"] == "borrador"}
+    assert not drafts & delivered.keys()
+    late = {e["coder_id"] for e in data["entregas"] if e["estado"] == "fuera_de_plazo"}
+    for ref, submission in delivered.items():
+        assignment = db.get(Assignment, submission.assignment_id)
+        assert (submission.first_submitted_at > assignment.due_at) == (ref in late)
+    assert loaded["submissions"] == len(delivered)

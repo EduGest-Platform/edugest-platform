@@ -44,9 +44,29 @@ class SelectionDecisionOut(BaseModel):
     enrollment_id: uuid.UUID | None = Field(description="Matrícula creada por la decisión (solo al admitir)")
 
 
+class SelectionApprovalOut(BaseModel):
+    decision: Decision
+    cohort_id: str | None
+    reason: str
+    actor: str | None
+    occurred_at: datetime
+
+
+class SelectionPendingOut(BaseModel):
+    """Returned with 202 when the vote was recorded but fewer than `quorum` different people agree yet."""
+
+    application_id: uuid.UUID
+    state: Literal["pending", "disagreement"] = Field(description="pending: falta otra persona; disagreement: hay votos distintos")
+    stage: str
+    quorum: int = Field(description="Personas distintas que deben coincidir (configurable por convocatoria, por defecto 2)")
+    votes: list[SelectionApprovalOut]
+
+
 class SelectionDecisionList(BaseModel):
     application_id: uuid.UUID
     items: list[SelectionDecisionOut]
+    quorum: int = Field(description="Personas distintas que deben coincidir en esta convocatoria")
+    pending_votes: list[SelectionApprovalOut] = Field(description="Votos que aún no han alcanzado el quórum")
 
 
 # Provisional rule until the foundation confirms the priority criteria (review of PR #95, point 2).
@@ -83,3 +103,11 @@ class SelectionOverview(BaseModel):
         description="Criterio con el que se ordena la lista de espera. Provisional: la fundación aún no ha confirmado los criterios de prioridad."
     )
     waiting_order_confirmed: bool = Field(description="False mientras la fundación no confirme el criterio de prioridad")
+
+
+class SelectionPolicy(BaseModel):
+    """Per-call selection rule. Melissa round 3 Q11: two approvals by default; administration may change it, audited."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    selection_quorum: int = Field(ge=1, le=5, description="Personas distintas que deben coincidir en la decisión de selección (por defecto 2)")

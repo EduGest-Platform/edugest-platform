@@ -1,16 +1,17 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core import audit
+from app.core import audit, login_throttle
 from app.core.authz import Principal
 from app.core.config import settings
 from app.core.db import utcnow
 from app.core.deps import DB, CurrentPrincipal, bearer
+from app.core.errors import UserFacingError
 from app.core.security import hash_password, new_token, token_hash, verify_password
 from app.core.text import normalize_email
 from app.modules.admissions.models import Application
@@ -45,17 +46,28 @@ def me_out(db: Session, p: Principal) -> MeOut:
     )
 
 
-@router.post("/login", response_model=LoginOut, summary="Iniciar sesión con una cuenta sintética de demo")
-def login(body: LoginIn, db: DB) -> LoginOut:
+@router.post("/login", response_model=LoginOut, responses={429: {"description": "Demasiados intentos fallidos; esperar Retry-After segundos"}},
+             summary="Iniciar sesión con una cuenta sintética de demo")
+def login(body: LoginIn, db: DB, request: Request) -> LoginOut:
     try:
         email = normalize_email(body.email)
     except ValueError:
         email = ""
+    client = request.client.host if request.client else None
+    wait = login_throttle.retry_after_seconds(email, client)
+    if wait:
+        audit.record(db, None, "auth.login_throttled", "user", None)
+        db.commit()
+        raise UserFacingError(status.HTTP_429_TOO_MANY_REQUESTS, "too_many_login_attempts",
+                              f"Demasiados intentos fallidos. Espera {max(1, wait // 60)} minuto(s) y vuelve a intentarlo.",
+                              headers={"Retry-After": str(wait)})
     user = db.scalar(select(User).where(User.email == email)) if email else None
     if not credentials_are_valid(user, body.password):
+        login_throttle.record_failure(email, client)
         audit.record(db, None, "auth.login_failed", "user", None)
         db.commit()
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Credenciales no válidas")
+    login_throttle.record_success(email)
     token, digest = new_token()
     expires = utcnow() + timedelta(hours=settings.session_ttl_hours)
     db.add(AuthSession(user_id=user.id, token_hash=digest, expires_at=expires))

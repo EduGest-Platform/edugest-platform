@@ -12,7 +12,7 @@ from app.modules.catalog.models import Call, Cohort
 from app.modules.learning.models import Enrollment
 from app.modules.preselection.models import PreselectionDecision
 from app.modules.selection.models import SelectionDecision
-from tests.conftest import CAPT_DATA, CAPT_IA, CODER, SEL_IA, login, new_application
+from tests.conftest import CAPT_DATA, CAPT_IA, CODER, COORD, SEL_IA, login, new_application
 
 CALL = "CONV-IA-2027A"
 COHORT = "COH-JOURNEY"
@@ -57,9 +57,16 @@ def invite(client, path, actor):
 
 
 def decide(client, path, actor, outcome, expected=201):
+    """A selection decision applies when two different people agree (call quorum 2, Melissa round 3 Q11).
+
+    For an expected 201, coordination votes first (202, pending) and `actor` completes the quorum.
+    """
     body = {"decision": outcome, "reason": REASON}
     if outcome == "admitida":
         body["cohort_id"] = COHORT
+    if expected == 201:
+        pending = request(client, "POST", f"{path}/selection-decisions", login(client, COORD), body, 202)
+        assert pending["state"] == "pending" and pending["quorum"] == 2
     return request(client, "POST", f"{path}/selection-decisions", actor, body, expected)
 
 
@@ -109,7 +116,8 @@ def test_public_intake_reaches_only_the_explicit_human_outcome(client, db, intak
         result = decide(client, path, selector, outcome)
         stage, enrollments, decisions = persisted(db, receipt)
         assert stage == outcome and len(decisions) == 1
-        assert result["from_stage"] == "convocada" and result["to_stage"] == outcome
+        # The first vote of the quorum moved the application to «pendiente de decisión»; the decision starts there.
+        assert result["from_stage"] == "pendiente_decision_humana" and result["to_stage"] == outcome
         if outcome == "admitida":
             assert len(enrollments) == 1
             enrollment = enrollments[0]

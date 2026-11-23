@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://gistar:gistar@localhost:5432/gistar"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8443", "http://localhost:3000"]
     session_ttl_hours: int = 8
+    # Login brute-force protection: failed attempts per account inside the window before 429 (4x that per client).
+    login_max_failures: int = 5
+    login_window_minutes: int = 15
     # Synthetic demo accounts only. Never reuse for real people.
     demo_password: str = "gistar-demo-2026"
     # scrypt cost; tests lower it to keep the suite fast.

@@ -37,7 +37,7 @@ El texto del CRM es fijo («Selección terminada: …») y el motivo libre se qu
 
 | Tema | Situación |
 |---|---|
-| Número de firmas | La propuesta es dos personas distintas y la fundación no la ha confirmado (nota 3 de `roles-y-permisos-objetivo.md`). Aquí basta **una** decisión humana. Al ser un registro de solo adición, una segunda firma se podrá añadir sin cambiar lo existente |
+| Número de firmas | **Confirmado** por la fundación (Melissa, ronda 3, Q11: «Valor predeterminado de dos aprobaciones como mínimo»). `call.selection_quorum`, por defecto 2 y configurable por convocatoria (1–5). Cada persona vota una vez (`selection_approval`); la decisión se aplica cuando el quórum coincide en el mismo resultado y la misma cohorte. Mientras tanto, la respuesta es `202` con los votos. Los votos en minoría quedan visibles y nunca se aplican. **EN:** confirmed two-person quorum per call (default 2). Each person votes once, the decision applies when the quorum agrees on the same outcome and cohort, and pending or outvoted votes stay visible |
 | Correos de estado | No se envía nada. «Esta vez no» exige revisión humana antes de enviarse (KAN-50) |
 | Invitación al coder al matricular (D2) | No implementada. La matrícula existe, pero la invitación sigue pendiente |
 | Etapas internas de selección | No hay endpoint para pasar de `convocada` a `evaluacion_en_curso` o `pendiente_decision_humana`, así que se permite decidir desde cualquiera de las tres |
@@ -89,3 +89,22 @@ No ejecutado: `pnpm build`, E2E, `gitleaks` ni el job `compose` de CI (no hay Do
 - **Ficheros compartidos:** `api/app/main.py` y `api/app/models.py` reciben una línea de importación cada uno, y `api/app/seed.py` un nombre más en `reset`. Los conflictos, si los hay, son de resolución trivial.
 - **Cliente generado:** si otro PR cambia `contracts/openapi.json`, regenerar `schema.gen.ts` con `pnpm gen:api` tras el rebase; el CI lo comprueba.
 - **Diagrama ER y diccionario de datos:** la tabla `selection_decision` es nueva. Los tests de deriva existentes (`test_data_dictionary_drift`) no la cubren y siguen pasando; conviene añadirla al diagrama de admisiones cuando se integre.
+
+## Integración web del quórum / Web integration of the quorum
+
+**ES.** Contrato para la pantalla de decisión (PR 98). La web no debe deducir estados: los lee de la API.
+
+| Respuesta de `POST /applications/{id}/selection-decisions` | Qué significa | Qué muestra la web |
+|---|---|---|
+| `201` + `SelectionDecisionOut` | Quórum alcanzado: decisión aplicada (y matrícula si `admitida`) | «Decisión registrada», enlace a la matrícula (`enrollment_id`) |
+| `202` + `state: "pending"` | Voto guardado; faltan `quorum - len(votes)` personas | «Tu voto está registrado. Falta la aprobación de otra persona», con la lista de votos (quién, qué, cuándo) |
+| `202` + `state: "disagreement"` | Hay votos distintos (resultado o cohorte) | Aviso destacado: «Hay votos distintos. Hace falta que otra persona decida», con los votos uno junto a otro |
+| `409 already_approved` | Esta persona ya votó | Desactivar el botón y mostrar el mensaje de la API |
+| `409 no_places_left`, `422 cohort_not_in_call`, `409 selection_ended` | Bloqueos de negocio | Mostrar `detail` tal cual (lenguaje llano) y recargar el estado |
+
+- Estado actual sin votar: `GET /applications/{id}/selection-decisions` devuelve `quorum`, `pending_votes` (votos abiertos) e `items` (decisiones aplicadas).
+- Regla de la convocatoria: `GET /calls/{call_id}/selection-policy`. Solo administración la cambia con `PUT` (1–5, auditado).
+- Tras un `201` o `202`, recargar la candidatura y la vista de selección (`/calls/{id}/selection-overview`): la etapa puede haber pasado a `pendiente_decision_humana`.
+- Tipos: `SelectionDecisionOut`, `SelectionPendingOut`, `SelectionApprovalOut` y `SelectionPolicy` en `src/shared/api/schema.gen.ts`.
+
+**EN.** Web contract for the decision screen. `201` means the decision applied (and the enrollment, when admitted). `202` means the vote was recorded, with `state` `pending` (more people needed) or `disagreement` (different votes). Show the votes from the response and never infer state client-side. `GET .../selection-decisions` exposes `quorum` and `pending_votes`. `GET/PUT /calls/{id}/selection-policy` reads or changes the quorum (`PUT` is admin-only and audited). After any `201` or `202`, reload the application and the selection overview.

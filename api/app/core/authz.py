@@ -13,6 +13,8 @@ REQUIREMENT_REVIEW_PERMISSIONS = {*REQUIREMENT_EXCEPTION_PERMISSIONS, "requireme
 PRESELECTION_PERMISSIONS = {"preselection.read", "preselection.decide"}
 # Admission decision (KAN-48, PO 19/11/2026): selección and coordinación decide by default; administration through the wildcard.
 SELECTION_PERMISSIONS = {"selection.read", "selection.decide"}
+# Melissa round 3 Q11: only administration (wildcard) changes the selection quorum of a call. No role grant on purpose.
+SELECTION_POLICY_PERMISSION = "selection.configure"
 # PO decision 19/11/2026: administration (wildcard) and captación edit the per-call silence policy.
 PRESELECTION_POLICY_PERMISSION = "preselection.configure"
 
@@ -21,6 +23,14 @@ ATTENDANCE_PERMISSIONS = {"attendance.read", "attendance.record"}
 # PO 19/11/2026: coordination sees cohort attendance totals only, never per-person rows.
 ATTENDANCE_AGGREGATE_PERMISSION = "attendance.aggregate"
 COMPETENCY_PERMISSIONS = {"competencies.read", "competencies.configure", "competencies.assess"}
+SUBMISSION_PERMISSIONS = {"submissions.read", "submissions.review"}
+# PO 23/11/2026: like attendance, coordination only sees submission and competency totals, never per-person rows.
+SUBMISSION_AGGREGATE_PERMISSION = "submissions.aggregate"
+COMPETENCY_AGGREGATE_PERMISSION = "competencies.aggregate"
+# Melissa round 3 Q15 (PO approved 23/11/2026): a teacher manages the teaching team of its own cohorts.
+TEAM_MANAGE_PERMISSION = "cohort.team.manage"
+# Q15: the academic attributions of coordination (cohort indicators) also belong to the teacher of the cohort.
+ACADEMIC_AGGREGATE_PERMISSIONS = {ATTENDANCE_AGGREGATE_PERMISSION, SUBMISSION_AGGREGATE_PERMISSION, COMPETENCY_AGGREGATE_PERMISSION}
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
@@ -29,10 +39,12 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
     "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS, *SELECTION_PERMISSIONS},
     # Coordinación: aggregated indicators (calls, cohort attendance), plus reading and recording requirement exceptions (KAN-128).
-    "coordinacion": {"calls.aggregate", ATTENDANCE_AGGREGATE_PERMISSION, *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *SELECTION_PERMISSIONS},
+    "coordinacion": {"calls.aggregate", ATTENDANCE_AGGREGATE_PERMISSION, SUBMISSION_AGGREGATE_PERMISSION, COMPETENCY_AGGREGATE_PERMISSION, *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *SELECTION_PERMISSIONS},
     # Docente: no access to admissions, except reading and recording requirement exceptions (KAN-128).
-    # Records attendance and configures/assesses competencies of its own cohorts (KAN-55, KAN-57).
-    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *ATTENDANCE_PERMISSIONS, *COMPETENCY_PERMISSIONS},
+    # Records attendance, configures/assesses competencies and reviews submissions of its own cohorts (KAN-55, KAN-57, KAN-56).
+    # Q15: also the cohort indicators of coordination and the teaching team of its cohorts. Never the admission decision.
+    "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *ATTENDANCE_PERMISSIONS, *COMPETENCY_PERMISSIONS, *SUBMISSION_PERMISSIONS,
+                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION},
 }
 
 

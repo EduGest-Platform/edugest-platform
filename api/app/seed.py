@@ -30,6 +30,13 @@ CALLS = [
 ]
 OPEN_CALL = {"P-IA": "CONV-IA-2027A", "P-DATA": "CONV-DATA-2027A"}
 
+# Cohorts fed by the open calls, still without coders: the final selection decision enrolls admitted people here
+# (demo path inscription -> admission -> enrollment). Not in seed.json, so the academic seed leaves them empty.
+UPCOMING_COHORTS = [
+    ("COH-IA-2027A", "P-IA", "CONV-IA-2027A", "IA aplicada · primavera 2027", date(2027, 2, 1), date(2027, 6, 30)),
+    ("COH-DATA-2027A", "P-DATA", "CONV-DATA-2027A", "Data y automatización · primavera 2027", date(2027, 2, 1), date(2027, 6, 30)),
+]
+
 # Synthetic staff accounts: role + scope. Domain .example is reserved and never deliverable.
 STAFF = [
     ("admin@gistar.example", "Administración demo", [("admin", "global", None)]),
@@ -48,7 +55,7 @@ def load_seed() -> dict:
 
 
 def reset(db: Session) -> None:
-    tables = ["audit_event", "competency_assessment", "cohort_competency_framework", "competency", "competency_framework", "attendance_record_revision", "attendance_record", "attendance_session", "selection_decision", "preselection_decision", "requirement_review_revision", "requirement_review", "application_event", "enrollment", "application", "auth_session", "role_assignment", "app_user", "person", "cohort", "call", "program"]
+    tables = ["audit_event", "submission", "assignment", "competency_assessment", "cohort_competency_framework", "competency", "competency_framework", "attendance_record_revision", "attendance_record", "attendance_session", "selection_approval", "selection_decision", "preselection_decision", "requirement_review_revision", "requirement_review", "application_event", "enrollment", "application", "auth_session", "role_assignment", "app_user", "person", "cohort", "call", "program"]
     db.execute(text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE"))
     db.commit()
 
@@ -64,6 +71,8 @@ def seed(db: Session) -> None:
     feeds = {c[8]: c[0] for c in CALLS if c[8]}
     for c in data["cohortes"]:
         db.add(Cohort(id=c["id"], program_id=c["programa_id"], call_id=feeds.get(c["id"]), nombre=c["nombre"], inicio=date.fromisoformat(c["inicio"]), fin=date.fromisoformat(c["fin"])))
+    for cid, prog, call_id, nombre, inicio, fin in UPCOMING_COHORTS:
+        db.add(Cohort(id=cid, program_id=prog, call_id=call_id, nombre=nombre, inicio=inicio, fin=fin))
     db.flush()
 
     persons: dict[str, Person] = {}
@@ -119,7 +128,8 @@ def main() -> None:
         else:
             print(f"Seed v2 (solo lo que faltaba): {created['frameworks']} árboles de competencias, "
                   f"{created['pins']} cohortes asignadas, {created['assessments']} evaluaciones, "
-                  f"{created['sessions']} sesiones y {created['records']} registros de asistencia")
+                  f"{created['sessions']} sesiones, {created['records']} registros de asistencia, "
+                  f"{created['assignments']} actividades y {created['submissions']} entregas")
 
 
 if __name__ == "__main__":

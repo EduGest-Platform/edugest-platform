@@ -33,6 +33,14 @@ def _migrated():
 
 
 @pytest.fixture(autouse=True)
+def _fresh_login_throttle():
+    from app.core import login_throttle
+
+    login_throttle.reset()
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _fresh_data():
     with SessionLocal() as db:
         reset(db)

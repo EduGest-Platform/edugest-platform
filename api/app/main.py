@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.db import engine
 from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
 from app.modules.admissions.router import router as admissions_router
+from app.modules.assistant_tools.router import router as assistant_tools_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.audit.router import router as audit_router
 from app.modules.automation.router import router as automation_router
@@ -21,7 +22,9 @@ from app.modules.identity.router import router as identity_router
 from app.modules.preselection.router import router as preselection_router
 from app.modules.requirements.router import router as requirements_router
 from app.modules.requirements.prefilter import router as prefilter_router
+from app.modules.learning.team_router import router as teaching_team_router
 from app.modules.selection.router import router as selection_router
+from app.modules.submissions.router import router as submissions_router
 
 app = FastAPI(
     title="EduGest API",
@@ -54,6 +57,9 @@ for r in (
     automation_router,
     attendance_router,
     competencies_router,
+    submissions_router,
+    assistant_tools_router,
+    teaching_team_router,
     audit_router,
 ):
     app.include_router(r, prefix=API)

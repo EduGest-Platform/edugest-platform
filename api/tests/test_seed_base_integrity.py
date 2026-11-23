@@ -33,7 +33,12 @@ def test_seed_catalog_keeps_call_program_and_cohort_bindings(db):
         if cohort_id:
             cohort = db.get(Cohort, cohort_id)
             assert (cohort.program_id, cohort.call_id) == (program_id, call_id)
-    assert {cohort.id for cohort in db.scalars(select(Cohort))} == {item["id"] for item in data["cohortes"]}
+    # seed.json cohorts plus the upcoming ones fed by the open calls (so the demo can admit and enroll).
+    upcoming = {row[0] for row in seed_module.UPCOMING_COHORTS}
+    assert {cohort.id for cohort in db.scalars(select(Cohort))} == {item["id"] for item in data["cohortes"]} | upcoming
+    for cohort_id, program_id, call_id, *_ in seed_module.UPCOMING_COHORTS:
+        cohort = db.get(Cohort, cohort_id)
+        assert (cohort.program_id, cohort.call_id) == (program_id, call_id) and calls[call_id].program_id == program_id
 
 
 def test_seed_people_keep_source_references_and_synthetic_identity(db):

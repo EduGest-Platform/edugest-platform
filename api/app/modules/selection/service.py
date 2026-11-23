@@ -14,7 +14,7 @@ from app.modules.catalog.models import Call, Cohort
 from app.modules.learning.models import Enrollment
 from app.modules.preselection.service import SELECTION_STAGES, STAGE_LABELS
 from app.modules.requirements.service import require_access
-from app.modules.selection.models import SelectionDecision
+from app.modules.selection.models import SelectionApproval, SelectionDecision
 from app.modules.selection.schemas import (
     WAITING_ORDER_BASIS, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
 )
@@ -22,6 +22,7 @@ from app.modules.selection.schemas import (
 # An admission decision can be taken while the application is in selection, or from the waiting list (promotion or final refusal).
 DECIDABLE_STAGES = (*SELECTION_STAGES, "lista_espera")
 TARGET_STAGE = {"admitida": "admitida", "lista_espera": "lista_espera", "no_admitida": "no_admitida"}
+APPROVAL_CRM_TEXT = "Voto de decisión final registrado: falta el acuerdo de otra persona"
 # Fixed CRM text: the free-text reason stays in the decision record, never in the history other profiles read.
 CRM_TEXT = {
     "admitida": "Selección terminada: admitida y matriculada en la cohorte {cohort}",
@@ -139,9 +140,21 @@ def _check_places(db: Session, call: Call) -> None:
         )
 
 
-def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: SelectionDecisionWrite) -> SelectionDecision:
-    """Records one human admission decision, with its enrollment (when admitting), CRM entry and audit event, in one transaction.
+def pending_approvals(db: Session, application_id: uuid.UUID) -> list[SelectionApproval]:
+    query = select(SelectionApproval).where(SelectionApproval.application_id == application_id, SelectionApproval.decision_id.is_(None))
+    return list(db.scalars(query.order_by(SelectionApproval.occurred_at, SelectionApproval.id)))
 
+
+def _agreeing(approvals: list[SelectionApproval], body: SelectionDecisionWrite) -> list[SelectionApproval]:
+    """Votes for exactly the same outcome (and, when admitting, the same cohort)."""
+    return [a for a in approvals if a.decision == body.decision and a.cohort_id == (body.cohort_id if body.decision == "admitida" else None)]
+
+
+def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: SelectionDecisionWrite) -> SelectionDecision | list[SelectionApproval]:
+    """Records one person's vote and, when `call.selection_quorum` different people agree, applies the decision with its
+    enrollment (when admitting), CRM entry and audit event, in one transaction.
+
+    Returns the SelectionDecision when it was applied, or the pending votes when more people still have to agree.
     The application and its call are locked together, so two people admitting at the same time cannot exceed the places of the call.
     """
     row = db.execute(
@@ -152,19 +165,54 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
     application, call = row
     require_selection_access(db, actor, "selection.decide", call)
     _check_stage(application, body.decision)
+    # Checked on every vote, so a wrong cohort or a full call is caught before anyone waits for a second person.
+    cohort = _check_cohort(db, application, call, body.cohort_id or "") if body.decision == "admitida" else None
+    if cohort:
+        _check_places(db, call)
 
+    pending = pending_approvals(db, application.id)
+    if any(a.actor_user_id == actor.user.id for a in pending):
+        raise _conflict("already_approved", "Ya registraste tu voto sobre esta candidatura. La decisión necesita a otra persona distinta.")
+    now = utcnow()
+    vote = SelectionApproval(application_id=application.id, decision=body.decision, cohort_id=cohort.id if cohort else None,
+                             reason=body.reason, actor_user_id=actor.user.id, occurred_at=now)
+    db.add(vote)
+    agreeing = [*_agreeing(pending, body), vote]
+    if len(agreeing) < call.selection_quorum:
+        return _wait_for_quorum(db, actor, application, call, body, [*pending, vote], now)
+    decision = _apply(db, actor, application, call, body, cohort, now)
+    # Every open vote is closed by this decision, outvoted ones included: an old vote must never count towards a later
+    # decision (for example a promotion from the waiting list). They stay linked to the decision they were part of.
+    for approval in [*pending, vote]:
+        approval.decision_id = decision.id
+    db.commit()
+    return decision
+
+
+def _wait_for_quorum(db: Session, actor: Principal, application: Application, call: Call, body: SelectionDecisionWrite,
+                     votes: list[SelectionApproval], now: datetime) -> list[SelectionApproval]:
+    """Keeps the vote and moves the application to «pendiente de decisión» (a waiting-list promotion stays on the list)."""
+    stage_changed = application.stage in SELECTION_STAGES and application.stage != "pendiente_decision_humana"
+    if stage_changed:
+        application.stage, application.updated_at = "pendiente_decision_humana", now
+    db.add(ApplicationEvent(application_id=application.id, tipo="cambio_etapa" if stage_changed else "nota", resumen=APPROVAL_CRM_TEXT,
+                            actor_user_id=actor.user.id, occurred_at=now))
+    db.flush()
+    audit.record(db, actor, "selection.approved", "application", str(application.id), codigo=application.codigo, decision=body.decision,
+                 votes=len(votes), quorum=call.selection_quorum)
+    db.commit()
+    return votes
+
+
+def _apply(db: Session, actor: Principal, application: Application, call: Call, body: SelectionDecisionWrite, cohort: Cohort | None, now: datetime) -> SelectionDecision:
     # Promoting someone who is not first in the waiting list is allowed (a person decides), but it is audited.
     out_of_waiting_order = False
     if application.stage == "lista_espera" and body.decision == "admitida":
         queue = waiting_list_order(db, call.id)
         out_of_waiting_order = bool(queue) and queue[0][0].id != application.id
 
-    now = utcnow()
-    cohort: Cohort | None = None
     enrollment: Enrollment | None = None
-    if body.decision == "admitida":
-        cohort = _check_cohort(db, application, call, body.cohort_id or "")
-        _check_places(db, call)
+    if cohort:
         enrollment = Enrollment(person_id=application.person_id, cohort_id=cohort.id, application_id=application.id, estado="activa")
         db.add(enrollment)
         db.flush()
@@ -189,7 +237,6 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
     audit.record(
         db, actor, "selection.decided", "application", str(application.id),
         codigo=application.codigo, decision=body.decision, from_stage=from_stage, to_stage=to_stage, cohort_id=cohort.id if cohort else None,
-        out_of_waiting_order=out_of_waiting_order,
+        out_of_waiting_order=out_of_waiting_order, quorum=call.selection_quorum,
     )
-    db.commit()
     return decision

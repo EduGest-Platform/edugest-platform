@@ -66,5 +66,5 @@ Each attendance record stores its first version in the correction history, the s
 
 ## What it does not do yet
 
-- It does not generate project submissions. They depend on the submissions model (KAN-56).
+- Submissions (KAN-56): one assignment per `seed.json` task in every cohort of its program, due at 23:59 local time. "enviada" is delivered the day before the deadline and "fuera_de_plazo" two days after it. Drafts and E-019 have no submission (shown as pending or overdue). E-002, E-006, E-013 and E-017 stay submitted but not reviewed. `check_results` are pre-computed synthetic test results: the platform never runs code.
 - It does not change the base data (people, calls, cohorts and users).

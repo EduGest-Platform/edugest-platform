@@ -31,6 +31,7 @@ from app.modules.catalog.models import Cohort
 from app.modules.competencies.models import CohortCompetencyFramework, Competency, CompetencyAssessment, CompetencyFramework
 from app.modules.identity.models import Person, User
 from app.modules.learning.models import Enrollment
+from app.modules.submissions.models import Assignment, Submission
 
 SEED = 173
 MADRID = ZoneInfo("Europe/Madrid")
@@ -75,7 +76,8 @@ def load_academic(db: Session, data: dict) -> dict[str, int]:
     teacher = db.scalar(select(User).where(User.email == TEACHER_EMAIL))
     if teacher is None:
         raise RuntimeError("The academic seed needs the base seed first (teacher account not found)")
-    cohorts = sorted(db.scalars(select(Cohort)), key=lambda c: c.id)
+    seed_cohorts = {c["id"] for c in data["cohortes"]}  # upcoming cohorts without coders get no academic data
+    cohorts = sorted((c for c in db.scalars(select(Cohort)) if c.id in seed_cohorts), key=lambda c: c.id)
     enrollments = {
         ref: enrollment
         for ref, enrollment in db.execute(select(Person.legacy_ref, Enrollment).join(Enrollment, Enrollment.person_id == Person.id))
@@ -83,8 +85,10 @@ def load_academic(db: Session, data: dict) -> dict[str, int]:
     frameworks, pins = _frameworks(db, data, cohorts, teacher)
     assessments = _assessments(db, data, enrollments, teacher)
     sessions, records = _attendance(db, data, cohorts, enrollments, teacher)
+    assignments, submissions = _submissions(db, data, cohorts, enrollments, teacher)
     db.commit()
-    return {"frameworks": frameworks, "pins": pins, "assessments": assessments, "sessions": sessions, "records": records}
+    return {"frameworks": frameworks, "pins": pins, "assessments": assessments, "sessions": sessions, "records": records,
+            "assignments": assignments, "submissions": submissions}
 
 
 def _frameworks(db: Session, data: dict, cohorts: list[Cohort], teacher: User) -> tuple[int, int]:
@@ -265,3 +269,60 @@ def _record(db: Session, session: AttendanceSession, enrollment: Enrollment, val
         record_id=record.id, version=1, status=status, modality=modality, justification=justification,
         reason=None, changed_by=teacher.id, changed_at=when,
     ))
+
+
+# ---------- KAN-56: assignments and submissions ----------
+
+DEADLINE_TIME = time(23, 59)
+ON_TIME_LEAD = timedelta(days=1)  # "enviada": delivered the day before the deadline
+LATE_DELAY = timedelta(days=2)    # "fuera_de_plazo": delivered two days after it
+NOT_DELIVERED = {"borrador"}      # a draft was never handed in: the coder shows as pending / overdue
+
+
+def _submissions(db: Session, data: dict, cohorts: list[Cohort], enrollments: dict, teacher: User) -> tuple[int, int]:
+    """One assignment per seed task in every cohort of its program; one submission per delivered seed entry.
+
+    Matches docs/datos/seed-v2: E-019 never delivered and E-002, E-006, E-013, E-017 are delivered but not reviewed.
+    """
+    created_assignments = created_submissions = 0
+    rng = random.Random(SEED)
+    tasks = {t["id"]: t for t in data.get("tareas", [])}
+    by_task: dict[tuple[str, str], Assignment] = {}
+    for task in tasks.values():
+        for cohort in (c for c in cohorts if c.program_id == task["programa_id"]):
+            assignment, created = _assignment(db, task, cohort, teacher)
+            by_task[(task["id"], cohort.id)] = assignment
+            created_assignments += created
+    db.flush()
+    for entry in data.get("entregas", []):
+        enrollment = enrollments.get(entry["coder_id"])
+        assignment = by_task.get((entry["tarea_id"], enrollment.cohort_id)) if enrollment else None
+        if assignment is None or entry["estado"] in NOT_DELIVERED or entry["coder_id"] in SPRINT_MISSING:
+            continue
+        exists = db.scalar(select(Submission.id).where(Submission.assignment_id == assignment.id, Submission.enrollment_id == enrollment.id))
+        if exists:
+            continue
+        delivered = assignment.due_at + LATE_DELAY if entry["estado"] == "fuera_de_plazo" else assignment.due_at - ON_TIME_LEAD
+        reviewed = entry["coder_id"] not in SPRINT_UNREVIEWED and bool(entry.get("feedback_publicado"))
+        total = 10
+        db.add(Submission(
+            assignment_id=assignment.id, enrollment_id=enrollment.id, portfolio_url=entry.get("repositorio_ficticio"),
+            check_results={"passed": rng.randint(5, total), "total": total}, status="reviewed" if reviewed else "submitted",
+            first_submitted_at=delivered, submitted_at=delivered, recorded_by=teacher.id,
+            reviewed_by=teacher.id if reviewed else None, reviewed_at=delivered + timedelta(days=3) if reviewed else None,
+        ))
+        created_submissions += 1
+    return created_assignments, created_submissions
+
+
+def _assignment(db: Session, task: dict, cohort: Cohort, teacher: User) -> tuple[Assignment, int]:
+    existing = db.scalar(select(Assignment).where(Assignment.cohort_id == cohort.id, Assignment.legacy_ref == task["id"]))
+    if existing:
+        return existing, 0
+    deadline = datetime.combine(date.fromisoformat(task["fecha_entrega"]), DEADLINE_TIME, tzinfo=ZoneInfo(cohort.timezone))
+    assignment = Assignment(
+        cohort_id=cohort.id, legacy_ref=task["id"], title=task["nombre"], description="", due_at=deadline,
+        rubric=list(task.get("rubrica", [])), status="published", created_by=teacher.id,
+    )
+    db.add(assignment)
+    return assignment, 1
