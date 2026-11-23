@@ -27,6 +27,14 @@ REASON = "Decisión tomada tras las entrevistas de selección"
 counter = itertools.count(1)
 
 
+@pytest.fixture(autouse=True)
+def _single_signature_calls(db):
+    """These tests cover the decision itself with quorum 1; the two-person quorum is tested in test_selection_quorum.py."""
+    for call_id in (IA_CALL, DATA_CALL):
+        db.get(Call, call_id).selection_quorum = 1
+    db.commit()
+
+
 def make_cohort(db, cohort_id=IA_COHORT, call_id=IA_CALL, program_id="P-IA") -> Cohort:
     cohort = Cohort(id=cohort_id, program_id=program_id, call_id=call_id, nombre="Cohorte sintética de prueba", inicio=date(2027, 3, 1), fin=date(2027, 9, 30))
     db.add(cohort)

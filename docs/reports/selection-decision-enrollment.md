@@ -37,7 +37,7 @@ El texto del CRM es fijo («Selección terminada: …») y el motivo libre se qu
 
 | Tema | Situación |
 |---|---|
-| Número de firmas | La propuesta es dos personas distintas y la fundación no la ha confirmado (nota 3 de `roles-y-permisos-objetivo.md`). Aquí basta **una** decisión humana. Al ser un registro de solo adición, una segunda firma se podrá añadir sin cambiar lo existente |
+| Número de firmas | **Confirmado** por la fundación (Melissa, ronda 3, Q11: «Valor predeterminado de dos aprobaciones como mínimo»). `call.selection_quorum`, por defecto 2 y configurable por convocatoria (1–5). Cada persona vota una vez (`selection_approval`); la decisión se aplica cuando el quórum coincide en el mismo resultado y la misma cohorte. Mientras tanto, la respuesta es `202` con los votos. Los votos en minoría quedan visibles y nunca se aplican. **EN:** confirmed two-person quorum per call (default 2). Each person votes once, the decision applies when the quorum agrees on the same outcome and cohort, and pending or outvoted votes stay visible |
 | Correos de estado | No se envía nada. «Esta vez no» exige revisión humana antes de enviarse (KAN-50) |
 | Invitación al coder al matricular (D2) | No implementada. La matrícula existe, pero la invitación sigue pendiente |
 | Etapas internas de selección | No hay endpoint para pasar de `convocada` a `evaluacion_en_curso` o `pendiente_decision_humana`, así que se permite decidir desde cualquiera de las tres |

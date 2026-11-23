@@ -19,6 +19,7 @@ EXPECTED_APPLICATION_COLUMNS = {
 EXPECTED_CALL_COLUMNS = {
     "id", "program_id", "nombre", "codigo_prefix", "opens_on", "closes_on", "plazas", "estado", "next_seq",
     "silence_days", "silence_max_contacts", "silence_warning_contacts",  # KAN-153: per-call silence policy (30 days / 4 attempts / light alert at 2)
+    "selection_quorum",  # Melissa round 3 Q11: people who must agree on a selection decision (default 2)
 }
 EXPECTED_APPLICATION_CREATE_FIELDS = {"call_id", "nombre", "email", "motivacion", "disponibilidad", "acepta_datos_sinteticos"}
 

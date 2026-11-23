@@ -195,7 +195,7 @@ export interface paths {
         /** Historial de decisiones de admisión de una candidatura */
         get: operations["list_selection_decisions_api_v1_applications__application_id__selection_decisions_get"];
         put?: never;
-        /** Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida */
+        /** Votar el fin de la selección: admitir (y matricular), lista de espera o no admitida. Se aplica cuando coinciden las personas del quórum */
         post: operations["post_selection_decision_api_v1_applications__application_id__selection_decisions_post"];
         delete?: never;
         options?: never;
@@ -2098,6 +2098,25 @@ export interface components {
             /** Scope Type */
             scope_type: string;
         };
+        /** SelectionApprovalOut */
+        SelectionApprovalOut: {
+            /** Actor */
+            actor: string | null;
+            /** Cohort Id */
+            cohort_id: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "admitida" | "lista_espera" | "no_admitida";
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+        };
         /**
          * SelectionCandidate
          * @description An application still in selection, shown next to the places of the call so the team deliberates comparatively.
@@ -2124,6 +2143,16 @@ export interface components {
             application_id: string;
             /** Items */
             items: components["schemas"]["SelectionDecisionOut"][];
+            /**
+             * Pending Votes
+             * @description Votos que aún no han alcanzado el quórum
+             */
+            pending_votes: components["schemas"]["SelectionApprovalOut"][];
+            /**
+             * Quorum
+             * @description Personas distintas que deben coincidir en esta convocatoria
+             */
+            quorum: number;
         };
         /** SelectionDecisionOut */
         SelectionDecisionOut: {
@@ -2216,6 +2245,32 @@ export interface components {
              * @description False mientras la fundación no confirme el criterio de prioridad
              */
             waiting_order_confirmed: boolean;
+        };
+        /**
+         * SelectionPendingOut
+         * @description Returned with 202 when the vote was recorded but fewer than `quorum` different people agree yet.
+         */
+        SelectionPendingOut: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Quorum
+             * @description Personas distintas que deben coincidir (configurable por convocatoria, por defecto 2)
+             */
+            quorum: number;
+            /** Stage */
+            stage: string;
+            /**
+             * State
+             * @description pending: falta otra persona; disagreement: hay votos distintos
+             * @enum {string}
+             */
+            state: "pending" | "disagreement";
+            /** Votes */
+            votes: components["schemas"]["SelectionApprovalOut"][];
         };
         /** SessionList */
         SessionList: {
@@ -3315,7 +3370,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SelectionDecisionOut"];
+                    "application/json": components["schemas"]["SelectionDecisionOut"] | components["schemas"]["SelectionPendingOut"];
+                };
+            };
+            /** @description Voto registrado; falta que otra persona distinta coincida (quórum) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionPendingOut"];
                 };
             };
             /** @description Sin permiso sobre el ámbito */

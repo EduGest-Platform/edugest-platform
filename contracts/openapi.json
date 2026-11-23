@@ -3117,6 +3117,59 @@
         "title": "RoleAssignmentOut",
         "type": "object"
       },
+      "SelectionApprovalOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "decision": {
+            "enum": [
+              "admitida",
+              "lista_espera",
+              "no_admitida"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "cohort_id",
+          "reason",
+          "actor",
+          "occurred_at"
+        ],
+        "title": "SelectionApprovalOut",
+        "type": "object"
+      },
       "SelectionCandidate": {
         "description": "An application still in selection, shown next to the places of the call so the team deliberates comparatively.",
         "properties": {
@@ -3160,11 +3213,26 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "pending_votes": {
+            "description": "Votos que aún no han alcanzado el quórum",
+            "items": {
+              "$ref": "#/components/schemas/SelectionApprovalOut"
+            },
+            "title": "Pending Votes",
+            "type": "array"
+          },
+          "quorum": {
+            "description": "Personas distintas que deben coincidir en esta convocatoria",
+            "title": "Quorum",
+            "type": "integer"
           }
         },
         "required": [
           "application_id",
-          "items"
+          "items",
+          "quorum",
+          "pending_votes"
         ],
         "title": "SelectionDecisionList",
         "type": "object"
@@ -3365,6 +3433,50 @@
           "waiting_order_confirmed"
         ],
         "title": "SelectionOverview",
+        "type": "object"
+      },
+      "SelectionPendingOut": {
+        "description": "Returned with 202 when the vote was recorded but fewer than `quorum` different people agree yet.",
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "quorum": {
+            "description": "Personas distintas que deben coincidir (configurable por convocatoria, por defecto 2)",
+            "title": "Quorum",
+            "type": "integer"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "state": {
+            "description": "pending: falta otra persona; disagreement: hay votos distintos",
+            "enum": [
+              "pending",
+              "disagreement"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "votes": {
+            "items": {
+              "$ref": "#/components/schemas/SelectionApprovalOut"
+            },
+            "title": "Votes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "state",
+          "stage",
+          "quorum",
+          "votes"
+        ],
+        "title": "SelectionPendingOut",
         "type": "object"
       },
       "SessionList": {
@@ -5247,11 +5359,29 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SelectionDecisionOut"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SelectionDecisionOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SelectionPendingOut"
+                    }
+                  ],
+                  "title": "Response Post Selection Decision Api V1 Applications  Application Id  Selection Decisions Post"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionPendingOut"
+                }
+              }
+            },
+            "description": "Voto registrado; falta que otra persona distinta coincida (quórum)"
           },
           "403": {
             "description": "Sin permiso sobre el ámbito"
@@ -5271,7 +5401,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida",
+        "summary": "Votar el fin de la selección: admitir (y matricular), lista de espera o no admitida. Se aplica cuando coinciden las personas del quórum",
         "tags": [
           "selection"
         ]
