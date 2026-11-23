@@ -150,7 +150,7 @@ try {
     tipo: 'contacto', canal: 'telefono', resultado: 'sin_respuesta', resumen: 'Synthetic unanswered contact',
   })
   requireCheck('Close dossier before viewing call alerts', await staff.click('Cerrar'))
-  requireCheck('Select call for scoped silence alerts', await staff.set('select[aria-label="Convocatoria"]', 'CONV-IA-2027A'))
+  requireCheck('Select call for scoped silence alerts', await staff.set('#application-call', 'CONV-IA-2027A'))
   const alertRow = `[data-silence-application="${applicationId}"]`
   requireCheck('Persisted contacts produce a visible early warning', await waitFor(staff,
     `document.querySelector(${JSON.stringify(alertRow)})?.innerText.includes('Aviso temprano de contacto')`))
@@ -174,7 +174,7 @@ try {
   requireCheck('Foreign staff list loaded', await foreign.waitText('en tu ámbito'))
   await foreign.set('[aria-label="Buscar expedientes"]', email)
   requireCheck('Foreign scope cannot discover dossier', await foreign.waitText('No hay expedientes con estos filtros'))
-  requireCheck('Select foreign call for denied silence read', await foreign.set('select[aria-label="Convocatoria"]', 'CONV-IA-2027A'))
+  requireCheck('Select foreign call for denied silence read', await foreign.set('#application-call', 'CONV-IA-2027A'))
   requireCheck('Foreign silence access is explicitly denied, never treated as empty', await waitFor(foreign,
     `document.querySelector('[data-silence-review]')?.innerText.includes('No tienes permiso') && !document.querySelector('[data-silence-review] [data-silence-application]')`))
   requireCheck('No browser runtime exceptions', errors.length === 0)
