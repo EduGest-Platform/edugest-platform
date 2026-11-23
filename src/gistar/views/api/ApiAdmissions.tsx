@@ -8,6 +8,7 @@ import { useGistar } from '../../store'
 import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerRequirementReview } from './ServerRequirementReview'
+import { ServerSilenceReview } from './ServerSilenceReview'
 import { Button, Card, Empty, Field, Notice, PageTitle, Status, Table, inputCls } from '../../ui'
 
 type Call = Schemas['CallOut']
@@ -270,6 +271,7 @@ export function ApiApplications() {
           </Table>
         )}
       </Card>
+      <ServerSilenceReview callId={callId} onOpen={setOpen} />
       {open && <ApplicationFile id={open} onClose={() => setOpen(null)} onChanged={load} />}
     </>
   )

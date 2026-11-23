@@ -141,6 +141,30 @@ try {
   requireCheck('Refresh shows amended server review', await waitFor(staff, `${panel}?.innerText.includes('Cumple') && !${panel}?.innerText.includes('No cumple')`))
 
 
+  // KAN-184: actual unanswered contacts drive an early warning, never a stage change.
+  const eventPath = `/applications/${applicationId}/events`
+  const originalStage = (await authorized(`/applications/${applicationId}`, adminToken)).stage
+  await authorized(eventPath, adminToken, 'POST', { tipo: 'contacto', canal: 'telefono', resultado: 'respondida', resumen: 'Synthetic reset before silence warning' })
+  const policy = await authorized('/calls/CONV-IA-2027A/preselection-policy', adminToken)
+  for (let i = 0; i < policy.silence_warning_contacts; i++) await authorized(eventPath, adminToken, 'POST', {
+    tipo: 'contacto', canal: 'telefono', resultado: 'sin_respuesta', resumen: 'Synthetic unanswered contact',
+  })
+  requireCheck('Close dossier before viewing call alerts', await staff.click('Cerrar'))
+  requireCheck('Select call for scoped silence alerts', await staff.set('select[aria-label="Convocatoria"]', 'CONV-IA-2027A'))
+  const alertRow = `[data-silence-application="${applicationId}"]`
+  requireCheck('Persisted contacts produce a visible early warning', await waitFor(staff,
+    `document.querySelector(${JSON.stringify(alertRow)})?.innerText.includes('Aviso temprano de contacto')`))
+  requireCheck('Alert offers the scoped dossier', await staff.ev(`(() => { const button = document.querySelector(${JSON.stringify(alertRow + ' button')}); if (!button) return false; button.click(); return true })()`))
+  requireCheck('Alert opens the correct dossier', await staff.waitText('Historial CRM'))
+  requireCheck('Alert dossier matches synthetic applicant', (await staff.text()).includes(email))
+  requireCheck('Close alert dossier', await staff.click('Cerrar'))
+  requireCheck('Reading warning does not change application stage', (await authorized(`/applications/${applicationId}`, adminToken)).stage === originalStage)
+  await authorized(eventPath, adminToken, 'POST', { tipo: 'contacto', canal: 'telefono', resultado: 'respondida', resumen: 'Synthetic response clears warning' })
+  requireCheck('Refresh silence evidence', await staff.click('Actualizar alertas'))
+  requireCheck('Responded contact clears warning on refresh', await waitFor(staff,
+    `!document.querySelector(${JSON.stringify(alertRow)}) && !!document.querySelector('[data-silence-review]') && !document.querySelector('[data-silence-review]').innerText.includes('Cargando')`))
+
+
   // Independent staff session: search must not expose this other-program application.
   const foreign = await newBrowser()
   await foreign.goto(web)
@@ -150,6 +174,9 @@ try {
   requireCheck('Foreign staff list loaded', await foreign.waitText('en tu ámbito'))
   await foreign.set('[aria-label="Buscar expedientes"]', email)
   requireCheck('Foreign scope cannot discover dossier', await foreign.waitText('No hay expedientes con estos filtros'))
+  requireCheck('Select foreign call for denied silence read', await foreign.set('select[aria-label="Convocatoria"]', 'CONV-IA-2027A'))
+  requireCheck('Foreign silence access is explicitly denied, never treated as empty', await waitFor(foreign,
+    `document.querySelector('[data-silence-review]')?.innerText.includes('No tienes permiso') && !document.querySelector('[data-silence-review] [data-silence-application]')`))
   requireCheck('No browser runtime exceptions', errors.length === 0)
 } catch (error) {
   // Fixed allowlist: never print arbitrary messages, names, bodies or tokens.
