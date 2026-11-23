@@ -59,6 +59,22 @@ La plantilla deja `GISTAR_DEMO_PASSWORD` vacía: debes definirla **antes del see
 | `aspirante-01@example.test` | persona A-001, sin rol interno |
 | `coder-01@example.test` | persona E-001 matriculada en COH-IA, sin rol interno |
 
+## Migraciones: orden real de la cadena / Alembic chain order
+
+**ES.** Los números de fichero no siguen el orden de ejecución. No existe la `0002`, y la `0005` se re-colgó de la `0007` al integrar ramas. El orden real es:
+
+`0001 → 0003 → 0004 → 0006 → 0007 → 0005 → 0008 → 0009 → 0010 → 0011`
+
+No se renumera: cambiar `revision` en una base ya migrada (staging) rompería `alembic upgrade`. Una migración nueva siempre cuelga del *head* actual (`alembic heads`), sin fijarse en el número más alto. El CI aplica `downgrade base` + `upgrade head` en cada ejecución de tests.
+
+**EN.** File numbers do not follow execution order. There is no `0002`, and `0005` was re-parented onto `0007` when branches were merged. The real order is the chain above. We do not renumber, because changing `revision` on an already migrated database (staging) would break `alembic upgrade`. A new migration always hangs from the current head (`alembic heads`), whatever the highest number is. CI runs `downgrade base` + `upgrade head` on every test run.
+
+## Límite de intentos de inicio de sesión / Login attempt limit
+
+**ES.** Tras `GISTAR_LOGIN_MAX_FAILURES` (5) fallos para la misma cuenta en `GISTAR_LOGIN_WINDOW_MINUTES` (15) minutos, `/auth/login` responde `429` con `Retry-After`, aunque la contraseña sea correcta. Por cliente el límite es 4 veces mayor. Un acceso correcto reinicia el contador de la cuenta. Los contadores viven en memoria, con claves SHA-256 sin correo ni IP en claro: vale para una sola instancia. Con varias instancias hay que moverlos a base de datos o a una caché compartida.
+
+**EN.** After `GISTAR_LOGIN_MAX_FAILURES` (5) failures for the same account within `GISTAR_LOGIN_WINDOW_MINUTES` (15) minutes, `/auth/login` answers `429` with `Retry-After`, even when the password is correct. The per-client limit is 4 times higher. A successful login clears the account counter. Counters are kept in memory under SHA-256 keys, with no e-mail or IP in clear text, so this only covers a single instance. With several instances they must move to the database or a shared cache.
+
 ## Estructura
 
 ```
