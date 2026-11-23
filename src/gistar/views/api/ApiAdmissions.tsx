@@ -392,6 +392,7 @@ export function ApiApplications() {
 function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
   const { toast } = useGistar()
   const [d, setD] = useState<Schemas['ApplicationDetail'] | null>(null)
+  const [actorFilter, setActorFilter] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [ev, setEv] = useState<{ tipo: 'contacto' | 'nota' | 'recordatorio'; canal: '' | 'email' | 'telefono' | 'presencial' | 'videollamada'; resumen: string }>({ tipo: 'contacto', canal: 'telefono', resumen: '' })
   const [busy, setBusy] = useState(false)
@@ -418,6 +419,11 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
     await load()
     onChanged()
   }
+
+  const actorLabel = (actor: string | null | undefined) => actor ?? 'Sistema / formulario'
+  const events = d?.events ?? []
+  const actors = [...new Set(events.map((event) => actorLabel(event.actor)))].sort((a, b) => a.localeCompare(b, 'es'))
+  const visibleEvents = actorFilter ? events.filter((event) => actorLabel(event.actor) === actorFilter) : events
 
   return (
     <Modal
@@ -455,12 +461,23 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
           </section>
           <section>
             <h3 className="mb-3 text-sm font-semibold">Historial CRM</h3>
+            <div className="mb-3 max-w-xs">
+              <Field label="Filtrar por agente" htmlFor="crm-event-actor">
+                <select id="crm-event-actor" className={inputCls} value={actorFilter} onChange={(event) => setActorFilter(event.target.value)}>
+                  <option value="">Todos los agentes</option>
+                  {actors.map((actor) => <option key={actor} value={actor}>{actor}</option>)}
+                </select>
+              </Field>
+            </div>
+            <p role="status" className="mb-2 text-sm text-muted">
+              {visibleEvents.length ? `${visibleEvents.length} eventos` : 'No hay eventos con este filtro.'}
+            </p>
             <ol className="mb-4 grid gap-2">
-              {d.events.map((e) => (
+              {visibleEvents.map((e) => (
                 <li key={e.id} className="rounded-lg border border-line px-3 py-2 text-sm">
                   <p className="text-xs text-muted">
                     {fmt(e.occurred_at)} · <b className="font-semibold text-ink/80">{humanize(e.tipo)}</b>
-                    {e.canal && ` · ${e.canal}`} · {e.actor ?? 'Sistema / formulario'}
+                    {e.canal && ` · ${e.canal}`} · {actorLabel(e.actor)}
                   </p>
                   <p className="mt-0.5">{e.resumen}</p>
                 </li>
