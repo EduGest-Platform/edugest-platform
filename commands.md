@@ -17,7 +17,7 @@ Verified on Windows 10 Pro (Git Bash and PowerShell), Node 24.18.0, pnpm 10.34.3
 | `uv venv .venv` + `uv pip install -e ".[dev]"` (in `api/`) | PASS |
 | `alembic upgrade head` / `alembic check` on an empty DB | `0005 (head)`; no pending operations |
 | `python -m app.seed` (twice) | Loaded, then "datos ya presentes" (idempotent) |
-| `uvicorn app.main:app --port 8785` + `curl /health` | `{"status":"ok","database":"ok"}` |
+| `uvicorn app.main:app --port 8785 --no-access-log` + `curl /health` | `{"status":"ok","database":"ok"}` |
 | `pytest` (complete API suite, disposable test DB) | PASS: 559 tests, 0 failures, 0 errors (KAN-85 branch, which adds 2 health tests to `dev`) |
 | `ruff check . --select E4,E7,E9,F` (0.17.5, in `api/`) | PASS |
 | `docker compose -f infra/compose.yaml up -d --build --wait` + `infra/smoke-test.sh` | NOT_RUN locally on 19/11 (shared stack already running); PASS in the CI `compose` job on every PR |
