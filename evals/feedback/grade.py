@@ -1,7 +1,7 @@
 """Corrector del ejercicio de acceso sintético (KAN-152).
 
-Solo para desarrollo y CI: ejecuta las entregas SINTÉTICAS de evals/feedback/submissions,
-escritas por el equipo. No acepta otras rutas y nunca ejecuta código de aspirantes reales
+Solo para desarrollo y CI: ejecuta solo las entregas SINTÉTICAS de ENTREGAS_PERMITIDAS
+(evals/feedback/submissions), escritas por el equipo. No acepta otras rutas ni carpetas y nunca ejecuta código de aspirantes reales
 (la corrección en sandbox, KAN-172, está fuera de alcance). Cada caso corre en un proceso
 aparte, con Python aislado (-I), sin cachés (-B) y con un límite de tiempo. El resultado
 se guarda en results.json para que lo use el borrador de feedback (KAN-191).
@@ -22,6 +22,9 @@ EJERCICIO = BASE / "exercise"
 ENTREGAS = BASE / "submissions"
 RESULTADOS = BASE / "results.json"
 LIMITE_SEGUNDOS = 2
+# Únicas entregas que el corrector puede ejecutar, todas sintéticas y escritas por el equipo.
+# Cualquier otra carpeta en submissions/ detiene la corrección.
+ENTREGAS_PERMITIDAS = ("s1_correcta", "s2_parcial", "s3_errores", "s4_colgada")
 
 # Se ejecuta en un proceso aparte: carga la entrega, llama a la función con un caso
 # e imprime el resultado como JSON en la última línea.
@@ -61,10 +64,14 @@ def ejecutar_caso(solucion: Path, entrada: list) -> dict:
     except subprocess.TimeoutExpired:
         return {"estado": "tiempo_agotado"}
     lineas = proceso.stdout.strip().splitlines()
+    fallo = {"estado": "error_de_ejecucion", "codigo": proceso.returncode}
+    if proceso.returncode != 0 or not lineas:
+        return fallo
     try:
-        return json.loads(lineas[-1])
-    except (IndexError, json.JSONDecodeError):
-        return {"estado": "salida_no_valida"}
+        salida = json.loads(lineas[-1])
+    except json.JSONDecodeError:
+        return fallo
+    return salida if isinstance(salida, dict) and "estado" in salida else fallo
 
 
 def describir(salida: dict) -> str:
@@ -73,12 +80,12 @@ def describir(salida: dict) -> str:
     return f"{salida['tipo']}: {salida['mensaje']}"
 
 
-def comprobar(caso: dict, salida: dict) -> tuple[bool, str]:
+def comprobar(caso: dict, salida: dict) -> tuple[bool | None, str]:
     esperado = caso["esperado"]
     if salida["estado"] == "tiempo_agotado":
         return False, f"tiempo agotado ({LIMITE_SEGUNDOS} s)"
-    if salida["estado"] == "salida_no_valida":
-        return False, "la función no devolvió un resultado válido"
+    if salida["estado"] == "error_de_ejecucion":
+        return None, f"el proceso terminó de forma inesperada (código {salida['codigo']})"
     if "error" in esperado:
         if (salida["estado"] == "excepcion" and salida["tipo"] == esperado["error"]
                 and esperado["mensaje_contiene"] in salida["mensaje"]):
@@ -100,12 +107,23 @@ def nivel(aprobados: int, total: int) -> int:
     return 1
 
 
+def motivo_incompleta(salidas: dict) -> str | None:
+    """Por qué no se puede poner nivel; None si todos los casos dieron un resultado fiable."""
+    estados = {salida["estado"] for salida in salidas.values()}
+    if "no_importable" in estados:
+        return "no_importable"
+    if "error_de_ejecucion" in estados:
+        return "error_de_ejecucion"
+    return None
+
+
 def corregir_entrega(carpeta: Path, rubrica: dict, casos: list) -> dict:
     salidas = {caso["id"]: ejecutar_caso(carpeta / "solucion.py", caso["entrada"]) for caso in casos}
-    importable = all(salida["estado"] != "no_importable" for salida in salidas.values())
+    motivo = motivo_incompleta(salidas)
+    evaluable = motivo is None
 
     detalle = []
-    if importable:
+    if motivo != "no_importable":
         for caso in casos:
             aprobado, explicacion = comprobar(caso, salidas[caso["id"]])
             detalle.append({"id": caso["id"], "criterio": caso["criterio"],
@@ -117,10 +135,10 @@ def corregir_entrega(carpeta: Path, rubrica: dict, casos: list) -> dict:
             criterios[criterio["id"]] = {"nivel": None, "medicion": "docente"}
             continue
         maximo += criterio["peso"]
-        propios = [d for d in detalle if d["criterio"] == criterio["id"]]
-        if not importable:
+        if not evaluable:
             criterios[criterio["id"]] = {"nivel": None, "medicion": "tests"}
             continue
+        propios = [d for d in detalle if d["criterio"] == criterio["id"]]
         aprobados = sum(d["aprobado"] for d in propios)
         nivel_criterio = nivel(aprobados, len(propios))
         puntos += criterio["peso"] * nivel_criterio / 3
@@ -129,19 +147,32 @@ def corregir_entrega(carpeta: Path, rubrica: dict, casos: list) -> dict:
 
     return {
         "id": carpeta.name,
-        "estado": "evaluada" if importable else "incompleta",
+        "estado": "evaluada" if evaluable else "incompleta",
+        "motivo": motivo,
         "revision_docente_pendiente": True,
         "criterios": criterios,
-        "puntos_automaticos": round(puntos, 1) if importable else None,
+        "puntos_automaticos": round(puntos, 1) if evaluable else None,
         "maximo_automatico": maximo,
         "casos": detalle,
     }
 
 
+def carpetas_entregas(directorio: Path = ENTREGAS) -> list[Path]:
+    """Las carpetas de ENTREGAS_PERMITIDAS, en orden. Una carpeta de más o una que falte es un error."""
+    presentes = {c.name for c in directorio.iterdir() if c.is_dir() and c.name != "__pycache__"}
+    no_permitidas = sorted(presentes - set(ENTREGAS_PERMITIDAS))
+    if no_permitidas:
+        raise ValueError(f"carpetas no permitidas en submissions/: {', '.join(no_permitidas)}")
+    faltan = sorted(set(ENTREGAS_PERMITIDAS) - presentes)
+    if faltan:
+        raise ValueError(f"faltan entregas permitidas: {', '.join(faltan)}")
+    return [directorio / nombre for nombre in ENTREGAS_PERMITIDAS]
+
+
 def generar() -> dict:
     rubrica = cargar_json(EJERCICIO / "rubric.json")
     casos = cargar_json(EJERCICIO / "cases.json")["casos"]
-    carpetas = sorted(c for c in ENTREGAS.iterdir() if c.is_dir())
+    carpetas = carpetas_entregas()
     return {
         "sintetico": True,
         "origen": "tests precalculados por evals/feedback/grade.py; no es una evaluación real",
@@ -160,7 +191,11 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="falla si results.json no está al día")
     args = parser.parse_args()
 
-    datos = generar()
+    try:
+        datos = generar()
+    except ValueError as exc:
+        print(f"Corrección detenida: {exc}", file=sys.stderr)
+        return 2
     texto = serializar(datos)
     if args.check:
         if not RESULTADOS.exists() or RESULTADOS.read_text(encoding="utf-8") != texto:

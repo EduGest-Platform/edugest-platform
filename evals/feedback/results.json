@@ -10,6 +10,7 @@
     {
       "id": "s1_correcta",
       "estado": "evaluada",
+      "motivo": null,
       "revision_docente_pendiente": true,
       "criterios": {
         "correccion": {
@@ -101,6 +102,7 @@
     {
       "id": "s2_parcial",
       "estado": "evaluada",
+      "motivo": null,
       "revision_docente_pendiente": true,
       "criterios": {
         "correccion": {
@@ -192,6 +194,7 @@
     {
       "id": "s3_errores",
       "estado": "evaluada",
+      "motivo": null,
       "revision_docente_pendiente": true,
       "criterios": {
         "correccion": {
@@ -283,6 +286,7 @@
     {
       "id": "s4_colgada",
       "estado": "evaluada",
+      "motivo": null,
       "revision_docente_pendiente": true,
       "criterios": {
         "correccion": {

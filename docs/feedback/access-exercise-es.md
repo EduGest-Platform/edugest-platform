@@ -24,7 +24,7 @@ Base de la demo de feedback automatizado (KAN-67). Todo es **sintético**: el en
 | Legibilidad y estructura | 20 | Siempre el docente |
 | Explicación de las decisiones | 15 | Siempre el docente, sobre `EXPLICACION.md` |
 
-- **Niveles por tests:** 3 si pasa todos los casos del criterio; 2 si pasa al menos la mitad; 1 si pasa menos. Si la entrega no se puede importar, el criterio queda **sin nivel** y la entrega, **incompleta**: nunca hay nivel 0.
+- **Niveles por tests:** 3 si pasa todos los casos del criterio; 2 si pasa al menos la mitad; 1 si pasa menos. Si la entrega no se puede importar o su proceso termina de forma inesperada (código de salida distinto de 0 o sin resultado), los criterios quedan **sin nivel** y la entrega, **incompleta**, con su `motivo` (`no_importable` o `error_de_ejecucion`): nunca hay nivel 0 ni un nivel 1 por un fallo que no se puede interpretar. Un caso que agota el tiempo sí cuenta como fallado, porque el enunciado exige terminar en menos de 2 s.
 - **Puntos:** suma de `peso × nivel / 3`, sobre 100. El corrector solo calcula los 65 puntos de los criterios medidos con tests; legibilidad y explicación quedan sin nivel y con la revisión del docente pendiente.
 - **No es excluyente:** `nota_minima` es `null`. El ejercicio suma puntos extra en la preselección.
 - `competencias` está vacío a propósito: las competencias C1–C10 son de coders matriculados, no de aspirantes.
@@ -52,7 +52,7 @@ Si cambias el enunciado, la rúbrica, los casos o una entrega, vuelve a generar 
 
 ## Garantías y límites
 
-- **Nunca ejecuta código de aspirantes reales.** El corrector solo acepta las carpetas de `evals/feedback/submissions/`, escritas por el equipo. La corrección en un sandbox aislado (KAN-172) está fuera de alcance.
+- **Nunca ejecuta código de aspirantes reales.** El corrector solo ejecuta las 4 carpetas de `ENTREGAS_PERMITIDAS` (`grade.py`), escritas por el equipo; cualquier otra carpeta en `evals/feedback/submissions/` detiene la corrección. La corrección en un sandbox aislado (KAN-172) está fuera de alcance.
 - Cada caso corre en un proceso aparte, con Python aislado (`-I`), sin cachés (`-B`) y con un límite de 2 segundos. Un caso que se cuelga cuenta como fallado y no bloquea el resto.
 - `results.json` es determinista: no guarda fechas, tiempos ni rutas locales.
 - La prueba 6 comprueba que no hay correos, DNI, NIE ni teléfonos en `evals/feedback`.
@@ -60,4 +60,4 @@ Si cambias el enunciado, la rúbrica, los casos o una entrega, vuelve a generar 
 
 ## Qué usa KAN-191
 
-Por cada entrega: `criterios` (nivel, aprobados y total por criterio), `puntos_automaticos`, `revision_docente_pendiente` y `casos` (id, criterio, aprobado y un `detalle` legible, por ejemplo `esperado {...}, obtenido {...}` o `tiempo agotado (2 s)`). Más la `rubrica` con su id y versión, para registrar con qué versión se generó el borrador.
+Por cada entrega: `estado` y `motivo` (si está incompleta), `criterios` (nivel, aprobados y total por criterio), `puntos_automaticos`, `revision_docente_pendiente` y `casos` (id, criterio, aprobado y un `detalle` legible, por ejemplo `esperado {...}, obtenido {...}` o `tiempo agotado (2 s)`). Más la `rubrica` con su id y versión, para registrar con qué versión se generó el borrador.

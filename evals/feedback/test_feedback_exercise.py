@@ -113,7 +113,7 @@ class EjercicioDeAcceso(unittest.TestCase):
         with tempfile.TemporaryDirectory() as carpeta:
             Path(carpeta, "solucion.py").write_text("def resumen_asistencia(:\n", encoding="utf-8")
             entrega = grade.corregir_entrega(Path(carpeta), self.rubrica, self.casos)
-        self.assertEqual(entrega["estado"], "incompleta")
+        self.assertEqual((entrega["estado"], entrega["motivo"]), ("incompleta", "no_importable"))
         self.assertIsNone(entrega["puntos_automaticos"])
         self.assertTrue(all(c["nivel"] is None for c in entrega["criterios"].values()))
 
@@ -127,6 +127,47 @@ class EjercicioDeAcceso(unittest.TestCase):
             for tipo, patron in DATOS_PERSONALES.items():
                 with self.subTest(archivo=archivo.relative_to(BASE).as_posix(), tipo=tipo):
                     self.assertIsNone(patron.search(texto))
+
+    def test_7_solo_se_ejecutan_las_entregas_permitidas(self):
+        self.assertEqual([c.name for c in grade.carpetas_entregas()], list(grade.ENTREGAS_PERMITIDAS))
+        with tempfile.TemporaryDirectory() as carpeta:
+            for nombre in grade.ENTREGAS_PERMITIDAS:
+                Path(carpeta, nombre).mkdir()
+            Path(carpeta, "intrusa").mkdir()
+            with self.assertRaisesRegex(ValueError, "intrusa"):
+                grade.carpetas_entregas(Path(carpeta))
+            Path(carpeta, "intrusa").rmdir()
+            Path(carpeta, grade.ENTREGAS_PERMITIDAS[0]).rmdir()
+            with self.assertRaisesRegex(ValueError, grade.ENTREGAS_PERMITIDAS[0]):
+                grade.carpetas_entregas(Path(carpeta))
+
+    def test_8_una_terminacion_inesperada_no_se_puntua(self):
+        codigos = {
+            "os._exit": "import os\n\n\ndef resumen_asistencia(estados):\n    os._exit(3)\n",
+            "sys.exit": "import sys\n\n\ndef resumen_asistencia(estados):\n    sys.exit(0)\n",
+        }
+        for nombre, codigo in codigos.items():
+            with self.subTest(salida=nombre), tempfile.TemporaryDirectory() as carpeta:
+                Path(carpeta, "solucion.py").write_text(codigo, encoding="utf-8")
+                entrega = grade.corregir_entrega(Path(carpeta), self.rubrica, self.casos)
+                self.assertEqual((entrega["estado"], entrega["motivo"]), ("incompleta", "error_de_ejecucion"))
+                self.assertIsNone(entrega["puntos_automaticos"])
+                self.assertTrue(all(c["nivel"] is None for c in entrega["criterios"].values()))
+                self.assertTrue(all(c["aprobado"] is None and "inesperada" in c["detalle"]
+                                    for c in entrega["casos"]))
+
+    def test_9_una_entrega_sin_la_funcion_queda_sin_nivel(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            Path(carpeta, "solucion.py").write_text("def otra_funcion():\n    return None\n", encoding="utf-8")
+            entrega = grade.corregir_entrega(Path(carpeta), self.rubrica, self.casos)
+        self.assertEqual((entrega["estado"], entrega["motivo"]), ("incompleta", "no_importable"))
+        self.assertEqual(entrega["casos"], [])
+
+    def test_10_un_caso_que_no_termina_agota_el_tiempo(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            solucion = Path(carpeta, "solucion.py")
+            solucion.write_text("def resumen_asistencia(estados):\n    while True:\n        pass\n", encoding="utf-8")
+            self.assertEqual(grade.ejecutar_caso(solucion, ["presente"]), {"estado": "tiempo_agotado"})
 
 
 if __name__ == "__main__":

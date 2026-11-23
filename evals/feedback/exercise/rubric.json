@@ -15,7 +15,7 @@
     "3": "pasa todos los casos del criterio",
     "2": "pasa al menos la mitad de los casos del criterio",
     "1": "pasa menos de la mitad de los casos del criterio",
-    "sin_nivel": "la entrega no se puede importar o no define resumen_asistencia"
+    "sin_nivel": "la entrega no se puede importar, no define resumen_asistencia o su proceso termina de forma inesperada"
   },
   "criterios": [
     {
