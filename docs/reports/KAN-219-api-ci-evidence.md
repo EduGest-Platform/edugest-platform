@@ -17,7 +17,7 @@ El artefacto `api-test-summary-<SHA>` se conserva **7 días**. No contiene nombr
 - Sin informe o con formato inválido se informa `unavailable`/`invalid` y contadores nulos: no se inventan cero fallos.
 - Un informe vacío o completamente omitido tampoco se presenta como éxito. Fallos de preparación anteriores mantienen el job fallido; la carga del JSON exige que exista el archivo.
 - Solo resume API pytest. No certifica las pruebas web, RAG, ML, navegador, despliegue o aceptación funcional.
-- No cambia reglas de protección ni afirma que todas las validaciones sean checks requeridos. La configuración de protección y aceptación final de KAN-219 requieren verificación separada por responsables del repositorio.
+- Comprobación de solo lectura el 23/11: `branches/dev/protection` devuelve `required_status_checks: null` y una revisión obligatoria; `rules/branches/dev` no devuelve reglas de checks requeridos. Por tanto, no hay evidencia de bloqueo de merge por CI en esa configuración. Este PR no modifica protecciones: configurar y verificar ese gate corresponde a responsables del repositorio y sigue pendiente para KAN-219.
 - No actualiza Jira, no despliega ni ejecuta migraciones fuera del entorno desechable ya configurado en CI.
 
 ### Verificación
@@ -32,6 +32,6 @@ The existing API job still runs pytest against disposable synthetic PostgreSQL. 
 
 Pytest failure remains blocking for the job. Interrupted/skipped steps, absent/invalid reports and empty/all-skipped suites never become passing evidence. Missing reports use null counts rather than fabricated zero failures. The summary step also fails closed and the upload requires an existing JSON file.
 
-This is API evidence only, not proof of web/RAG/ML/browser/deployment success, required-check configuration or PO acceptance. Repository protection and final KAN-219 acceptance remain separate checks. No Jira update or external deployment/migration occurs.
+This is API evidence only, not proof of web/RAG/ML/browser/deployment success, required-check configuration or PO acceptance. Read-only GitHub API inspection on November 23 returned `required_status_checks: null`, one required approval and no effective required-status-check rules for dev. CI-based merge blocking is therefore not established by that configuration. Repository owners still need to configure/verify the gate; this PR changes no protection settings or final acceptance. No Jira update or external deployment/migration occurs.
 
 Local: eight standard-library regression cases passed, together with Ruff and diff checks. CI's automation job runs those regressions; the API job validates actual pytest JUnit and artifact publication. Full local PostgreSQL tests were not run; record actual CI evidence before accepting.
