@@ -8,7 +8,11 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const SRC_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
-const IMPORT_PATTERN = /^\s*(import|export)\s+(type\s+)?[^'"]*?from\s+['"]([^'"]+)['"]/gm
+// Static `import … from` / `export … from`, side-effect `import 'x'` and dynamic `import('x')` with a literal path.
+const STATIC_IMPORT_PATTERN = /^\s*(?:import|export)\s+(type\s+)?[^'"]*?from\s+['"]([^'"]+)['"]/gm
+const SIDE_EFFECT_IMPORT_PATTERN = /^\s*import\s+['"]([^'"]+)['"]/gm
+const DYNAMIC_IMPORT_PATTERN = /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g
+const SRC_ALIAS = '@/'
 const ALLOWED_PACKAGES = new Set(['react', 'react-dom', 'react-dom/client', 'lucide-react', 'openapi-fetch', 'vitest'])
 const HTTP_CLIENT = 'shared/api/client.ts'
 
@@ -26,23 +30,54 @@ function toSrcPath(path: string): string {
   return relative(SRC_DIR, path).split(sep).join('/')
 }
 
-function importsOf(file: string): SourceImport[] {
-  const text = readFileSync(file, 'utf8')
-  return [...text.matchAll(IMPORT_PATTERN)].map((match) => ({
-    file: toSrcPath(file),
-    target: match[3],
-    typeOnly: Boolean(match[2]),
+/** Every import of a source text; `file` is its path relative to src/. */
+function parseImports(file: string, text: string): SourceImport[] {
+  const staticImports = [...text.matchAll(STATIC_IMPORT_PATTERN)].map((match) => ({
+    file,
+    target: match[2],
+    typeOnly: Boolean(match[1]),
   }))
+  const otherImports = [...text.matchAll(SIDE_EFFECT_IMPORT_PATTERN), ...text.matchAll(DYNAMIC_IMPORT_PATTERN)].map(
+    (match) => ({ file, target: match[1], typeOnly: false }),
+  )
+  return [...staticImports, ...otherImports]
 }
 
+/** Relative imports and the `@/` alias point into the project; everything else is a package. */
+function isProjectImport(item: SourceImport): boolean {
+  return item.target.startsWith('.') || item.target.startsWith(SRC_ALIAS)
+}
+
+/** Path relative to src/ of a project import, with the `@/` alias resolved like Vite and tsconfig do. */
 function resolvedTarget(item: SourceImport): string {
-  const base = resolve(SRC_DIR, dirname(item.file), item.target)
+  const base = item.target.startsWith(SRC_ALIAS)
+    ? resolve(SRC_DIR, item.target.slice(SRC_ALIAS.length))
+    : resolve(SRC_DIR, dirname(item.file), item.target)
   const path = toSrcPath(base)
   return /\.(ts|tsx|json|css)$/.test(path) ? path : `${path}.ts`
 }
 
-const ALL_IMPORTS = sourceFiles(SRC_DIR).flatMap(importsOf)
-const RELATIVE_IMPORTS = ALL_IMPORTS.filter((item) => item.target.startsWith('.'))
+function callsHttpClientOutsideApiLayers(imports: SourceImport[]): SourceImport[] {
+  return imports.filter(
+    (item) =>
+      resolvedTarget(item) === HTTP_CLIENT &&
+      !item.file.startsWith('gistar/views/api/') &&
+      !item.file.startsWith('shared/api/'),
+  )
+}
+
+function sharedRuntimeImportsOfGistar(imports: SourceImport[]): SourceImport[] {
+  return imports.filter(
+    (item) => item.file.startsWith('shared/') && resolvedTarget(item).startsWith('gistar/') && !item.typeOnly,
+  )
+}
+
+// This checker is skipped: its regression fixtures are import statements written as strings.
+const CHECKER_FILE = fileURLToPath(import.meta.url)
+const ALL_IMPORTS = sourceFiles(SRC_DIR)
+  .filter((file) => resolve(file) !== resolve(CHECKER_FILE))
+  .flatMap((file) => parseImports(toSrcPath(file), readFileSync(file, 'utf8')))
+const PROJECT_IMPORTS = ALL_IMPORTS.filter(isProjectImport)
 
 describe('web import boundaries (KAN-96)', () => {
   it('finds the source files it checks', () => {
@@ -50,25 +85,55 @@ describe('web import boundaries (KAN-96)', () => {
   })
 
   it('never imports code from outside src/ (api, ml, e2e, infra)', () => {
-    const escaping = RELATIVE_IMPORTS.filter((item) => resolvedTarget(item).startsWith('..'))
+    const escaping = PROJECT_IMPORTS.filter((item) => resolvedTarget(item).startsWith('..'))
     expect(escaping).toEqual([])
   })
 
   it('uses only the declared runtime packages', () => {
-    const packages = ALL_IMPORTS.filter((item) => !item.target.startsWith('.') && !item.target.startsWith('@/'))
+    const packages = ALL_IMPORTS.filter((item) => !isProjectImport(item))
     const isTestTool = (item: SourceImport) => item.file.includes('/__tests__/') && item.target.startsWith('node:')
     expect(packages.filter((item) => !ALLOWED_PACKAGES.has(item.target) && !isTestTool(item))).toEqual([])
   })
 
   it('calls the HTTP client only from API views and the shared API layer', () => {
-    const callers = RELATIVE_IMPORTS.filter((item) => resolvedTarget(item) === HTTP_CLIENT).map((item) => item.file)
-    expect(callers.filter((file) => !file.startsWith('gistar/views/api/') && !file.startsWith('shared/api/'))).toEqual([])
+    expect(callsHttpClientOutsideApiLayers(PROJECT_IMPORTS)).toEqual([])
   })
 
   it('keeps shared/ independent of gistar/ except for type-only imports', () => {
-    const reverse = RELATIVE_IMPORTS.filter(
-      (item) => item.file.startsWith('shared/') && resolvedTarget(item).startsWith('gistar/') && !item.typeOnly,
-    )
-    expect(reverse).toEqual([])
+    expect(sharedRuntimeImportsOfGistar(PROJECT_IMPORTS)).toEqual([])
+  })
+})
+
+describe('import boundary checker regressions (KAN-96)', () => {
+  const projectImportsOf = (file: string, lines: string[]) =>
+    parseImports(file, lines.join('\n')).filter(isProjectImport)
+
+  it('flags the HTTP client imported through the @/ alias', () => {
+    const imports = projectImportsOf('gistar/views/Dashboard.tsx', ["import { api } from '@/shared/api/client'"])
+    expect(callsHttpClientOutsideApiLayers(imports)).toHaveLength(1)
+  })
+
+  it('flags the HTTP client imported with a literal dynamic import', () => {
+    const imports = projectImportsOf('gistar/views/Dashboard.tsx', ["const m = await import('../../shared/api/client')"])
+    expect(callsHttpClientOutsideApiLayers(imports)).toHaveLength(1)
+  })
+
+  it('flags shared/ importing gistar/ at runtime through the alias, dynamically or for side effects', () => {
+    const imports = projectImportsOf('shared/ui/Widget.tsx', [
+      "import { x } from '@/gistar/state'",
+      "const y = import('@/gistar/views/Home')",
+      "import '../../gistar/setup'",
+    ])
+    expect(sharedRuntimeImportsOfGistar(imports)).toHaveLength(3)
+  })
+
+  it('still allows type-only imports from shared/ to gistar/ via the alias', () => {
+    const imports = projectImportsOf('shared/ui/Widget.tsx', ["import type { Role } from '@/gistar/types'"])
+    expect(sharedRuntimeImportsOfGistar(imports)).toEqual([])
+  })
+
+  it('allows the API layers to use the client through the alias', () => {
+    const imports = projectImportsOf('gistar/views/api/Calls.tsx', ["import { api } from '@/shared/api/client'"])
+    expect(callsHttpClientOutsideApiLayers(imports)).toEqual([])
   })
 })
