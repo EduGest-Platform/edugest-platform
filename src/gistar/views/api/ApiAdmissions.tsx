@@ -134,17 +134,50 @@ export function ApiInscription() {
 
 export function ApiMyApplications() {
   const { navigate } = useGistar()
-  const [items, setItems] = useState<Schemas['ApplicationSelfView'][] | null>(null)
+  type Result =
+    | { status: 'loading' }
+    | { status: 'error'; message: string }
+    | { status: 'ready'; items: Schemas['ApplicationSelfView'][] }
+  const [result, setResult] = useState<Result>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
+
   useEffect(() => {
-    api.GET('/api/v1/me/applications').then(({ data }) => setItems(data ?? []))
-  }, [])
+    const controller = new AbortController()
+
+    async function loadApplications() {
+      try {
+        const { data, error, response } = await api.GET('/api/v1/me/applications', { signal: controller.signal })
+        if (controller.signal.aborted) return
+        setResult(data
+          ? { status: 'ready', items: data }
+          : { status: 'error', message: problemText(describeApiError(response.status, error)) })
+      } catch {
+        if (!controller.signal.aborted) {
+          setResult({ status: 'error', message: 'No se pudo conectar con el servidor.' })
+        }
+      }
+    }
+
+    void loadApplications()
+    return () => controller.abort()
+  }, [attempt])
   return (
     <>
       <PageTitle title="Mi candidatura" sub="Estado de tus solicitudes. La evaluación y la admisión siempre las deciden personas autorizadas." />
       <Card title="Mis solicitudes" action={<ServerBadge />}>
-        {items === null ? (
-          <p className="text-sm text-muted">Cargando…</p>
-        ) : !items.length ? (
+        {result.status === 'loading' ? (
+          <p role="status" className="text-sm text-muted">Cargando…</p>
+        ) : result.status === 'error' ? (
+          <div className="grid justify-items-start gap-3">
+            <Notice tone="warning" live="assertive">{result.message}</Notice>
+            <Button type="button" variant="ghost" onClick={() => {
+              setResult({ status: 'loading' })
+              setAttempt((previous) => previous + 1)
+            }}>
+              Volver a intentar
+            </Button>
+          </div>
+        ) : !result.items.length ? (
           <Empty>
             Aún no has enviado ninguna candidatura.{' '}
             <button type="button" className="cursor-pointer font-semibold text-blue underline" onClick={() => navigate('inscripcion')}>
@@ -153,7 +186,7 @@ export function ApiMyApplications() {
           </Empty>
         ) : (
           <ul className="grid gap-3">
-            {items.map((a) => (
+            {result.items.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
                 <div>
                   <p className="font-medium">{a.call_nombre}</p>
