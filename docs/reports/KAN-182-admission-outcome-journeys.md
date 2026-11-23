@@ -23,3 +23,9 @@ Negative journeys exercise another programme, premature admission, recruitment, 
 The tests consume #95's integrated contract; they add neither selection UI nor #98's pending quorum policy. Revalidate/adapt journeys when that policy merges. This is API integration evidence, not a browser E2E or Jira completion. Waiting order remains provisional under the current contract.
 
 Local Ruff and Python compilation passed. Local pytest was not run because a disposable PostgreSQL test service is unavailable. CI includes the file in its real-PostgreSQL pytest suite; inspect the result before acceptance. Sole requested reviewer: Anas.
+
+## Corrección de integración / Integration repair
+
+ES: CI detectó que el control de KAN-96 recién fusionado rechaza el renderer estático ya usado por KAN-184. Se permite `react-dom/server` exclusivamente en `__tests__`, conservando el rechazo en producto y de paquetes no declarados. Se añade regresión de esos límites.
+
+EN: CI exposed a conflict between the newly merged KAN-96 boundary checker and KAN-184’s existing static-render tests. Permit `react-dom/server` only in `__tests__`, retaining production and undeclared-package rejection, with regression coverage.

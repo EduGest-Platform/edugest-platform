@@ -18,6 +18,12 @@ const HTTP_CLIENT = 'shared/api/client.ts'
 
 type SourceImport = { file: string; target: string; typeOnly: boolean }
 
+/** Node tooling and React's static renderer are test-only; runtime package boundaries stay unchanged. */
+function isTestTool(item: SourceImport): boolean {
+  return item.file.includes('/__tests__/') &&
+    (item.target.startsWith('node:') || item.target === 'react-dom/server')
+}
+
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name)
@@ -92,7 +98,6 @@ describe('web import boundaries (KAN-96)', () => {
 
   it('uses only the declared runtime packages', () => {
     const packages = ALL_IMPORTS.filter((item) => !isProjectImport(item))
-    const isTestTool = (item: SourceImport) => item.file.includes('/__tests__/') && item.target.startsWith('node:')
     expect(packages.filter((item) => !ALLOWED_PACKAGES.has(item.target) && !isTestTool(item))).toEqual([])
   })
 
@@ -106,6 +111,12 @@ describe('web import boundaries (KAN-96)', () => {
 })
 
 describe('import boundary checker regressions (KAN-96)', () => {
+  it('permits the declared React static renderer only in tests, without allowing arbitrary packages', () => {
+    expect(isTestTool({ file: 'gistar/__tests__/render.test.tsx', target: 'react-dom/server', typeOnly: false })).toBe(true)
+    expect(isTestTool({ file: 'gistar/views/Render.tsx', target: 'react-dom/server', typeOnly: false })).toBe(false)
+    expect(isTestTool({ file: 'gistar/__tests__/render.test.tsx', target: 'undeclared-package', typeOnly: false })).toBe(false)
+  })
+
   const projectImportsOf = (file: string, lines: string[]) =>
     parseImports(file, lines.join('\n')).filter(isProjectImport)
 
