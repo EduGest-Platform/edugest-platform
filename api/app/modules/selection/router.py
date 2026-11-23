@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Path, status
 from sqlalchemy import select
 
 from app.core import audit
@@ -10,8 +10,8 @@ from app.modules.admissions.models import Application
 from app.modules.catalog.models import Call
 from app.modules.identity.models import User
 from app.modules.selection.models import SelectionDecision
-from app.modules.selection.schemas import SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite
-from app.modules.selection.service import decide, require_selection_access
+from app.modules.selection.schemas import SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview
+from app.modules.selection.service import decide, require_selection_access, selection_overview
 
 router = APIRouter(tags=["selection"])
 
@@ -60,3 +60,16 @@ def list_selection_decisions(application_id: uuid.UUID, p: CurrentPrincipal, db:
     audit.record(db, p, "selection.decisions_viewed", "application", str(application.id), codigo=application.codigo)
     db.commit()
     return SelectionDecisionList(application_id=application.id, items=[_out(d, names.get(d.actor_user_id)) for d in decisions])
+
+
+@router.get(
+    "/calls/{call_id}/selection-overview",
+    response_model=SelectionOverview,
+    responses=_ERRORS,
+    summary="Plazas de la convocatoria junto a las candidaturas en selección y la lista de espera ordenada (solo lectura)",
+)
+def get_selection_overview(p: CurrentPrincipal, db: DB, call_id: str = Path(max_length=30)) -> SelectionOverview:
+    call = db.get(Call, call_id)
+    if not call:
+        raise UserFacingError(status.HTTP_404_NOT_FOUND, "call_not_found", "No encontramos esta convocatoria. Vuelve a la lista de convocatorias.")
+    return selection_overview(db, p, call)

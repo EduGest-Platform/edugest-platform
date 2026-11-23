@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -14,7 +15,9 @@ from app.modules.learning.models import Enrollment
 from app.modules.preselection.service import SELECTION_STAGES, STAGE_LABELS
 from app.modules.requirements.service import require_access
 from app.modules.selection.models import SelectionDecision
-from app.modules.selection.schemas import SelectionDecisionWrite
+from app.modules.selection.schemas import (
+    WAITING_ORDER_BASIS, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
+)
 
 # An admission decision can be taken while the application is in selection, or from the waiting list (promotion or final refusal).
 DECIDABLE_STAGES = (*SELECTION_STAGES, "lista_espera")
@@ -25,6 +28,54 @@ CRM_TEXT = {
     "lista_espera": "Selección terminada: en lista de espera",
     "no_admitida": "Selección terminada: no admitida en esta convocatoria",
 }
+
+
+def waiting_list_order(db: Session, call_id: str) -> list[tuple[Application, datetime]]:
+    """Waiting list of a call, first to enter first in line (provisional criterion, not yet confirmed by the foundation).
+
+    The moment of entry is the latest «lista_espera» decision of the application; without one, its last update.
+    The order is only a proposal: nobody is promoted by it, a person always decides.
+    """
+    entered = (
+        select(SelectionDecision.application_id.label("application_id"), func.max(SelectionDecision.occurred_at).label("entered_at"))
+        .where(SelectionDecision.decision == "lista_espera")
+        .group_by(SelectionDecision.application_id)
+        .subquery()
+    )
+    since = func.coalesce(entered.c.entered_at, Application.updated_at)
+    rows = db.execute(
+        select(Application, since)
+        .outerjoin(entered, entered.c.application_id == Application.id)
+        .where(Application.call_id == call_id, Application.stage == "lista_espera")
+        .order_by(since, Application.codigo)
+    ).all()
+    return [(application, entered_at) for application, entered_at in rows]
+
+
+def selection_overview(db: Session, actor: Principal, call: Call) -> SelectionOverview:
+    """Places of the call next to the applications still in selection and the ordered waiting list (read only)."""
+    require_selection_access(db, actor, "selection.read", call)
+    stage_of_each = db.execute(select(Application.stage, func.count()).where(Application.call_id == call.id).group_by(Application.stage)).all()
+    totals = {stage: total for stage, total in stage_of_each}
+    admitted = totals.get("admitida", 0)
+    candidates = db.scalars(
+        select(Application).where(Application.call_id == call.id, Application.stage.in_(SELECTION_STAGES)).order_by(Application.codigo)
+    ).all()
+    queue = waiting_list_order(db, call.id)
+    audit.record(db, actor, "selection.overview_viewed", "call", call.id, in_selection=len(candidates), waiting=len(queue))
+    db.commit()
+    return SelectionOverview(
+        call_id=call.id, plazas=call.plazas, admitted=admitted, free_places=max(call.plazas - admitted, 0),
+        in_selection=len(candidates), waiting=len(queue),
+        candidates=[
+            SelectionCandidate(application_id=a.id, codigo=a.codigo, stage=a.stage, stage_label=STAGE_LABELS.get(a.stage, a.stage)) for a in candidates
+        ],
+        waiting_list=[
+            WaitingListEntry(position=position, application_id=a.id, codigo=a.codigo, since=entered_at, is_next=position == 1)
+            for position, (a, entered_at) in enumerate(queue, start=1)
+        ],
+        waiting_order_basis=WAITING_ORDER_BASIS, waiting_order_confirmed=False,
+    )
 
 
 def _conflict(code: str, message: str) -> UserFacingError:
@@ -102,6 +153,12 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
     require_selection_access(db, actor, "selection.decide", call)
     _check_stage(application, body.decision)
 
+    # Promoting someone who is not first in the waiting list is allowed (a person decides), but it is audited.
+    out_of_waiting_order = False
+    if application.stage == "lista_espera" and body.decision == "admitida":
+        queue = waiting_list_order(db, call.id)
+        out_of_waiting_order = bool(queue) and queue[0][0].id != application.id
+
     now = utcnow()
     cohort: Cohort | None = None
     enrollment: Enrollment | None = None
@@ -132,6 +189,7 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
     audit.record(
         db, actor, "selection.decided", "application", str(application.id),
         codigo=application.codigo, decision=body.decision, from_stage=from_stage, to_stage=to_stage, cohort_id=cohort.id if cohort else None,
+        out_of_waiting_order=out_of_waiting_order,
     )
     db.commit()
     return decision

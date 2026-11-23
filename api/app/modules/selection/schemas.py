@@ -47,3 +47,39 @@ class SelectionDecisionOut(BaseModel):
 class SelectionDecisionList(BaseModel):
     application_id: uuid.UUID
     items: list[SelectionDecisionOut]
+
+
+# Provisional rule until the foundation confirms the priority criteria (review of PR #95, point 2).
+WAITING_ORDER_BASIS = "entrada_en_lista"
+
+
+class SelectionCandidate(BaseModel):
+    """An application still in selection, shown next to the places of the call so the team deliberates comparatively."""
+
+    application_id: uuid.UUID
+    codigo: str
+    stage: str
+    stage_label: str
+
+
+class WaitingListEntry(BaseModel):
+    position: int = Field(ge=1, description="Lugar en la lista según el criterio provisional (orden de entrada en la lista)")
+    application_id: uuid.UUID
+    codigo: str
+    since: datetime = Field(description="Cuándo entró en la lista de espera")
+    is_next: bool = Field(description="Primera de la lista: es la que se propone si se libera una plaza. Una persona decide siempre.")
+
+
+class SelectionOverview(BaseModel):
+    call_id: str
+    plazas: int
+    admitted: int
+    free_places: int = Field(description="Plazas sin cubrir (nunca negativo)")
+    in_selection: int
+    waiting: int
+    candidates: list[SelectionCandidate]
+    waiting_list: list[WaitingListEntry]
+    waiting_order_basis: Literal["entrada_en_lista"] = Field(
+        description="Criterio con el que se ordena la lista de espera. Provisional: la fundación aún no ha confirmado los criterios de prioridad."
+    )
+    waiting_order_confirmed: bool = Field(description="False mientras la fundación no confirme el criterio de prioridad")

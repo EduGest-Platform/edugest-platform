@@ -387,3 +387,120 @@ def test_database_refuses_an_admission_without_enrollment(db):
     with pytest.raises(IntegrityError):
         db.commit()
     db.rollback()
+
+
+# ---------- comparative view and waiting-list order (review of PR #95) ----------
+
+
+def overview(client, who, call_id=IA_CALL):
+    return client.get(f"/api/v1/calls/{call_id}/selection-overview", headers=who)
+
+
+def empty_waiting_list(db, call_id=IA_CALL) -> None:
+    """The seed may already have people on the waiting list: start the test with an empty one."""
+    for application in db.scalars(select(Application).where(Application.call_id == call_id, Application.stage == "lista_espera")):
+        application.stage = "no_admitida"
+    db.commit()
+
+
+def test_overview_puts_the_places_next_to_the_applications_in_selection(client, db):
+    first = make_application(db, stage="convocada")
+    second = make_application(db, stage="pendiente_decision_humana")
+    response = overview(client, login(client, SEL_IA))
+    assert response.status_code == 200, response.text
+    body = response.json()
+    call = db.get(Call, IA_CALL)
+    admitted = db.scalar(select(func.count()).select_from(Application).where(Application.call_id == IA_CALL, Application.stage == "admitida"))
+    assert (body["call_id"], body["plazas"], body["admitted"]) == (IA_CALL, call.plazas, admitted)
+    assert body["free_places"] == max(call.plazas - admitted, 0)
+    codes = {item["codigo"]: item["stage"] for item in body["candidates"]}
+    assert codes[first.codigo] == "convocada" and codes[second.codigo] == "pendiente_decision_humana"
+    assert body["in_selection"] == len(body["candidates"])
+    assert all(item["stage"] in ("convocada", "evaluacion_en_curso", "pendiente_decision_humana") for item in body["candidates"])
+    # The view shows codes and stages only: no names, emails or free text.
+    assert set(body["candidates"][0]) == {"application_id", "codigo", "stage", "stage_label"}
+
+
+def test_overview_never_reports_negative_free_places(client, db):
+    admitted = db.scalar(select(func.count()).select_from(Application).where(Application.call_id == IA_CALL, Application.stage == "admitida"))
+    db.get(Call, IA_CALL).plazas = max(admitted - 1, 0)
+    db.commit()
+    assert overview(client, login(client, COORD)).json()["free_places"] == 0
+
+
+def test_waiting_list_is_ordered_by_entry_and_only_proposes_the_first(client, db):
+    empty_waiting_list(db)
+    applications = [make_application(db) for _ in range(3)]
+    who = login(client, SEL_IA)
+    for application in applications:
+        assert decide(client, who, application.id, "lista_espera").status_code == 201
+    body = overview(client, who).json()
+    assert body["waiting"] == 3 and len(body["waiting_list"]) == 3
+    assert [entry["codigo"] for entry in body["waiting_list"]] == [a.codigo for a in applications]
+    assert [entry["position"] for entry in body["waiting_list"]] == [1, 2, 3]
+    assert [entry["is_next"] for entry in body["waiting_list"]] == [True, False, False]
+    assert body["waiting_order_basis"] == "entrada_en_lista" and body["waiting_order_confirmed"] is False
+
+
+def test_promoting_from_the_waiting_list_moves_the_next_person_up(client, db):
+    make_cohort(db)
+    empty_waiting_list(db)
+    leave_one_place(db)
+    first, second = make_application(db), make_application(db)
+    who = login(client, SEL_IA)
+    for application in (first, second):
+        assert decide(client, who, application.id, "lista_espera").status_code == 201
+    assert decide(client, who, first.id).status_code == 201
+    waiting = overview(client, who).json()["waiting_list"]
+    assert [(entry["codigo"], entry["position"], entry["is_next"]) for entry in waiting] == [(second.codigo, 1, True)]
+
+
+def test_promoting_out_of_order_is_allowed_but_audited(client, db):
+    make_cohort(db)
+    empty_waiting_list(db)
+    leave_one_place(db)
+    first, second = make_application(db), make_application(db)
+    who = login(client, SEL_IA)
+    for application in (first, second):
+        assert decide(client, who, application.id, "lista_espera").status_code == 201
+    assert decide(client, who, second.id).status_code == 201
+    assert stage_of(db, second) == "admitida"
+    db.expire_all()
+    rows = db.scalars(select(AuditEvent).where(AuditEvent.action == "selection.decided").order_by(AuditEvent.id)).all()
+    flags = [row.meta["out_of_waiting_order"] for row in rows]
+    assert flags == [False, False, True]
+
+
+def test_promoting_the_first_in_line_is_not_flagged(client, db):
+    make_cohort(db)
+    empty_waiting_list(db)
+    leave_one_place(db)
+    first, second = make_application(db), make_application(db)
+    who = login(client, SEL_IA)
+    for application in (first, second):
+        assert decide(client, who, application.id, "lista_espera").status_code == 201
+    assert decide(client, who, first.id).status_code == 201
+    last = db.scalars(select(AuditEvent).where(AuditEvent.action == "selection.decided").order_by(AuditEvent.id.desc())).first()
+    assert last.meta["out_of_waiting_order"] is False
+
+
+@pytest.mark.parametrize("who", ALLOWED)
+def test_overview_is_readable_by_deciders_and_leaves_an_audit_trail(client, db, who):
+    assert overview(client, login(client, who)).status_code == 200
+    assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "selection.overview_viewed")) == 1
+
+
+@pytest.mark.parametrize("who", [CAPT_IA, DOCENTE, ASPIRANTE, CODER])
+def test_other_profiles_cannot_read_the_overview(client, db, who):
+    assert overview(client, login(client, who)).status_code == 403
+    assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == "selection.overview_viewed")) == 0
+
+
+def test_overview_respects_the_scope_of_the_call(client, db):
+    assert overview(client, login(client, SEL_IA), DATA_CALL).status_code == 403
+    assert overview(client, login(client, ADMIN), DATA_CALL).status_code == 200
+
+
+def test_overview_of_an_unknown_call_is_not_found_and_anonymous_is_refused(client):
+    assert overview(client, login(client, ADMIN), "CONV-NO-EXISTE").status_code == 404
+    assert client.get(f"/api/v1/calls/{IA_CALL}/selection-overview").status_code == 401
