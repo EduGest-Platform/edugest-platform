@@ -122,7 +122,7 @@ Lectura: la mayor concentración de trabajo pendiente está en subtareas (94 en 
 
 ### 8.3 Registros fuera de `pf2-v41`
 
-- **12 tareas sustituidas:** KAN-5 a KAN-16 (concretamente KAN-5…KAN-16 excepto KAN-17…KAN-20), marcadas `superseded` y `legacy-traceability`; no mezclarlas con el backlog activo.
+- **12 tareas sustituidas:** KAN-5 a KAN-16, marcadas `superseded` y `legacy-traceability`; no mezclarlas con el backlog activo.
 - **9 registros documentales:** KAN-2, KAN-3, KAN-4, KAN-17, KAN-18, KAN-19, KAN-20, KAN-22 y KAN-23. Incluyen kickoff, briefing, cuestionario, AS-IS y normas del equipo.
 - Los 21 registros están en estado Jira `Docs`; no se consideran entregables activos de `pf2-v41` en esta auditoría.
 
