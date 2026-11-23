@@ -76,7 +76,7 @@ def put_submission(assignment_id: uuid.UUID, enrollment_id: uuid.UUID, body: Sub
     if _is_own_active_enrollment(p, enrollment):
         if body.check_results is not None:
             # Pre-computed test results come from the teacher or CI, never self-reported by the coder.
-            raise UserFacingError(status.HTTP_422_UNPROCESSABLE_ENTITY, "check_results_not_allowed",
+            raise UserFacingError(422, "check_results_not_allowed",
                                   "Los resultados de las pruebas los registra el equipo docente. Envía solo el enlace de tu entrega.")
     else:
         require_cohort(db, p, "submissions.review", assignment.cohort_id)
