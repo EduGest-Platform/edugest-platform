@@ -15,21 +15,6 @@ const B = await newBrowser()
 // 1 · A: captación IA inicia sesión y ve solo su ámbito
 await A.goto(WEB)
 check('Pantalla de acceso en modo API', await A.waitText('Iniciar sesión'))
-const localOnlyName = `Local-only application ${Date.now()}`
-const demoStorageKey = 'gistar-demo-v2'
-const seededLocalApplication = await A.ev(`(() => {
-  const key = ${JSON.stringify(demoStorageKey)}
-  const demo = JSON.parse(localStorage.getItem(key) ?? 'null')
-  if (!demo?.candidaturas?.length) return false
-  demo.candidaturas[0].nombre_ficticio = ${JSON.stringify(localOnlyName)}
-  localStorage.setItem(key, JSON.stringify(demo))
-  return true
-})()`)
-await A.goto(WEB)
-const retainedLocalApplication = await A.ev(`(() => {
-  const demo = JSON.parse(localStorage.getItem(${JSON.stringify(demoStorageKey)}) ?? 'null')
-  return demo?.candidaturas?.some((application) => application.nombre_ficticio === ${JSON.stringify(localOnlyName)}) === true
-})()`)
 await A.login('captacion.ia@gistar.example')
 await A.nav('Candidaturas')
 await A.waitText('en tu ámbito')
@@ -37,11 +22,6 @@ await sleep(600)
 const before = await A.rows()
 const callsA = await A.ev(`[...document.querySelectorAll('main tbody tr td:nth-child(3)')].map(td => td.textContent)`)
 check('Captación IA ve solo expedientes de su programa', before > 0 && callsA.every((c) => c.startsWith('CONV-IA')), `filas=${before}`)
-const applicationText = await A.ev("document.querySelector('main')?.innerText")
-check('API applications do not display a stored demo application',
-  seededLocalApplication === true && retainedLocalApplication === true && before > 0 &&
-  typeof applicationText === 'string' && !applicationText.includes(localOnlyName),
-)
 
 // 2 · B: inscripción pública (otro navegador, sin sesión)
 await B.goto(WEB)

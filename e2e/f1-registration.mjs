@@ -38,10 +38,31 @@ try {
   const applicant = await newBrowser()
   await staff.goto(web)
   requireCheck('API login screen', await staff.waitText('Iniciar sesión'))
+  const localOnlyName = `Local-only application ${Date.now()}`
+  const demoStorageKey = 'gistar-demo-v2'
+  const seededLocalApplication = await staff.ev(`(() => {
+    const key = ${JSON.stringify(demoStorageKey)}
+    const demo = JSON.parse(localStorage.getItem(key) ?? 'null')
+    if (!demo?.candidaturas?.length) return false
+    demo.candidaturas[0].nombre_ficticio = ${JSON.stringify(localOnlyName)}
+    localStorage.setItem(key, JSON.stringify(demo))
+    return true
+  })()`)
+  await staff.goto(web)
+  const retainedLocalApplication = await staff.ev(`(() => {
+    const demo = JSON.parse(localStorage.getItem(${JSON.stringify(demoStorageKey)}) ?? 'null')
+    return demo?.candidaturas?.some((application) => application.nombre_ficticio === ${JSON.stringify(localOnlyName)}) === true
+  })()`)
+  requireCheck('Local-only application survives reload', seededLocalApplication && retainedLocalApplication)
   await staff.login('captacion.ia@gistar.example')
   requireCheck('Staff login succeeded', await waitFor(staff, "!!document.querySelector('nav') && !document.querySelector('#lg-email')"))
   requireCheck('Staff navigation', await staff.nav('Candidaturas'))
   requireCheck('Staff application list loaded', await staff.waitText('en tu ámbito'))
+
+  const applicationList = "document.querySelector('main')"
+  requireCheck('API applications exclude the local-only application', await waitFor(staff,
+    `!!${applicationList}?.querySelector('tbody tr') && !${applicationList}?.innerText.includes(${JSON.stringify(localOnlyName)})`,
+  ))
 
   await applicant.goto(web)
   requireCheck('Public registration available', await applicant.click('Quiero inscribirme'))
