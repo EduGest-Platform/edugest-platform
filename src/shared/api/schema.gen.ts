@@ -185,6 +185,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/selection-decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de decisiones de admisión de una candidatura */
+        get: operations["list_selection_decisions_api_v1_applications__application_id__selection_decisions_get"];
+        put?: never;
+        /** Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida */
+        post: operations["post_selection_decision_api_v1_applications__application_id__selection_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/simulated-reminders": {
         parameters: {
             query?: never;
@@ -352,6 +370,23 @@ export interface paths {
         put?: never;
         /** Publicar una definición inmutable; solo administración. Nunca decide admisión */
         post: operations["create_call_requirement_api_v1_calls__call_id__requirements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/calls/{call_id}/selection-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plazas de la convocatoria junto a las candidaturas en selección y la lista de espera ordenada (solo lectura) */
+        get: operations["get_selection_overview_api_v1_calls__call_id__selection_overview_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1680,6 +1715,125 @@ export interface components {
             /** Scope Type */
             scope_type: string;
         };
+        /**
+         * SelectionCandidate
+         * @description An application still in selection, shown next to the places of the call so the team deliberates comparatively.
+         */
+        SelectionCandidate: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Codigo */
+            codigo: string;
+            /** Stage */
+            stage: string;
+            /** Stage Label */
+            stage_label: string;
+        };
+        /** SelectionDecisionList */
+        SelectionDecisionList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["SelectionDecisionOut"][];
+        };
+        /** SelectionDecisionOut */
+        SelectionDecisionOut: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Cohort Id
+             * @description Cohorte de la matrícula creada (solo al admitir)
+             */
+            cohort_id: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "admitida" | "lista_espera" | "no_admitida";
+            /**
+             * Enrollment Id
+             * @description Matrícula creada por la decisión (solo al admitir)
+             */
+            enrollment_id: string | null;
+            /** From Stage */
+            from_stage: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+            /** To Stage */
+            to_stage: string;
+        };
+        /** SelectionDecisionWrite */
+        SelectionDecisionWrite: {
+            /**
+             * Cohort Id
+             * @description Cohorte en la que se matricula. Obligatoria al admitir y no permitida en las demás decisiones.
+             */
+            cohort_id?: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "admitida" | "lista_espera" | "no_admitida";
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud ni situación personal.
+             */
+            reason: string;
+        };
+        /** SelectionOverview */
+        SelectionOverview: {
+            /** Admitted */
+            admitted: number;
+            /** Call Id */
+            call_id: string;
+            /** Candidates */
+            candidates: components["schemas"]["SelectionCandidate"][];
+            /**
+             * Free Places
+             * @description Plazas sin cubrir (nunca negativo)
+             */
+            free_places: number;
+            /** In Selection */
+            in_selection: number;
+            /** Plazas */
+            plazas: number;
+            /** Waiting */
+            waiting: number;
+            /** Waiting List */
+            waiting_list: components["schemas"]["WaitingListEntry"][];
+            /**
+             * Waiting Order Basis
+             * @description Criterio con el que se ordena la lista de espera. Provisional: la fundación aún no ha confirmado los criterios de prioridad.
+             * @constant
+             */
+            waiting_order_basis: "entrada_en_lista";
+            /**
+             * Waiting Order Confirmed
+             * @description False mientras la fundación no confirme el criterio de prioridad
+             */
+            waiting_order_confirmed: boolean;
+        };
         /** SessionList */
         SessionList: {
             /** Cohort Id */
@@ -1864,6 +2018,32 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WaitingListEntry */
+        WaitingListEntry: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Is Next
+             * @description Primera de la lista: es la que se propone si se libera una plaza. Una persona decide siempre.
+             */
+            is_next: boolean;
+            /**
+             * Position
+             * @description Lugar en la lista según el criterio provisional (orden de entrada en la lista)
+             */
+            position: number;
+            /**
+             * Since
+             * Format: date-time
+             * @description Cuándo entró en la lista de espera
+             */
+            since: string;
         };
     };
     responses: never;
@@ -2421,6 +2601,105 @@ export interface operations {
             };
         };
     };
+    list_selection_decisions_api_v1_applications__application_id__selection_decisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionDecisionList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_selection_decision_api_v1_applications__application_id__selection_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionDecisionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionDecisionOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La selección ya terminó, no hay plazas o la persona ya está matriculada en esa cohorte */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Datos no válidos o cohorte que no pertenece a la convocatoria */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_simulated_reminders_api_v1_applications__application_id__simulated_reminders_get: {
         parameters: {
             query?: {
@@ -2927,6 +3206,51 @@ export interface operations {
             };
             /** @description Referencia o versión en conflicto */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_selection_overview_api_v1_calls__call_id__selection_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionOverview"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

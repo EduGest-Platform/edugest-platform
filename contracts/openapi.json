@@ -2647,6 +2647,256 @@
         "title": "RoleAssignmentOut",
         "type": "object"
       },
+      "SelectionCandidate": {
+        "description": "An application still in selection, shown next to the places of the call so the team deliberates comparatively.",
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "stage_label": {
+            "title": "Stage Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "codigo",
+          "stage",
+          "stage_label"
+        ],
+        "title": "SelectionCandidate",
+        "type": "object"
+      },
+      "SelectionDecisionList": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SelectionDecisionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "items"
+        ],
+        "title": "SelectionDecisionList",
+        "type": "object"
+      },
+      "SelectionDecisionOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cohorte de la matrícula creada (solo al admitir)",
+            "title": "Cohort Id"
+          },
+          "decision": {
+            "enum": [
+              "admitida",
+              "lista_espera",
+              "no_admitida"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Matrícula creada por la decisión (solo al admitir)",
+            "title": "Enrollment Id"
+          },
+          "from_stage": {
+            "title": "From Stage",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "to_stage": {
+            "title": "To Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "decision",
+          "from_stage",
+          "to_stage",
+          "reason",
+          "actor",
+          "occurred_at",
+          "cohort_id",
+          "enrollment_id"
+        ],
+        "title": "SelectionDecisionOut",
+        "type": "object"
+      },
+      "SelectionDecisionWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cohorte en la que se matricula. Obligatoria al admitir y no permitida en las demás decisiones.",
+            "title": "Cohort Id"
+          },
+          "decision": {
+            "enum": [
+              "admitida",
+              "lista_espera",
+              "no_admitida"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Motivo operativo. No incluir datos de salud ni situación personal.",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "title": "SelectionDecisionWrite",
+        "type": "object"
+      },
+      "SelectionOverview": {
+        "properties": {
+          "admitted": {
+            "title": "Admitted",
+            "type": "integer"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/SelectionCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "free_places": {
+            "description": "Plazas sin cubrir (nunca negativo)",
+            "title": "Free Places",
+            "type": "integer"
+          },
+          "in_selection": {
+            "title": "In Selection",
+            "type": "integer"
+          },
+          "plazas": {
+            "title": "Plazas",
+            "type": "integer"
+          },
+          "waiting": {
+            "title": "Waiting",
+            "type": "integer"
+          },
+          "waiting_list": {
+            "items": {
+              "$ref": "#/components/schemas/WaitingListEntry"
+            },
+            "title": "Waiting List",
+            "type": "array"
+          },
+          "waiting_order_basis": {
+            "const": "entrada_en_lista",
+            "description": "Criterio con el que se ordena la lista de espera. Provisional: la fundación aún no ha confirmado los criterios de prioridad.",
+            "title": "Waiting Order Basis",
+            "type": "string"
+          },
+          "waiting_order_confirmed": {
+            "description": "False mientras la fundación no confirme el criterio de prioridad",
+            "title": "Waiting Order Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "call_id",
+          "plazas",
+          "admitted",
+          "free_places",
+          "in_selection",
+          "waiting",
+          "candidates",
+          "waiting_list",
+          "waiting_order_basis",
+          "waiting_order_confirmed"
+        ],
+        "title": "SelectionOverview",
+        "type": "object"
+      },
       "SessionList": {
         "properties": {
           "cohort_id": {
@@ -3048,6 +3298,45 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WaitingListEntry": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "is_next": {
+            "description": "Primera de la lista: es la que se propone si se libera una plaza. Una persona decide siempre.",
+            "title": "Is Next",
+            "type": "boolean"
+          },
+          "position": {
+            "description": "Lugar en la lista según el criterio provisional (orden de entrada en la lista)",
+            "minimum": 1.0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "since": {
+            "description": "Cuándo entró en la lista de espera",
+            "format": "date-time",
+            "title": "Since",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position",
+          "application_id",
+          "codigo",
+          "since",
+          "is_next"
+        ],
+        "title": "WaitingListEntry",
         "type": "object"
       }
     },
@@ -3867,6 +4156,118 @@
         ]
       }
     },
+    "/api/v1/applications/{application_id}/selection-decisions": {
+      "get": {
+        "operationId": "list_selection_decisions_api_v1_applications__application_id__selection_decisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionDecisionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial de decisiones de admisión de una candidatura",
+        "tags": [
+          "selection"
+        ]
+      },
+      "post": {
+        "operationId": "post_selection_decision_api_v1_applications__application_id__selection_decisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionDecisionWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La selección ya terminó, no hay plazas o la persona ya está matriculada en esa cohorte"
+          },
+          "422": {
+            "description": "Datos no válidos o cohorte que no pertenece a la convocatoria"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida",
+        "tags": [
+          "selection"
+        ]
+      }
+    },
     "/api/v1/applications/{application_id}/simulated-reminders": {
       "get": {
         "operationId": "list_simulated_reminders_api_v1_applications__application_id__simulated_reminders_get",
@@ -4598,6 +4999,60 @@
         "summary": "Publicar una definición inmutable; solo administración. Nunca decide admisión",
         "tags": [
           "requirements"
+        ]
+      }
+    },
+    "/api/v1/calls/{call_id}/selection-overview": {
+      "get": {
+        "operationId": "get_selection_overview_api_v1_calls__call_id__selection_overview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "maxLength": 30,
+              "title": "Call Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Plazas de la convocatoria junto a las candidaturas en selección y la lista de espera ordenada (solo lectura)",
+        "tags": [
+          "selection"
         ]
       }
     },
