@@ -66,8 +66,19 @@ def test_disagreement_waits_until_two_people_agree(client, db, ready):
     settled = decide(client, login(client, ADMIN), ready.id, "lista_espera")
     assert settled.status_code == 201 and settled.json()["decision"] == "lista_espera"
     db.expire_all()
-    pending = db.scalars(select(SelectionApproval).where(SelectionApproval.application_id == ready.id, SelectionApproval.decision_id.is_(None))).all()
-    assert [v.decision for v in pending] == ["admitida"]  # the outvoted vote stays visible, never applied
+    votes = db.scalars(select(SelectionApproval).where(SelectionApproval.application_id == ready.id)).all()
+    decision_id = settled.json()["id"]
+    assert len(votes) == 3 and all(str(v.decision_id) == decision_id for v in votes)  # the outvoted vote is kept, linked, and closed
+    assert {v.decision for v in votes} == {"admitida", "lista_espera"}
+
+
+def test_an_outvoted_vote_never_counts_towards_a_later_promotion(client, db, ready):
+    decide(client, login(client, SEL_IA), ready.id, "admitida")  # outvoted
+    decide(client, login(client, COORD), ready.id, "lista_espera")
+    decide(client, login(client, ADMIN), ready.id, "lista_espera")
+    promotion = decide(client, login(client, COORD), ready.id, "admitida")
+    assert promotion.status_code == 202, "one fresh vote plus an old outvoted one must not admit"
+    assert promotion.json()["state"] == "pending" and len(promotion.json()["votes"]) == 1
 
 
 def test_votes_for_different_cohorts_do_not_add_up(client, db, ready):

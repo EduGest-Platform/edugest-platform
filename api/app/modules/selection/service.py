@@ -181,7 +181,9 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
     if len(agreeing) < call.selection_quorum:
         return _wait_for_quorum(db, actor, application, call, body, [*pending, vote], now)
     decision = _apply(db, actor, application, call, body, cohort, now)
-    for approval in agreeing:
+    # Every open vote is closed by this decision, outvoted ones included: an old vote must never count towards a later
+    # decision (for example a promotion from the waiting list). They stay linked to the decision they were part of.
+    for approval in [*pending, vote]:
         approval.decision_id = decision.id
     db.commit()
     return decision
@@ -190,9 +192,11 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
 def _wait_for_quorum(db: Session, actor: Principal, application: Application, call: Call, body: SelectionDecisionWrite,
                      votes: list[SelectionApproval], now: datetime) -> list[SelectionApproval]:
     """Keeps the vote and moves the application to «pendiente de decisión» (a waiting-list promotion stays on the list)."""
-    if application.stage in SELECTION_STAGES and application.stage != "pendiente_decision_humana":
+    stage_changed = application.stage in SELECTION_STAGES and application.stage != "pendiente_decision_humana"
+    if stage_changed:
         application.stage, application.updated_at = "pendiente_decision_humana", now
-    db.add(ApplicationEvent(application_id=application.id, tipo="nota", resumen=APPROVAL_CRM_TEXT, actor_user_id=actor.user.id, occurred_at=now))
+    db.add(ApplicationEvent(application_id=application.id, tipo="cambio_etapa" if stage_changed else "nota", resumen=APPROVAL_CRM_TEXT,
+                            actor_user_id=actor.user.id, occurred_at=now))
     db.flush()
     audit.record(db, actor, "selection.approved", "application", str(application.id), codigo=application.codigo, decision=body.decision,
                  votes=len(votes), quorum=call.selection_quorum)
