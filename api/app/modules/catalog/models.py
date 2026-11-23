@@ -24,6 +24,7 @@ class Call(Base):
         CheckConstraint("silence_days BETWEEN 1 AND 365", name="ck_call_silence_days"),
         CheckConstraint("silence_max_contacts BETWEEN 1 AND 20", name="ck_call_silence_max_contacts"),
         CheckConstraint("silence_warning_contacts BETWEEN 1 AND silence_max_contacts", name="ck_call_silence_warning_contacts"),
+        CheckConstraint("selection_quorum BETWEEN 1 AND 5", name="ck_call_selection_quorum"),
     )
     id: Mapped[str] = mapped_column(String(30), primary_key=True)
     program_id: Mapped[str] = mapped_column(ForeignKey("program.id"), index=True)
@@ -40,6 +41,8 @@ class Call(Base):
     silence_max_contacts: Mapped[int] = mapped_column(Integer, default=4, server_default=text("4"))
     # Early, light alert (PO 19/11/2026): unanswered attempts that already flag the application, with no waiting days.
     silence_warning_contacts: Mapped[int] = mapped_column(Integer, default=2, server_default=text("2"))
+    # Melissa round 3 Q11 (PO 23/11/2026): different people who must agree on a selection decision; default two.
+    selection_quorum: Mapped[int] = mapped_column(Integer, default=2, server_default=text("2"))
 
 
 # Spain (peninsula, Canary Islands) and Portugal (PO 19/11/2026). Decides which day is "today" for a cohort.

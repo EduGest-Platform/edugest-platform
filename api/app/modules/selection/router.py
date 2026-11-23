@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Path, status
+from fastapi import APIRouter, Path, Response, status
 from sqlalchemy import select
 
 from app.core import audit
@@ -9,9 +9,11 @@ from app.core.errors import UserFacingError
 from app.modules.admissions.models import Application
 from app.modules.catalog.models import Call
 from app.modules.identity.models import User
-from app.modules.selection.models import SelectionDecision
-from app.modules.selection.schemas import SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview
-from app.modules.selection.service import decide, require_selection_access, selection_overview
+from app.modules.selection.models import SelectionApproval, SelectionDecision
+from app.modules.selection.schemas import (
+    SelectionApprovalOut, SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview, SelectionPendingOut,
+)
+from app.modules.selection.service import decide, pending_approvals, require_selection_access, selection_overview
 
 router = APIRouter(tags=["selection"])
 
@@ -26,20 +28,36 @@ def _out(decision: SelectionDecision, actor_name: str | None) -> SelectionDecisi
     )
 
 
+def _names(db: DB, user_ids: set) -> dict:
+    return {u.id: u.display_name for u in db.scalars(select(User).where(User.id.in_(user_ids)))} if user_ids else {}
+
+
+def _votes_out(db: DB, votes: list[SelectionApproval]) -> list[SelectionApprovalOut]:
+    names = _names(db, {v.actor_user_id for v in votes})
+    return [SelectionApprovalOut(decision=v.decision, cohort_id=v.cohort_id, reason=v.reason, actor=names.get(v.actor_user_id), occurred_at=v.occurred_at) for v in votes]
+
+
 @router.post(
     "/applications/{application_id}/selection-decisions",
-    response_model=SelectionDecisionOut,
+    response_model=SelectionDecisionOut | SelectionPendingOut,
     status_code=201,
     responses={
+        202: {"model": SelectionPendingOut, "description": "Voto registrado; falta que otra persona distinta coincida (quórum)"},
         **_ERRORS,
         409: {"description": "La selección ya terminó, no hay plazas o la persona ya está matriculada en esa cohorte"},
         422: {"description": "Datos no válidos o cohorte que no pertenece a la convocatoria"},
     },
-    summary="Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida",
+    summary="Votar el fin de la selección: admitir (y matricular), lista de espera o no admitida. Se aplica cuando coinciden las personas del quórum",
 )
-def post_selection_decision(application_id: uuid.UUID, body: SelectionDecisionWrite, p: CurrentPrincipal, db: DB) -> SelectionDecisionOut:
-    decision = decide(db, p, application_id, body)
-    return _out(decision, p.user.display_name)
+def post_selection_decision(application_id: uuid.UUID, body: SelectionDecisionWrite, p: CurrentPrincipal, db: DB, response: Response) -> SelectionDecisionOut | SelectionPendingOut:
+    result = decide(db, p, application_id, body)
+    if isinstance(result, SelectionDecision):
+        return _out(result, p.user.display_name)
+    response.status_code = status.HTTP_202_ACCEPTED
+    application = db.get(Application, application_id)
+    call = db.get(Call, application.call_id)
+    state = "disagreement" if len({(v.decision, v.cohort_id) for v in result}) > 1 else "pending"
+    return SelectionPendingOut(application_id=application.id, state=state, stage=application.stage, quorum=call.selection_quorum, votes=_votes_out(db, result))
 
 
 @router.get(
@@ -59,7 +77,8 @@ def list_selection_decisions(application_id: uuid.UUID, p: CurrentPrincipal, db:
     names = {u.id: u.display_name for u in db.scalars(select(User).where(User.id.in_(ids)))} if ids else {}
     audit.record(db, p, "selection.decisions_viewed", "application", str(application.id), codigo=application.codigo)
     db.commit()
-    return SelectionDecisionList(application_id=application.id, items=[_out(d, names.get(d.actor_user_id)) for d in decisions])
+    return SelectionDecisionList(application_id=application.id, items=[_out(d, names.get(d.actor_user_id)) for d in decisions],
+                                 quorum=call.selection_quorum, pending_votes=_votes_out(db, pending_approvals(db, application.id)))
 
 
 @router.get(

@@ -44,9 +44,29 @@ class SelectionDecisionOut(BaseModel):
     enrollment_id: uuid.UUID | None = Field(description="Matrícula creada por la decisión (solo al admitir)")
 
 
+class SelectionApprovalOut(BaseModel):
+    decision: Decision
+    cohort_id: str | None
+    reason: str
+    actor: str | None
+    occurred_at: datetime
+
+
+class SelectionPendingOut(BaseModel):
+    """Returned with 202 when the vote was recorded but fewer than `quorum` different people agree yet."""
+
+    application_id: uuid.UUID
+    state: Literal["pending", "disagreement"] = Field(description="pending: falta otra persona; disagreement: hay votos distintos")
+    stage: str
+    quorum: int = Field(description="Personas distintas que deben coincidir (configurable por convocatoria, por defecto 2)")
+    votes: list[SelectionApprovalOut]
+
+
 class SelectionDecisionList(BaseModel):
     application_id: uuid.UUID
     items: list[SelectionDecisionOut]
+    quorum: int = Field(description="Personas distintas que deben coincidir en esta convocatoria")
+    pending_votes: list[SelectionApprovalOut] = Field(description="Votos que aún no han alcanzado el quórum")
 
 
 # Provisional rule until the foundation confirms the priority criteria (review of PR #95, point 2).
