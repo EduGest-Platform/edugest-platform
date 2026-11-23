@@ -31,7 +31,12 @@ TITLE_WIDTH = 30
 
 
 def run_ingest(db: Session, corpus_dir: str, dry_run: bool = False, embedder: Embedder | None = None) -> list[IngestResult]:
-    """One transaction per document. A dry run does the same work and rolls every transaction back."""
+    """One transaction per document. A dry run does the same work and rolls every transaction back.
+
+    A dry run never calls the provider, even when an embedder is passed: corpus text must not leave
+    the process, or incur provider usage, for work that is rolled back."""
+    if dry_run:
+        embedder = None
     documents, unreadable = load_corpus(corpus_dir)
     known_names = list(db.scalars(select(Person.display_name)))
     results = [IngestResult(entry.source_key, "-", "rejected", reason=entry.reason) for entry in unreadable]

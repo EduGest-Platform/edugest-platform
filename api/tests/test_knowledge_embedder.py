@@ -125,3 +125,28 @@ def test_gemini_requires_an_api_key():
     with pytest.raises(EmbeddingError) as error:
         GeminiEmbedder("")
     assert error.value.code == "missing_api_key"
+
+
+MALFORMED_VECTORS = [
+    pytest.param({"embeddings": [{"values": None}]}, id="values-null"),
+    pytest.param({"embeddings": [{"values": 5}]}, id="values-scalar"),
+    pytest.param({"embeddings": [{"values": ["0.1"] * EMBEDDING_DIM}]}, id="values-strings"),
+    pytest.param({"embeddings": [{"values": [True] * EMBEDDING_DIM}]}, id="values-booleans"),
+    pytest.param({"embeddings": [{"values": [0.1] * (EMBEDDING_DIM - 1) + [None]}]}, id="one-null-element"),
+    pytest.param({"embeddings": [{}]}, id="values-missing"),
+    pytest.param({"embeddings": ["not-an-object"]}, id="item-not-an-object"),
+]
+
+
+@pytest.mark.parametrize("payload", MALFORMED_VECTORS)
+def test_gemini_malformed_vectors_raise_a_safe_code(payload):
+    with pytest.raises(EmbeddingError) as error:
+        gemini(lambda request: httpx.Response(200, json=payload)).embed_documents([P1])
+    assert error.value.code == "malformed_vector"
+
+
+@pytest.mark.parametrize("payload", [{"embeddings": None}, {"embeddings": {"values": [0.1]}}, [1, 2]])
+def test_gemini_malformed_envelope_is_an_unexpected_response(payload):
+    with pytest.raises(EmbeddingError) as error:
+        gemini(lambda request: httpx.Response(200, json=payload)).embed_documents([P1])
+    assert error.value.code == "unexpected_response"

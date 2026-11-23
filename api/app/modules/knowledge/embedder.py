@@ -107,14 +107,24 @@ class GeminiEmbedder:
         ]}
         response = self._post(body)
         try:
-            embeddings = [item["values"] for item in response.json()["embeddings"]]
+            items = response.json()["embeddings"]
         except (ValueError, KeyError, TypeError):
             raise EmbeddingError("unexpected_response") from None
-        if len(embeddings) != len(passages):
+        if not isinstance(items, list) or len(items) != len(passages):
             raise EmbeddingError("unexpected_response")
-        if any(len(values) != self.dimensions for values in embeddings):
+        return [normalize(self._values(item)) for item in items]
+
+    def _values(self, item: object) -> list[float]:
+        """One vector from a 200 response. Any malformed shape becomes an EmbeddingError, never a TypeError,
+        so the pipeline keeps the text and moves on to the next document."""
+        values = item.get("values") if isinstance(item, dict) else None
+        if not isinstance(values, list) or not all(
+            isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+        ):
+            raise EmbeddingError("malformed_vector")
+        if len(values) != self.dimensions:
             raise EmbeddingError("wrong_dimensions")
-        return [normalize(values) for values in embeddings]
+        return [float(v) for v in values]
 
     def _post(self, body: dict) -> httpx.Response:
         code = "no_attempt"

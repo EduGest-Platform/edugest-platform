@@ -1,14 +1,16 @@
 """KAN-130 part B: vectors in the ingest, with the offline FakeEmbedder and real PostgreSQL."""
 
+import json
 import shutil
 from pathlib import Path
 
+import httpx
 import pytest
 from sqlalchemy import select, text
 
 from app.core.config import settings
 from app.modules.audit.models import AuditEvent
-from app.modules.knowledge.embedder import EmbeddingError, FakeEmbedder
+from app.modules.knowledge.embedder import EmbeddingError, FakeEmbedder, GeminiEmbedder
 from app.modules.knowledge.ingest import run_ingest
 from app.modules.knowledge.models import EMBEDDING_DIM, KnowledgeChunk
 
@@ -89,6 +91,22 @@ def test_running_without_provider_keeps_existing_vectors(db, corpus):
     assert all(c.embedding_model == "fake-embedding-v1" for c in chunks(db))
 
 
-def test_dry_run_with_provider_saves_nothing(db, corpus):
-    run_ingest(db, str(corpus), dry_run=True, embedder=FakeEmbedder())
+def test_dry_run_with_provider_saves_nothing_and_makes_no_calls(db, corpus):
+    fake = FakeEmbedder()
+    run_ingest(db, str(corpus), dry_run=True, embedder=fake)
     assert chunks(db) == []
+    assert fake.calls == 0
+
+
+def test_malformed_provider_vectors_keep_the_text_and_continue(db, corpus):
+    def handler(request):
+        count = len(json.loads(request.content)["requests"])
+        return httpx.Response(200, json={"embeddings": [{"values": None} for _ in range(count)]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    embedder = GeminiEmbedder("synthetic-test-key", client=client, sleep=lambda seconds: None)
+    results = run_ingest(db, str(corpus), embedder=embedder)
+    stored = chunks(db)
+    assert len(results) > 1 and {r.action for r in results} == {"created"}
+    assert {r.embedding_error for r in results} == {"malformed_vector"}
+    assert stored and all(c.embedding is None and c.embedding_model is None for c in stored)
