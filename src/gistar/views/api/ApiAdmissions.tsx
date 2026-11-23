@@ -29,7 +29,7 @@ function useCalls(estado?: 'abierta') {
 }
 
 /** Public inscription form (also used by a logged-in aspirant). Creates or reuses the Person record. */
-export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void }) {
+export function InscriptionForm({ onViewApplications }: { onViewApplications?: () => void }) {
   const { me, refresh } = useApiSession()
   const calls = useCalls('abierta')
   const empty = () => ({ call_id: '', nombre: me?.display_name ?? '', email: me?.email ?? '', motivacion: '', disponibilidad: 'Mañana' as 'Mañana' | 'Tarde' | 'Flexible', acepta: false })
@@ -55,7 +55,6 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
       }
       setReceipt(data)
       await refresh()
-      onDone?.(data.codigo)
     } catch {
       setError('No se pudo confirmar el envío. Comprueba tu conexión e inténtalo de nuevo.')
     } finally {
@@ -66,11 +65,12 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
   if (receipt)
     return (
       <div className="grid gap-3">
-        <Notice>
+        <Notice live="polite">
           <CircleCheck className="mr-1 inline size-4 align-[-3px] text-teal-700" aria-hidden />
           Candidatura recibida con el código <b className="font-mono">{receipt.codigo}</b>. Se ha registrado en tu expediente único y en el historial.
         </Notice>
-        <div>
+        <div className="flex flex-wrap gap-2">
+          {onViewApplications && <Button onClick={onViewApplications}>Ir a Mi candidatura</Button>}
           <Button
             variant="ghost"
             onClick={() => {
@@ -137,7 +137,7 @@ export function ApiInscription() {
     <>
       <PageTitle title="Inscripción" sub="Formulario único de solicitud. Se crea o reutiliza tu ficha de persona: nunca se duplica el expediente." />
       <Card title="Solicitud de acceso" action={<ServerBadge />} className="max-w-2xl">
-        <InscriptionForm onDone={() => setTimeout(() => navigate('candidatura'), 1500)} />
+        <InscriptionForm onViewApplications={() => navigate('candidatura')} />
       </Card>
     </>
   )
