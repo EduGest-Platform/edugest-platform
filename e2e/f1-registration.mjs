@@ -201,7 +201,12 @@ try {
   // Independent staff session: search must not expose this other-program application.
   const foreign = await newBrowser()
   await foreign.goto(web)
-  await foreign.login('captacion.data@gistar.example')
+  requireCheck('Foreign staff sign-in form is ready', await waitFor(foreign,
+    "!!document.querySelector('#lg-email option[value=\"captacion.data@gistar.example\"]') && !!document.querySelector('#lg-pass')",
+  ))
+  requireCheck('Foreign staff account can be selected', await foreign.set('#lg-email', 'captacion.data@gistar.example'))
+  requireCheck('Foreign staff password can be entered', await foreign.set('#lg-pass', process.env.GISTAR_DEMO_PASSWORD))
+  requireCheck('Foreign staff sign-in can be submitted', await foreign.click('Entrar'))
   requireCheck('Foreign staff login succeeded', await waitFor(foreign, "!!document.querySelector('nav') && !document.querySelector('#lg-email')"))
   requireCheck('Foreign staff list available', await foreign.nav('Candidaturas'))
   requireCheck('Foreign staff list loaded', await foreign.waitText('en tu ámbito'))
