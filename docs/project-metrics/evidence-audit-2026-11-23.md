@@ -18,15 +18,17 @@ Una PR fusionada o un check verde no demuestran por sí solos aceptación funcio
 
 ## 2. Alcance y límites de la consulta Jira
 
-Consulta ejecutada:
+Consulta completa ejecutada:
 
-`project = KAN AND updated >= -14d ORDER BY updated DESC`
+`project = KAN ORDER BY updated DESC`
 
-- Jira informa **256 incidencias** en la población consultada.
-- Se inspeccionó la primera página de **100 incidencias**, todas etiquetadas `pf2-v41`.
-- Distribución de estado de esa primera página: **38 Finalizada, 25 Pruebas, 30 En curso y 7 Idea**.
-- Estos porcentajes/conteos son únicamente de la primera página; **no** deben extrapolarse a las 256 incidencias ni presentarse como avance global.
-- La auditoría técnica detallada de este corte cubre PR **#113–#122** y las tareas Jira directamente asociadas. No constituye todavía un muestreo completo de todas las 256 incidencias.
+- Jira devolvió **264 incidencias** en el proyecto KAN; se recorrieron las **3 páginas** y la paginación terminó (`hasNextPage=false`).
+- **243 incidencias** llevan la etiqueta `pf2-v41`; **21** quedan fuera de ese alcance. De esas 21, 12 son tareas marcadas explícitamente como sustituidas y 9 son documentos/briefings/notas de equipo.
+- Distribución de estado dentro de las 243 `pf2-v41`: **58 Finalizada, 29 Pruebas, 43 En curso y 113 Idea**.
+- Tipos dentro de `pf2-v41`: **187 subtareas, 48 historias y 8 épicas**.
+- Distribución por tipo: subtareas (53 Finalizada, 28 Pruebas, 12 En curso, 94 Idea); historias (5 Finalizada, 1 Pruebas, 23 En curso, 19 Idea); épicas (8 En curso).
+- La proporción administrativa `Finalizada` es 58/243 (23,9 %), pero **no es un porcentaje de avance técnico ni de aceptación**: los estados no están ponderados por alcance, criterios ni evidencia.
+- La auditoría técnica detallada de PR sigue siendo un muestreo, no una verificación individual de las 243 incidencias.
 
 ## 3. Evidencia técnica por PR
 
@@ -88,3 +90,77 @@ Mantener los estados Jira actuales de las tareas de esta muestra; no promover a 
 
 ---
 **Trazabilidad:** datos consultados en Jira y GitHub el 23/11/2026. Los resultados de workflow se refieren a los SHA de cabeza de las PR consultadas; los resultados históricos o posteriores pueden cambiar. Los resultados descritos como “declarados en el PR” son afirmaciones de sus autores, no una reproducción independiente de cada ensayo.
+
+
+## 8. Ampliación global del inventario Jira (proyecto completo)
+
+**Consulta:** `project = KAN ORDER BY updated DESC`  
+**Resultado:** 264 incidencias, 3 páginas procesadas, sin página siguiente.
+
+### 8.1 Distribución por etiqueta y estado
+
+| Segmento | Cantidad | Observación |
+|---|---:|---|
+| Total proyecto KAN | 264 | Inventario completo devuelto por la consulta |
+| Etiqueta `pf2-v41` | 243 | Alcance funcional principal |
+| Fuera de `pf2-v41` | 21 | Registros históricos/documentales |
+| `pf2-v41` — Finalizada | 58 | Estado Jira, no aceptación independiente |
+| `pf2-v41` — Pruebas | 29 | Pendiente de validación/aceptación |
+| `pf2-v41` — En curso | 43 | Trabajo en curso |
+| `pf2-v41` — Idea | 113 | No iniciado/pendiente según flujo Jira |
+
+### 8.2 Composición del alcance `pf2-v41`
+
+| Tipo | Total | Finalizada | Pruebas | En curso | Idea |
+|---|---:|---:|---:|---:|---:|
+| Subtarea | 187 | 53 | 28 | 12 | 94 |
+| Historia | 48 | 5 | 1 | 23 | 19 |
+| Épica | 8 | 0 | 0 | 8 | 0 |
+| **Total** | **243** | **58** | **29** | **43** | **113** |
+
+Lectura: la mayor concentración de trabajo pendiente está en subtareas (94 en Idea) e historias (19 en Idea). Las 8 épicas aparecen En curso; esto no significa que sus historias hijas estén aceptadas.
+
+### 8.3 Registros fuera de `pf2-v41`
+
+- **12 tareas sustituidas:** KAN-5 a KAN-16 (concretamente KAN-5…KAN-16 excepto KAN-17…KAN-20), marcadas `superseded` y `legacy-traceability`; no mezclarlas con el backlog activo.
+- **9 registros documentales:** KAN-2, KAN-3, KAN-4, KAN-17, KAN-18, KAN-19, KAN-20, KAN-22 y KAN-23. Incluyen kickoff, briefing, cuestionario, AS-IS y normas del equipo.
+- Los 21 registros están en estado Jira `Docs`; no se consideran entregables activos de `pf2-v41` en esta auditoría.
+
+### 8.4 Mapa Jira ↔ GitHub disponible en la trazabilidad revisada
+
+La siguiente tabla consolida las relaciones PR↔KAN ya identificadas en el historial de auditoría del proyecto. **No significa que se haya vuelto a inspeccionar cada diff en esta ampliación**; el estado de cada PR debe leerse en GitHub y la aceptación, en Jira.
+
+| Jira | PR(s) asociadas identificadas |
+|---|---|
+| KAN-131 | #105 |
+| KAN-182 | #99 |
+| KAN-207 | #82 |
+| KAN-205 | #84 |
+| KAN-199 | #83 |
+| KAN-181 | #59 |
+| KAN-146 | #58 |
+| KAN-144 | #76, #77 |
+| KAN-129 | #57, #86 |
+| KAN-219 | #48, #101 |
+| KAN-184 | #92 |
+| KAN-127 | #110 |
+| KAN-122 | #50 |
+| KAN-209 | #25 |
+| KAN-142 | #21 |
+| KAN-120 | #94, #95 |
+| KAN-214 | #111 |
+| KAN-261 | #77 |
+| KAN-238, KAN-248 | #112 |
+| KAN-125 | #113, #116 |
+| KAN-253 | #114 |
+| KAN-134 | #115 |
+| KAN-212 | #117 (abierta en este corte) |
+| KAN-220 | #118 (abierta en este corte) |
+| KAN-60, KAN-130, KAN-151 | #120, #122 |
+
+### 8.5 Lectura de auditoría
+
+- El inventario Jira del proyecto ya está completo en términos de paginación.
+- La evidencia técnica no está completa para las 243 incidencias etiquetadas: el mapa anterior es un conjunto de relaciones conocidas, no una cobertura exhaustiva.
+- No se ha cambiado ningún estado Jira en esta ampliación.
+- Para afirmar un avance técnico global es necesario enlazar cada una de las 187 subtareas con criterios de aceptación, PR/commit, workflow, prueba funcional y revisor/aceptación; las historias y épicas deben evaluarse a partir de sus hijas y no contarse como trabajo técnico adicional.
