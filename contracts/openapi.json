@@ -342,6 +342,100 @@
         "title": "ApplicationSummary",
         "type": "object"
       },
+      "AskIn": {
+        "additionalProperties": false,
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opcional: busca solo en una de tus cohortes",
+            "title": "Cohort Id"
+          },
+          "question": {
+            "description": "Pregunta sobre la documentación del curso",
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "AskIn",
+        "type": "object"
+      },
+      "AskOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "as_of": {
+            "description": "Fecha de corte: la vigencia de los documentos se comprueba en esta fecha",
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/Citation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "mode": {
+            "const": "extractive",
+            "description": "extractive = fragmento literal del documento (el modo generated llega con T10)",
+            "title": "Mode",
+            "type": "string"
+          },
+          "retrieval": {
+            "description": "hybrid = palabras y significado; keyword = solo palabras",
+            "enum": [
+              "hybrid",
+              "keyword"
+            ],
+            "title": "Retrieval",
+            "type": "string"
+          },
+          "scope_cohorts": {
+            "description": "Cohortes en las que se ha buscado",
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope Cohorts",
+            "type": "array"
+          },
+          "status": {
+            "description": "no_source = abstención: no hay fuente en tu ámbito",
+            "enum": [
+              "answered",
+              "no_source"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "mode",
+          "retrieval",
+          "answer",
+          "citations",
+          "as_of",
+          "scope_cohorts"
+        ],
+        "title": "AskOut",
+        "type": "object"
+      },
       "AssessmentOut": {
         "properties": {
           "assessed_at": {
@@ -1095,6 +1189,53 @@
           "total"
         ],
         "title": "CheckResults",
+        "type": "object"
+      },
+      "Citation": {
+        "properties": {
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "valid_from": {
+            "format": "date",
+            "title": "Valid From",
+            "type": "string"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_key",
+          "title",
+          "version",
+          "valid_from",
+          "valid_until",
+          "excerpt"
+        ],
+        "title": "Citation",
         "type": "object"
       },
       "CohortAttendance": {
@@ -5668,6 +5809,55 @@
         "summary": "Entregar o reentregar (hasta que se revise): el propio coder sobre su matrícula, o el docente de la cohorte",
         "tags": [
           "submissions"
+        ]
+      }
+    },
+    "/api/v1/assistant/ask": {
+      "post": {
+        "operationId": "ask_api_v1_assistant_ask_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin documentos en tu ámbito o cohorte ajena"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preguntar a la documentación del curso: respuesta citada o «no consta»",
+        "tags": [
+          "assistant"
         ]
       }
     },

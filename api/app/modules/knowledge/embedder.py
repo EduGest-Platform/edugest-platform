@@ -46,6 +46,8 @@ class Embedder(Protocol):
 
     def embed_documents(self, passages: Sequence[Passage]) -> list[list[float]]: ...
 
+    def embed_query(self, text: str) -> list[float]: ...
+
 
 def normalize(values: Sequence[float]) -> list[float]:
     norm = math.sqrt(sum(v * v for v in values))
@@ -61,10 +63,15 @@ class FakeEmbedder:
         self.model = model
         self.dimensions = dimensions
         self.calls = 0
+        self.query_calls = 0
 
     def embed_documents(self, passages: Sequence[Passage]) -> list[list[float]]:
         self.calls += 1
         return [self._vector(f"{p.title}\n{p.text}") for p in passages]
+
+    def embed_query(self, text: str) -> list[float]:
+        self.query_calls += 1
+        return self._vector(f"query\n{text}")
 
     def _vector(self, text: str) -> list[float]:
         values: list[float] = []
@@ -105,12 +112,20 @@ class GeminiEmbedder:
              "taskType": "RETRIEVAL_DOCUMENT", "title": p.title, "outputDimensionality": self.dimensions}
             for p in passages
         ]}
-        response = self._post(body)
+        return self._vectors(self._post(body), expected=len(passages))
+
+    def embed_query(self, text: str) -> list[float]:
+        """One question vector. RETRIEVAL_QUERY is the task type Gemini pairs with RETRIEVAL_DOCUMENT; no title."""
+        body = {"requests": [{"model": f"models/{GEMINI_MODEL}", "content": {"parts": [{"text": text}]},
+                              "taskType": "RETRIEVAL_QUERY", "outputDimensionality": self.dimensions}]}
+        return self._vectors(self._post(body), expected=1)[0]
+
+    def _vectors(self, response: httpx.Response, expected: int) -> list[list[float]]:
         try:
             items = response.json()["embeddings"]
         except (ValueError, KeyError, TypeError):
             raise EmbeddingError("unexpected_response") from None
-        if not isinstance(items, list) or len(items) != len(passages):
+        if not isinstance(items, list) or len(items) != expected:
             raise EmbeddingError("unexpected_response")
         return [normalize(self._values(item)) for item in items]
 

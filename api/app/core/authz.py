@@ -31,6 +31,9 @@ COMPETENCY_AGGREGATE_PERMISSION = "competencies.aggregate"
 TEAM_MANAGE_PERMISSION = "cohort.team.manage"
 # Q15: the academic attributions of coordination (cohort indicators) also belong to the teacher of the cohort.
 ACADEMIC_AGGREGATE_PERMISSIONS = {ATTENDANCE_AGGREGATE_PERMISSION, SUBMISSION_AGGREGATE_PERMISSION, COMPETENCY_AGGREGATE_PERMISSION}
+# ADR-0005 (KAN-151): course documents for the RAG assistant, inside the caller's scope. Coders do not need a role:
+# they read the documents of the cohorts where they have an active enrollment (app/modules/knowledge/scope.py).
+KNOWLEDGE_READ_PERMISSION = "knowledge.read"
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
@@ -39,12 +42,12 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Colaborador de selección: reads and annotates applications in its call, reviews requirements.
     "seleccion": {"applications.read", "applications.crm", "calls.aggregate", *REQUIREMENT_REVIEW_PERMISSIONS, *PRESELECTION_PERMISSIONS, *SELECTION_PERMISSIONS},
     # Coordinación: aggregated indicators (calls, cohort attendance), plus reading and recording requirement exceptions (KAN-128).
-    "coordinacion": {"calls.aggregate", ATTENDANCE_AGGREGATE_PERMISSION, SUBMISSION_AGGREGATE_PERMISSION, COMPETENCY_AGGREGATE_PERMISSION, *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *SELECTION_PERMISSIONS},
+    "coordinacion": {"calls.aggregate", KNOWLEDGE_READ_PERMISSION, ATTENDANCE_AGGREGATE_PERMISSION, SUBMISSION_AGGREGATE_PERMISSION, COMPETENCY_AGGREGATE_PERMISSION, *REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *SELECTION_PERMISSIONS},
     # Docente: no access to admissions, except reading and recording requirement exceptions (KAN-128).
     # Records attendance, configures/assesses competencies and reviews submissions of its own cohorts (KAN-55, KAN-57, KAN-56).
     # Q15: also the cohort indicators of coordination and the teaching team of its cohorts. Never the admission decision.
     "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *ATTENDANCE_PERMISSIONS, *COMPETENCY_PERMISSIONS, *SUBMISSION_PERMISSIONS,
-                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION},
+                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION, KNOWLEDGE_READ_PERMISSION},
 }
 
 

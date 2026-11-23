@@ -150,3 +150,16 @@ def test_gemini_malformed_envelope_is_an_unexpected_response(payload):
     with pytest.raises(EmbeddingError) as error:
         gemini(lambda request: httpx.Response(200, json=payload)).embed_documents([P1])
     assert error.value.code == "unexpected_response"
+
+
+def test_gemini_query_vector_uses_retrieval_query_without_title():
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content)["requests"])
+        return ok(request)
+
+    vector = gemini(handler).embed_query("¿Cuándo se entrega el proyecto?")
+    [body] = seen[0]
+    assert body["taskType"] == "RETRIEVAL_QUERY" and "title" not in body
+    assert body["outputDimensionality"] == EMBEDDING_DIM and len(vector) == EMBEDDING_DIM

@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.db import engine
 from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
 from app.modules.admissions.router import router as admissions_router
+from app.modules.assistant.router import router as assistant_router
 from app.modules.assistant_tools.router import router as assistant_tools_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.audit.router import router as audit_router
@@ -58,6 +59,7 @@ for r in (
     attendance_router,
     competencies_router,
     submissions_router,
+    assistant_router,
     assistant_tools_router,
     teaching_team_router,
     audit_router,
