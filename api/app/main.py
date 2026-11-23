@@ -21,6 +21,7 @@ from app.modules.identity.router import router as identity_router
 from app.modules.preselection.router import router as preselection_router
 from app.modules.requirements.router import router as requirements_router
 from app.modules.requirements.prefilter import router as prefilter_router
+from app.modules.selection.router import router as selection_router
 
 app = FastAPI(
     title="EduGest API",
@@ -49,6 +50,7 @@ for r in (
     requirements_router,
     prefilter_router,
     preselection_router,
+    selection_router,
     automation_router,
     attendance_router,
     competencies_router,

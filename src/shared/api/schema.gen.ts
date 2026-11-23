@@ -185,6 +185,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/selection-decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Historial de decisiones de admisión de una candidatura */
+        get: operations["list_selection_decisions_api_v1_applications__application_id__selection_decisions_get"];
+        put?: never;
+        /** Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida */
+        post: operations["post_selection_decision_api_v1_applications__application_id__selection_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/simulated-reminders": {
         parameters: {
             query?: never;
@@ -1680,6 +1698,75 @@ export interface components {
             /** Scope Type */
             scope_type: string;
         };
+        /** SelectionDecisionList */
+        SelectionDecisionList: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Items */
+            items: components["schemas"]["SelectionDecisionOut"][];
+        };
+        /** SelectionDecisionOut */
+        SelectionDecisionOut: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /**
+             * Cohort Id
+             * @description Cohorte de la matrícula creada (solo al admitir)
+             */
+            cohort_id: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "admitida" | "lista_espera" | "no_admitida";
+            /**
+             * Enrollment Id
+             * @description Matrícula creada por la decisión (solo al admitir)
+             */
+            enrollment_id: string | null;
+            /** From Stage */
+            from_stage: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason: string;
+            /** To Stage */
+            to_stage: string;
+        };
+        /** SelectionDecisionWrite */
+        SelectionDecisionWrite: {
+            /**
+             * Cohort Id
+             * @description Cohorte en la que se matricula. Obligatoria al admitir y no permitida en las demás decisiones.
+             */
+            cohort_id?: string | null;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "admitida" | "lista_espera" | "no_admitida";
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud ni situación personal.
+             */
+            reason: string;
+        };
         /** SessionList */
         SessionList: {
             /** Cohort Id */
@@ -2418,6 +2505,105 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_selection_decisions_api_v1_applications__application_id__selection_decisions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionDecisionList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_selection_decision_api_v1_applications__application_id__selection_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectionDecisionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelectionDecisionOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La selección ya terminó, no hay plazas o la persona ya está matriculada en esa cohorte */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Datos no válidos o cohorte que no pertenece a la convocatoria */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

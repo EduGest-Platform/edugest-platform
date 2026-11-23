@@ -2647,6 +2647,158 @@
         "title": "RoleAssignmentOut",
         "type": "object"
       },
+      "SelectionDecisionList": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SelectionDecisionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "application_id",
+          "items"
+        ],
+        "title": "SelectionDecisionList",
+        "type": "object"
+      },
+      "SelectionDecisionOut": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cohorte de la matrícula creada (solo al admitir)",
+            "title": "Cohort Id"
+          },
+          "decision": {
+            "enum": [
+              "admitida",
+              "lista_espera",
+              "no_admitida"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Matrícula creada por la decisión (solo al admitir)",
+            "title": "Enrollment Id"
+          },
+          "from_stage": {
+            "title": "From Stage",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "to_stage": {
+            "title": "To Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "decision",
+          "from_stage",
+          "to_stage",
+          "reason",
+          "actor",
+          "occurred_at",
+          "cohort_id",
+          "enrollment_id"
+        ],
+        "title": "SelectionDecisionOut",
+        "type": "object"
+      },
+      "SelectionDecisionWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "cohort_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cohorte en la que se matricula. Obligatoria al admitir y no permitida en las demás decisiones.",
+            "title": "Cohort Id"
+          },
+          "decision": {
+            "enum": [
+              "admitida",
+              "lista_espera",
+              "no_admitida"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Motivo operativo. No incluir datos de salud ni situación personal.",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "title": "SelectionDecisionWrite",
+        "type": "object"
+      },
       "SessionList": {
         "properties": {
           "cohort_id": {
@@ -3864,6 +4016,118 @@
         "summary": "Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión",
         "tags": [
           "requirements"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/selection-decisions": {
+      "get": {
+        "operationId": "list_selection_decisions_api_v1_applications__application_id__selection_decisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionDecisionList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Historial de decisiones de admisión de una candidatura",
+        "tags": [
+          "selection"
+        ]
+      },
+      "post": {
+        "operationId": "post_selection_decision_api_v1_applications__application_id__selection_decisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionDecisionWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionDecisionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La selección ya terminó, no hay plazas o la persona ya está matriculada en esa cohorte"
+          },
+          "422": {
+            "description": "Datos no válidos o cohorte que no pertenece a la convocatoria"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Terminar la selección con una decisión humana: admitir (y matricular), lista de espera o no admitida",
+        "tags": [
+          "selection"
         ]
       }
     },
