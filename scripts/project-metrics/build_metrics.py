@@ -64,6 +64,7 @@ def github_get(path: str) -> dict | list:
 def build() -> dict:
     issues = jira_issues()
     by_status = Counter()
+    sprint_assigned_by_status = Counter()
     by_sprint: dict[str, Counter] = defaultdict(Counter)
     sprint_total = 0
     for issue in issues:
@@ -75,6 +76,7 @@ def build() -> dict:
         if sprint_labels:
             sprint = sprint_labels[0]
             by_sprint[sprint][status] += 1
+            sprint_assigned_by_status[status] += 1
             sprint_total += 1
         else:
             by_sprint["Sin sprint"][status] += 1
@@ -102,6 +104,7 @@ def build() -> dict:
             "total": len(issues), "sprint_assigned": sprint_total,
             "without_sprint": len(issues) - sprint_total,
             "done_status": DONE_STATUS, "by_status": dict(sorted(by_status.items())),
+            "sprint_assigned_by_status": dict(sorted(sprint_assigned_by_status.items())),
             "sprints": {
                 name: {"total": sum(counts.values()), "by_status": dict(sorted(counts.items()))}
                 for name, counts in sorted(by_sprint.items())
@@ -132,7 +135,7 @@ def build() -> dict:
 
 def render_html(data: dict) -> str:
     jira, gh = data["jira"], data["github"]
-    done = jira["by_status"].get(DONE_STATUS, 0)
+    done = jira["sprint_assigned_by_status"].get(DONE_STATUS, 0)
     total = jira["sprint_assigned"]
     pct = (done / total * 100) if total else 0
     sprint_rows = []
@@ -168,7 +171,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "metrics.json").write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (OUT / "index.html").write_text(render_html(data), encoding="utf-8")
-    done = data["jira"]["by_status"].get(DONE_STATUS, 0)
+    done = data["jira"]["sprint_assigned_by_status"].get(DONE_STATUS, 0)
     total = data["jira"]["sprint_assigned"]
     pct = (done / total * 100) if total else 0
     summary = [
