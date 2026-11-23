@@ -83,12 +83,10 @@ HEALTH_UNAVAILABLE_RESPONSE = {
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: HEALTH_UNAVAILABLE_RESPONSE},
 )
 def health(response: Response) -> dict:
-    """Return 200 when the database answers, 503 (without driver details) when it does not.
-
-    The whole probe (pool checkout, pre-ping and ``select 1``) is bounded by
-    HEALTH_PROBE_TIMEOUT_SECONDS, so a pooled connection to a database that has stopped
-    responding cannot hang the endpoint; ``connect_timeout`` alone only bounds new connections.
-    """
+    """Return 200 when the database answers, 503 (without driver details) when it does not."""
+    # The whole probe (pool checkout, pre-ping and select 1) is bounded by the deadline, so a
+    # pooled connection to a database that stopped answering cannot hang the endpoint;
+    # connect_timeout alone only bounds new connections.
     try:
         _health_probe_pool.submit(check_database).result(timeout=HEALTH_PROBE_TIMEOUT_SECONDS)
     except (SQLAlchemyError, ProbeTimeout):
