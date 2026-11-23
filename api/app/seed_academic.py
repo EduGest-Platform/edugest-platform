@@ -276,7 +276,8 @@ def _record(db: Session, session: AttendanceSession, enrollment: Enrollment, val
 DEADLINE_TIME = time(23, 59)
 ON_TIME_LEAD = timedelta(days=1)  # "enviada": delivered the day before the deadline
 LATE_DELAY = timedelta(days=2)    # "fuera_de_plazo": delivered two days after it
-NOT_DELIVERED = {"borrador"}      # a draft was never handed in: the coder shows as pending / overdue
+NOT_DELIVERED = {"borrador"}
+CHECKS_TOTAL = 10  # synthetic pre-computed tests per submission      # a draft was never handed in: the coder shows as pending / overdue
 
 
 def _submissions(db: Session, data: dict, cohorts: list[Cohort], enrollments: dict, teacher: User) -> tuple[int, int]:
@@ -295,6 +296,8 @@ def _submissions(db: Session, data: dict, cohorts: list[Cohort], enrollments: di
             created_assignments += created
     db.flush()
     for entry in data.get("entregas", []):
+        # Drawn for every entry before any skip, so a partial reconcile yields the same values as a clean seed.
+        passed = rng.randint(5, CHECKS_TOTAL)
         enrollment = enrollments.get(entry["coder_id"])
         assignment = by_task.get((entry["tarea_id"], enrollment.cohort_id)) if enrollment else None
         if assignment is None or entry["estado"] in NOT_DELIVERED or entry["coder_id"] in SPRINT_MISSING:
@@ -304,10 +307,9 @@ def _submissions(db: Session, data: dict, cohorts: list[Cohort], enrollments: di
             continue
         delivered = assignment.due_at + LATE_DELAY if entry["estado"] == "fuera_de_plazo" else assignment.due_at - ON_TIME_LEAD
         reviewed = entry["coder_id"] not in SPRINT_UNREVIEWED and bool(entry.get("feedback_publicado"))
-        total = 10
         db.add(Submission(
             assignment_id=assignment.id, enrollment_id=enrollment.id, portfolio_url=entry.get("repositorio_ficticio"),
-            check_results={"passed": rng.randint(5, total), "total": total}, status="reviewed" if reviewed else "submitted",
+            check_results={"passed": passed, "total": CHECKS_TOTAL}, status="reviewed" if reviewed else "submitted",
             first_submitted_at=delivered, submitted_at=delivered, recorded_by=teacher.id,
             reviewed_by=teacher.id if reviewed else None, reviewed_at=delivered + timedelta(days=3) if reviewed else None,
         ))

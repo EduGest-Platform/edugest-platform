@@ -204,3 +204,21 @@ def test_submissions_follow_the_documented_delivery_cases(db, data, loaded):
         assignment = db.get(Assignment, submission.assignment_id)
         assert (submission.first_submitted_at > assignment.due_at) == (ref in late)
     assert loaded["submissions"] == len(delivered)
+
+
+def test_partial_reconcile_gives_the_same_submissions_as_a_clean_seed(db, data, loaded):
+    """PR 97 review (David): random values are drawn before skipping existing rows, so reconciling keeps them stable."""
+    from app.modules.submissions.models import Submission
+
+    def snapshot():
+        db.expire_all()
+        return {ref: s.check_results for ref, s in by_coder(db, Submission)}
+
+    clean = snapshot()
+    victims = sorted(clean)[: len(clean) // 2]
+    for ref, submission in by_coder(db, Submission):
+        if ref in victims:
+            db.delete(submission)
+    db.commit()
+    load_academic(db, data)
+    assert snapshot() == clean
