@@ -20,7 +20,7 @@ The structure from PR #3 still holds. Growth stayed inside the existing folders,
 ### Boundaries found, now enforced by `src/shared/__tests__/import-boundaries.test.ts`
 
 1. **Nothing in `src/` imports from outside `src/`** (`api/`, `ml/`, `e2e/`, `infra/`). The web reaches the backend only over HTTP through the generated contract (`contracts/openapi.json` → `schema.gen.ts`).
-2. **Runtime packages are only** `react`, `react-dom`, `lucide-react` and `openapi-fetch`. Tests may also use `vitest` and `node:*`. A new package needs a PR that updates this list on purpose.
+2. **Runtime packages are only** `react`, `react-dom`, `lucide-react` and `openapi-fetch`. Tests may also use `vitest`. Imports of `node:*` and `react-dom/server` are limited to files under `__tests__/`. A new package needs a PR that updates this list on purpose.
 3. **Only `gistar/views/api/` (and `shared/api/` itself) import the HTTP client.** Local views never make HTTP calls, which keeps local and API data apart (ADR-0004).
 4. **`shared/` does not depend on `gistar/`** except for type-only imports. Today there is exactly one: `shared/api/session.tsx` imports the `Role` type.
 
@@ -50,7 +50,7 @@ The test checks the source text, not the compiled bundle. Mutation check: three 
 
 **Límites, ahora comprobados por una prueba Vitest:**
 1. Nada de `src/` importa de fuera de `src/`; la web llega al backend solo por HTTP y contrato generado.
-2. Paquetes de ejecución permitidos: `react`, `react-dom`, `lucide-react` y `openapi-fetch`.
+2. Paquetes de ejecución permitidos: `react`, `react-dom`, `lucide-react` y `openapi-fetch`. Los imports de `node:*` y `react-dom/server` se limitan a archivos bajo `__tests__/`.
 3. Solo `gistar/views/api/` (y la propia `shared/api/`) usan el cliente HTTP; las vistas locales nunca llaman a la API.
 4. `shared/` no depende de `gistar/` salvo importaciones de solo tipos (hoy una: `Role`).
 
