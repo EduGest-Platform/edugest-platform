@@ -61,6 +61,15 @@ try {
   await staff.set('[aria-label="Buscar expedientes"]', email)
   requireCheck('Exactly one shared dossier visible', await waitFor(staff, `document.querySelectorAll('main tbody tr').length === 1 && document.querySelector('main tbody tr').innerText.includes(${JSON.stringify(email)})`))
   requireCheck('Dossier belongs to IA call', await staff.ev("document.querySelector('main tbody tr')?.innerText.includes('CONV-IA-2027A')"))
+  await staff.goto(web)
+  requireCheck('Staff session survives browser reload', await waitFor(staff, "!!document.querySelector('nav') && !document.querySelector('#lg-email')"))
+  requireCheck('Staff can reopen applications after reload', await staff.nav('Candidaturas'))
+  requireCheck('Reloaded application list is available', await staff.waitText('en tu ámbito'))
+  requireCheck('Staff can search for the dossier after reload', await staff.set('[aria-label="Buscar expedientes"]', email))
+  requireCheck('Exactly one dossier remains visible after reload', await waitFor(staff,
+    `document.querySelectorAll('main tbody tr').length === 1 && document.querySelector('main tbody tr').innerText.includes(${JSON.stringify(email)})`,
+  ))
+
   await staff.ev(`document.querySelector('main tbody tr button').click()`)
   requireCheck('Persisted dossier opens', await staff.waitText('Historial CRM'))
   requireCheck('Dossier contains synthetic registration', (await staff.text()).includes(email))
