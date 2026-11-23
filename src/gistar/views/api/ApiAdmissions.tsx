@@ -41,16 +41,26 @@ export function InscriptionForm({ onDone }: { onDone?: (codigo: string) => void 
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
+    if (busy || !callId) return
     setBusy(true)
     setError(null)
-    const { data, error: err, response } = await api.POST('/api/v1/applications', {
-      body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: true },
-    })
-    setBusy(false)
-    if (err || !data) return setError(problemText(describeApiError(response.status, err)))
-    setReceipt(data)
-    await refresh()
-    onDone?.(data.codigo)
+
+    try {
+      const { data, error: err, response } = await api.POST('/api/v1/applications', {
+        body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: true },
+      })
+      if (err || !data) {
+        setError(problemText(describeApiError(response.status, err)))
+        return
+      }
+      setReceipt(data)
+      await refresh()
+      onDone?.(data.codigo)
+    } catch {
+      setError('No se pudo confirmar el envío. Comprueba tu conexión e inténtalo de nuevo.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (receipt)
