@@ -76,7 +76,7 @@ A badly written `corpus.json` entry never retires the version already stored: a 
 
 The `id` follows the corpus format: 1 to 4 letters and 1 to 3 digits (`A1`, `B12`). The `version` is a `v` and 1 to 3 digits (`v1`, `v10`). This way no identifier can hold a DNI or a phone number.
 
-`maintained_by` is the area responsible for the document, given as one of the system roles (`admin`, `captacion`, `seleccion`, `coordinacion` or `docente`). Never a person's name.
+`maintained_by` is the area responsible for the document, given as a role and never as a person's name. Only `docente` is accepted: the assistant is fed exclusively with materials shared by teachers (Melissa, round 3, Q16, and Q15 approved by the PO on 23/11/2026). The ingest rejects any other value with a reason.
 
 Each corpus cohort maps to the real seed cohort in `app/modules/knowledge/corpus.py` (`COHORT_SCOPE`). A test fails if those cohorts stop existing.
 

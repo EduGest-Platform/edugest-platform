@@ -14,15 +14,15 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from app.core.authz import ROLE_PERMISSIONS
 from app.modules.knowledge.privacy import find_personal_data
 
 MANIFEST = "corpus.json"
 # Corpus cohorts (the letters used by the question bank) -> real cohort IDs of the synthetic seed.
 COHORT_SCOPE = {"A": "COH-IA", "B": "COH-DATA"}
 STATUSES = ("vigente", "obsoleto")
-# The responsible area is a staff role, never a person's name (no personal data in the knowledge base).
-MAINTAINER_ROLES = frozenset(ROLE_PERMISSIONS)
+# The responsible area is a role, never a person's name (no personal data in the knowledge base).
+# Melissa (round 3, Q16): the assistant is fed exclusively with materials shared by teachers.
+MAINTAINER_ROLES = frozenset({"docente"})
 REQUIRED_FIELDS = ("id", "file", "title", "cohort", "version", "valid_from", "status", "synthetic", "maintained_by")
 # Ids and versions reach reports and audit events, so they follow a domain format with at most 3 digits:
 # no DNI (8 digits), NIE (7) or phone number (9) can fit, and nothing can be glued with separators.
@@ -113,7 +113,7 @@ def _to_document(root: Path, entry: dict) -> SourceDocument:
     if entry["status"] not in STATUSES:
         raise CorpusError(f"status must be one of {', '.join(STATUSES)}")
     if entry["maintained_by"] not in MAINTAINER_ROLES:
-        raise CorpusError(f"maintained_by must be a staff role: {', '.join(sorted(MAINTAINER_ROLES))}")
+        raise CorpusError("maintained_by must be docente: the assistant only uses materials shared by teachers (Q16)")
     if len(str(entry["title"])) > MAX_TITLE:
         raise CorpusError(f"title is longer than {MAX_TITLE} characters")
     valid_from = _iso_date(entry, "valid_from")
