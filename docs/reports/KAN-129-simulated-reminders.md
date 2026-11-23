@@ -29,3 +29,7 @@ No actual sends, scheduler, learner inbox, CRM/stage/enrollment decisions or sav
 Local: ruff, Python compilation, OpenAPI/TS generation, engine unit suite and diff checks. PostgreSQL/Docker unavailable locally: NOT RUN; current-head CI is the source of DB evidence. Regression tests cover same-instant retries, rescheduling, deadline boundary, concurrent retry, atomic rollback, role/scope denial, invalid/forged fields, stage restrictions, no business writes, bounded history, application-delete cascade and migration roundtrip. Actual results are recorded in the PR.
 
 Review: David primary for engine/deduplication and test evidence; Elizabeth for permissions, data and coordination with #46. All fixtures synthetic.
+
+## Follow-up / Seguimiento de referencias (KAN-129)
+
+New simulations now require a `synthetic-` technical reference and reject recognized phone/document shapes; outside-preselection errors expose stable code `simulation_outside_preselection`. Existing stored references remain readable. See [input compatibility, limits and evidence](KAN-129-reference-hardening.md). / Las nuevas simulaciones exigen referencia técnica `synthetic-` y rechazan formatos reconocidos de teléfono/documento. El historial antiguo sigue legible; límites y compatibilidad detallados en el informe de seguimiento.

@@ -4,7 +4,6 @@ import uuid
 from datetime import timedelta, timezone
 from hashlib import sha256
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -12,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core import audit
 from app.core.authz import Principal
 from app.core.db import utcnow
+from app.core.errors import UserFacingError
 from app.modules.admissions.models import Application
 from app.modules.automation.engine import Policy, Task, TaskKind, propose
 from app.modules.automation.models import SimulatedReminder
@@ -29,7 +29,10 @@ def simulate_reminder(db: Session, actor: Principal, application_id: uuid.UUID,
     application = db.scalar(select(Application).where(Application.id == application.id)
                             .with_for_update().execution_options(populate_existing=True))
     if application.stage not in PRESELECTION_STAGES:
-        raise HTTPException(409, "La simulación solo está disponible en preselección")
+        raise UserFacingError(
+            409, "simulation_outside_preselection",
+            "Esta candidatura ya no está en preselección. Consulta su historial antes de crear otra simulación.",
+        )
     now = utcnow().astimezone(timezone.utc)
     due_at = body.due_at.astimezone(timezone.utc)
     task = Task(call.id, str(application.id), body.task_ref, TaskKind(body.kind), due_at)
