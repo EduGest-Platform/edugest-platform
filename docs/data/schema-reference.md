@@ -164,6 +164,7 @@ erDiagram
     app_user ||--o{ competency_framework : created_by
     program ||--o{ competency_framework : program_id
     app_user ||--o{ discussion_comment : actor_user_id
+    app_user |o--o{ discussion_comment : deleted_by
     discussion_comment |o--o{ discussion_comment : parent_id
     discussion_comment ||--o{ discussion_comment : thread_id
     discussion_thread ||--o{ discussion_comment : thread_id
@@ -570,8 +571,12 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | version | INTEGER | no | — |
 | created_at | TIMESTAMP WITH TIME ZONE | no | — |
 | edited_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+| deleted_by | UUID | sí / yes | app_user.id |
+| deleted_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
 
 - CHECK `ck_discussion_comment_body`: `length(trim(body)) BETWEEN 1 AND 2000`
+
+- CHECK `ck_discussion_comment_deleted`: `(deleted_by IS NULL) = (deleted_at IS NULL)`
 
 - CHECK `ck_discussion_comment_edited`: `edited_at IS NULL OR edited_at >= created_at`
 
@@ -594,12 +599,15 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | created_at | TIMESTAMP WITH TIME ZONE | no | — |
 | resolved_by | UUID | sí / yes | app_user.id |
 | resolved_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+| version | INTEGER | no | — |
 
 - CHECK `ck_discussion_thread_resolution`: `(resolved_by IS NULL) = (resolved_at IS NULL)`
 
 - CHECK `ck_discussion_thread_scope`: `(scope_type = 'application' AND application_id IS NOT NULL AND program_id IS NULL) OR (scope_type = 'program' AND program_id IS NOT NULL AND application_id IS NULL)`
 
 - CHECK `ck_discussion_thread_subject`: `length(trim(subject)) BETWEEN 1 AND 160`
+
+- CHECK `ck_discussion_thread_version`: `version >= 1`
 
 ### enrollment
 

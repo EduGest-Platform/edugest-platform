@@ -15,6 +15,7 @@ class DiscussionThread(Base):
                         "(scope_type = 'program' AND program_id IS NOT NULL AND application_id IS NULL)", name='ck_discussion_thread_scope'),
         CheckConstraint('length(trim(subject)) BETWEEN 1 AND 160', name='ck_discussion_thread_subject'),
         CheckConstraint('(resolved_by IS NULL) = (resolved_at IS NULL)', name='ck_discussion_thread_resolution'),
+        CheckConstraint('version >= 1', name='ck_discussion_thread_version'),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     scope_type: Mapped[str] = mapped_column(String(12))
@@ -25,6 +26,7 @@ class DiscussionThread(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey('app_user.id'))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default=text('1'))
 
 
 class DiscussionComment(Base):
@@ -37,6 +39,7 @@ class DiscussionComment(Base):
         CheckConstraint('length(trim(body)) BETWEEN 1 AND 2000', name='ck_discussion_comment_body'),
         CheckConstraint('version >= 1', name='ck_discussion_comment_version'),
         CheckConstraint('edited_at IS NULL OR edited_at >= created_at', name='ck_discussion_comment_edited'),
+        CheckConstraint('(deleted_by IS NULL) = (deleted_at IS NULL)', name='ck_discussion_comment_deleted'),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     thread_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('discussion_thread.id'), index=True)
@@ -46,3 +49,5 @@ class DiscussionComment(Base):
     version: Mapped[int] = mapped_column(Integer, default=1, server_default=text('1'))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey('app_user.id'))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
