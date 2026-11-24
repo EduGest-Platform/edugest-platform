@@ -435,7 +435,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
       dirty={!!ev.resumen.trim() || selectionDirty}
       title={d ? `${d.person.display_name} · ${d.codigo}` : 'Expediente'}
       subtitle={d ? `${d.call_id} · ${d.person.email}` : undefined}
-      footer={<Button onClick={onClose}>Cerrar</Button>}
+      footer={(requestClose) => <Button onClick={requestClose}>Cerrar</Button>}
     >
       {error && (
         <Notice tone="warning" live="assertive">
