@@ -73,6 +73,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: pnpm/action-setup@v4
         with:
           version: 10.34.3
@@ -87,7 +90,29 @@ jobs:
         continue-on-error: true
         run: pnpm exec oxfmt --check src e2e
       - run: pnpm exec tsc --noEmit -p .
-      - run: pnpm test
+      - name: Web tests with temporary JUnit counts
+        id: web-tests
+        run: pnpm test --reporter=default --reporter=junit --outputFile.junit="$RUNNER_TEMP/web-tests.xml"
+      - name: Summarize web evidence without test output
+        if: always()
+        env:
+          WEB_TEST_OUTCOME: ${{ steps.web-tests.outcome || 'skipped' }}
+        run: >-
+          python scripts/ci/summarize_junit.py
+          --suite web
+          --input "$RUNNER_TEMP/web-tests.xml"
+          --output "$RUNNER_TEMP/web-test-summary.json"
+          --summary "$GITHUB_STEP_SUMMARY"
+          --commit "$GITHUB_SHA"
+          --outcome "$WEB_TEST_OUTCOME"
+      - name: Attach aggregate web evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-test-summary-${{ github.sha }}
+          path: ${{ runner.temp }}/web-test-summary.json
+          retention-days: 7
+          if-no-files-found: error
       - run: pnpm build
       - name: Cliente TS sincronizado con contracts/openapi.json
         run: pnpm gen:api && git diff --exit-code src/shared/api/schema.gen.ts

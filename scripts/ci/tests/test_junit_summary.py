@@ -80,6 +80,33 @@ class SummaryTests(unittest.TestCase):
                 self.assertNotIn("PRIVATE", text)
                 self.assertNotIn("SECRET", text)
 
+    def test_web_cli_labels_evidence_and_preserves_outcomes(self):
+        for outcome, status, exit_code in (("success", "passed", 0), ("failure", "failed", 1), ("skipped", "failed", 1)):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                folder = Path(directory)
+                report, output, summary = [folder / name for name in ("input.xml", "output.json", "summary.md")]
+                report.write_text(f'<testsuites>{SUITE}</testsuites>', encoding="utf-8")
+                process = subprocess.run([sys.executable, str(SCRIPT), "--suite", "web", "--input", str(report),
+                                          "--output", str(output), "--summary", str(summary), "--commit", COMMIT,
+                                          "--outcome", outcome], capture_output=True, text=True)
+                self.assertEqual(process.returncode, exit_code)
+                self.assertEqual(json.loads(output.read_text(encoding="utf-8"))["status"], status)
+                published = summary.read_text(encoding="utf-8") + output.read_text(encoding="utf-8")
+                self.assertIn("WEB test evidence", published)
+                self.assertNotIn("API test evidence", published)
+                self.assertNotIn("PRIVATE", published)
+                self.assertNotIn("SECRET", published)
+
+    def test_cli_rejects_arbitrary_suite_labels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            process = subprocess.run([sys.executable, str(SCRIPT), "--suite", "arbitrary", "--input", str(folder / "input.xml"),
+                                      "--output", str(folder / "output.json"), "--summary", str(folder / "summary.md"),
+                                      "--commit", COMMIT, "--outcome", "success"], capture_output=True, text=True)
+            self.assertEqual(process.returncode, 2)
+            self.assertFalse((folder / "output.json").exists())
+            self.assertFalse((folder / "summary.md").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

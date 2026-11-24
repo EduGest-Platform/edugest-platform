@@ -1,4 +1,4 @@
-"""Publish aggregate API test evidence without copying JUnit messages or test identities."""
+"""Publish aggregate test evidence without copying JUnit messages or test identities."""
 
 import argparse
 import json
@@ -50,10 +50,12 @@ def main() -> int:
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument("--commit", required=True)
     parser.add_argument("--outcome", choices=["success", "failure", "cancelled", "skipped"], required=True)
+    parser.add_argument("--suite", choices=["api", "web"], default="api")
     args = parser.parse_args()
     result = summarize(args.input, args.outcome, args.commit)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    lines = ["## API test evidence / Evidencia de pruebas API", "", f"Status / Estado: **{result['status']}**", "",
+    label = args.suite.upper()
+    lines = [f"## {label} test evidence / Evidencia de pruebas {label}", "", f"Status / Estado: **{result['status']}**", "",
              "Only aggregate counts; no test identities or output. / Solo totales, sin nombres ni salida de tests.", ""]
     if result["counts"] is not None:
         lines += ["| Metric / Métrica | Count / Total |", "|---|---|"]
