@@ -51,6 +51,15 @@ jobs:
         run: |
           node e2e/f1-registration.mjs
           node e2e/f1-registration.mjs
+      - name: Prepare F2 synthetic reference cohort (KAN-192)
+        run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
+      - name: F2 HTTP admission and repeat-run integrity (KAN-192)
+        env:
+          GISTAR_API: http://localhost:8000
+          E2E_FIXTURE_ID: ci-f2-admission
+        run: |
+          node e2e/f2-admission-enrollment.mjs
+          node e2e/f2-admission-enrollment.mjs
       - name: Remove disposable data
         if: always()
         run: docker compose -f infra/compose.yaml down -v
