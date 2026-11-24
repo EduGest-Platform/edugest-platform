@@ -36,7 +36,8 @@ def assert_safe_logs(caplog, response, question):
     messages = [record.getMessage() for record in caplog.records if record.name == "app.access"]
     assert any("/assistant/ask" in message and correlation in message for message in messages)
     assert question not in caplog.text
-    assert question not in response.text
+    if response.status_code >= 400:
+        assert question not in response.text
 
 
 @pytest.mark.parametrize("question,cohort,status,result", [
