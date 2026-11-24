@@ -1037,24 +1037,32 @@ export interface components {
             citations: components["schemas"]["Citation"][];
             /**
              * Mode
-             * @description extractive = fragmento literal del documento (el modo generated llega con T10)
-             * @constant
-             */
-            mode: "extractive";
-            /**
-             * Retrieval
-             * @description hybrid = palabras y significado; keyword = solo palabras
+             * @description extractive = fragmento literal del documento; template = frase fija con los totales de una herramienta
              * @enum {string}
              */
-            retrieval: "hybrid" | "keyword";
+            mode: "extractive" | "template";
+            /** @description Solo si source_kind = records: herramienta, fuente, regla y momento de la consulta */
+            record?: components["schemas"]["RecordSource"] | null;
+            /**
+             * Retrieval
+             * @description hybrid = palabras y significado; keyword = solo palabras; nulo si la respuesta sale de registros
+             */
+            retrieval: ("hybrid" | "keyword") | null;
             /**
              * Scope Cohorts
              * @description Cohortes en las que se ha buscado
              */
             scope_cohorts: string[];
             /**
+             * Source Kind
+             * @description documents = documentos del curso; records = registros operativos actuales
+             * @default documents
+             * @enum {string}
+             */
+            source_kind: "documents" | "records";
+            /**
              * Status
-             * @description no_source = abstención: no hay fuente en tu ámbito
+             * @description no_source = abstención: no hay fuente o no hay registros
              * @enum {string}
              */
             status: "answered" | "no_source";
@@ -2039,6 +2047,35 @@ export interface components {
             updated_at: string;
             /** Version */
             version: number;
+        };
+        /** RecordSource */
+        RecordSource: {
+            /**
+             * Aggregate Only
+             * @description Verdadero si el rol solo puede ver totales
+             */
+            aggregate_only: boolean;
+            /**
+             * Generated At
+             * Format: date-time
+             * @description Momento de la consulta: los datos son de este instante
+             */
+            generated_at: string;
+            /**
+             * Rule
+             * @description Regla de cálculo aplicada
+             */
+            rule: string;
+            /**
+             * Source
+             * @description Tablas de origen
+             */
+            source: string;
+            /**
+             * Tool
+             * @description Herramienta de solo lectura usada (get_attendance_summary, get_pending_submissions, get_competency_progress)
+             */
+            tool: string;
         };
         /** RecordWrite */
         RecordWrite: {

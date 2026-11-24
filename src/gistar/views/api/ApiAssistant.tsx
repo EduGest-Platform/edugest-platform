@@ -10,6 +10,23 @@ type Message = {
 }
 
 export function DocumentAnswer({ result }: { result: Answer }) {
+  // KAN-195: figures from the read-only tools. The server text already says "no hay registros" when there is no data.
+  if (result.source_kind === "records")
+    return (
+      <div className="grid gap-3 text-sm">
+        <p className="whitespace-pre-wrap">{result.answer}</p>
+        {result.record && (
+          <p className="text-xs text-muted">
+            Registros operativos actuales · {result.record.tool} · fuente:{" "}
+            {result.record.source} · consultado el {result.record.generated_at}
+          </p>
+        )}
+        <p className="text-xs">
+          Ámbito consultado:{" "}
+          {result.scope_cohorts.join(", ") || "Sin cohortes indicadas"}
+        </p>
+      </div>
+    )
   if (result.status === "no_source")
     return (
       <Notice>
