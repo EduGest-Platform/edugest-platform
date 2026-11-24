@@ -2360,6 +2360,118 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "InvitationCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_hours": {
+            "default": 24,
+            "maximum": 168.0,
+            "minimum": 1.0,
+            "title": "Expires Hours",
+            "type": "integer"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "title": "InvitationCreate",
+        "type": "object"
+      },
+      "InvitationIssued": {
+        "properties": {
+          "invitation": {
+            "$ref": "#/components/schemas/InvitationOut"
+          },
+          "token": {
+            "description": "Secreto mostrado solo al emitir. No guardar en logs, tickets ni almacenamiento del navegador.",
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invitation",
+          "token"
+        ],
+        "title": "InvitationIssued",
+        "type": "object"
+      },
+      "InvitationOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "staff_profile_id": {
+            "format": "uuid",
+            "title": "Staff Profile Id",
+            "type": "string"
+          },
+          "used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used At"
+          }
+        },
+        "required": [
+          "id",
+          "staff_profile_id",
+          "created_at",
+          "expires_at",
+          "used_at",
+          "revoked_at"
+        ],
+        "title": "InvitationOut",
+        "type": "object"
+      },
+      "InvitationRenew": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_hours": {
+            "default": 24,
+            "maximum": 168.0,
+            "minimum": 1.0,
+            "title": "Expires Hours",
+            "type": "integer"
+          }
+        },
+        "title": "InvitationRenew",
+        "type": "object"
+      },
       "JsonValue": {},
       "LevelCount": {
         "properties": {
@@ -8988,6 +9100,185 @@
         "summary": "Crear una versión borrador del árbol de competencias de un bootcamp",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/staff/invitations": {
+      "post": {
+        "operationId": "post_invitation_api_v1_staff_invitations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationIssued"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Emitir invitación para una cuenta interna existente, sin conceder roles",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/invitations/{invitation_id}/renew": {
+      "post": {
+        "operationId": "renew_invitation_api_v1_staff_invitations__invitation_id__renew_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationRenew"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationIssued"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Renovar secreto de invitación y revocar los anteriores no utilizados; sin envío externo",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/invitations/{invitation_id}/revoke": {
+      "post": {
+        "operationId": "revoke_invitation_api_v1_staff_invitations__invitation_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revocar invitación pendiente, sin cambiar roles o sesiones existentes",
+        "tags": [
+          "staff"
         ]
       }
     },
