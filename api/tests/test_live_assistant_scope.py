@@ -98,15 +98,21 @@ def test_team_removal_and_readd_apply_to_existing_tokens_across_documents_and_da
     assert submission_state(submission_id) == before
 
 
-def test_coder_withdrawal_removes_both_assistant_surfaces_without_logging_out(client, db, documents):
+def test_coder_withdrawal_revokes_documents_and_own_submissions_without_granting_cohort_tools(client, db, documents):
     tokens = [login(client, CODER), login(client, CODER)]
     user = db.scalars(select(User).where(User.email == CODER)).one()
     enrollment = db.scalars(select(Enrollment).where(Enrollment.person_id == user.person_id,
                                                     Enrollment.cohort_id == COHORT, Enrollment.estado == "activa")).one()
+    own_submissions = f"/api/v1/enrollments/{enrollment.id}/submissions"
     for token in tokens:
         assert ask(client, token, COHORT).status_code == 200
+        own = client.get(own_submissions, headers=token)
+        assert own.status_code == 200
+        assert own.json()["enrollment_id"] == str(enrollment.id)
+        # Cohort tools are staff-only; enrollment never grants access to everyone else's data.
         for path in tool_paths(COHORT):
-            assert client.get(path, headers=token).status_code == 200, path
+            assert client.get(path, headers=token).status_code == 403, path
+        assert client.get(tool_paths(COHORT)[0] + f"&enrollment_id={enrollment.id}", headers=token).status_code == 403
     # Fixture-only lifecycle change; this does not claim a withdrawal UI/API exists.
     enrollment.estado = "baja_voluntaria"
     db.commit()
@@ -114,6 +120,7 @@ def test_coder_withdrawal_removes_both_assistant_surfaces_without_logging_out(cl
         assert client.get("/api/v1/auth/me", headers=token).status_code == 200
         assert ask(client, token, COHORT).status_code == 403
         assert ask(client, token).status_code == 403
+        assert client.get(own_submissions, headers=token).status_code == 403
         for path in tool_paths(COHORT):
             assert client.get(path, headers=token).status_code == 403, path
     db.expire_all()
