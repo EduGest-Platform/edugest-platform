@@ -53,7 +53,7 @@ def login(body: LoginIn, db: DB, request: Request) -> LoginOut:
         email = normalize_email(body.email)
     except ValueError:
         email = ""
-    client = request.client.host if request.client else None
+    client = login_throttle.client_ip(request.client.host if request.client else None, ", ".join(request.headers.getlist("x-forwarded-for")) or None)  # every header line: proxies append to the last
     wait = login_throttle.retry_after_seconds(email, client)
     if wait:
         audit.record(db, None, "auth.login_throttled", "user", None)

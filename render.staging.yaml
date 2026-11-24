@@ -35,6 +35,8 @@ services:
         value: staging
       - key: GISTAR_DEMO_PASSWORD
         generateValue: true # Contraseña propia de staging; consultarla en el panel de Render. No reutilizar la de producción.
+      - key: GISTAR_TRUSTED_PROXY_HOPS
+        value: "1" # Render's proxy appends the real client IP as the right-most X-Forwarded-For entry; the login limit uses that one.
       - key: GISTAR_CORS_ORIGINS
         sync: false # Lista JSON con la URL pública de la web de staging, p. ej. ["https://edugest-web-staging.onrender.com"]
       - key: GISTAR_GITHUB_TOKEN
