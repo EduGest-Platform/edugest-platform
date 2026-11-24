@@ -8,6 +8,16 @@ CONFIGURED_DATABASE_URL = "postgresql+psycopg://gistar:unique@db:5432/gistar"
 CONFIGURED_DEMO_PASSWORD = "unique-demo-password-for-staging"
 
 
+@pytest.mark.parametrize('values', [
+    {'session_ttl_hours': 0}, {'session_ttl_hours': -1}, {'session_ttl_hours': 25},
+    {'login_max_failures': 0}, {'login_max_failures': 101},
+    {'login_window_minutes': 0}, {'login_window_minutes': 1441},
+])
+def test_invalid_session_or_throttle_policy_fails_at_startup(values):
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, environment='local', **values)
+
+
 @pytest.fixture(autouse=True)
 def clean_gistar_env(monkeypatch):
     """Settings reads GISTAR_* variables; ignore the ones conftest or the shell may have set."""
