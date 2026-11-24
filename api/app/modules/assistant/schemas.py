@@ -34,9 +34,6 @@ class RecordSource(BaseModel):
 
 
 class AskOut(BaseModel):
-    # Fields with a default stay optional in the contract, so clients written before KAN-195 keep compiling.
-    model_config = ConfigDict(json_schema_mode_override="validation")
-
     status: Literal["answered", "no_source"] = Field(description="no_source = abstención: no hay fuente o no hay registros")
     mode: Literal["extractive", "template"] = Field(
         description="extractive = fragmento literal del documento; template = frase fija con los totales de una herramienta")

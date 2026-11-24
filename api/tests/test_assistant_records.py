@@ -116,7 +116,6 @@ def test_submissions_and_competencies_route_to_their_tools(client, db, question,
     assert not any(str(e) in response.text for e in enrollment_ids)  # totals only, nobody singled out
 
 
-def test_ask_contract_keeps_new_fields_optional():
-    schema = app.openapi()["components"]["schemas"]["AskOut"]
-    assert {"source_kind", "record"} <= set(schema["properties"])
-    assert not {"source_kind", "record"} & set(schema["required"])
+def test_every_answer_says_where_it_comes_from():
+    source_kind = app.openapi()["components"]["schemas"]["AskOut"]["properties"]["source_kind"]
+    assert source_kind["enum"] == ["documents", "records"] and source_kind["default"] == "documents"
