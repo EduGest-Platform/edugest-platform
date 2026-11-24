@@ -24,6 +24,7 @@ from app.modules.preselection.router import router as preselection_router
 from app.modules.requirements.router import router as requirements_router
 from app.modules.requirements.prefilter import router as prefilter_router
 from app.modules.learning.team_router import router as teaching_team_router
+from app.modules.learning.directory_router import router as academic_directory_router
 from app.modules.selection.router import router as selection_router
 from app.modules.submissions.router import router as submissions_router
 
@@ -62,6 +63,7 @@ for r in (
     assistant_router,
     assistant_tools_router,
     teaching_team_router,
+    academic_directory_router,
     audit_router,
 ):
     app.include_router(r, prefix=API)

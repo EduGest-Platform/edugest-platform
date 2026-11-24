@@ -1,6 +1,51 @@
 {
   "components": {
     "schemas": {
+      "AcademicCohortOut": {
+        "properties": {
+          "can_record_attendance": {
+            "title": "Can Record Attendance",
+            "type": "boolean"
+          },
+          "fin": {
+            "format": "date",
+            "title": "Fin",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inicio": {
+            "format": "date",
+            "title": "Inicio",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "program_id",
+          "nombre",
+          "inicio",
+          "fin",
+          "timezone",
+          "can_record_attendance"
+        ],
+        "title": "AcademicCohortOut",
+        "type": "object"
+      },
       "ApplicationCreate": {
         "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
         "properties": {
@@ -6733,6 +6778,36 @@
         "summary": "Agregados de una convocatoria, sin datos nominales",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/cohorts": {
+      "get": {
+        "operationId": "list_academic_cohorts_api_v1_cohorts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AcademicCohortOut"
+                  },
+                  "title": "Response List Academic Cohorts Api V1 Cohorts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cohortes del ámbito académico autorizado, sin alumnado",
+        "tags": [
+          "learning"
         ]
       }
     },
