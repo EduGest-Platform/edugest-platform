@@ -4546,7 +4546,9 @@ export interface operations {
     list_sessions_api_v1_cohorts__cohort_id__attendance_sessions_get: {
         parameters: {
             query?: {
+                /** @description Inicio inclusivo; no posterior al fin */
                 date_from?: string | null;
+                /** @description Fin inclusivo; no anterior al inicio */
                 date_to?: string | null;
             };
             header?: never;
@@ -4651,7 +4653,9 @@ export interface operations {
         parameters: {
             query?: {
                 enrollment_id?: string | null;
+                /** @description Inicio inclusivo; no posterior al fin */
                 date_from?: string | null;
+                /** @description Fin inclusivo; no anterior al inicio */
                 date_to?: string | null;
             };
             header?: never;
