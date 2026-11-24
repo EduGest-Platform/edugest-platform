@@ -137,7 +137,8 @@ def get_attendance_summary(p: CurrentPrincipal, db: DB, cohort_id: str = CohortI
     if enrollment_id:
         enrollment_ids = [enrollment_id]
     else:
-        enrollment_ids = list(db.scalars(select(Enrollment.id).where(Enrollment.cohort_id == cohort_id).order_by(Enrollment.created_at, Enrollment.id)))
+        enrollment_ids = list(db.scalars(select(Enrollment.id).where(Enrollment.cohort_id == cohort_id, Enrollment.estado != "baja_voluntaria")
+                                       .order_by(Enrollment.created_at, Enrollment.id)))
     sessions = _sessions_in(db, cohort_id, date_from, date_to)
     items = summarize(sessions, _records_of(db, sessions), enrollment_ids, cohort.timezone)
     audit.record(db, p, "attendance.summary_viewed", "cohort", cohort_id, enrollments=len(enrollment_ids), per_enrollment=per_enrollment)

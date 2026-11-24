@@ -132,17 +132,17 @@ def _first_enrollment_of(db, cohort_id):
     return db.scalars(query).first()
 
 
-@pytest.mark.parametrize("estado", ["baja_voluntaria", "finalizada"])
-@pytest.mark.parametrize("tool", ["competency-progress", "pending-submissions"])
-def test_inactive_enrollments_are_left_out_of_per_person_rows(client, db, academic, teacher, tool, estado):
+@pytest.mark.parametrize("estado,left_out", [("baja_voluntaria", True), ("finalizada", False)])
+@pytest.mark.parametrize("tool", TOOLS)
+def test_withdrawn_enrollments_are_left_out_but_finished_ones_stay(client, db, academic, teacher, tool, estado, left_out):
     before = call(client, teacher, tool).json()["data"]["items"]
     enrollment = _first_enrollment_of(db, COHORT)
     gone = str(enrollment.id)
     enrollment.estado = estado
     db.commit()
     after = call(client, teacher, tool).json()["data"]["items"]
-    assert len(after) == len(before) - 1
-    assert gone not in {item["enrollment_id"] for item in after}
+    assert len(after) == (len(before) - 1 if left_out else len(before))
+    assert (gone in {item["enrollment_id"] for item in after}) is not left_out
 
 
 def test_coder_who_left_is_neither_overdue_nor_counted_in_totals(client, db, academic, teacher):
@@ -154,10 +154,10 @@ def test_coder_who_left_is_neither_overdue_nor_counted_in_totals(client, db, aca
     gone = str(enrollment.id)
     enrollment.estado = "baja_voluntaria"
     db.commit()
-    active = db.scalar(select(func.count()).select_from(Enrollment).where(Enrollment.cohort_id == COHORT, Enrollment.estado == "activa"))
+    counted = db.scalar(select(func.count()).select_from(Enrollment).where(Enrollment.cohort_id == COHORT, Enrollment.estado != "baja_voluntaria"))
     data = call(client, teacher, "pending-submissions").json()["data"]
     assert data["assignments"]
     for assignment in data["assignments"]:
         counts = assignment["counts"]
-        assert sum(counts[k] for k in ("on_time", "late", "pending", "overdue")) == active
+        assert sum(counts[k] for k in ("on_time", "late", "pending", "overdue")) == counted
     assert gone not in str(data)
