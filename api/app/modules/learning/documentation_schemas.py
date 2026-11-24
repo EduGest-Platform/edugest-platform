@@ -16,7 +16,7 @@ class DocumentationOut(BaseModel):
 
 class DocumentationWrite(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    expected_version: int = Field(ge=1)
+    expected_version: int = Field(strict=True, ge=1)
 
 
 class DocumentationHistoryItem(BaseModel):

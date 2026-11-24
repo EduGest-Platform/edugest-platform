@@ -48,7 +48,8 @@ def test_staff_read_follows_existing_application_scope():
     assert error.value.status_code == 403
 
 
-@pytest.mark.parametrize('fields', [{'expected_version': 0}, {'expected_version': 1, 'accredited_by': str(uuid.uuid4())},
+@pytest.mark.parametrize('fields', [{'expected_version': 0}, {'expected_version': True}, {'expected_version': '1'},
+                                  {'expected_version': 1, 'accredited_by': str(uuid.uuid4())},
                                   {'expected_version': 1, 'document_url': 'https://synthetic.example'}])
 def test_input_cannot_spoof_an_actor_or_upload_document_metadata(fields):
     with pytest.raises(ValidationError):
@@ -92,3 +93,20 @@ def test_accreditation_requires_a_coherent_active_admission(broken):
         with pytest.raises(HTTPException) as error:
             require_accreditation_eligibility(row, application, cohort, broken != 'decision')
         assert error.value.status_code == 409
+
+
+@pytest.mark.parametrize('operation', ['read_documentation', 'accredit_documentation', 'revoke_documentation'])
+def test_unauthorized_actions_stop_before_database_lookup(operation):
+    from app.modules.learning import documentation_service as service
+
+    class NoDatabaseAccess:
+        def __getattr__(self, name):
+            raise AssertionError('Unauthorized operation reached the database')
+
+    actor = principal('docente', 'cohort', 'COH-IA')
+    arguments = [NoDatabaseAccess(), actor, uuid.uuid4()]
+    if operation != 'read_documentation':
+        arguments.append(DocumentationWrite(expected_version=1))
+    with pytest.raises(HTTPException) as error:
+        getattr(service, operation)(*arguments)
+    assert error.value.status_code == 403
