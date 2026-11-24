@@ -10,6 +10,7 @@ import { Modal } from '../../components/Modal'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
+import { inscriptionTarget } from './inscriptionTarget'
 import { Button, Card, Empty, Field, Notice, PageTitle, Status, Table, inputCls } from '../../ui'
 
 type Call = Schemas['CallOut']
@@ -60,19 +61,20 @@ function useCalls(estado?: 'abierta') {
 }
 
 /** Public inscription form (also used by a logged-in aspirant). Creates or reuses the Person record. */
-export function InscriptionForm({ onViewApplications }: { onViewApplications?: () => void }) {
+export function InscriptionForm({ onViewApplications, initialCallId }: { onViewApplications?: () => void; initialCallId?: string }) {
   const { me, refresh } = useApiSession()
   const { calls, loading: callsLoading, error: callsError, retry: retryCalls } = useCalls('abierta')
-  const empty = () => ({ call_id: '', nombre: me?.display_name ?? '', email: me?.email ?? '', motivacion: '', disponibilidad: 'Mañana' as 'Mañana' | 'Tarde' | 'Flexible', acepta: false })
+  const empty = () => ({ call_id: initialCallId ?? '', nombre: me?.display_name ?? '', email: me?.email ?? '', motivacion: '', disponibilidad: 'Mañana' as 'Mañana' | 'Tarde' | 'Flexible', acepta: false })
   const [f, setF] = useState(empty)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Schemas['ApplicationReceipt'] | null>(null)
-  const callId = f.call_id || calls[0]?.id || ''
+  const target = inscriptionTarget(calls, f.call_id, initialCallId)
+  const callId = target.id
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (busy || !callId) return
+    if (busy || callsLoading || callsError || !target.available) return
     setBusy(true)
     setError(null)
 
@@ -118,7 +120,7 @@ export function InscriptionForm({ onViewApplications }: { onViewApplications?: (
   return (
     <form onSubmit={submit} className="grid gap-4">
       <Field label="Convocatoria" htmlFor="ins-call">
-        <select id="ins-call" className={inputCls} value={callId} onChange={(e) => setF({ ...f, call_id: e.target.value })} disabled={callsLoading || !calls.length} required>
+        <select id="ins-call" className={inputCls} value={callId} onChange={(e) => setF({ ...f, call_id: e.target.value })} disabled={callsLoading || !calls.length || !!initialCallId} required>
           {!calls.length && <option value="">Selecciona una convocatoria</option>}
           {calls.map((c) => (
             <option key={c.id} value={c.id}>
@@ -135,6 +137,7 @@ export function InscriptionForm({ onViewApplications }: { onViewApplications?: (
         </div>
       )}
       {!callsLoading && !callsError && !calls.length && <Notice live="polite">No hay convocatorias abiertas.</Notice>}
+      {initialCallId && !callsLoading && !callsError && !target.available && <Notice tone="warning" live="assertive">Esta formación ya no admite solicitudes. Vuelve al catálogo para elegir otra; no se enviará la candidatura a una formación diferente.</Notice>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nombre (ficticio)" htmlFor="ins-name">
           <input id="ins-name" className={inputCls} required minLength={2} maxLength={120} value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} />
@@ -163,7 +166,7 @@ export function InscriptionForm({ onViewApplications }: { onViewApplications?: (
         </Notice>
       )}
       <div>
-        <Button type="submit" disabled={busy || !callId}>
+        <Button type="submit" disabled={busy || callsLoading || !!callsError || !target.available}>
           <Send className="size-4" aria-hidden /> {busy ? 'Enviando…' : 'Enviar candidatura'}
         </Button>
       </div>

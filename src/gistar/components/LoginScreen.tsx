@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { LogIn } from 'lucide-react'
 import { API_URL } from '../../shared/api/config'
 import { useApiSession } from '../../shared/api/session'
 import { InscriptionForm } from '../views/api/ApiAdmissions'
+import { PublicCatalog } from '../views/api/PublicCatalog'
+import type { PublicCourse } from '../../shared/api/publicCatalog'
 import { Button, Card, Field, Notice, Segmented, inputCls } from '../ui'
 
 /** Synthetic demo accounts created by `python -m app.seed`. Password: GISTAR_DEMO_PASSWORD (default documented in api/README). */
@@ -19,11 +21,16 @@ const DEMO_ACCOUNTS = [
 
 export function LoginScreen() {
   const { login, apiDown, notice } = useApiSession()
-  const [tab, setTab] = useState<'login' | 'inscripcion'>('login')
+  const [tab, setTab] = useState<'login' | 'inscripcion' | 'catalogo'>('login')
+  const [selectedCourse, setSelectedCourse] = useState<PublicCourse | null>(null)
   const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[1][0])
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (tab === 'inscripcion' && selectedCourse) document.getElementById('ins-name')?.focus()
+  }, [tab, selectedCourse])
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -35,7 +42,7 @@ export function LoginScreen() {
 
   return (
     <div className="min-h-screen bg-canvas px-4 py-10">
-      <div className="mx-auto max-w-xl">
+      <div className={`mx-auto ${tab === 'catalogo' ? 'max-w-4xl' : 'max-w-xl'}`}>
         <div className="mb-6 flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-lg bg-navy text-gold">
             <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
@@ -52,7 +59,7 @@ export function LoginScreen() {
         )}
         {apiDown && <Notice tone="warning" live="assertive">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
         <div className="mb-4">
-          <Segmented label="Acceso" value={tab} onChange={setTab} options={[{ id: 'login', label: 'Iniciar sesión' }, { id: 'inscripcion', label: 'Quiero inscribirme' }]} />
+          <Segmented label="Acceso" value={tab} onChange={(next) => { setTab(next); setSelectedCourse(null) }} options={[{ id: 'login', label: 'Iniciar sesión' }, { id: 'inscripcion', label: 'Quiero inscribirme' }, { id: 'catalogo', label: 'Ver formaciones' }]} />
         </div>
         {tab === 'login' ? (
           <Card title="Iniciar sesión">
@@ -100,9 +107,15 @@ export function LoginScreen() {
             </form>
             <p className="mt-4 text-xs text-muted">Cada pestaña mantiene su propia sesión: abre otra pestaña para actuar con otro perfil a la vez. Los permisos los comprueba la API.</p>
           </Card>
+        ) : tab === 'catalogo' ? (
+          <PublicCatalog onApply={(course) => { setSelectedCourse(course); setTab('inscripcion') }} />
         ) : (
-          <Card title="Solicitud de acceso">
-            <InscriptionForm />
+          <Card title={selectedCourse ? `Solicitud: ${selectedCourse.name}` : 'Solicitud de acceso'}>
+            {selectedCourse && <div className="mb-4 grid gap-2">
+              <p className="text-sm">Solicitud para la formación elegida. Enviar no garantiza admisión.</p>
+              <Button variant="ghost" onClick={() => { setSelectedCourse(null); setTab('catalogo') }}>Volver al catálogo</Button>
+            </div>}
+            <InscriptionForm key={selectedCourse?.id ?? 'general'} initialCallId={selectedCourse?.id} />
           </Card>
         )}
       </div>
