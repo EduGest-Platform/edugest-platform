@@ -84,6 +84,7 @@ try {
   const dossier = (await request(path, 200, { token: selector })).data
   check(dossier.stage === 'admitida' && dossier.events.filter(e => e.tipo === 'contacto' && e.resumen === contactText).length === 1,
     'CRM contact survives the complete journey without duplication')
+  check(dossier.events.every(e => e.resumen !== 'Synthetic denied F2 note'), 'Denied foreign-program write left no CRM note')
   console.log('PASS · F2 HTTP admission-to-enrollment journey')
 } catch {
   // Never print bodies, exception text, tokens, credentials, names or email addresses.
