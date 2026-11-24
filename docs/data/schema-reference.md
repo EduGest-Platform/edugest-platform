@@ -14,6 +14,9 @@ Los marcadores muestran nulabilidad y unicidad simple; no inferir restricciones 
 
 ```mermaid
 erDiagram
+    access_change_request {
+        string id PK
+    }
     app_user {
         string id PK
     }
@@ -65,6 +68,12 @@ erDiagram
     competency_framework {
         string id PK
     }
+    discussion_comment {
+        string id PK
+    }
+    discussion_thread {
+        string id PK
+    }
     enrollment {
         string id PK
     }
@@ -107,9 +116,19 @@ erDiagram
     simulated_reminder {
         string id PK
     }
+    staff_invitation {
+        string id PK
+    }
+    staff_profile {
+        string id PK
+    }
     submission {
         string id PK
     }
+    role_assignment |o--o{ access_change_request : applied_assignment_id
+    app_user ||--o{ access_change_request : requested_by
+    app_user |o--o{ access_change_request : reviewed_by
+    staff_profile ||--o{ access_change_request : staff_profile_id
     person |o--o| app_user : person_id
     call ||--o{ application : call_id
     person ||--o{ application : person_id
@@ -144,6 +163,14 @@ erDiagram
     competency_framework |o--o{ competency_framework : based_on_id
     app_user ||--o{ competency_framework : created_by
     program ||--o{ competency_framework : program_id
+    app_user ||--o{ discussion_comment : actor_user_id
+    discussion_comment |o--o{ discussion_comment : parent_id
+    discussion_comment ||--o{ discussion_comment : thread_id
+    discussion_thread ||--o{ discussion_comment : thread_id
+    application |o--o{ discussion_thread : application_id
+    app_user ||--o{ discussion_thread : created_by
+    program |o--o{ discussion_thread : program_id
+    app_user |o--o{ discussion_thread : resolved_by
     application |o--o{ enrollment : application_id
     cohort ||--o{ enrollment : cohort_id
     person ||--o{ enrollment : person_id
@@ -173,6 +200,10 @@ erDiagram
     application ||--o{ simulated_reminder : application_id
     call ||--o{ simulated_reminder : call_id
     app_user ||--o{ simulated_reminder : recorded_by
+    app_user ||--o{ staff_invitation : created_by
+    staff_profile ||--o{ staff_invitation : staff_profile_id
+    app_user ||--o{ staff_profile : created_by
+    app_user ||--o| staff_profile : user_id
     assignment ||--o{ submission : assignment_id
     enrollment ||--o{ submission : enrollment_id
     app_user ||--o{ submission : recorded_by
@@ -183,6 +214,34 @@ erDiagram
 
 Las restricciones CHECK conservan el vocabulario real de estados. Las reglas de transición y autorización viven en servicios y routers, no en este diagrama.
 CHECK constraints preserve the stored state vocabulary. Transition/authorization rules live in services and routers, not this diagram.
+
+### access_change_request
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| staff_profile_id | UUID | no | staff_profile.id |
+| requested_role | VARCHAR(20) | no | — |
+| scope_type | VARCHAR(12) | no | — |
+| scope_id | VARCHAR(30) | sí / yes | — |
+| state | VARCHAR(12) | no | — |
+| requested_by | UUID | no | app_user.id |
+| requested_at | TIMESTAMP WITH TIME ZONE | no | — |
+| reviewed_by | UUID | sí / yes | app_user.id |
+| reviewed_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+| applied_assignment_id | UUID | sí / yes | role_assignment.id |
+
+- CHECK `ck_access_request_distinct_reviewer`: `reviewed_by IS NULL OR reviewed_by <> requested_by`
+
+- CHECK `ck_access_request_review_shape`: `(state = 'requested' AND reviewed_by IS NULL AND reviewed_at IS NULL AND applied_assignment_id IS NULL) OR (state IN ('approved', 'rejected') AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL AND applied_assignment_id IS NULL) OR (state IN ('applied', 'revoked') AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL AND applied_assignment_id IS NOT NULL)`
+
+- CHECK `ck_access_request_role`: `requested_role IN ('admin', 'captacion', 'seleccion', 'docente', 'coordinacion')`
+
+- CHECK `ck_access_request_scope`: `scope_type IN ('global', 'program', 'call', 'cohort')`
+
+- CHECK `ck_access_request_scope_id`: `(scope_type = 'global') = (scope_id IS NULL)`
+
+- CHECK `ck_access_request_state`: `state IN ('requested', 'approved', 'rejected', 'applied', 'revoked')`
 
 ### app_user
 
@@ -499,6 +558,49 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - UNIQUE `uq_competency_framework_version`: `program_id, version`
 
+### discussion_comment
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| thread_id | UUID | no | discussion_comment.thread_id, discussion_thread.id |
+| parent_id | UUID | sí / yes | discussion_comment.id |
+| actor_user_id | UUID | no | app_user.id |
+| body | VARCHAR(2000) | no | — |
+| version | INTEGER | no | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| edited_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_discussion_comment_body`: `length(trim(body)) BETWEEN 1 AND 2000`
+
+- CHECK `ck_discussion_comment_edited`: `edited_at IS NULL OR edited_at >= created_at`
+
+- CHECK `ck_discussion_comment_not_self`: `parent_id IS NULL OR parent_id <> id`
+
+- CHECK `ck_discussion_comment_version`: `version >= 1`
+
+- UNIQUE `uq_discussion_comment_thread_id`: `thread_id, id`
+
+### discussion_thread
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| scope_type | VARCHAR(12) | no | — |
+| application_id | UUID | sí / yes | application.id |
+| program_id | VARCHAR(20) | sí / yes | program.id |
+| subject | VARCHAR(160) | no | — |
+| created_by | UUID | no | app_user.id |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| resolved_by | UUID | sí / yes | app_user.id |
+| resolved_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_discussion_thread_resolution`: `(resolved_by IS NULL) = (resolved_at IS NULL)`
+
+- CHECK `ck_discussion_thread_scope`: `(scope_type = 'application' AND application_id IS NOT NULL AND program_id IS NULL) OR (scope_type = 'program' AND program_id IS NOT NULL AND application_id IS NULL)`
+
+- CHECK `ck_discussion_thread_subject`: `length(trim(subject)) BETWEEN 1 AND 160`
+
 ### enrollment
 
 | Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
@@ -729,6 +831,7 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | actor_user_id | UUID | no | app_user.id |
 | occurred_at | TIMESTAMP WITH TIME ZONE | no | — |
 | decision_id | UUID | sí / yes | selection_decision.id |
+| authority | JSON | sí / yes | — |
 
 - CHECK `ck_selection_approval_cohort`: `(decision = 'admitida') = (cohort_id IS NOT NULL)`
 
@@ -777,6 +880,46 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - CHECK `ck_simulated_reminder_kind`: `kind IN ('documentation', 'exercises')`
 
 - UNIQUE `uq_simulated_reminder_key`: `idempotency_key`
+
+### staff_invitation
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| staff_profile_id | UUID | no | staff_profile.id |
+| token_hash | VARCHAR(64) | no | — |
+| created_by | UUID | no | app_user.id |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| expires_at | TIMESTAMP WITH TIME ZONE | no | — |
+| used_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+| revoked_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_staff_invitation_expiry`: `expires_at > created_at`
+
+- CHECK `ck_staff_invitation_hash`: `token_hash ~ '^[0-9a-f]{64}$'`
+
+- CHECK `ck_staff_invitation_revoked`: `revoked_at IS NULL OR revoked_at >= created_at`
+
+- CHECK `ck_staff_invitation_terminal`: `used_at IS NULL OR revoked_at IS NULL`
+
+- CHECK `ck_staff_invitation_used`: `used_at IS NULL OR (used_at >= created_at AND used_at <= expires_at)`
+
+- UNIQUE `unnamed`: `token_hash`
+
+### staff_profile
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| user_id | UUID | no | app_user.id |
+| job_title | VARCHAR(120) | sí / yes | — |
+| state | VARCHAR(12) | no | — |
+| created_by | UUID | no | app_user.id |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+
+- CHECK `ck_staff_profile_state`: `state IN ('pending', 'active', 'inactive')`
+
+- UNIQUE `unnamed`: `user_id`
 
 ### submission
 

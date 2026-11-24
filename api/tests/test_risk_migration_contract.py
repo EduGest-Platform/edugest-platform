@@ -21,8 +21,8 @@ class RecordingOperations:
     def create_table(self, name, *items):
         Table(name, self.metadata, *items)
 
-    def create_index(self, name, table, columns):
-        Index(name, *(self.metadata.tables[table].c[column] for column in columns))
+    def create_index(self, name, table, columns, **options):
+        Index(name, *(self.metadata.tables[table].c[column] for column in columns), **options)
 
     def drop_table(self, name):
         self.dropped.append(name)

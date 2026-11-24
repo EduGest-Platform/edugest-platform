@@ -31,12 +31,20 @@ class SelectionDecisionWrite(BaseModel):
         return self
 
 
+class SignatureAuthorityOut(BaseModel):
+    role: str
+    scope_type: str
+    scope_id: str | None
+    permission: Literal['selection.decide']
+
+
 class SelectionApprovalOut(BaseModel):
     decision: Decision
     cohort_id: str | None
     reason: str
     actor: str | None
     occurred_at: datetime
+    authority: list[SignatureAuthorityOut] | None = Field(default=None, description="Autoridad registrada al firmar. Nulo para votos históricos sin evidencia; no reconstruye permisos antiguos.")
 
 
 class SelectionDecisionOut(BaseModel):

@@ -27,7 +27,8 @@ def test_applied_response_and_history_keep_the_two_human_votes(client, db):
     assert [row["reason"] for row in votes] == ["Synthetic first review", "Synthetic second review"]
     expected_names = set(db.scalars(select(User.display_name).where(User.email.in_([SEL_IA, COORD]))))
     assert {row["actor"] for row in votes} == expected_names
-    assert all(set(row) == {"decision", "cohort_id", "reason", "actor", "occurred_at"} for row in votes)
+    assert all(set(row) == {"decision", "cohort_id", "reason", "actor", "occurred_at", "authority"} for row in votes)
+    assert all(row['authority'] and row['authority'][0]['permission'] == 'selection.decide' for row in votes)
     response = history(client, login(client, SEL_IA), target.id)
     assert response.status_code == 200
     assert response.json()["pending_votes"] == []

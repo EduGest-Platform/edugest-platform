@@ -15,6 +15,7 @@ from app.modules.learning.models import Enrollment
 from app.modules.preselection.service import SELECTION_STAGES, STAGE_LABELS
 from app.modules.requirements.service import require_access
 from app.modules.selection.models import SelectionApproval, SelectionDecision
+from app.modules.selection.authority import signature_authority
 from app.modules.selection.schemas import (
     WAITING_ORDER_BASIS, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
 )
@@ -175,7 +176,8 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
         raise _conflict("already_approved", "Ya registraste tu voto sobre esta candidatura. La decisión necesita a otra persona distinta.")
     now = utcnow()
     vote = SelectionApproval(application_id=application.id, decision=body.decision, cohort_id=cohort.id if cohort else None,
-                             reason=body.reason, actor_user_id=actor.user.id, occurred_at=now)
+                             reason=body.reason, actor_user_id=actor.user.id, occurred_at=now,
+                             authority=signature_authority(actor, call.program_id, call.id))
     db.add(vote)
     agreeing = [*_agreeing(pending, body), vote]
     if len(agreeing) < call.selection_quorum:

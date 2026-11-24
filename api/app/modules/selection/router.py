@@ -35,7 +35,7 @@ def _names(db: DB, user_ids: set) -> dict:
 
 def _votes_out(db: DB, votes: list[SelectionApproval]) -> list[SelectionApprovalOut]:
     names = _names(db, {v.actor_user_id for v in votes})
-    return [SelectionApprovalOut(decision=v.decision, cohort_id=v.cohort_id, reason=v.reason, actor=names.get(v.actor_user_id), occurred_at=v.occurred_at) for v in votes]
+    return [SelectionApprovalOut(decision=v.decision, cohort_id=v.cohort_id, reason=v.reason, actor=names.get(v.actor_user_id), occurred_at=v.occurred_at, authority=v.authority) for v in votes]
 
 
 def _closed_votes(db: DB, application_id: uuid.UUID, decision_ids: set[uuid.UUID]) -> dict[uuid.UUID, list[SelectionApprovalOut]]:
