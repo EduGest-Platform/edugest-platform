@@ -11,6 +11,8 @@ from app.main import app
     ('post', '/api/v1/discussion-threads', {'scope_type': 'program', 'program_id': 'P-IA', 'subject': 'Synthetic topic'}),
     ('get', '/api/v1/discussion-threads?scope_type=program&program_id=P-IA', None),
     ('get', f'/api/v1/discussion-threads/{uuid.uuid4()}', None),
+    ('get', f'/api/v1/discussion-threads/{uuid.uuid4()}/comments', None),
+    ('post', f'/api/v1/discussion-threads/{uuid.uuid4()}/comments', {'body': 'Synthetic comment'}),
 ])
 def test_thread_routes_require_authentication(method, path, body):
     with TestClient(app) as client:

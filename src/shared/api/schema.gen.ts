@@ -687,6 +687,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/discussion-threads/{thread_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comentarios paginados de un hilo autorizado, con referencias al comentario padre */
+        get: operations["get_comments_api_v1_discussion_threads__thread_id__comments_get"];
+        put?: never;
+        /** Añadir comentario o respuesta dentro de un hilo autorizado */
+        post: operations["post_comment_api_v1_discussion_threads__thread_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/enrollments/{enrollment_id}/assessments": {
         parameters: {
             query?: never;
@@ -1503,6 +1521,59 @@ export interface components {
              * Format: uuid
              */
             framework_id: string;
+        };
+        /** CommentCreate */
+        CommentCreate: {
+            /**
+             * Body
+             * @description Texto plano interno; la interfaz debe renderizarlo escapado
+             */
+            body: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /** CommentList */
+        CommentList: {
+            /** Items */
+            items: components["schemas"]["CommentOut"][];
+            /** Total */
+            total: number;
+        };
+        /** CommentOut */
+        CommentOut: {
+            /**
+             * Actor User Id
+             * Format: uuid
+             */
+            actor_user_id: string;
+            /**
+             * Body
+             * @description Nulo tras borrado lógico; no se expone el texto retenido
+             */
+            body: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Edited At */
+            edited_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+            /** Version */
+            version: number;
         };
         /** CompetencyDistribution */
         CompetencyDistribution: {
@@ -5332,6 +5403,110 @@ export interface operations {
             };
             /** @description Hilo o ámbito no encontrado */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_comments_api_v1_discussion_threads__thread_id__comments_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentList"];
+                };
+            };
+            /** @description Sin permiso en el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo o ámbito no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_comment_api_v1_discussion_threads__thread_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentOut"];
+                };
+            };
+            /** @description Sin permiso en el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo o ámbito no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo resuelto */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

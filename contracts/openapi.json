@@ -1451,6 +1451,145 @@
         "title": "CohortFrameworkWrite",
         "type": "object"
       },
+      "CommentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "description": "Texto plano interno; la interfaz debe renderizarlo escapado",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "CommentCreate",
+        "type": "object"
+      },
+      "CommentList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "CommentList",
+        "type": "object"
+      },
+      "CommentOut": {
+        "properties": {
+          "actor_user_id": {
+            "format": "uuid",
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo tras borrado lógico; no se expone el texto retenido",
+            "title": "Body"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "thread_id": {
+            "format": "uuid",
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "thread_id",
+          "parent_id",
+          "actor_user_id",
+          "body",
+          "version",
+          "created_at",
+          "edited_at",
+          "deleted_at"
+        ],
+        "title": "CommentOut",
+        "type": "object"
+      },
       "CompetencyDistribution": {
         "properties": {
           "codigo": {
@@ -8127,6 +8266,148 @@
           }
         ],
         "summary": "Consultar un hilo interno, comprobando los permisos del expediente o programa",
+        "tags": [
+          "discussions"
+        ]
+      }
+    },
+    "/api/v1/discussion-threads/{thread_id}/comments": {
+      "get": {
+        "operationId": "get_comments_api_v1_discussion_threads__thread_id__comments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso en el ámbito"
+          },
+          "404": {
+            "description": "Hilo o ámbito no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Comentarios paginados de un hilo autorizado, con referencias al comentario padre",
+        "tags": [
+          "discussions"
+        ]
+      },
+      "post": {
+        "operationId": "post_comment_api_v1_discussion_threads__thread_id__comments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Thread Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso en el ámbito"
+          },
+          "404": {
+            "description": "Hilo o ámbito no encontrado"
+          },
+          "409": {
+            "description": "Hilo resuelto"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Añadir comentario o respuesta dentro de un hilo autorizado",
         "tags": [
           "discussions"
         ]
