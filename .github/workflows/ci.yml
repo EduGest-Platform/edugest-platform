@@ -149,6 +149,22 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+      - name: Disposable seed backup and restore rehearsal (KAN-217)
+        env:
+          GISTAR_BACKUP_PROBE: disposable-synthetic
+        run: >-
+          python ../scripts/ci/backup_restore.py
+          --container "${{ job.services.postgres.id }}"
+          --output "$RUNNER_TEMP/synthetic-backup-summary.json"
+      - name: Attach backup metadata only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-backup-summary-${{ github.sha }}
+          path: ${{ runner.temp }}/synthetic-backup-summary.json
+          retention-days: 7
+          if-no-files-found: warn
+
   secrets:
     runs-on: ubuntu-latest
     steps:
