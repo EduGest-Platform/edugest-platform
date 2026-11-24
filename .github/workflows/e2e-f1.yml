@@ -56,6 +56,14 @@ jobs:
         run: |
           node e2e/f1-registration.mjs
           node e2e/f1-registration.mjs
+      - name: Public catalogue to application, including repeat-run duplicate (KAN-227)
+        env:
+          WEB_URL: http://localhost:8443/
+          GISTAR_API: http://localhost:8000
+          E2E_FIXTURE_ID: ci-public-catalog
+        run: |
+          node e2e/public-catalog.mjs
+          node e2e/public-catalog.mjs
       - name: Prepare F2 synthetic reference cohort (KAN-192)
         run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
       - name: F2 HTTP admission and repeat-run integrity (KAN-192)

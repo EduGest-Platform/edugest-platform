@@ -1,5 +1,8 @@
 /** Minimal Chrome DevTools Protocol harness (no dependencies). To be replaced by Playwright in F5. */
 import { spawn } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 export const PASSWORD = process.env.GISTAR_DEMO_PASSWORD ?? 'gistar-demo-2026'
 const CHROME = process.env.CHROME_BIN ?? 'chromium'
@@ -13,7 +16,8 @@ export const check = (name, ok, extra = '') => {
 const PORT = 9300 + Math.floor(Math.random() * 90)
 // CI runners can be slow to start Chrome on a cold cache, so give it a generous wait.
 const CHROME_START_TIMEOUT_MS = 30_000
-const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--disable-gpu', `--remote-debugging-port=${PORT}`, `--user-data-dir=/tmp/e2e-${Date.now()}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] })
+const browserProfile = mkdtempSync(join(tmpdir(), 'edugest-e2e-'))
+const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--disable-gpu', `--remote-debugging-port=${PORT}`, `--user-data-dir=${browserProfile}`, 'about:blank'], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] })
 
 // Keep Chrome's last stderr lines so a startup failure explains itself.
 let chromeStderr = ''

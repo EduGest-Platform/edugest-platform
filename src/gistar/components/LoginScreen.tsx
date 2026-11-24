@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { LogIn } from 'lucide-react'
 import { API_URL } from '../../shared/api/config'
 import { useApiSession } from '../../shared/api/session'
@@ -27,6 +27,10 @@ export function LoginScreen() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (tab === 'inscripcion' && selectedCourse) document.getElementById('ins-name')?.focus()
+  }, [tab, selectedCourse])
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()

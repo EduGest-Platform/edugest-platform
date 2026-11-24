@@ -45,4 +45,18 @@ describe('public course detail', () => {
     observePublicRead(() => Promise.reject(new PublicCatalogError(404)), publish)
     await vi.waitFor(() => expect(publish).toHaveBeenLastCalledWith({ status: 'error', message: expect.stringContaining('Vuelve al catálogo') }))
   })
+
+  it('ignores a late failure after navigation and hides unexpected diagnostic messages', async () => {
+    let reject!: (error: Error) => void
+    const pending = new Promise<string>((_, fail) => { reject = fail })
+    const oldPublish = vi.fn()
+    const stop = observePublicRead(() => pending, oldPublish)
+    stop()
+    reject(new Error('INTERNAL-CANARY'))
+    await new Promise((done) => setTimeout(done, 0))
+    expect(oldPublish).toHaveBeenCalledExactlyOnceWith({ status: 'loading' })
+    const publish = vi.fn()
+    observePublicRead(() => Promise.reject(new Error('INTERNAL-CANARY')), publish)
+    await vi.waitFor(() => expect(publish).toHaveBeenLastCalledWith({ status: 'error', message: 'No se pudieron cargar las formaciones. Vuelve a intentarlo.' }))
+  })
 })
