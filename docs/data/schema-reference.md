@@ -729,6 +729,7 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | actor_user_id | UUID | no | app_user.id |
 | occurred_at | TIMESTAMP WITH TIME ZONE | no | — |
 | decision_id | UUID | sí / yes | selection_decision.id |
+| authority | JSON | sí / yes | — |
 
 - CHECK `ck_selection_approval_cohort`: `(decision = 'admitida') = (cohort_id IS NOT NULL)`
 

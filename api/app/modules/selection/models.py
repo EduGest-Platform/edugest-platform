@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Uuid, text
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Index, String, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, utcnow
@@ -57,3 +57,4 @@ class SelectionApproval(Base):
     actor_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     decision_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("selection_decision.id"))
+    authority: Mapped[list | None] = mapped_column(JSON)

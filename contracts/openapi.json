@@ -3402,6 +3402,21 @@
             ],
             "title": "Actor"
           },
+          "authority": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SignatureAuthorityOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Autoridad registrada al firmar. Nulo para votos históricos sin evidencia; no reconstruye permisos antiguos.",
+            "title": "Authority"
+          },
           "cohort_id": {
             "anyOf": [
               {
@@ -3876,6 +3891,42 @@
           "shift"
         ],
         "title": "SessionWrite",
+        "type": "object"
+      },
+      "SignatureAuthorityOut": {
+        "properties": {
+          "permission": {
+            "const": "selection.decide",
+            "title": "Permission",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "title": "Scope Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "scope_type",
+          "scope_id",
+          "permission"
+        ],
+        "title": "SignatureAuthorityOut",
         "type": "object"
       },
       "SilenceEvidence": {

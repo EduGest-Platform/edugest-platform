@@ -2289,6 +2289,11 @@ export interface components {
         SelectionApprovalOut: {
             /** Actor */
             actor: string | null;
+            /**
+             * Authority
+             * @description Autoridad registrada al firmar. Nulo para votos históricos sin evidencia; no reconstruye permisos antiguos.
+             */
+            authority?: components["schemas"]["SignatureAuthorityOut"][] | null;
             /** Cohort Id */
             cohort_id: string | null;
             /**
@@ -2524,6 +2529,20 @@ export interface components {
              * @enum {string}
              */
             shift: "manana" | "tarde" | "completa";
+        };
+        /** SignatureAuthorityOut */
+        SignatureAuthorityOut: {
+            /**
+             * Permission
+             * @constant
+             */
+            permission: "selection.decide";
+            /** Role */
+            role: string;
+            /** Scope Id */
+            scope_id: string | null;
+            /** Scope Type */
+            scope_type: string;
         };
         /**
          * SilenceEvidence
