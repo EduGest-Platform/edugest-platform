@@ -845,6 +845,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Published course offers, excluding drafts */
+        get: operations["list_courses_api_v1_public_courses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/courses/{course_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One published offer; drafts and unknown IDs are not found */
+        get: operations["get_course_api_v1_public_courses__course_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/access-requests": {
         parameters: {
             query?: never;
@@ -2445,6 +2479,44 @@ export interface components {
              * @description Intentos sin respuesta para la alerta leve; salta sin esperar días
              */
             silence_warning_contacts: number;
+        };
+        /** PublicCourseList */
+        PublicCourseList: {
+            /** Items */
+            items: components["schemas"]["PublicCourseOut"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * PublicCourseOut
+         * @description Explicit public projection; never serialize the entire Call or Program object.
+         */
+        PublicCourseOut: {
+            /**
+             * Admission State
+             * @enum {string}
+             */
+            admission_state: "abierta" | "cerrada";
+            /** Capacity */
+            capacity: number;
+            /**
+             * Closes On
+             * Format: date
+             */
+            closes_on: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Opens On
+             * Format: date
+             */
+            opens_on: string;
+            /** Program Id */
+            program_id: string;
+            /** Program Name */
+            program_name: string;
         };
         /** PublicationList */
         PublicationList: {
@@ -6479,6 +6551,78 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_courses_api_v1_public_courses_get: {
+        parameters: {
+            query?: {
+                program_id?: string | null;
+                admission_state?: ("abierta" | "cerrada") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCourseList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_course_api_v1_public_courses__course_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCourseOut"];
+                };
+            };
+            /** @description Published offer not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

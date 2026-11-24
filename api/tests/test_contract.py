@@ -4,6 +4,7 @@ from app.main import app
 from scripts.export_openapi import OUT, render
 
 PUBLIC = {("/api/v1/applications", "post"), ("/api/v1/calls", "get"), ("/api/v1/auth/login", "post"), ("/health", "get")}
+PUBLIC |= {('/api/v1/public/courses', 'get'), ('/api/v1/public/courses/{course_id}', 'get')}
 
 
 def test_committed_contract_matches_api():

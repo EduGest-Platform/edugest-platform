@@ -3207,6 +3207,82 @@
         "title": "PreselectionPolicy",
         "type": "object"
       },
+      "PublicCourseList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicCourseOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "PublicCourseList",
+        "type": "object"
+      },
+      "PublicCourseOut": {
+        "description": "Explicit public projection; never serialize the entire Call or Program object.",
+        "properties": {
+          "admission_state": {
+            "enum": [
+              "abierta",
+              "cerrada"
+            ],
+            "title": "Admission State",
+            "type": "string"
+          },
+          "capacity": {
+            "title": "Capacity",
+            "type": "integer"
+          },
+          "closes_on": {
+            "format": "date",
+            "title": "Closes On",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opens_on": {
+            "format": "date",
+            "title": "Opens On",
+            "type": "string"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "program_name": {
+            "title": "Program Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "program_id",
+          "program_name",
+          "name",
+          "opens_on",
+          "closes_on",
+          "capacity",
+          "admission_state"
+        ],
+        "title": "PublicCourseOut",
+        "type": "object"
+      },
       "PublicationList": {
         "properties": {
           "items": {
@@ -9615,6 +9691,145 @@
         "summary": "Crear una versión borrador del árbol de competencias de un bootcamp",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/public/courses": {
+      "get": {
+        "operationId": "list_courses_api_v1_public_courses_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "program_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 20,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Program Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "admission_state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "abierta",
+                    "cerrada"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Admission State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCourseList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Published course offers, excluding drafts",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/api/v1/public/courses/{course_id}": {
+      "get": {
+        "operationId": "get_course_api_v1_public_courses__course_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "course_id",
+            "required": true,
+            "schema": {
+              "title": "Course Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCourseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Published offer not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "One published offer; drafts and unknown IDs are not found",
+        "tags": [
+          "catalog"
         ]
       }
     },
