@@ -276,8 +276,8 @@ def _record(db: Session, session: AttendanceSession, enrollment: Enrollment, val
 DEADLINE_TIME = time(23, 59)
 ON_TIME_LEAD = timedelta(days=1)  # "enviada": delivered the day before the deadline
 LATE_DELAY = timedelta(days=2)    # "fuera_de_plazo": delivered two days after it
-NOT_DELIVERED = {"borrador"}
-CHECKS_TOTAL = 10  # synthetic pre-computed tests per submission      # a draft was never handed in: the coder shows as pending / overdue
+NOT_DELIVERED = {"borrador"}  # a draft was never handed in: the coder shows as pending / overdue
+CHECKS_TOTAL = 10  # synthetic pre-computed tests per submission
 
 
 def _submissions(db: Session, data: dict, cohorts: list[Cohort], enrollments: dict, teacher: User) -> tuple[int, int]:

@@ -1,5 +1,8 @@
 """Login brute-force protection: 429 with Retry-After after repeated failures; success clears the account counter."""
 
+import pytest
+
+from app.core import login_throttle
 from app.core.config import settings
 from tests.conftest import ADMIN, DOCENTE
 
@@ -39,11 +42,6 @@ def test_unknown_accounts_are_throttled_too(client):
 
 
 # ---------- Client IP behind a proxy (PR 97 follow-up, David + security review) ----------
-
-import pytest
-
-from app.core import login_throttle
-
 
 @pytest.mark.parametrize(("hops", "peer", "header", "expected"), [
     (0, "10.0.0.1", "1.1.1.1, 9.9.9.9", "10.0.0.1"),          # local: the header is ignored
