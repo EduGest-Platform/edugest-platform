@@ -66,7 +66,7 @@ def seed(db: Session) -> None:
         db.add(Program(id=p["id"], nombre=p["nombre"], descripcion=p.get("descripcion", "")))
     db.flush()
     for cid, prog, nombre, prefix, opens, closes, plazas, estado, _ in CALLS:
-        db.add(Call(id=cid, program_id=prog, nombre=nombre, codigo_prefix=prefix, opens_on=opens, closes_on=closes, plazas=plazas, estado=estado))
+        db.add(Call(id=cid, program_id=prog, nombre=nombre, codigo_prefix=prefix, opens_on=opens, closes_on=closes, plazas=plazas, estado=estado, publication_state="published"))
     db.flush()
     feeds = {c[8]: c[0] for c in CALLS if c[8]}
     for c in data["cohortes"]:
