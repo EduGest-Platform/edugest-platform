@@ -21,7 +21,7 @@ export function PublicCourseList({ state, admission, offset, onFilter, onPage, o
 }) {
   return <section aria-labelledby="public-catalog-title" className="grid gap-4">
     <header>
-      <h1 id="public-catalog-title" className="text-2xl font-bold text-navy">Formaciones disponibles</h1>
+      <h1 id="public-catalog-title" tabIndex={-1} className="text-2xl font-bold text-navy">Formaciones disponibles</h1>
       <p className="text-sm text-muted">Ofertas publicadas del servidor · Demostración con datos sintéticos.</p>
     </header>
     <Field label="Estado de convocatoria" htmlFor="public-admission-filter">
