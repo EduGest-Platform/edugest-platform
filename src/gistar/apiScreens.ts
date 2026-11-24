@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import type { View } from './types'
 import { ApiCohorts } from './views/api/ApiCohorts'
+import { ApiAttendance } from './views/api/ApiAttendance'
 import { ApiApplications, ApiAudit, ApiInscription, ApiMyApplications } from './views/api/ApiAdmissions'
 
 /**
@@ -9,6 +10,7 @@ import { ApiApplications, ApiAudit, ApiInscription, ApiMyApplications } from './
  */
 export const API_SCREENS: Partial<Record<View, () => ReactElement>> = {
   cohortes: ApiCohorts,
+  asistencia: ApiAttendance,
   inscripcion: ApiInscription,
   candidatura: ApiMyApplications,
   candidaturas: ApiApplications,
