@@ -32,3 +32,9 @@ Local lint, Python compilation and diff checks passed. PostgreSQL tests were not
 ES: el fallo de la ejecución 45370411124 era la expectativa 200 del coder sobre `/tools/attendance-summary` de cohorte. Se corrigió el test conforme a `cohort_access`, `_summary_access` y la cobertura de permisos ya existente; no se ampliaron permisos ni se cambió producto. Se añadió el control positivo de entregas propias y su denegación tras baja. Ruff, compilación y diff comprobados; PostgreSQL local no disponible. No se espera a la nueva CI.
 
 EN: run 45370411124 failed because the new test wrongly expected coder access to a cohort-wide tool. The correction follows existing authorization rather than widening it, and adds a positive own-submission control plus post-withdrawal denial. Local lint/compilation/diff checked; PostgreSQL unavailable. New CI completion is not awaited.
+
+## Positive document controls / Controles positivos documentales
+
+ES: los dos tokens del coder antes de la baja y los dos tokens docentes tras restituir el permiso deben obtener `status=answered`, además de HTTP 200. Así, una abstención `no_source` no satisface el control positivo. Se conserva el mismo criterio ya exigido al docente antes de la revocación.
+
+EN: both coder tokens before withdrawal and both teacher tokens after reinstatement must receive `status=answered` as well as HTTP 200. A `no_source` abstention cannot satisfy these positive controls, matching the existing pre-revocation teacher assertion. Local lint/compilation/diff checked; PostgreSQL and CI completion were not run/awaited for this correction.

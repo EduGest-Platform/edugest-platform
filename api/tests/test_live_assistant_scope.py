@@ -93,7 +93,8 @@ def test_team_removal_and_readd_apply_to_existing_tokens_across_documents_and_da
     # Restoring the grant also affects these same tokens, without another login.
     assert client.put(f"{team_path}/{teacher_id}", headers=login(client, ADMIN)).status_code == 200
     for token in tokens:
-        assert ask(client, token, COHORT).status_code == 200
+        answer = ask(client, token, COHORT)
+        assert answer.status_code == 200 and answer.json()["status"] == "answered"
         assert client.get(context, headers=token).status_code == 200
     assert submission_state(submission_id) == before
 
@@ -105,7 +106,8 @@ def test_coder_withdrawal_revokes_documents_and_own_submissions_without_granting
                                                     Enrollment.cohort_id == COHORT, Enrollment.estado == "activa")).one()
     own_submissions = f"/api/v1/enrollments/{enrollment.id}/submissions"
     for token in tokens:
-        assert ask(client, token, COHORT).status_code == 200
+        answer = ask(client, token, COHORT)
+        assert answer.status_code == 200 and answer.json()["status"] == "answered"
         own = client.get(own_submissions, headers=token)
         assert own.status_code == 200
         assert own.json()["enrollment_id"] == str(enrollment.id)
