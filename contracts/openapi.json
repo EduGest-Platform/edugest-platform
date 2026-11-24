@@ -7485,14 +7485,7 @@
             "description": "Stale publication version"
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "Invalid publication payload or incomplete offer"
           }
         },
         "security": [

@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from datetime import date
 
 import pytest
 from fastapi import HTTPException
@@ -69,3 +70,29 @@ def test_registration_rejects_unpublished_offer_before_person_or_application_wri
     with pytest.raises(HTTPException) as error:
         create_application(LookupOnlyDatabase(), SimpleNamespace(call_id='SYNTHETIC'), None)
     assert error.value.status_code == 404
+
+
+@pytest.mark.parametrize('changes', [{'nombre': '   '}, {'plazas': -1}, {'closes_on': date(2029, 1, 1)}])
+def test_incomplete_offer_cannot_be_published(changes):
+    from app.modules.catalog.publication_policy import require_publishable
+
+    call = SimpleNamespace(**({'nombre': 'Synthetic course', 'plazas': 0,
+                               'opens_on': date(2030, 1, 1), 'closes_on': date(2030, 2, 1)} | changes))
+    with pytest.raises(HTTPException) as error:
+        require_publishable(call)
+    assert error.value.status_code == 422
+
+
+def test_minimal_projection_does_not_expose_other_model_attributes():
+    from app.modules.catalog.public_service import course_out
+    from app.modules.catalog.publication_policy import require_publishable
+
+    canary = 'SYNTHETIC-INTERNAL-POLICY-CANARY'
+    call = SimpleNamespace(id='SYNTHETIC', program_id='P-IA', nombre='Synthetic course', plazas=0,
+                           opens_on=date(2030, 1, 1), closes_on=date(2030, 2, 1), estado='cerrada',
+                           codigo_prefix=canary, next_seq=123, silence_days=99, publication_version=7)
+    program = SimpleNamespace(nombre='Synthetic program', descripcion=canary)
+    require_publishable(call)
+    projected = course_out(call, program).model_dump_json()
+    assert canary not in projected
+    assert 'publication_version' not in projected and 'silence_days' not in projected

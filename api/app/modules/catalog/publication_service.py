@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 from app.core import audit
 from app.core.errors import UserFacingError
 from app.modules.catalog.models import Call
-from app.modules.catalog.publication_policy import check_publication_version, require_publication_admin
+from app.modules.catalog.publication_policy import check_publication_version, require_publication_admin, require_publishable
 from app.modules.catalog.publication_schemas import PublicationOut
 
 
@@ -35,6 +35,8 @@ def list_publications(db, actor, state, limit, offset):
 def update_publication(db, actor, call_id, body):
     call = get_publication(db, actor, call_id, lock=True)
     check_publication_version(call, body.expected_version)
+    if body.state == 'published':
+        require_publishable(call)
     if call.publication_state != body.state:
         previous = call.publication_state
         call.publication_state = body.state

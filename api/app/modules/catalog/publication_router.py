@@ -22,7 +22,8 @@ def get_publication(call_id: str, p: CurrentPrincipal, db: DB):
 
 
 @router.put('/calls/{call_id}/publication', response_model=PublicationOut,
-            responses={**ERRORS, 409: {'description': 'Stale publication version'}},
+            responses={**ERRORS, 409: {'description': 'Stale publication version'},
+                       422: {'description': 'Invalid publication payload or incomplete offer'}},
             summary='Publish or withdraw an offer with optimistic version checking')
 def update_publication(call_id: str, body: PublicationUpdate, p: CurrentPrincipal, db: DB):
     return service.update_publication(db, p, call_id, body)
