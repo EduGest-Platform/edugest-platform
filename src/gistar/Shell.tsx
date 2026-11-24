@@ -150,7 +150,7 @@ export function Shell() {
           <Screen />
           <p className="mt-10 border-t border-line pt-5 text-xs text-muted">
             {API_MODE
-              ? 'Modo servidor: autenticación, permisos por rol y ámbito, inscripción, expedientes y auditoría los gestiona la API. Datos sintéticos; sin IA, correo ni servicios externos.'
+              ? 'Modo servidor: autenticación, permisos por rol y ámbito, inscripción, expedientes, auditoría y consultas documentales los gestiona la API. Datos sintéticos; asistente extractivo con citas, sin decisiones automáticas.'
               : 'Prototipo funcional con datos sintéticos. Los permisos son solo de interfaz; no hay autenticación, IA, correo ni servicios externos.'}
           </p>
         </main>
