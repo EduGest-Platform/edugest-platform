@@ -1,5 +1,11 @@
 # KAN-107 · Entregable 3 — Evaluación de privacidad / Privacy assessment
 
+## Actualización técnica KAN-226 (24/11/2026) / Technical update
+
+ES: `call.publication_state` (`draft`/`published`) y `call.publication_version` (entero >= 1) son metadatos editoriales de la oferta. No añaden datos personales, preguntas, consentimiento ni versión de formulario. La migración `0018` conserva la visibilidad de las ofertas ya públicas; las nuevas quedan en borrador por defecto. El filtrado de borradores en catálogo e inscripción se completa en los tramos dependientes del stack, no en el PR de modelo aislado. No acredita aceptación PO ni conformidad jurídica.
+
+EN: `call.publication_state` (`draft`/`published`) and `call.publication_version` (integer >= 1) are offer editorial metadata. They add no personal data, questions, consent or form version. Migration `0018` preserves previously public offers; new rows default to draft. Draft filtering in catalogue and registration is completed by dependent stack increments, not the model PR alone. This is neither PO acceptance nor a legal compliance finding.
+
 **Alcance:** el proyecto es una prueba de concepto gratuita con datos sintéticos. La validación legal (base jurídica, EIPD, plazos, responsable y DPO) **queda fuera del proyecto** y corresponde a la Fundación en una fase con datos reales; aquí solo se deja el diseño preparado. **Estado:** análisis técnico-funcional preliminar. **No sustituye al DPO ni al asesoramiento jurídico de la Fundación.** No declara que ningún tratamiento sea lícito, ilícito ni que la EIPD sea obligatoria.
 > **EN summary:** Risk matrix for the application form. Nationality, birth country and gender are kept (PO decision 17/11/2026); this document records the risk, the alternative, and who must authorise. Disability is treated as a probable special-category (health) datum.
 
