@@ -15,4 +15,6 @@ Convención: **CONFIRMADO** (ejecutado/leído), **PROPUESTO**, **POR VALIDAR** (
 
 ## Operator manuals / Manuales operativos
 
+[ERD y diccionario generados desde SQLAlchemy / Generated model ERD and data dictionary (KAN-216)](data/schema-reference.md). Describe código registrado, no una base desplegada. / Describes registered code, not a deployed database.
+
 [Role procedures and API/demo boundaries (KAN-220)](manuals/KAN-220-roles.md) / Procedimientos por rol y límites actuales entre servidor y demo.
