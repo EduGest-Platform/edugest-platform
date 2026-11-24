@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from app.core.authz import Principal
 from app.modules.identity.models import RoleAssignment
-from app.modules.staff.policy import invitation_available, require_admin, require_staff_account
+from app.modules.staff.policy import invitation_available, require_admin, require_distinct_reviewer, require_staff_account
 from app.modules.staff.schemas import AccessRequestCreate, InvitationAccept, InvitationCreate
 
 
@@ -48,3 +48,12 @@ def test_secret_input_repr_is_redacted_and_client_cannot_spoof_actors():
         AccessRequestCreate(requested_role='docente', scope_type='global', scope_id='P-IA')
     with pytest.raises(ValidationError):
         InvitationCreate(user_id=uuid.uuid4(), expires_hours=0)
+
+
+def test_self_review_is_forbidden_even_before_database_access():
+    identity = uuid.uuid4()
+    actor = SimpleNamespace(user=SimpleNamespace(id=identity))
+    with pytest.raises(HTTPException) as error:
+        require_distinct_reviewer(actor, identity)
+    assert error.value.status_code == 403
+    require_distinct_reviewer(actor, uuid.uuid4())

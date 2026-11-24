@@ -1,15 +1,17 @@
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core import audit
+from app.core.authz import Scope
 from app.core.db import utcnow
 from app.core.errors import UserFacingError
 from app.core.security import new_token, token_hash
 from app.modules.identity.models import User
-from app.modules.staff.models import Invitation, StaffProfile
-from app.modules.staff.policy import invitation_available, require_admin, require_staff_account
-from app.modules.staff.schemas import InvitationIssued, InvitationOut, StaffProfileOut
+from app.modules.catalog.models import Call, Cohort, Program
+from app.modules.staff.models import AccessChangeRequest, Invitation, StaffProfile
+from app.modules.staff.policy import invitation_available, require_admin, require_distinct_reviewer, require_staff_account
+from app.modules.staff.schemas import AccessRequestOut, InvitationIssued, InvitationOut, StaffProfileOut
 
 
 def invitation_out(row):
@@ -109,3 +111,69 @@ def own_profile(db, actor):
     if profile is None:
         raise UserFacingError(404, 'staff_profile_not_found', 'No encontramos una ficha interna para esta cuenta.')
     return StaffProfileOut.model_validate(profile, from_attributes=True)
+
+
+def active_own_profile(db, actor, lock=False):
+    require_staff_account(actor.user)
+    query = select(StaffProfile).where(StaffProfile.user_id == actor.user.id)
+    if lock:
+        query = query.with_for_update()
+    profile = db.scalar(query)
+    if profile is None or profile.state != 'active':
+        raise UserFacingError(409, 'active_staff_profile_required', 'Se requiere una ficha interna activa.')
+    return profile
+
+
+def request_out(row):
+    return AccessRequestOut.model_validate(row, from_attributes=True)
+
+
+def create_access_request(db, actor, body):
+    profile = active_own_profile(db, actor, lock=True)
+    row = AccessChangeRequest(staff_profile_id=profile.id, requested_role=body.requested_role,
+                              scope_type=body.scope_type, scope_id=body.scope_id, requested_by=actor.user.id)
+    db.add(row)
+    db.flush()
+    audit.record(db, actor, 'staff.access_requested', 'access_change_request', str(row.id), staff_profile_id=str(profile.id))
+    db.commit()
+    return request_out(row)
+
+
+def list_access_requests(db, actor, limit, offset):
+    is_admin = actor.can('staff.manage', Scope())
+    query = select(AccessChangeRequest)
+    profile = None
+    if not is_admin:
+        profile = active_own_profile(db, actor)
+        query = query.where(AccessChangeRequest.staff_profile_id == profile.id)
+    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    rows = list(db.scalars(query.order_by(AccessChangeRequest.requested_at, AccessChangeRequest.id).limit(limit).offset(offset)))
+    audit.record(db, actor, 'staff.access_requests_viewed', 'staff_profile', str(profile.id) if profile else None, administrative=is_admin)
+    db.commit()
+    return dict(items=[request_out(row) for row in rows], total=total)
+
+
+def review_access_request(db, actor, request_id, body):
+    require_admin(actor)
+    profile_id = db.scalar(select(AccessChangeRequest.staff_profile_id).where(AccessChangeRequest.id == request_id))
+    if profile_id is None:
+        raise UserFacingError(404, 'access_request_not_found', 'No encontramos esta solicitud.')
+    profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id).with_for_update())
+    row = db.scalar(select(AccessChangeRequest).where(AccessChangeRequest.id == request_id).with_for_update())
+    require_distinct_reviewer(actor, row.requested_by)
+    if row.state != 'requested':
+        raise UserFacingError(409, 'access_request_reviewed', 'Esta solicitud ya se revisó.')
+    if body.approved:
+        eligible_profile(db, profile)
+        if profile.state != 'active':
+            raise UserFacingError(409, 'active_staff_profile_required', 'Se requiere una ficha interna activa.')
+        # Only administration checks target existence: requesting a scope does not enumerate it to staff.
+        model = {'program': Program, 'call': Call, 'cohort': Cohort}.get(row.scope_type)
+        if model is not None and db.get(model, row.scope_id) is None:
+            raise UserFacingError(422, 'access_scope_unknown', 'El ámbito solicitado no existe. Rechaza la solicitud y pide una corregida.')
+    row.state = 'approved' if body.approved else 'rejected'
+    row.reviewed_by, row.reviewed_at = actor.user.id, utcnow()
+    audit.record(db, actor, 'staff.access_reviewed', 'access_change_request', str(row.id), state=row.state)
+    # Human review is recorded separately from application. RoleAssignment is deliberately untouched.
+    db.commit()
+    return request_out(row)

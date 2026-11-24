@@ -21,3 +21,8 @@ def invitation_available(invitation, now):
     if now.utcoffset() is None or invitation.expires_at.utcoffset() is None:
         return False
     return now.astimezone(timezone.utc) < invitation.expires_at.astimezone(timezone.utc)
+
+
+def require_distinct_reviewer(actor, requested_by):
+    if actor.user.id == requested_by:
+        raise UserFacingError(403, 'access_self_review', 'Otra persona administradora debe revisar esta solicitud.')

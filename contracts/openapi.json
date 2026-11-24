@@ -46,6 +46,184 @@
         "title": "AcademicCohortOut",
         "type": "object"
       },
+      "AccessRequestCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "requested_role": {
+            "enum": [
+              "admin",
+              "captacion",
+              "seleccion",
+              "docente",
+              "coordinacion"
+            ],
+            "title": "Requested Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "enum": [
+              "global",
+              "program",
+              "call",
+              "cohort"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested_role",
+          "scope_type"
+        ],
+        "title": "AccessRequestCreate",
+        "type": "object"
+      },
+      "AccessRequestList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AccessRequestOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AccessRequestList",
+        "type": "object"
+      },
+      "AccessRequestOut": {
+        "properties": {
+          "applied_assignment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Assignment Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by": {
+            "format": "uuid",
+            "title": "Requested By",
+            "type": "string"
+          },
+          "requested_role": {
+            "title": "Requested Role",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "staff_profile_id": {
+            "format": "uuid",
+            "title": "Staff Profile Id",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "staff_profile_id",
+          "requested_role",
+          "scope_type",
+          "scope_id",
+          "state",
+          "requested_by",
+          "requested_at",
+          "reviewed_by",
+          "reviewed_at",
+          "applied_assignment_id"
+        ],
+        "title": "AccessRequestOut",
+        "type": "object"
+      },
+      "AccessReview": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approved"
+        ],
+        "title": "AccessReview",
+        "type": "object"
+      },
       "ApplicationCreate": {
         "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
         "properties": {
@@ -9161,6 +9339,189 @@
         "summary": "Crear una versión borrador del árbol de competencias de un bootcamp",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests": {
+      "get": {
+        "operationId": "list_access_requests_api_v1_staff_access_requests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessRequestList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Solicitudes propias; administración global puede consultar todas",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "operationId": "create_access_request_api_v1_staff_access_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessRequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Solicitar un cambio para la ficha propia; no aplica permisos",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests/{request_id}/review": {
+      "post": {
+        "operationId": "review_access_request_api_v1_staff_access_requests__request_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessReview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "description": "Ámbito desconocido"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revisión administrativa distinta de quien solicita; aprobar no aplica roles",
+        "tags": [
+          "staff"
         ]
       }
     },

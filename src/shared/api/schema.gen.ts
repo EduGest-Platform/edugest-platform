@@ -810,6 +810,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/access-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Solicitudes propias; administración global puede consultar todas */
+        get: operations["list_access_requests_api_v1_staff_access_requests_get"];
+        put?: never;
+        /** Solicitar un cambio para la ficha propia; no aplica permisos */
+        post: operations["create_access_request_api_v1_staff_access_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/access-requests/{request_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revisión administrativa distinta de quien solicita; aprobar no aplica roles */
+        post: operations["review_access_request_api_v1_staff_access_requests__request_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/invitations": {
         parameters: {
             query?: never;
@@ -1026,6 +1061,70 @@ export interface components {
             program_id: string;
             /** Timezone */
             timezone: string;
+        };
+        /** AccessRequestCreate */
+        AccessRequestCreate: {
+            /**
+             * Requested Role
+             * @enum {string}
+             */
+            requested_role: "admin" | "captacion" | "seleccion" | "docente" | "coordinacion";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Scope Type
+             * @enum {string}
+             */
+            scope_type: "global" | "program" | "call" | "cohort";
+        };
+        /** AccessRequestList */
+        AccessRequestList: {
+            /** Items */
+            items: components["schemas"]["AccessRequestOut"][];
+            /** Total */
+            total: number;
+        };
+        /** AccessRequestOut */
+        AccessRequestOut: {
+            /** Applied Assignment Id */
+            applied_assignment_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /**
+             * Requested By
+             * Format: uuid
+             */
+            requested_by: string;
+            /** Requested Role */
+            requested_role: string;
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Reviewed By */
+            reviewed_by: string | null;
+            /** Scope Id */
+            scope_id: string | null;
+            /** Scope Type */
+            scope_type: string;
+            /**
+             * Staff Profile Id
+             * Format: uuid
+             */
+            staff_profile_id: string;
+            /** State */
+            state: string;
+        };
+        /** AccessReview */
+        AccessReview: {
+            /** Approved */
+            approved: boolean;
         };
         /**
          * ApplicationCreate
@@ -6181,6 +6280,167 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_access_requests_api_v1_staff_access_requests_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRequestList"];
+                };
+            };
+            /** @description Administración global requerida */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invitación no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cuenta/ficha no elegible o invitación ya utilizada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_access_request_api_v1_staff_access_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRequestOut"];
+                };
+            };
+            /** @description Administración global requerida */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invitación no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cuenta/ficha no elegible o invitación ya utilizada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_access_request_api_v1_staff_access_requests__request_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessRequestOut"];
+                };
+            };
+            /** @description Administración global requerida */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invitación no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cuenta/ficha no elegible o invitación ya utilizada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ámbito desconocido */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

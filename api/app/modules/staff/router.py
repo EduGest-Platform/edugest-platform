@@ -1,11 +1,12 @@
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from app.core.deps import DB, CurrentPrincipal
 from app.modules.staff import service
 from app.modules.staff.schemas import InvitationCreate, InvitationIssued, InvitationOut, InvitationRenew
 from app.modules.staff.schemas import InvitationAccept, StaffProfileOut
+from app.modules.staff.schemas import AccessRequestCreate, AccessRequestList, AccessRequestOut, AccessReview
 
 router = APIRouter(prefix='/staff', tags=['staff'])
 ERRORS = {403: {'description': 'Administración global requerida'}, 404: {'description': 'Invitación no encontrada'},
@@ -40,3 +41,22 @@ def accept_invitation(body: InvitationAccept, p: CurrentPrincipal, db: DB):
             summary='Consultar únicamente la ficha interna de la sesión actual')
 def own_profile(p: CurrentPrincipal, db: DB):
     return service.own_profile(db, p)
+
+
+@router.post('/access-requests', response_model=AccessRequestOut, status_code=201, responses=ERRORS,
+             summary='Solicitar un cambio para la ficha propia; no aplica permisos')
+def create_access_request(body: AccessRequestCreate, p: CurrentPrincipal, db: DB):
+    return service.create_access_request(db, p, body)
+
+
+@router.get('/access-requests', response_model=AccessRequestList, responses=ERRORS,
+            summary='Solicitudes propias; administración global puede consultar todas')
+def list_access_requests(p: CurrentPrincipal, db: DB, limit: int = Query(default=50, ge=1, le=100), offset: int = Query(default=0, ge=0)):
+    return service.list_access_requests(db, p, limit, offset)
+
+
+@router.post('/access-requests/{request_id}/review', response_model=AccessRequestOut,
+             responses={**ERRORS, 422: {'description': 'Ámbito desconocido'}},
+             summary='Revisión administrativa distinta de quien solicita; aprobar no aplica roles')
+def review_access_request(request_id: uuid.UUID, body: AccessReview, p: CurrentPrincipal, db: DB):
+    return service.review_access_request(db, p, request_id, body)

@@ -72,3 +72,8 @@ class AccessRequestOut(BaseModel):
     reviewed_by: uuid.UUID | None
     reviewed_at: datetime | None
     applied_assignment_id: uuid.UUID | None
+
+
+class AccessRequestList(BaseModel):
+    items: list[AccessRequestOut]
+    total: int
