@@ -135,7 +135,7 @@ erDiagram
     call |o--o{ cohort : call_id
     program ||--o{ cohort : program_id
     app_user ||--o{ cohort_competency_framework : assigned_by
-    cohort ||--o{ cohort_competency_framework : cohort_id
+    cohort ||--o| cohort_competency_framework : cohort_id
     competency_framework ||--o{ cohort_competency_framework : framework_id
     competency_framework ||--o{ competency : framework_id
     app_user ||--o{ competency_assessment : assessed_by

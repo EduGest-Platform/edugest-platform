@@ -42,3 +42,22 @@ def test_multiple_unnamed_constraints_have_stable_order():
               *(UniqueConstraint(name) for name in names))
         variants.append(render(data))
     assert variants[0] == variants[1]
+
+
+def test_foreign_key_that_is_the_entire_primary_key_is_unique():
+    data = MetaData()
+    Table('cohort', data, Column('id', Integer, primary_key=True))
+    Table('framework', data, Column('cohort_id', Integer, ForeignKey('cohort.id'), primary_key=True))
+    text = render(data)
+    assert 'cohort ||--o| framework : cohort_id' in text
+    assert 'cohort ||--o{ framework : cohort_id' not in text
+
+
+def test_individual_columns_of_composite_primary_key_are_not_unique():
+    data = MetaData()
+    Table('cohort', data, Column('id', Integer, primary_key=True))
+    Table('framework', data, Column('cohort_id', Integer, ForeignKey('cohort.id'), primary_key=True),
+          Column('version', Integer, primary_key=True))
+    text = render(data)
+    assert 'cohort ||--o{ framework : cohort_id' in text
+    assert 'cohort ||--o| framework : cohort_id' not in text

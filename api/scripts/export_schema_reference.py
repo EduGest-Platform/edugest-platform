@@ -32,7 +32,10 @@ def render(metadata) -> str:
     for table in tables:
         for fk in sorted(table.foreign_keys, key=lambda item: (item.parent.name, item.target_fullname)):
             column = fk.parent
-            unique = column.unique or any(isinstance(c, UniqueConstraint) and list(c.columns) == [column] for c in table.constraints)
+            single_primary_key = len(table.primary_key.columns) == 1 and column.primary_key
+            unique = single_primary_key or column.unique or any(
+                isinstance(c, UniqueConstraint) and list(c.columns) == [column] for c in table.constraints
+            )
             left = "|o" if column.nullable else "||"
             right = "o|" if unique else "o{"
             lines.append(f"    {fk.column.table.name} {left}--{right} {table.name} : {column.name}")
