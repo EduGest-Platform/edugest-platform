@@ -55,7 +55,7 @@ def load_seed() -> dict:
 
 
 def reset(db: Session) -> None:
-    tables = ["audit_event", "access_change_request", "staff_invitation", "staff_profile", "intervention", "risk_alert", "submission", "assignment", "competency_assessment", "cohort_competency_framework", "competency", "competency_framework", "attendance_record_revision", "attendance_record", "attendance_session", "selection_approval", "selection_decision", "preselection_decision", "requirement_review_revision", "requirement_review", "application_event", "enrollment", "application", "auth_session", "role_assignment", "app_user", "person", "cohort", "call", "program"]
+    tables = ["audit_event", "discussion_comment", "discussion_thread", "access_change_request", "staff_invitation", "staff_profile", "intervention", "risk_alert", "submission", "assignment", "competency_assessment", "cohort_competency_framework", "competency", "competency_framework", "attendance_record_revision", "attendance_record", "attendance_session", "selection_approval", "selection_decision", "preselection_decision", "requirement_review_revision", "requirement_review", "application_event", "enrollment", "application", "auth_session", "role_assignment", "app_user", "person", "cohort", "call", "program"]
     db.execute(text(f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE"))
     db.commit()
 

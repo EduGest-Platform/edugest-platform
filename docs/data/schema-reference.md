@@ -68,6 +68,12 @@ erDiagram
     competency_framework {
         string id PK
     }
+    discussion_comment {
+        string id PK
+    }
+    discussion_thread {
+        string id PK
+    }
     enrollment {
         string id PK
     }
@@ -157,6 +163,14 @@ erDiagram
     competency_framework |o--o{ competency_framework : based_on_id
     app_user ||--o{ competency_framework : created_by
     program ||--o{ competency_framework : program_id
+    app_user ||--o{ discussion_comment : actor_user_id
+    discussion_comment |o--o{ discussion_comment : parent_id
+    discussion_comment ||--o{ discussion_comment : thread_id
+    discussion_thread ||--o{ discussion_comment : thread_id
+    application |o--o{ discussion_thread : application_id
+    app_user ||--o{ discussion_thread : created_by
+    program |o--o{ discussion_thread : program_id
+    app_user |o--o{ discussion_thread : resolved_by
     application |o--o{ enrollment : application_id
     cohort ||--o{ enrollment : cohort_id
     person ||--o{ enrollment : person_id
@@ -543,6 +557,49 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - CHECK `ck_competency_framework_version`: `version >= 1`
 
 - UNIQUE `uq_competency_framework_version`: `program_id, version`
+
+### discussion_comment
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| thread_id | UUID | no | discussion_comment.thread_id, discussion_thread.id |
+| parent_id | UUID | sí / yes | discussion_comment.id |
+| actor_user_id | UUID | no | app_user.id |
+| body | VARCHAR(2000) | no | — |
+| version | INTEGER | no | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| edited_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_discussion_comment_body`: `length(trim(body)) BETWEEN 1 AND 2000`
+
+- CHECK `ck_discussion_comment_edited`: `edited_at IS NULL OR edited_at >= created_at`
+
+- CHECK `ck_discussion_comment_not_self`: `parent_id IS NULL OR parent_id <> id`
+
+- CHECK `ck_discussion_comment_version`: `version >= 1`
+
+- UNIQUE `uq_discussion_comment_thread_id`: `thread_id, id`
+
+### discussion_thread
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| scope_type | VARCHAR(12) | no | — |
+| application_id | UUID | sí / yes | application.id |
+| program_id | VARCHAR(20) | sí / yes | program.id |
+| subject | VARCHAR(160) | no | — |
+| created_by | UUID | no | app_user.id |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| resolved_by | UUID | sí / yes | app_user.id |
+| resolved_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_discussion_thread_resolution`: `(resolved_by IS NULL) = (resolved_at IS NULL)`
+
+- CHECK `ck_discussion_thread_scope`: `(scope_type = 'application' AND application_id IS NOT NULL AND program_id IS NULL) OR (scope_type = 'program' AND program_id IS NOT NULL AND application_id IS NULL)`
+
+- CHECK `ck_discussion_thread_subject`: `length(trim(subject)) BETWEEN 1 AND 160`
 
 ### enrollment
 
