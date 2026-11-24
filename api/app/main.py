@@ -11,6 +11,7 @@ from app import models  # noqa: F401  (registers metadata)
 from app.core.config import settings
 from app.core.db import engine
 from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
+from app.core.response_policy import SecurityResponseMiddleware
 from app.modules.admissions.router import router as admissions_router
 from app.modules.assistant.router import router as assistant_router
 from app.modules.assistant_tools.router import router as assistant_tools_router
@@ -48,6 +49,7 @@ app.add_middleware(
 )
 
 API = "/api/v1"
+app.add_middleware(SecurityResponseMiddleware, environment=settings.environment)
 for r in (
     identity_router,
     catalog_router,
