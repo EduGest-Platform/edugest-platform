@@ -2022,6 +2022,62 @@
         "title": "CurrentLevel",
         "type": "object"
       },
+      "DocumentationHistory": {
+        "properties": {
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentationHistoryItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "items",
+          "total"
+        ],
+        "title": "DocumentationHistory",
+        "type": "object"
+      },
+      "DocumentationHistoryItem": {
+        "properties": {
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "accredited"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 2.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "state",
+          "recorded_at"
+        ],
+        "title": "DocumentationHistoryItem",
+        "type": "object"
+      },
       "DocumentationOut": {
         "properties": {
           "accredited_at": {
@@ -9659,6 +9715,150 @@
           }
         ],
         "summary": "Record a human administrative accreditation, without granting academic access",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/documentation/history": {
+      "get": {
+        "operationId": "documentation_history_api_v1_enrollments__enrollment_id__documentation_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentationHistory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Outside authorized scope"
+          },
+          "404": {
+            "description": "Enrollment not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Own or admission-scope documentary history without verifier identities",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/documentation/revoke": {
+      "post": {
+        "operationId": "revoke_documentation_api_v1_enrollments__enrollment_id__documentation_revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentationWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Outside authorized scope"
+          },
+          "404": {
+            "description": "Enrollment not found"
+          },
+          "409": {
+            "description": "Stale documentation version"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Withdraw accreditation evidence without withdrawing academic enrollment",
         "tags": [
           "learning"
         ]

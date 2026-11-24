@@ -1,12 +1,13 @@
 from app.core import audit
 from app.core.db import utcnow
 from app.core.errors import UserFacingError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from app.modules.admissions.models import Application
 from app.modules.catalog.models import Cohort
+from app.modules.audit.models import AuditEvent
 from app.modules.learning.documentation_policy import enrollment_not_found, require_documentation_read, require_reader_role
 from app.modules.learning.documentation_policy import check_documentation_version, require_accreditation_eligibility, require_documentation_admin
-from app.modules.learning.documentation_schemas import DocumentationOut
+from app.modules.learning.documentation_schemas import DocumentationHistoryItem, DocumentationOut
 from app.modules.learning.models import Enrollment
 from app.modules.selection.models import SelectionDecision
 
@@ -65,3 +66,30 @@ def accredit_documentation(db, actor, enrollment_id, body):
                      state=row.documentation_state, version=row.documentation_version)
     db.commit()
     return documentation_out(row)
+
+
+def revoke_documentation(db, actor, enrollment_id, body):
+    row, _ = locked_documentation(db, actor, enrollment_id)
+    check_documentation_version(row, body.expected_version)
+    if row.documentation_state == 'accredited':
+        row.documentation_state = 'pending'
+        row.documentation_version += 1
+        row.documentation_accredited_by, row.documentation_accredited_at = None, None
+        audit.record(db, actor, 'enrollment.documentation_revoked', 'enrollment', str(row.id),
+                     state=row.documentation_state, version=row.documentation_version)
+    # Allow correction of documentary evidence even if academic enrollment is no longer active.
+    db.commit()
+    return documentation_out(row)
+
+
+def documentation_history(db, actor, enrollment_id, limit, offset):
+    row = readable_enrollment(db, actor, enrollment_id)
+    query = select(AuditEvent).where(AuditEvent.target_type == 'enrollment', AuditEvent.target_id == str(row.id),
+        AuditEvent.action.in_(('enrollment.documentation_accredited', 'enrollment.documentation_revoked')))
+    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    events = db.scalars(query.order_by(AuditEvent.at, AuditEvent.id).limit(limit).offset(offset))
+    # Only documentary state changes are projected, never audit actors, role strings or arbitrary metadata.
+    items = [DocumentationHistoryItem(version=event.meta['version'], state=event.meta['state'], recorded_at=event.at) for event in events]
+    audit.record(db, actor, 'enrollment.documentation_history_viewed', 'enrollment', str(row.id))
+    db.commit()
+    return dict(enrollment_id=row.id, items=items, total=total)
