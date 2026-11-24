@@ -68,14 +68,22 @@ En otra terminal, raíz del repo / Separate terminal at repository root:
 
 ```powershell
 $env:VITE_GISTAR_API_URL='http://localhost:8000'
-pnpm dev --host 127.0.0.1
+pnpm dev --host localhost --port 5173 --strictPort
 ```
 
-POSIX: `VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev --host 127.0.0.1`.
+POSIX: `VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev --host localhost --port 5173 --strictPort`.
 
-ES: CORS debe incluir el origen exacto mostrado por Vite. Sin esta variable la web usa datos locales; no prueba persistencia ni RBAC. Las vistas migradas están enumeradas en `src/shared/api/config.ts`; las demás muestran su aviso local.
+ES: Abrir **http://localhost:5173**, que coincide con `GISTAR_CORS_ORIGINS` del ejemplo de API. La URL de la API sigue siendo `http://localhost:8000`; el origen que debe permitir CORS es el de la **web**, no el destino de sus llamadas. `--strictPort` hace que Vite falle si 5173 está ocupado, en vez de elegir silenciosamente otro puerto. Detener el proceso que ocupa ese puerto o elegir explícitamente otro y actualizar CORS antes de reiniciar API y Vite.
 
-EN: CORS must include Vite's exact displayed origin. Without the API URL, browser-local data does not prove persistence or RBAC. `API_VIEWS` is the current registry of migrated screens; remaining screens retain their local warning.
+Si se prefiere abrir la web en `http://127.0.0.1:5173`, configurar en **api/.env** la línea siguiente y usar `--host 127.0.0.1 --port 5173 --strictPort` en cualquiera de las dos terminales:
+
+```dotenv
+GISTAR_CORS_ORIGINS=["http://localhost:5173","http://127.0.0.1:5173","http://localhost:8443"]
+```
+
+Para un puerto alternativo, por ejemplo 5174, usar `--port 5174 --strictPort` y añadir el origen exacto con ese puerto (`http://localhost:5174` o `http://127.0.0.1:5174`, según el host elegido) a la lista JSON de `api/.env`. Reiniciar la API para recargar CORS. No usar comodines. Sin la URL de API, la web usa datos locales; no prueba persistencia ni RBAC. Las vistas migradas están enumeradas en `src/shared/api/config.ts`.
+
+EN: Open **http://localhost:5173**, matching the API template. The API destination remains localhost:8000; CORS must allow the **web's origin**. `--strictPort` prevents silent port changes. Free port 5173 or explicitly select another port and update CORS before restarting both services. To use 127.0.0.1, add the exact origin using the JSON line above in `api/.env` and use `--host 127.0.0.1 --port 5173 --strictPort` in either shell. For 5174, change the port flag and add the exact chosen host/port to that JSON list, then restart the API. Do not use wildcard origins. Without the API URL, browser-local data does not prove persistence or RBAC. `API_VIEWS` is the current migrated-screen registry.
 
 Para un cambio de contrato / For contract changes:
 
