@@ -20,4 +20,10 @@ PASS: TypeScript, 81 frontend tests, production build, Ruff, Python compilation 
 
 CODE_PRESENT_NOT_RUN for DB integration. / Integración DB no ejecutada localmente. Increment for course selection only; activation and roster management are outside this PR. Browser workflow not run.
 
+## CI correction / Corrección CI — 24/11/2026
+
+ES: La primera ejecución de API registró 940 pruebas correctas y un fallo en el caso de aislamiento nuevo. El docente compartido del seed tiene permisos en COH-IA y COH-DATA; el test esperaba solo COH-IA sin limitar sus asignaciones. Ahora ese caso revoca explícitamente los otros ámbitos antes de autenticar. Un sexto caso confirma que el docente conserva ambas cohortes cuando están autorizadas. La API y los permisos no se modifican.
+
+EN: The initial API run recorded 940 passes and one failure in the new isolation test. The shared seed teacher is authorized for both COH-IA and COH-DATA; the test incorrectly expected only one without restricting its assignments. The isolation case now explicitly revokes other scopes before authentication. A sixth API case preserves discovery of both authorized cohorts. API behavior and permissions are unchanged. Full PostgreSQL tests remain not run locally; no claim is made about the corrected CI run.
+
 CI completion is not awaited, as requested. No Jira changes, merge or deployment. / No se espera al CI por petición del usuario. No se cambia Jira ni se fusiona o despliega.
