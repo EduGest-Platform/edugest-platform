@@ -5,6 +5,8 @@ Datos **exclusivamente sintéticos**. La autorización se comprueba en el servid
 
 ## Arranque local
 
+Pasos completos y límites operativos / Complete setup and operating boundaries: [instalación local / local installation](../docs/deploy/local-installation.md).
+
 ```bash
 cd api
 python -m venv .venv && . .venv/bin/activate
@@ -14,7 +16,7 @@ cp .env.example .env              # pon la contraseña de infra/.env en GISTAR_D
 # In .env, set GISTAR_DEMO_PASSWORD to a strong, non-empty, environment-specific value before continuing.
 alembic upgrade head
 python -m app.seed                # carga ../src/gistar/seed.json (idempotente; --reset para recargar)
-uvicorn app.main:app --reload     # http://localhost:8000/docs
+uvicorn app.main:app --host 127.0.0.1 --reload --no-access-log  # http://localhost:8000/docs
 ```
 
 Web contra la API (desde la raíz): `VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev`.
@@ -23,8 +25,9 @@ Alternativa con contenedores: `docker compose -f infra/compose.yaml up --build` 
 ## Pruebas
 
 ```bash
-# GISTAR_TEST_DATABASE_URL está en api/.env (git-ignorado); bash la carga así:
-export $(grep GISTAR_TEST_DATABASE_URL .env) && pytest
+# Preparar GISTAR_TEST_DATABASE_URL en el entorno sin imprimir su valor.
+# Prepare the isolated test DB environment variable without printing its value.
+python -m pytest
 ```
 
 En PowerShell: lee la variable de `api/.env` y expórtala antes de `pytest` (sin imprimirla).
