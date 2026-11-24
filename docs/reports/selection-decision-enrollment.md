@@ -108,3 +108,7 @@ No ejecutado: `pnpm build`, E2E, `gitleaks` ni el job `compose` de CI (no hay Do
 - Tipos: `SelectionDecisionOut`, `SelectionPendingOut`, `SelectionApprovalOut` y `SelectionPolicy` en `src/shared/api/schema.gen.ts`.
 
 **EN.** Web contract for the decision screen. `201` means the decision applied (and the enrollment, when admitted). `202` means the vote was recorded, with `state` `pending` (more people needed) or `disagreement` (different votes). Show the votes from the response and never infer state client-side. `GET .../selection-decisions` exposes `quorum` and `pending_votes`. `GET/PUT /calls/{id}/selection-policy` reads or changes the quorum (`PUT` is admin-only and audited). After any `201` or `202`, reload the application and the selection overview.
+
+## Linked closed votes / Votos cerrados vinculados (KAN-200)
+
+This increment adds `SelectionDecisionOut.votes` to applied POST/history responses. It includes outvoted records and returns an empty list for missing legacy evidence; `quorum` remains current policy. See [scope and evidence](KAN-200-linked-decision-votes.md). / Este incremento expone los votos vinculados de cada decisión aplicada, incluidos desacuerdos; no reconstruye políticas históricas ni firmas ausentes.

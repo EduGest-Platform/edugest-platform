@@ -21,11 +21,11 @@ router = APIRouter(tags=["selection"])
 _ERRORS = {403: {"description": "Sin permiso sobre el ámbito"}, 404: {"description": "No encontrado"}}
 
 
-def _out(decision: SelectionDecision, actor_name: str | None) -> SelectionDecisionOut:
+def _out(decision: SelectionDecision, actor_name: str | None, votes: list[SelectionApprovalOut]) -> SelectionDecisionOut:
     return SelectionDecisionOut(
         id=decision.id, application_id=decision.application_id, decision=decision.decision, from_stage=decision.from_stage,
         to_stage=decision.to_stage, reason=decision.reason, actor=actor_name, occurred_at=decision.occurred_at,
-        cohort_id=decision.cohort_id, enrollment_id=decision.enrollment_id,
+        cohort_id=decision.cohort_id, enrollment_id=decision.enrollment_id, votes=votes,
     )
 
 
@@ -36,6 +36,18 @@ def _names(db: DB, user_ids: set) -> dict:
 def _votes_out(db: DB, votes: list[SelectionApproval]) -> list[SelectionApprovalOut]:
     names = _names(db, {v.actor_user_id for v in votes})
     return [SelectionApprovalOut(decision=v.decision, cohort_id=v.cohort_id, reason=v.reason, actor=names.get(v.actor_user_id), occurred_at=v.occurred_at) for v in votes]
+
+
+def _closed_votes(db: DB, application_id: uuid.UUID, decision_ids: set[uuid.UUID]) -> dict[uuid.UUID, list[SelectionApprovalOut]]:
+    if not decision_ids:
+        return {}
+    rows = list(db.scalars(select(SelectionApproval).where(
+        SelectionApproval.application_id == application_id, SelectionApproval.decision_id.in_(decision_ids),
+    ).order_by(SelectionApproval.occurred_at, SelectionApproval.id)))
+    grouped: dict[uuid.UUID, list[SelectionApprovalOut]] = {}
+    for row, view in zip(rows, _votes_out(db, rows)):
+        grouped.setdefault(row.decision_id, []).append(view)
+    return grouped
 
 
 @router.post(
@@ -53,7 +65,7 @@ def _votes_out(db: DB, votes: list[SelectionApproval]) -> list[SelectionApproval
 def post_selection_decision(application_id: uuid.UUID, body: SelectionDecisionWrite, p: CurrentPrincipal, db: DB, response: Response) -> SelectionDecisionOut | SelectionPendingOut:
     result = decide(db, p, application_id, body)
     if isinstance(result, SelectionDecision):
-        return _out(result, p.user.display_name)
+        return _out(result, p.user.display_name, _closed_votes(db, result.application_id, {result.id}).get(result.id, []))
     response.status_code = status.HTTP_202_ACCEPTED
     application = db.get(Application, application_id)
     call = db.get(Call, application.call_id)
@@ -74,11 +86,12 @@ def list_selection_decisions(application_id: uuid.UUID, p: CurrentPrincipal, db:
     application, call = row
     require_selection_access(db, p, "selection.read", call)
     decisions = list(db.scalars(select(SelectionDecision).where(SelectionDecision.application_id == application.id).order_by(SelectionDecision.occurred_at)))
+    closed_votes = _closed_votes(db, application.id, {d.id for d in decisions})
     ids = {d.actor_user_id for d in decisions}
     names = {u.id: u.display_name for u in db.scalars(select(User).where(User.id.in_(ids)))} if ids else {}
     audit.record(db, p, "selection.decisions_viewed", "application", str(application.id), codigo=application.codigo)
     db.commit()
-    return SelectionDecisionList(application_id=application.id, items=[_out(d, names.get(d.actor_user_id)) for d in decisions],
+    return SelectionDecisionList(application_id=application.id, items=[_out(d, names.get(d.actor_user_id), closed_votes.get(d.id, [])) for d in decisions],
                                  quorum=call.selection_quorum, pending_votes=_votes_out(db, pending_approvals(db, application.id)))
 
 
