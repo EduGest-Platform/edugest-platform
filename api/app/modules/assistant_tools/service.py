@@ -38,7 +38,12 @@ def cohort_access(db: Session, p: Principal, cohort_id: str, read_perm: str, agg
 
 
 def enrollment_ids_of(db: Session, cohort_id: str) -> list[uuid.UUID]:
-    query = select(Enrollment.id).where(Enrollment.cohort_id == cohort_id).order_by(Enrollment.created_at, Enrollment.id)
+    """Active enrollments only (KAN-158): coders who left or finished are never pending, overdue or counted in totals."""
+    query = (
+        select(Enrollment.id)
+        .where(Enrollment.cohort_id == cohort_id, Enrollment.estado == "activa")
+        .order_by(Enrollment.created_at, Enrollment.id)
+    )
     return list(db.scalars(query))
 
 
