@@ -6942,6 +6942,7 @@
             }
           },
           {
+            "description": "Inicio inclusivo; no posterior al fin",
             "in": "query",
             "name": "date_from",
             "required": false,
@@ -6955,10 +6956,12 @@
                   "type": "null"
                 }
               ],
+              "description": "Inicio inclusivo; no posterior al fin",
               "title": "Date From"
             }
           },
           {
+            "description": "Fin inclusivo; no anterior al inicio",
             "in": "query",
             "name": "date_to",
             "required": false,
@@ -6972,6 +6975,7 @@
                   "type": "null"
                 }
               ],
+              "description": "Fin inclusivo; no anterior al inicio",
               "title": "Date To"
             }
           }
@@ -7112,6 +7116,7 @@
             }
           },
           {
+            "description": "Inicio inclusivo; no posterior al fin",
             "in": "query",
             "name": "date_from",
             "required": false,
@@ -7125,10 +7130,12 @@
                   "type": "null"
                 }
               ],
+              "description": "Inicio inclusivo; no posterior al fin",
               "title": "Date From"
             }
           },
           {
+            "description": "Fin inclusivo; no anterior al inicio",
             "in": "query",
             "name": "date_to",
             "required": false,
@@ -7142,6 +7149,7 @@
                   "type": "null"
                 }
               ],
+              "description": "Fin inclusivo; no anterior al inicio",
               "title": "Date To"
             }
           }

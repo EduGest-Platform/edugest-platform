@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from typing import Annotated
 
 from fastapi import APIRouter, Path, Query, status
 from sqlalchemy import select
@@ -46,6 +47,8 @@ def _session_out(s: AttendanceSession, records: list[AttendanceRecord], timezone
 
 
 def _sessions_in(db: DB, cohort_id: str, date_from: date | None, date_to: date | None) -> list[AttendanceSession]:
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise UserFacingError(422, "invalid_date_window", "La fecha de inicio no puede ser posterior a la fecha de fin.")
     query = select(AttendanceSession).where(AttendanceSession.cohort_id == cohort_id)
     if date_from:
         query = query.where(AttendanceSession.session_date >= date_from)
@@ -76,7 +79,9 @@ def post_session(body: SessionWrite, p: CurrentPrincipal, db: DB, cohort_id: str
 
 @router.get("/cohorts/{cohort_id}/attendance-sessions", response_model=SessionList, responses=_ERRORS,
             summary="Sesiones de asistencia de una cohorte con sus registros")
-def list_sessions(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId, date_from: date | None = None, date_to: date | None = None) -> SessionList:
+def list_sessions(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId,
+                  date_from: Annotated[date | None, Query(description="Inicio inclusivo; no posterior al fin")] = None,
+                  date_to: Annotated[date | None, Query(description="Fin inclusivo; no anterior al inicio")] = None) -> SessionList:
     cohort = require_cohort(db, p, "attendance.read", cohort_id)
     sessions = _sessions_in(db, cohort_id, date_from, date_to)
     records = _records_of(db, sessions)
@@ -132,7 +137,8 @@ def _summary_access(db: DB, p: Principal, cohort_id: str, enrollment_id: uuid.UU
 @router.get("/cohorts/{cohort_id}/attendance-summary", response_model=AttendanceSummary, responses=_ERRORS,
             summary="Totales de asistencia por matrícula y de la cohorte (contrato get_attendance_summary del asistente)")
 def get_attendance_summary(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId, enrollment_id: uuid.UUID | None = Query(default=None),
-                           date_from: date | None = None, date_to: date | None = None) -> AttendanceSummary:
+                           date_from: Annotated[date | None, Query(description="Inicio inclusivo; no posterior al fin")] = None,
+                           date_to: Annotated[date | None, Query(description="Fin inclusivo; no anterior al inicio")] = None) -> AttendanceSummary:
     cohort, per_enrollment = _summary_access(db, p, cohort_id, enrollment_id)
     if enrollment_id:
         enrollment_ids = [enrollment_id]
