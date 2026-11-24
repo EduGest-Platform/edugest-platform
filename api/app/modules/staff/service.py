@@ -5,11 +5,11 @@ from sqlalchemy import select
 from app.core import audit
 from app.core.db import utcnow
 from app.core.errors import UserFacingError
-from app.core.security import new_token
+from app.core.security import new_token, token_hash
 from app.modules.identity.models import User
 from app.modules.staff.models import Invitation, StaffProfile
-from app.modules.staff.policy import require_admin, require_staff_account
-from app.modules.staff.schemas import InvitationIssued, InvitationOut
+from app.modules.staff.policy import invitation_available, require_admin, require_staff_account
+from app.modules.staff.schemas import InvitationIssued, InvitationOut, StaffProfileOut
 
 
 def invitation_out(row):
@@ -77,3 +77,35 @@ def revoke_invitation(db, actor, invitation_id):
         audit.record(db, actor, 'staff.invitation_revoked', 'staff_invitation', str(row.id), staff_profile_id=str(profile.id))
     db.commit()
     return invitation_out(row)
+
+
+def unavailable():
+    return UserFacingError(400, 'invitation_unavailable', 'La invitación no está disponible para esta cuenta. Solicita una nueva a administración.')
+
+
+def accept_invitation(db, actor, body):
+    require_staff_account(actor.user)
+    digest = token_hash(body.token.get_secret_value())
+    profile_id = db.scalar(select(Invitation.staff_profile_id).where(Invitation.token_hash == digest))
+    if profile_id is None:
+        raise unavailable()
+    # All token state transitions use profile -> invitation locking, including rotation/revocation.
+    profile = db.scalar(select(StaffProfile).where(StaffProfile.id == profile_id).with_for_update())
+    row = db.scalar(select(Invitation).where(Invitation.token_hash == digest).with_for_update())
+    now = utcnow()
+    if profile is None or profile.user_id != actor.user.id or profile.state == 'inactive' or not invitation_available(row, now):
+        raise unavailable()
+    eligible_profile(db, profile)
+    row.used_at = now
+    profile.state = 'active'
+    audit.record(db, actor, 'staff.invitation_accepted', 'staff_invitation', str(row.id), staff_profile_id=str(profile.id))
+    db.commit()
+    return StaffProfileOut.model_validate(profile, from_attributes=True)
+
+
+def own_profile(db, actor):
+    require_staff_account(actor.user)
+    profile = db.scalar(select(StaffProfile).where(StaffProfile.user_id == actor.user.id))
+    if profile is None:
+        raise UserFacingError(404, 'staff_profile_not_found', 'No encontramos una ficha interna para esta cuenta.')
+    return StaffProfileOut.model_validate(profile, from_attributes=True)

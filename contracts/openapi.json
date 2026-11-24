@@ -2360,6 +2360,24 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "InvitationAccept": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 32,
+            "title": "Token",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "InvitationAccept",
+        "type": "object"
+      },
       "InvitationCreate": {
         "additionalProperties": false,
         "properties": {
@@ -4452,6 +4470,49 @@
           "simulated_at"
         ],
         "title": "SimulatedReminderOut",
+        "type": "object"
+      },
+      "StaffProfileOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "job_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Title"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "state",
+          "job_title",
+          "created_at"
+        ],
+        "title": "StaffProfileOut",
         "type": "object"
       },
       "StageCount": {
@@ -9158,6 +9219,58 @@
         ]
       }
     },
+    "/api/v1/staff/invitations/accept": {
+      "post": {
+        "operationId": "accept_invitation_api_v1_staff_invitations_accept_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationAccept"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Invitación no disponible"
+          },
+          "409": {
+            "description": "Cuenta no elegible"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consumir una invitación para la propia cuenta interna, sin conceder roles",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/v1/staff/invitations/{invitation_id}/renew": {
       "post": {
         "operationId": "renew_invitation_api_v1_staff_invitations__invitation_id__renew_post",
@@ -9277,6 +9390,38 @@
           }
         ],
         "summary": "Revocar invitación pendiente, sin cambiar roles o sesiones existentes",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/me": {
+      "get": {
+        "operationId": "own_profile_api_v1_staff_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Ficha no encontrada"
+          },
+          "409": {
+            "description": "Cuenta no elegible"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar únicamente la ficha interna de la sesión actual",
         "tags": [
           "staff"
         ]

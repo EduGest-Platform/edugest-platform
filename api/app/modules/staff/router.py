@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.core.deps import DB, CurrentPrincipal
 from app.modules.staff import service
 from app.modules.staff.schemas import InvitationCreate, InvitationIssued, InvitationOut, InvitationRenew
+from app.modules.staff.schemas import InvitationAccept, StaffProfileOut
 
 router = APIRouter(prefix='/staff', tags=['staff'])
 ERRORS = {403: {'description': 'Administración global requerida'}, 404: {'description': 'Invitación no encontrada'},
@@ -27,3 +28,15 @@ def renew_invitation(invitation_id: uuid.UUID, body: InvitationRenew, p: Current
              summary='Revocar invitación pendiente, sin cambiar roles o sesiones existentes')
 def revoke_invitation(invitation_id: uuid.UUID, p: CurrentPrincipal, db: DB):
     return service.revoke_invitation(db, p, invitation_id)
+
+
+@router.post('/invitations/accept', response_model=StaffProfileOut, responses={400: {'description': 'Invitación no disponible'}, 409: {'description': 'Cuenta no elegible'}},
+             summary='Consumir una invitación para la propia cuenta interna, sin conceder roles')
+def accept_invitation(body: InvitationAccept, p: CurrentPrincipal, db: DB):
+    return service.accept_invitation(db, p, body)
+
+
+@router.get('/me', response_model=StaffProfileOut, responses={404: {'description': 'Ficha no encontrada'}, 409: {'description': 'Cuenta no elegible'}},
+            summary='Consultar únicamente la ficha interna de la sesión actual')
+def own_profile(p: CurrentPrincipal, db: DB):
+    return service.own_profile(db, p)
