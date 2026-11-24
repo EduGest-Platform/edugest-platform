@@ -10,6 +10,7 @@ import {
   inputCls,
 } from "../../ui"
 import { useAcademicCohorts, type AcademicCohort } from "./ApiCohorts"
+import { attendanceDraft } from './attendanceDraft'
 
 export function AttendanceTotals({
   summary,
@@ -142,15 +143,26 @@ function CohortAttendance({ cohort }: { cohort: AcademicCohort }) {
     return () => controller.abort()
   }, [cohort.id, cohort.can_record_attendance, attempt])
   const selectedSession = sessions.find((s) => s.id === sessionId)
-  const correction = !!selectedSession?.records.some(
+  const selectedRecord = selectedSession?.records.find(
     (r) => r.enrollment_id === enrollmentId,
   )
+  const correction = !!selectedRecord
+  const editorKey = JSON.stringify([sessionId, enrollmentId, selectedRecord?.id, selectedRecord?.version])
+  const [draftKey, setDraftKey] = useState('')
+  useEffect(() => {
+    const next = attendanceDraft(selectedRecord)
+    setStatus(next.status)
+    setModality(next.modality)
+    setJustification(next.justification)
+    setReason(next.reason)
+    setDraftKey(editorKey)
+  }, [selectedRecord, editorKey])
   const save = async (event: FormEvent, create: boolean) => {
     event.preventDefault()
     if (lock.current) return
     if (
       !create &&
-      (!selectedSession?.held ||
+      (draftKey !== editorKey || !selectedSession?.held ||
         !summary?.items.some((i) => i.enrollment_id === enrollmentId))
     )
       return
@@ -369,6 +381,7 @@ function CohortAttendance({ cohort }: { cohort: AcademicCohort }) {
               type="submit"
               disabled={
                 busy ||
+                draftKey !== editorKey ||
                 !selectedSession?.held ||
                 !enrollmentId ||
                 (correction && !reason.trim())
