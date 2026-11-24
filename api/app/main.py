@@ -20,6 +20,8 @@ from app.modules.audit.router import router as audit_router
 from app.modules.discussions.router import router as discussion_router
 from app.modules.automation.router import router as automation_router
 from app.modules.catalog.router import router as catalog_router
+from app.modules.catalog.publication_router import router as publication_router
+from app.modules.catalog.public_router import router as public_catalog_router
 from app.modules.competencies.router import router as competencies_router
 from app.modules.identity.router import router as identity_router
 from app.modules.preselection.router import router as preselection_router
@@ -55,6 +57,8 @@ app.add_middleware(SecurityResponseMiddleware, environment=settings.environment)
 for r in (
     identity_router,
     catalog_router,
+    publication_router,
+    public_catalog_router,
     admissions_router,
     requirements_router,
     prefilter_router,

@@ -14,7 +14,7 @@ export interface paths {
         /** Expedientes dentro del ámbito del usuario (captación / selección / administración) */
         get: operations["list_applications_api_v1_applications_get"];
         put?: never;
-        /** Inscripción pública: crea o reutiliza la ficha de persona */
+        /** Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona */
         post: operations["post_application_api_v1_applications_post"];
         delete?: never;
         options?: never;
@@ -392,6 +392,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{call_id}/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read editorial publication version (global administration) */
+        get: operations["get_publication_api_v1_calls__call_id__publication_get"];
+        /** Publish or withdraw an offer with optimistic version checking */
+        put: operations["update_publication_api_v1_calls__call_id__publication_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{call_id}/requirements": {
         parameters: {
             query?: never;
@@ -471,6 +489,23 @@ export interface paths {
         };
         /** Agregados de una convocatoria, sin datos nominales */
         get: operations["call_summary_api_v1_calls__call_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List editorial publication states (global administration) */
+        get: operations["list_publications_api_v1_catalog_publications_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -804,6 +839,40 @@ export interface paths {
         put?: never;
         /** Crear una versión borrador del árbol de competencias de un bootcamp */
         post: operations["post_framework_api_v1_programs__program_id__competency_frameworks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Published course offers, excluding drafts */
+        get: operations["list_courses_api_v1_public_courses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/courses/{course_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One published offer; drafts and unknown IDs are not found */
+        get: operations["get_course_api_v1_public_courses__course_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2411,6 +2480,73 @@ export interface components {
              */
             silence_warning_contacts: number;
         };
+        /** PublicCourseList */
+        PublicCourseList: {
+            /** Items */
+            items: components["schemas"]["PublicCourseOut"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * PublicCourseOut
+         * @description Explicit public projection; never serialize the entire Call or Program object.
+         */
+        PublicCourseOut: {
+            /**
+             * Admission State
+             * @enum {string}
+             */
+            admission_state: "abierta" | "cerrada";
+            /** Capacity */
+            capacity: number;
+            /**
+             * Closes On
+             * Format: date
+             */
+            closes_on: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Opens On
+             * Format: date
+             */
+            opens_on: string;
+            /** Program Id */
+            program_id: string;
+            /** Program Name */
+            program_name: string;
+        };
+        /** PublicationList */
+        PublicationList: {
+            /** Items */
+            items: components["schemas"]["PublicationOut"][];
+            /** Total */
+            total: number;
+        };
+        /** PublicationOut */
+        PublicationOut: {
+            /** Call Id */
+            call_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "draft" | "published";
+            /** Version */
+            version: number;
+        };
+        /** PublicationUpdate */
+        PublicationUpdate: {
+            /** Expected Version */
+            expected_version: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "draft" | "published";
+        };
         /** RecordOut */
         RecordOut: {
             /**
@@ -3533,6 +3669,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApplicationReceipt"];
                 };
+            };
+            /** @description Published offer not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -4677,6 +4820,105 @@ export interface operations {
             };
         };
     };
+    get_publication_api_v1_calls__call_id__publication_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_publication_api_v1_calls__call_id__publication_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale publication version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid publication payload or incomplete offer */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_call_requirements_api_v1_calls__call_id__requirements_get: {
         parameters: {
             query?: never;
@@ -4960,6 +5202,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CallSummaryOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_publications_api_v1_catalog_publications_get: {
+        parameters: {
+            query?: {
+                state?: ("draft" | "published") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationList"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -6267,6 +6556,78 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_courses_api_v1_public_courses_get: {
+        parameters: {
+            query?: {
+                program_id?: string | null;
+                admission_state?: ("abierta" | "cerrada") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCourseList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_course_api_v1_public_courses__course_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCourseOut"];
+                };
+            };
+            /** @description Published offer not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

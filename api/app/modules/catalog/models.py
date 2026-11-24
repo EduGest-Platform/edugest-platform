@@ -25,6 +25,8 @@ class Call(Base):
         CheckConstraint("silence_max_contacts BETWEEN 1 AND 20", name="ck_call_silence_max_contacts"),
         CheckConstraint("silence_warning_contacts BETWEEN 1 AND silence_max_contacts", name="ck_call_silence_warning_contacts"),
         CheckConstraint("selection_quorum BETWEEN 1 AND 5", name="ck_call_selection_quorum"),
+        CheckConstraint("publication_state IN ('draft','published')", name="ck_call_publication_state"),
+        CheckConstraint("publication_version >= 1", name="ck_call_publication_version"),
     )
     id: Mapped[str] = mapped_column(String(30), primary_key=True)
     program_id: Mapped[str] = mapped_column(ForeignKey("program.id"), index=True)
@@ -43,6 +45,9 @@ class Call(Base):
     silence_warning_contacts: Mapped[int] = mapped_column(Integer, default=2, server_default=text("2"))
     # Melissa round 3 Q11 (PO 23/11/2026): different people who must agree on a selection decision; default two.
     selection_quorum: Mapped[int] = mapped_column(Integer, default=2, server_default=text("2"))
+    # Editorial visibility is independent of whether applications are open or closed.
+    publication_state: Mapped[str] = mapped_column(String(10), default="draft", server_default="draft")
+    publication_version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
 
 
 # Spain (peninsula, Canary Islands) and Portugal (PO 19/11/2026). Decides which day is "today" for a cohort.

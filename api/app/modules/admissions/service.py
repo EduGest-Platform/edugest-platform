@@ -8,6 +8,7 @@ from app.core.authz import Principal
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.admissions.schemas import ApplicationCreate
 from app.modules.catalog.models import Call
+from app.modules.catalog.publication_policy import require_published
 from app.modules.identity.models import Person
 
 
@@ -33,8 +34,8 @@ def _find_or_create_person(db: Session, body: ApplicationCreate) -> tuple[Person
 def create_application(db: Session, body: ApplicationCreate, actor: Principal | None) -> Application:
     # Row lock on the call: serialises the per-call code counter.
     call = db.scalar(select(Call).where(Call.id == body.call_id).with_for_update())
-    if not call:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Convocatoria no encontrada")
+    # Share the call lock with publication changes; check before creating any person/application.
+    require_published(call)
     if call.estado != "abierta":
         raise HTTPException(status.HTTP_409_CONFLICT, "La convocatoria no admite inscripciones")
 
