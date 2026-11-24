@@ -392,6 +392,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/calls/{call_id}/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read editorial publication version (global administration) */
+        get: operations["get_publication_api_v1_calls__call_id__publication_get"];
+        /** Publish or withdraw an offer with optimistic version checking */
+        put: operations["update_publication_api_v1_calls__call_id__publication_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/calls/{call_id}/requirements": {
         parameters: {
             query?: never;
@@ -471,6 +489,23 @@ export interface paths {
         };
         /** Agregados de una convocatoria, sin datos nominales */
         get: operations["call_summary_api_v1_calls__call_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List editorial publication states (global administration) */
+        get: operations["list_publications_api_v1_catalog_publications_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2410,6 +2445,35 @@ export interface components {
              * @description Intentos sin respuesta para la alerta leve; salta sin esperar días
              */
             silence_warning_contacts: number;
+        };
+        /** PublicationList */
+        PublicationList: {
+            /** Items */
+            items: components["schemas"]["PublicationOut"][];
+            /** Total */
+            total: number;
+        };
+        /** PublicationOut */
+        PublicationOut: {
+            /** Call Id */
+            call_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "draft" | "published";
+            /** Version */
+            version: number;
+        };
+        /** PublicationUpdate */
+        PublicationUpdate: {
+            /** Expected Version */
+            expected_version: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "draft" | "published";
         };
         /** RecordOut */
         RecordOut: {
@@ -4677,6 +4741,107 @@ export interface operations {
             };
         };
     };
+    get_publication_api_v1_calls__call_id__publication_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_publication_api_v1_calls__call_id__publication_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale publication version */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_call_requirements_api_v1_calls__call_id__requirements_get: {
         parameters: {
             query?: never;
@@ -4960,6 +5125,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CallSummaryOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_publications_api_v1_catalog_publications_get: {
+        parameters: {
+            query?: {
+                state?: ("draft" | "published") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationList"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Call not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

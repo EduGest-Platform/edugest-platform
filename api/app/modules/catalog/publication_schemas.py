@@ -18,6 +18,11 @@ class PublicationOut(BaseModel):
     version: int
 
 
+class PublicationList(BaseModel):
+    items: list[PublicationOut]
+    total: int
+
+
 class PublicCourseOut(BaseModel):
     """Explicit public projection; never serialize the entire Call or Program object."""
     id: str
