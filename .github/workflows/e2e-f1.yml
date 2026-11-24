@@ -32,6 +32,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: F2 enrollment verifier regressions
+        run: python -m unittest discover -s e2e/tests -v
       - name: Disposable synthetic environment
         run: |
           DB_PASS=$(openssl rand -hex 24)
@@ -59,7 +64,9 @@ jobs:
           E2E_FIXTURE_ID: ci-f2-admission
         run: |
           node e2e/f2-admission-enrollment.mjs
+          docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic -e E2E_FIXTURE_ID="${E2E_FIXTURE_ID:-local-f2-admission}" api python < e2e/verify-f2.py
           node e2e/f2-admission-enrollment.mjs
+          docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic -e E2E_FIXTURE_ID="${E2E_FIXTURE_ID:-local-f2-admission}" api python < e2e/verify-f2.py
       - name: Remove disposable data
         if: always()
         run: docker compose -f infra/compose.yaml down -v
