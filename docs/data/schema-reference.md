@@ -14,6 +14,9 @@ Los marcadores muestran nulabilidad y unicidad simple; no inferir restricciones 
 
 ```mermaid
 erDiagram
+    access_change_request {
+        string id PK
+    }
     app_user {
         string id PK
     }
@@ -107,9 +110,19 @@ erDiagram
     simulated_reminder {
         string id PK
     }
+    staff_invitation {
+        string id PK
+    }
+    staff_profile {
+        string id PK
+    }
     submission {
         string id PK
     }
+    role_assignment |o--o{ access_change_request : applied_assignment_id
+    app_user ||--o{ access_change_request : requested_by
+    app_user |o--o{ access_change_request : reviewed_by
+    staff_profile ||--o{ access_change_request : staff_profile_id
     person |o--o| app_user : person_id
     call ||--o{ application : call_id
     person ||--o{ application : person_id
@@ -173,6 +186,10 @@ erDiagram
     application ||--o{ simulated_reminder : application_id
     call ||--o{ simulated_reminder : call_id
     app_user ||--o{ simulated_reminder : recorded_by
+    app_user ||--o{ staff_invitation : created_by
+    staff_profile ||--o{ staff_invitation : staff_profile_id
+    app_user ||--o{ staff_profile : created_by
+    app_user ||--o| staff_profile : user_id
     assignment ||--o{ submission : assignment_id
     enrollment ||--o{ submission : enrollment_id
     app_user ||--o{ submission : recorded_by
@@ -183,6 +200,34 @@ erDiagram
 
 Las restricciones CHECK conservan el vocabulario real de estados. Las reglas de transición y autorización viven en servicios y routers, no en este diagrama.
 CHECK constraints preserve the stored state vocabulary. Transition/authorization rules live in services and routers, not this diagram.
+
+### access_change_request
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| staff_profile_id | UUID | no | staff_profile.id |
+| requested_role | VARCHAR(20) | no | — |
+| scope_type | VARCHAR(12) | no | — |
+| scope_id | VARCHAR(30) | sí / yes | — |
+| state | VARCHAR(12) | no | — |
+| requested_by | UUID | no | app_user.id |
+| requested_at | TIMESTAMP WITH TIME ZONE | no | — |
+| reviewed_by | UUID | sí / yes | app_user.id |
+| reviewed_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+| applied_assignment_id | UUID | sí / yes | role_assignment.id |
+
+- CHECK `ck_access_request_distinct_reviewer`: `reviewed_by IS NULL OR reviewed_by <> requested_by`
+
+- CHECK `ck_access_request_review_shape`: `(state = 'requested' AND reviewed_by IS NULL AND reviewed_at IS NULL AND applied_assignment_id IS NULL) OR (state IN ('approved', 'rejected') AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL AND applied_assignment_id IS NULL) OR (state IN ('applied', 'revoked') AND reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL AND applied_assignment_id IS NOT NULL)`
+
+- CHECK `ck_access_request_role`: `requested_role IN ('admin', 'captacion', 'seleccion', 'docente', 'coordinacion')`
+
+- CHECK `ck_access_request_scope`: `scope_type IN ('global', 'program', 'call', 'cohort')`
+
+- CHECK `ck_access_request_scope_id`: `(scope_type = 'global') = (scope_id IS NULL)`
+
+- CHECK `ck_access_request_state`: `state IN ('requested', 'approved', 'rejected', 'applied', 'revoked')`
 
 ### app_user
 
@@ -778,6 +823,46 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - CHECK `ck_simulated_reminder_kind`: `kind IN ('documentation', 'exercises')`
 
 - UNIQUE `uq_simulated_reminder_key`: `idempotency_key`
+
+### staff_invitation
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| staff_profile_id | UUID | no | staff_profile.id |
+| token_hash | VARCHAR(64) | no | — |
+| created_by | UUID | no | app_user.id |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| expires_at | TIMESTAMP WITH TIME ZONE | no | — |
+| used_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+| revoked_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_staff_invitation_expiry`: `expires_at > created_at`
+
+- CHECK `ck_staff_invitation_hash`: `token_hash ~ '^[0-9a-f]{64}$'`
+
+- CHECK `ck_staff_invitation_revoked`: `revoked_at IS NULL OR revoked_at >= created_at`
+
+- CHECK `ck_staff_invitation_terminal`: `used_at IS NULL OR revoked_at IS NULL`
+
+- CHECK `ck_staff_invitation_used`: `used_at IS NULL OR (used_at >= created_at AND used_at <= expires_at)`
+
+- UNIQUE `unnamed`: `token_hash`
+
+### staff_profile
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |
+|---|---|---|---|
+| id | UUID | no | — |
+| user_id | UUID | no | app_user.id |
+| job_title | VARCHAR(120) | sí / yes | — |
+| state | VARCHAR(12) | no | — |
+| created_by | UUID | no | app_user.id |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — |
+
+- CHECK `ck_staff_profile_state`: `state IN ('pending', 'active', 'inactive')`
+
+- UNIQUE `unnamed`: `user_id`
 
 ### submission
 
