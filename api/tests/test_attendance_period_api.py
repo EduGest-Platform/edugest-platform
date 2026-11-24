@@ -9,7 +9,7 @@ from tests.conftest import CAPT_IA, DOCENTE, login
 @pytest.mark.parametrize('path', [
     '/api/v1/cohorts/COH-IA/attendance-sessions',
     '/api/v1/cohorts/COH-IA/attendance-summary',
-    '/api/v1/assistant/tools/attendance-summary?cohort_id=COH-IA',
+    '/api/v1/tools/attendance-summary?cohort_id=COH-IA',
 ])
 def test_inverted_period_does_not_return_empty_successful_metrics(client, db, path):
     headers = login(client, DOCENTE)
