@@ -31,6 +31,14 @@ class SelectionDecisionWrite(BaseModel):
         return self
 
 
+class SelectionApprovalOut(BaseModel):
+    decision: Decision
+    cohort_id: str | None
+    reason: str
+    actor: str | None
+    occurred_at: datetime
+
+
 class SelectionDecisionOut(BaseModel):
     id: uuid.UUID
     application_id: uuid.UUID
@@ -42,14 +50,10 @@ class SelectionDecisionOut(BaseModel):
     occurred_at: datetime
     cohort_id: str | None = Field(description="Cohorte de la matrícula creada (solo al admitir)")
     enrollment_id: uuid.UUID | None = Field(description="Matrícula creada por la decisión (solo al admitir)")
-
-
-class SelectionApprovalOut(BaseModel):
-    decision: Decision
-    cohort_id: str | None
-    reason: str
-    actor: str | None
-    occurred_at: datetime
+    votes: list[SelectionApprovalOut] = Field(
+        default_factory=list,
+        description="Votos históricos vinculados a la decisión, incluidos desacuerdos. Vacío si no constan; no reconstruye el quórum histórico.",
+    )
 
 
 class SelectionPendingOut(BaseModel):

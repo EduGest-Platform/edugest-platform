@@ -2304,6 +2304,11 @@ export interface components {
             reason: string;
             /** To Stage */
             to_stage: string;
+            /**
+             * Votes
+             * @description Votos históricos vinculados a la decisión, incluidos desacuerdos. Vacío si no constan; no reconstruye el quórum histórico.
+             */
+            votes?: components["schemas"]["SelectionApprovalOut"][];
         };
         /** SelectionDecisionWrite */
         SelectionDecisionWrite: {

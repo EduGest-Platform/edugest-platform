@@ -3467,6 +3467,14 @@
           "to_stage": {
             "title": "To Stage",
             "type": "string"
+          },
+          "votes": {
+            "description": "Votos históricos vinculados a la decisión, incluidos desacuerdos. Vacío si no constan; no reconstruye el quórum histórico.",
+            "items": {
+              "$ref": "#/components/schemas/SelectionApprovalOut"
+            },
+            "title": "Votes",
+            "type": "array"
           }
         },
         "required": [
