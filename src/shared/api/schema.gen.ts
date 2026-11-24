@@ -14,7 +14,7 @@ export interface paths {
         /** Expedientes dentro del ámbito del usuario (captación / selección / administración) */
         get: operations["list_applications_api_v1_applications_get"];
         put?: never;
-        /** Inscripción pública: crea o reutiliza la ficha de persona */
+        /** Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona */
         post: operations["post_application_api_v1_applications_post"];
         delete?: never;
         options?: never;
@@ -3669,6 +3669,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApplicationReceipt"];
                 };
+            };
+            /** @description Published offer not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

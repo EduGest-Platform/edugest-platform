@@ -67,7 +67,9 @@ def _load_in_scope(db: DB, p: CurrentPrincipal, perm: str, application_id: uuid.
     return a, person, call
 
 
-@router.post("/applications", response_model=ApplicationReceipt, status_code=201, summary="Inscripción pública: crea o reutiliza la ficha de persona")
+@router.post("/applications", response_model=ApplicationReceipt, status_code=201,
+             responses={404: {"description": "Published offer not found"}},
+             summary="Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona")
 def post_application(body: ApplicationCreate, db: DB, p: OptionalPrincipal) -> ApplicationReceipt:
     a = create_application(db, body, p)
     return ApplicationReceipt(id=a.id, codigo=a.codigo, call_id=a.call_id, stage=a.stage, created_at=a.created_at)

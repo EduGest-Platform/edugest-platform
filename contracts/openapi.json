@@ -5845,6 +5845,9 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "description": "Published offer not found"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -5861,7 +5864,7 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Inscripción pública: crea o reutiliza la ficha de persona",
+        "summary": "Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona",
         "tags": [
           "admissions"
         ]

@@ -56,3 +56,16 @@ def test_publication_contract_rejects_invalid_or_spoofed_fields(extra):
 def test_public_projection_contains_only_offer_fields():
     assert set(PublicCourseOut.model_fields) == {
         'id', 'program_id', 'program_name', 'name', 'opens_on', 'closes_on', 'capacity', 'admission_state'}
+
+
+@pytest.mark.parametrize('row', [None, SimpleNamespace(publication_state='draft')])
+def test_registration_rejects_unpublished_offer_before_person_or_application_write(row):
+    from app.modules.admissions.service import create_application
+
+    class LookupOnlyDatabase:
+        def scalar(self, query):
+            return row
+
+    with pytest.raises(HTTPException) as error:
+        create_application(LookupOnlyDatabase(), SimpleNamespace(call_id='SYNTHETIC'), None)
+    assert error.value.status_code == 404

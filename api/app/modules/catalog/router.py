@@ -16,7 +16,8 @@ router = APIRouter(prefix="/calls", tags=["catalog"])
 
 @router.get("", response_model=list[CallOut], summary="Convocatorias (público: solo datos de la oferta)")
 def list_calls(db: DB, estado: Literal["abierta", "cerrada"] | None = None) -> list[CallOut]:
-    q = select(Call, Program).join(Program, Program.id == Call.program_id).order_by(Call.opens_on.desc())
+    q = (select(Call, Program).join(Program, Program.id == Call.program_id)
+         .where(Call.publication_state == 'published').order_by(Call.opens_on.desc(), Call.id))
     if estado:
         q = q.where(Call.estado == estado)
     return [
