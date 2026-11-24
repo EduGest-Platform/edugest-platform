@@ -2063,6 +2063,21 @@
         "title": "DocumentationOut",
         "type": "object"
       },
+      "DocumentationWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "DocumentationWrite",
+        "type": "object"
+      },
       "EnrollmentAssessments": {
         "properties": {
           "current": {
@@ -9577,6 +9592,73 @@
           }
         ],
         "summary": "Read own or authorized admission-scope documentation status",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/documentation/accredit": {
+      "post": {
+        "operationId": "accredit_documentation_api_v1_enrollments__enrollment_id__documentation_accredit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentationWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Outside authorized scope"
+          },
+          "404": {
+            "description": "Enrollment not found"
+          },
+          "409": {
+            "description": "Stale version or unverifiable active admission"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record a human administrative accreditation, without granting academic access",
         "tags": [
           "learning"
         ]

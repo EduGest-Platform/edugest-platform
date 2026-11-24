@@ -66,3 +66,29 @@ def test_stale_documentation_write_is_a_conflict():
     with pytest.raises(HTTPException) as error:
         check_documentation_version(row, 1)
     assert error.value.status_code == 409
+
+
+@pytest.mark.parametrize('broken', [None, 'inactive', 'unlinked', 'waiting_list', 'person', 'call', 'decision'])
+def test_accreditation_requires_a_coherent_active_admission(broken):
+    from app.modules.learning.documentation_policy import require_accreditation_eligibility
+
+    person, application_id = uuid.uuid4(), uuid.uuid4()
+    row = SimpleNamespace(estado='activa', person_id=person, application_id=application_id, cohort_id='COH-IA')
+    application = SimpleNamespace(id=application_id, person_id=person, stage='admitida', call_id='CALL-IA')
+    cohort = SimpleNamespace(id='COH-IA', call_id='CALL-IA')
+    if broken == 'inactive':
+        row.estado = 'baja_voluntaria'
+    elif broken == 'unlinked':
+        application = None
+    elif broken == 'waiting_list':
+        application.stage = 'lista_espera'
+    elif broken == 'person':
+        application.person_id = uuid.uuid4()
+    elif broken == 'call':
+        cohort.call_id = 'CALL-DATA'
+    if broken is None:
+        require_accreditation_eligibility(row, application, cohort, True)
+    else:
+        with pytest.raises(HTTPException) as error:
+            require_accreditation_eligibility(row, application, cohort, broken != 'decision')
+        assert error.value.status_code == 409
