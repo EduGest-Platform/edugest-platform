@@ -2022,6 +2022,47 @@
         "title": "CurrentLevel",
         "type": "object"
       },
+      "DocumentationOut": {
+        "properties": {
+          "accredited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accredited At"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "accredited"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "state",
+          "version",
+          "accredited_at"
+        ],
+        "title": "DocumentationOut",
+        "type": "object"
+      },
       "EnrollmentAssessments": {
         "properties": {
           "current": {
@@ -9484,6 +9525,60 @@
         "summary": "Registrar el nivel 1–3 de un coder en una competencia, con evidencia",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/documentation": {
+      "get": {
+        "operationId": "read_documentation_api_v1_enrollments__enrollment_id__documentation_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Outside authorized scope"
+          },
+          "404": {
+            "description": "Enrollment not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read own or authorized admission-scope documentation status",
+        "tags": [
+          "learning"
         ]
       }
     },

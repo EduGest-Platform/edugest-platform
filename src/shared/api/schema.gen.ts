@@ -793,6 +793,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/enrollments/{enrollment_id}/documentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read own or authorized admission-scope documentation status */
+        get: operations["read_documentation_api_v1_enrollments__enrollment_id__documentation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/enrollments/{enrollment_id}/submissions": {
         parameters: {
             query?: never;
@@ -1959,6 +1976,23 @@ export interface components {
             level: (1 | 2 | 3) | null;
             /** Nombre */
             nombre: string;
+        };
+        /** DocumentationOut */
+        DocumentationOut: {
+            /** Accredited At */
+            accredited_at: string | null;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "accredited";
+            /** Version */
+            version: number;
         };
         /** EnrollmentAssessments */
         EnrollmentAssessments: {
@@ -6390,6 +6424,51 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_documentation_api_v1_enrollments__enrollment_id__documentation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentationOut"];
+                };
+            };
+            /** @description Outside authorized scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Enrollment not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
