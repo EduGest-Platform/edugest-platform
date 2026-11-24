@@ -1,6 +1,6 @@
 """Submission rules (KAN-56). The derived delivery state is a pure function so the assistant tools reuse it."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import status
 from sqlalchemy import select
@@ -17,11 +17,18 @@ from app.modules.submissions.models import Assignment, Submission
 from app.modules.submissions.schemas import AssignmentWrite, CheckResults, SubmissionOut, SubmissionWrite
 
 
+def _after(instant: datetime, deadline: datetime) -> bool:
+    """Compare elapsed instants, not local wall times in a repeated DST hour."""
+    if instant.utcoffset() is None or deadline.utcoffset() is None:
+        raise ValueError("Delivery deadlines require timezone-aware instants")
+    return instant.astimezone(timezone.utc) > deadline.astimezone(timezone.utc)
+
+
 def delivery_state(assignment: Assignment, submission: Submission | None, now: datetime) -> str:
     """on_time / late when delivered; pending / overdue when not. Same four states as the web (domain.ts)."""
     if submission is None:
-        return "overdue" if now > assignment.due_at else "pending"
-    return "late" if submission.first_submitted_at > assignment.due_at else "on_time"
+        return "overdue" if _after(now, assignment.due_at) else "pending"
+    return "late" if _after(submission.first_submitted_at, assignment.due_at) else "on_time"
 
 
 def submission_out(submission: Submission, assignment: Assignment) -> SubmissionOut:
@@ -30,7 +37,7 @@ def submission_out(submission: Submission, assignment: Assignment) -> Submission
         portfolio_url=submission.portfolio_url,
         check_results=CheckResults(**submission.check_results) if submission.check_results else None,
         status=submission.status, revision=submission.revision, first_submitted_at=submission.first_submitted_at, submitted_at=submission.submitted_at,
-        late=submission.first_submitted_at > assignment.due_at, reviewed_at=submission.reviewed_at,
+        late=_after(submission.first_submitted_at, assignment.due_at), reviewed_at=submission.reviewed_at,
     )
 
 
