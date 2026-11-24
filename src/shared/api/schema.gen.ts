@@ -652,6 +652,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/discussion-threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hilos de un único ámbito autorizado, paginados sin datos de otros ámbitos */
+        get: operations["list_threads_api_v1_discussion_threads_get"];
+        put?: never;
+        /** Crear un hilo interno en un expediente o programa autorizado */
+        post: operations["post_thread_api_v1_discussion_threads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/discussion-threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar un hilo interno, comprobando los permisos del expediente o programa */
+        get: operations["get_thread_api_v1_discussion_threads__thread_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/enrollments/{enrollment_id}/assessments": {
         parameters: {
             query?: never;
@@ -2784,6 +2819,62 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** ThreadCreate */
+        ThreadCreate: {
+            /** Application Id */
+            application_id?: string | null;
+            /** Program Id */
+            program_id?: string | null;
+            /**
+             * Scope Type
+             * @enum {string}
+             */
+            scope_type: "application" | "program";
+            /** Subject */
+            subject: string;
+        };
+        /** ThreadList */
+        ThreadList: {
+            /** Items */
+            items: components["schemas"]["ThreadOut"][];
+            /** Total */
+            total: number;
+        };
+        /** ThreadOut */
+        ThreadOut: {
+            /** Application Id */
+            application_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Created By
+             * Format: uuid
+             */
+            created_by: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Program Id */
+            program_id?: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolved By */
+            resolved_by: string | null;
+            /**
+             * Scope Type
+             * @enum {string}
+             */
+            scope_type: "application" | "program";
+            /** Subject */
+            subject: string;
+            /** Version */
+            version: number;
         };
         /** ToolPeriod */
         ToolPeriod: {
@@ -5100,6 +5191,147 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_threads_api_v1_discussion_threads_get: {
+        parameters: {
+            query: {
+                scope_type: "application" | "program";
+                application_id?: string | null;
+                program_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadList"];
+                };
+            };
+            /** @description Sin permiso en el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo o ámbito no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_thread_api_v1_discussion_threads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThreadCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Sin permiso en el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo o ámbito no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_thread_api_v1_discussion_threads__thread_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                thread_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Sin permiso en el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo o ámbito no encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
