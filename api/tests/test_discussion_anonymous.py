@@ -13,6 +13,9 @@ from app.main import app
     ('get', f'/api/v1/discussion-threads/{uuid.uuid4()}', None),
     ('get', f'/api/v1/discussion-threads/{uuid.uuid4()}/comments', None),
     ('post', f'/api/v1/discussion-threads/{uuid.uuid4()}/comments', {'body': 'Synthetic comment'}),
+    ('patch', f'/api/v1/discussion-comments/{uuid.uuid4()}', {'body': 'Synthetic edit', 'expected_version': 1}),
+    ('delete', f'/api/v1/discussion-comments/{uuid.uuid4()}', {'expected_version': 1}),
+    ('post', f'/api/v1/discussion-threads/{uuid.uuid4()}/resolution', {'resolved': True, 'expected_version': 1}),
 ])
 def test_thread_routes_require_authentication(method, path, body):
     with TestClient(app) as client:

@@ -2,10 +2,11 @@
 from sqlalchemy import func, select
 
 from app.core import audit
+from app.core.db import utcnow
 from app.core.errors import UserFacingError
-from app.modules.discussions.access import require_scope, require_thread
+from app.modules.discussions.access import require_any_scope, require_scope, require_thread
 from app.modules.discussions.models import DiscussionComment, DiscussionThread
-from app.modules.discussions.schemas import CommentOut, ThreadOut
+from app.modules.discussions.schemas import CommentOut, ThreadOut, ThreadScope
 
 
 def thread_out(thread):
@@ -80,3 +81,72 @@ def list_comments(db, actor, thread_id, limit, offset):
     audit.record(db, actor, 'discussion.comments_viewed', 'discussion_thread', str(thread.id))
     db.commit()
     return dict(items=[comment_out(row) for row in rows], total=total)
+
+
+def require_version(current, expected, kind):
+    if current != expected:
+        raise UserFacingError(409, f'stale_{kind}', 'Hay una revisión nueva. Actualiza el hilo antes de guardar.')
+
+
+def require_owner_or_moderator(db, actor, thread, owner_id):
+    if owner_id == actor.user.id:
+        return
+    scope = require_scope(db, actor, ThreadScope(scope_type=thread.scope_type, application_id=thread.application_id, program_id=thread.program_id), write=True)
+    # No non-admin role is granted this permission; only an existing matching wildcard can moderate.
+    if not actor.can('discussions.moderate', scope):
+        raise UserFacingError(403, 'discussion_owner_required', 'Solo la autoría o administración puede realizar este cambio.')
+
+
+def load_comment_for_change(db, actor, comment_id):
+    require_any_scope(actor, write=True)
+    thread_id = db.scalar(select(DiscussionComment.thread_id).where(DiscussionComment.id == comment_id))
+    if thread_id is None:
+        raise UserFacingError(404, 'comment_not_found', 'No encontramos este comentario.')
+    # Every write locks thread first, then comment, matching the reply/resolve lock order.
+    thread = require_thread(db, actor, thread_id, write=True, lock=True)
+    comment = db.scalar(select(DiscussionComment).where(DiscussionComment.id == comment_id, DiscussionComment.thread_id == thread.id).with_for_update())
+    if comment is None:
+        raise UserFacingError(404, 'comment_not_found', 'No encontramos este comentario.')
+    require_owner_or_moderator(db, actor, thread, comment.actor_user_id)
+    require_open(thread)
+    if comment.deleted_at is not None:
+        raise UserFacingError(409, 'comment_deleted', 'Este comentario ya está borrado.')
+    return thread, comment
+
+
+def edit_comment(db, actor, comment_id, body):
+    thread, comment = load_comment_for_change(db, actor, comment_id)
+    require_version(comment.version, body.expected_version, 'comment')
+    comment.body, comment.edited_at = body.body, utcnow()
+    comment.version += 1
+    thread.version += 1
+    audit.record(db, actor, 'discussion.comment_edited', 'discussion_comment', str(comment.id), thread_id=str(thread.id), version=comment.version)
+    db.commit()
+    return comment_out(comment)
+
+
+def delete_comment(db, actor, comment_id, body):
+    thread, comment = load_comment_for_change(db, actor, comment_id)
+    require_version(comment.version, body.expected_version, 'comment')
+    comment.deleted_at, comment.deleted_by = utcnow(), actor.user.id
+    comment.version += 1
+    thread.version += 1
+    audit.record(db, actor, 'discussion.comment_deleted', 'discussion_comment', str(comment.id), thread_id=str(thread.id), version=comment.version)
+    db.commit()
+    return comment_out(comment)
+
+
+def resolve_thread(db, actor, thread_id, body):
+    thread = require_thread(db, actor, thread_id, write=True, lock=True)
+    require_owner_or_moderator(db, actor, thread, thread.created_by)
+    require_version(thread.version, body.expected_version, 'thread')
+    if (thread.resolved_at is not None) == body.resolved:
+        db.commit()
+        return thread_out(thread)
+    thread.resolved_by = actor.user.id if body.resolved else None
+    thread.resolved_at = utcnow() if body.resolved else None
+    thread.version += 1
+    audit.record(db, actor, 'discussion.thread_resolved' if body.resolved else 'discussion.thread_reopened',
+                 'discussion_thread', str(thread.id), version=thread.version)
+    db.commit()
+    return thread_out(thread)

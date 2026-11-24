@@ -26,12 +26,15 @@ def require_scope(db, actor: Principal, scope: ThreadScope, write=False):
         call = db.get(Call, application.call_id)
         if call is None:
             raise UserFacingError(404, 'call_not_found', 'No encontramos esta convocatoria.')
-        actor.require(permission, Scope(program_id=call.program_id, call_id=call.id))
+        effective_scope = Scope(program_id=call.program_id, call_id=call.id)
+        actor.require(permission, effective_scope)
     else:
         # A call assignment never grants access to every thread of its program.
-        actor.require(permission, Scope(program_id=scope.program_id))
+        effective_scope = Scope(program_id=scope.program_id)
+        actor.require(permission, effective_scope)
         if db.get(Program, scope.program_id) is None:
             raise UserFacingError(404, 'program_not_found', 'No encontramos este programa.')
+    return effective_scope
 
 
 def require_thread(db, actor: Principal, thread_id, write=False, lock=False):

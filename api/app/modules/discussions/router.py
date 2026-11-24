@@ -9,6 +9,7 @@ from app.core.errors import UserFacingError
 from app.modules.discussions import service
 from app.modules.discussions.schemas import ThreadCreate, ThreadList, ThreadOut, ThreadScope
 from app.modules.discussions.schemas import CommentCreate, CommentList, CommentOut
+from app.modules.discussions.schemas import CommentEdit, ResolutionWrite, VersionWrite
 
 router = APIRouter(tags=['discussions'])
 ERRORS = {403: {'description': 'Sin permiso en el ámbito'}, 404: {'description': 'Hilo o ámbito no encontrado'}}
@@ -49,3 +50,24 @@ def post_comment(thread_id: uuid.UUID, body: CommentCreate, p: CurrentPrincipal,
 def get_comments(thread_id: uuid.UUID, p: CurrentPrincipal, db: DB,
                  limit: int = Query(default=50, ge=1, le=200), offset: int = Query(default=0, ge=0)):
     return service.list_comments(db, p, thread_id, limit, offset)
+
+
+@router.patch('/discussion-comments/{comment_id}', response_model=CommentOut,
+              responses={**ERRORS, 409: {'description': 'Revisión antigua, comentario borrado o hilo resuelto'}},
+              summary='Editar el comentario propio o moderar como administración con versión observada')
+def patch_comment(comment_id: uuid.UUID, body: CommentEdit, p: CurrentPrincipal, db: DB):
+    return service.edit_comment(db, p, comment_id, body)
+
+
+@router.delete('/discussion-comments/{comment_id}', response_model=CommentOut,
+               responses={**ERRORS, 409: {'description': 'Revisión antigua, comentario borrado o hilo resuelto'}},
+               summary='Borrado lógico con versión observada; conserva respuestas sin mostrar el texto borrado')
+def delete_comment(comment_id: uuid.UUID, body: VersionWrite, p: CurrentPrincipal, db: DB):
+    return service.delete_comment(db, p, comment_id, body)
+
+
+@router.post('/discussion-threads/{thread_id}/resolution', response_model=ThreadOut,
+             responses={**ERRORS, 409: {'description': 'Revisión de hilo antigua'}},
+             summary='Resolver o reabrir el hilo propio, o moderar como administración, sin alterar candidaturas')
+def resolve_thread(thread_id: uuid.UUID, body: ResolutionWrite, p: CurrentPrincipal, db: DB):
+    return service.resolve_thread(db, p, thread_id, body)
