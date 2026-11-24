@@ -5,6 +5,8 @@ Datos **exclusivamente sintéticos**. La autorización se comprueba en el servid
 
 ## Arranque local
 
+Pasos completos y límites operativos / Complete setup and operating boundaries: [instalación local / local installation](../docs/deploy/local-installation.md).
+
 ```bash
 cd api
 python -m venv .venv && . .venv/bin/activate
@@ -14,7 +16,7 @@ cp .env.example .env              # pon la contraseña de infra/.env en GISTAR_D
 # In .env, set GISTAR_DEMO_PASSWORD to a strong, non-empty, environment-specific value before continuing.
 alembic upgrade head
 python -m app.seed                # carga ../src/gistar/seed.json (idempotente; --reset para recargar)
-uvicorn app.main:app --reload     # http://localhost:8000/docs
+uvicorn app.main:app --host 127.0.0.1 --reload --no-access-log  # http://localhost:8000/docs
 ```
 
 Web contra la API (desde la raíz): `VITE_GISTAR_API_URL=http://localhost:8000 pnpm dev`.
@@ -23,8 +25,9 @@ Alternativa con contenedores: `docker compose -f infra/compose.yaml up --build` 
 ## Pruebas
 
 ```bash
-# GISTAR_TEST_DATABASE_URL está en api/.env (git-ignorado); bash la carga así:
-export $(grep GISTAR_TEST_DATABASE_URL .env) && pytest
+# Preparar GISTAR_TEST_DATABASE_URL en el entorno sin imprimir su valor.
+# Prepare the isolated test DB environment variable without printing its value.
+python -m pytest
 ```
 
 En PowerShell: lee la variable de `api/.env` y expórtala antes de `pytest` (sin imprimirla).
@@ -71,9 +74,9 @@ No se renumera: cambiar `revision` en una base ya migrada (staging) rompería `a
 
 ## Límite de intentos de inicio de sesión / Login attempt limit
 
-**ES.** Tras `GISTAR_LOGIN_MAX_FAILURES` (5) fallos para la misma cuenta en `GISTAR_LOGIN_WINDOW_MINUTES` (15) minutos, `/auth/login` responde `429` con `Retry-After`, aunque la contraseña sea correcta. Por cliente el límite es 4 veces mayor. Un acceso correcto reinicia el contador de la cuenta. Los contadores viven en memoria, con claves SHA-256 sin correo ni IP en claro: vale para una sola instancia. Con varias instancias hay que moverlos a base de datos o a una caché compartida.
+**ES.** Tras `GISTAR_LOGIN_MAX_FAILURES` (5) fallos para la misma cuenta en `GISTAR_LOGIN_WINDOW_MINUTES` (15) minutos, `/auth/login` responde `429` con `Retry-After`, aunque la contraseña sea correcta. Por cliente el límite es 4 veces mayor. Un acceso correcto reinicia el contador de la cuenta. Los contadores viven en memoria, con claves SHA-256 sin correo ni IP en claro: vale para una sola instancia. Con varias instancias hay que moverlos a base de datos o a una caché compartida. Detrás de un proxy (Render), `GISTAR_TRUSTED_PROXY_HOPS=1` (en `render*.yaml`) hace que la IP por cliente sea la entrada **más a la derecha** de `X-Forwarded-For`, la que añade el proxy. Las de la izquierda las escribe el cliente y nunca se usan. Con 0 (local) se ignora la cabecera. **Pendiente de verificar en staging**, y de nuevo si cambia la cadena de proxies: enviar `X-Forwarded-For: 1.2.3.4` y confirmar que la entrada de más a la derecha es tu IP pública. Si Render añade más saltos, sube el valor.
 
-**EN.** After `GISTAR_LOGIN_MAX_FAILURES` (5) failures for the same account within `GISTAR_LOGIN_WINDOW_MINUTES` (15) minutes, `/auth/login` answers `429` with `Retry-After`, even when the password is correct. The per-client limit is 4 times higher. A successful login clears the account counter. Counters are kept in memory under SHA-256 keys, with no e-mail or IP in clear text, so this only covers a single instance. With several instances they must move to the database or a shared cache.
+**EN.** After `GISTAR_LOGIN_MAX_FAILURES` (5) failures for the same account within `GISTAR_LOGIN_WINDOW_MINUTES` (15) minutes, `/auth/login` answers `429` with `Retry-After`, even when the password is correct. The per-client limit is 4 times higher. A successful login clears the account counter. Counters are kept in memory under SHA-256 keys, with no e-mail or IP in clear text, so this only covers a single instance. With several instances they must move to the database or a shared cache. Behind a proxy (Render), `GISTAR_TRUSTED_PROXY_HOPS=1` (in `render*.yaml`) makes the per-client IP the **right-most** `X-Forwarded-For` entry, the one the proxy appends. Entries to its left are client-written and never used. With 0 (local), the header is ignored. **To verify on staging**, and again whenever the proxy chain changes: send `X-Forwarded-For: 1.2.3.4` and confirm the right-most entry is your public IP. If Render adds more hops, raise the value.
 
 ## Estructura
 

@@ -18,10 +18,12 @@ class Settings(BaseSettings):
     environment: Literal["local", "staging", "production"] = "production"
     database_url: str = "postgresql+psycopg://gistar:gistar@localhost:5432/gistar"
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:8443", "http://localhost:3000"]
-    session_ttl_hours: int = 8
+    session_ttl_hours: int = Field(default=8, ge=1, le=24)
     # Login brute-force protection: failed attempts per account inside the window before 429 (4x that per client).
-    login_max_failures: int = 5
-    login_window_minutes: int = 15
+    login_max_failures: int = Field(default=5, ge=1, le=100)
+    login_window_minutes: int = Field(default=15, ge=1, le=1440)
+    # Proxies in front of the API that append to X-Forwarded-For (Render: 1). 0 = use the TCP peer, ignore the header.
+    trusted_proxy_hops: int = Field(default=0, ge=0, le=5)
     # Synthetic demo accounts only. Never reuse for real people.
     demo_password: str = "gistar-demo-2026"
     # scrypt cost; tests lower it to keep the suite fast.

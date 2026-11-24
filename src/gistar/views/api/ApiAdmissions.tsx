@@ -9,6 +9,7 @@ import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { ServerSilenceReview } from './ServerSilenceReview'
+import { ServerSelection } from './ServerSelection'
 import { Button, Card, Empty, Field, Notice, PageTitle, Status, Table, inputCls } from '../../ui'
 
 type Call = Schemas['CallOut']
@@ -390,6 +391,7 @@ export function ApiApplications() {
 }
 
 function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
+  const [selectionDirty, setSelectionDirty] = useState(false)
   const { toast } = useGistar()
   const [d, setD] = useState<Schemas['ApplicationDetail'] | null>(null)
   const [actorFilter, setActorFilter] = useState('')
@@ -430,10 +432,10 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
       open
       size="lg"
       onClose={onClose}
-      dirty={!!ev.resumen.trim()}
+      dirty={!!ev.resumen.trim() || selectionDirty}
       title={d ? `${d.person.display_name} · ${d.codigo}` : 'Expediente'}
       subtitle={d ? `${d.call_id} · ${d.person.email}` : undefined}
-      footer={<Button onClick={onClose}>Cerrar</Button>}
+      footer={(requestClose) => <Button onClick={requestClose}>Cerrar</Button>}
     >
       {error && (
         <Notice tone="warning" live="assertive">
@@ -457,7 +459,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
               <span className="text-muted">Disponibilidad:</span> {d.disponibilidad}
             </p>
             <ServerRequirementReview key={`${d.id}:${d.call_id}`} applicationId={d.id} callId={d.call_id} />
-            <Notice>Los cambios de etapa, la valoración y la decisión se registrarán con revisión humana en el siguiente incremento (F2).</Notice>
+            <ServerSelection applicationId={d.id} callId={d.call_id} onDirty={setSelectionDirty} onChanged={() => { void load(); onChanged() }} />
           </section>
           <section>
             <h3 className="mb-3 text-sm font-semibold">Historial CRM</h3>

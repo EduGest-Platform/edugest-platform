@@ -38,7 +38,15 @@ def cohort_access(db: Session, p: Principal, cohort_id: str, read_perm: str, agg
 
 
 def enrollment_ids_of(db: Session, cohort_id: str) -> list[uuid.UUID]:
-    query = select(Enrollment.id).where(Enrollment.cohort_id == cohort_id).order_by(Enrollment.created_at, Enrollment.id)
+    """KAN-158: withdrawn coders (baja_voluntaria) are never pending, overdue or counted in totals.
+
+    Finished enrollments stay: when a cohort ends every enrollment becomes finalizada and its history must remain visible.
+    """
+    query = (
+        select(Enrollment.id)
+        .where(Enrollment.cohort_id == cohort_id, Enrollment.estado != "baja_voluntaria")
+        .order_by(Enrollment.created_at, Enrollment.id)
+    )
     return list(db.scalars(query))
 
 

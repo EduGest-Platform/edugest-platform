@@ -20,6 +20,8 @@ Plataforma para centralizar inscripción, preselección, selección, formación 
 
 ## Comandos
 
+Guía completa para PowerShell/POSIX, entorno local, migraciones y pruebas aisladas: [instalación local](docs/deploy/local-installation.md). / Complete PowerShell/POSIX setup, migrations and isolated-test instructions: [local installation](docs/deploy/local-installation.md).
+
 ```bash
 pnpm install && pnpm dev          # web
 pnpm test                         # Vitest (dominio web)

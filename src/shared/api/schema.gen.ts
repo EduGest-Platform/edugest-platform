@@ -479,6 +479,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cohortes del ámbito académico autorizado, sin alumnado */
+        get: operations["list_academic_cohorts_api_v1_cohorts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/assignments": {
         parameters: {
             query?: never;
@@ -814,6 +831,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcademicCohortOut */
+        AcademicCohortOut: {
+            /** Can Record Attendance */
+            can_record_attendance: boolean;
+            /**
+             * Fin
+             * Format: date
+             */
+            fin: string;
+            /** Id */
+            id: string;
+            /**
+             * Inicio
+             * Format: date
+             */
+            inicio: string;
+            /** Nombre */
+            nombre: string;
+            /** Program Id */
+            program_id: string;
+            /** Timezone */
+            timezone: string;
+        };
         /**
          * ApplicationCreate
          * @description Public inscription form. Only the minimum data needed for pre-selection (data minimisation).
@@ -4422,6 +4462,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_academic_cohorts_api_v1_cohorts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcademicCohortOut"][];
                 };
             };
         };

@@ -16,6 +16,20 @@ _failures: dict[str, deque[float]] = defaultdict(deque)
 _lock = threading.Lock()
 
 
+def client_ip(peer: str | None, forwarded_for: str | None) -> str | None:
+    """The client address seen by the outermost trusted proxy.
+
+    Each trusted proxy appends the address it received from, so the real client is the Nth entry from the RIGHT
+    (N = trusted_proxy_hops). Entries further left are written by the client and can be forged, so they are never used.
+    With no trusted proxy (local), the header is ignored and the TCP peer is the client.
+    """
+    hops = settings.trusted_proxy_hops
+    if hops == 0 or not forwarded_for:
+        return peer
+    entries = [item.strip() for item in forwarded_for.split(",") if item.strip()]
+    return entries[-hops] if len(entries) >= hops else peer
+
+
 def _key(kind: str, value: str) -> str:
     return kind + ":" + hashlib.sha256(value.lower().encode("utf-8")).hexdigest()
 

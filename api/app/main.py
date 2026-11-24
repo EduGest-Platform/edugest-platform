@@ -11,6 +11,7 @@ from app import models  # noqa: F401  (registers metadata)
 from app.core.config import settings
 from app.core.db import engine
 from app.core.error_handling import REQUEST_ID_HEADER, install_error_handling
+from app.core.response_policy import SecurityResponseMiddleware
 from app.modules.admissions.router import router as admissions_router
 from app.modules.assistant.router import router as assistant_router
 from app.modules.assistant_tools.router import router as assistant_tools_router
@@ -24,6 +25,7 @@ from app.modules.preselection.router import router as preselection_router
 from app.modules.requirements.router import router as requirements_router
 from app.modules.requirements.prefilter import router as prefilter_router
 from app.modules.learning.team_router import router as teaching_team_router
+from app.modules.learning.directory_router import router as academic_directory_router
 from app.modules.selection.router import router as selection_router
 from app.modules.submissions.router import router as submissions_router
 
@@ -47,6 +49,7 @@ app.add_middleware(
 )
 
 API = "/api/v1"
+app.add_middleware(SecurityResponseMiddleware, environment=settings.environment)
 for r in (
     identity_router,
     catalog_router,
@@ -62,6 +65,7 @@ for r in (
     assistant_router,
     assistant_tools_router,
     teaching_team_router,
+    academic_directory_router,
     audit_router,
 ):
     app.include_router(r, prefix=API)
