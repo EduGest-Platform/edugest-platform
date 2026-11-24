@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -25,11 +25,28 @@ class Citation(BaseModel):
     excerpt: str
 
 
+class RecordSource(BaseModel):
+    tool: str = Field(description="Herramienta de solo lectura usada (get_attendance_summary, get_pending_submissions, get_competency_progress)")
+    source: str = Field(description="Tablas de origen")
+    rule: str = Field(description="Regla de cálculo aplicada")
+    generated_at: datetime = Field(description="Momento de la consulta: los datos son de este instante")
+    aggregate_only: bool = Field(description="Verdadero si el rol solo puede ver totales")
+
+
 class AskOut(BaseModel):
-    status: Literal["answered", "no_source"] = Field(description="no_source = abstención: no hay fuente en tu ámbito")
-    mode: Literal["extractive"] = Field(description="extractive = fragmento literal del documento (el modo generated llega con T10)")
-    retrieval: Literal["hybrid", "keyword"] = Field(description="hybrid = palabras y significado; keyword = solo palabras")
+    # Fields with a default stay optional in the contract, so clients written before KAN-195 keep compiling.
+    model_config = ConfigDict(json_schema_mode_override="validation")
+
+    status: Literal["answered", "no_source"] = Field(description="no_source = abstención: no hay fuente o no hay registros")
+    mode: Literal["extractive", "template"] = Field(
+        description="extractive = fragmento literal del documento; template = frase fija con los totales de una herramienta")
+    retrieval: Literal["hybrid", "keyword"] | None = Field(
+        description="hybrid = palabras y significado; keyword = solo palabras; nulo si la respuesta sale de registros")
     answer: str
     citations: list[Citation]
     as_of: date = Field(description="Fecha de corte: la vigencia de los documentos se comprueba en esta fecha")
     scope_cohorts: list[str] = Field(description="Cohortes en las que se ha buscado")
+    source_kind: Literal["documents", "records"] = Field(
+        default="documents", description="documents = documentos del curso; records = registros operativos actuales")
+    record: RecordSource | None = Field(
+        default=None, description="Solo si source_kind = records: herramienta, fuente, regla y momento de la consulta")

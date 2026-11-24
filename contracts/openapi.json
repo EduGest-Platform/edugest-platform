@@ -392,19 +392,40 @@
             "type": "array"
           },
           "mode": {
-            "const": "extractive",
-            "description": "extractive = fragmento literal del documento (el modo generated llega con T10)",
+            "description": "extractive = fragmento literal del documento; template = frase fija con los totales de una herramienta",
+            "enum": [
+              "extractive",
+              "template"
+            ],
             "title": "Mode",
             "type": "string"
           },
-          "retrieval": {
-            "description": "hybrid = palabras y significado; keyword = solo palabras",
-            "enum": [
-              "hybrid",
-              "keyword"
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecordSource"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Retrieval",
-            "type": "string"
+            "description": "Solo si source_kind = records: herramienta, fuente, regla y momento de la consulta"
+          },
+          "retrieval": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hybrid",
+                  "keyword"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "hybrid = palabras y significado; keyword = solo palabras; nulo si la respuesta sale de registros",
+            "title": "Retrieval"
           },
           "scope_cohorts": {
             "description": "Cohortes en las que se ha buscado",
@@ -414,8 +435,18 @@
             "title": "Scope Cohorts",
             "type": "array"
           },
+          "source_kind": {
+            "default": "documents",
+            "description": "documents = documentos del curso; records = registros operativos actuales",
+            "enum": [
+              "documents",
+              "records"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
           "status": {
-            "description": "no_source = abstención: no hay fuente en tu ámbito",
+            "description": "no_source = abstención: no hay fuente o no hay registros",
             "enum": [
               "answered",
               "no_source"
@@ -2739,6 +2770,45 @@
           "updated_at"
         ],
         "title": "RecordOut",
+        "type": "object"
+      },
+      "RecordSource": {
+        "properties": {
+          "aggregate_only": {
+            "description": "Verdadero si el rol solo puede ver totales",
+            "title": "Aggregate Only",
+            "type": "boolean"
+          },
+          "generated_at": {
+            "description": "Momento de la consulta: los datos son de este instante",
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "rule": {
+            "description": "Regla de cálculo aplicada",
+            "title": "Rule",
+            "type": "string"
+          },
+          "source": {
+            "description": "Tablas de origen",
+            "title": "Source",
+            "type": "string"
+          },
+          "tool": {
+            "description": "Herramienta de solo lectura usada (get_attendance_summary, get_pending_submissions, get_competency_progress)",
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "source",
+          "rule",
+          "generated_at",
+          "aggregate_only"
+        ],
+        "title": "RecordSource",
         "type": "object"
       },
       "RecordWrite": {

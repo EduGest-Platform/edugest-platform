@@ -14,7 +14,8 @@ from app.core import audit
 from app.core.db import utcnow
 from app.core.deps import DB, CurrentPrincipal
 from app.core.errors import UserFacingError
-from app.modules.assistant.schemas import AskIn, AskOut, Citation
+from app.modules.assistant import records
+from app.modules.assistant.schemas import AskIn, AskOut, Citation, RecordSource
 from app.modules.catalog.models import Cohort
 from app.modules.knowledge.embedder import GeminiEmbedder
 from app.modules.knowledge.ingest import build_embedder
@@ -25,6 +26,7 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 
 MADRID = ZoneInfo("Europe/Madrid")
 NO_SOURCE = "No consta en la documentación de tu curso. Consulta con tu equipo docente."
+CHOOSE_COHORT = "Tienes varias cohortes. Indica cuál (por ejemplo, COH-IA) para consultar los registros."
 
 
 def today() -> date:
@@ -44,6 +46,28 @@ def _excerpt(hit: Hit) -> str:
     return hit.text[cut + 2:] if cut != -1 else hit.text
 
 
+def _records_answer(db: DB, p: CurrentPrincipal, topic: records.Topic, cohorts: list[str]) -> AskOut:
+    """KAN-195: figures come from the read-only tools (#97), never from the documents or from free SQL."""
+    as_of = today()
+    if len(cohorts) > 1:
+        audit.record(db, p, "assistant.ask", "knowledge", None, result="no_source", mode="template", source_kind="records",
+                     topic=topic, reason="cohort_required")
+        db.commit()
+        return AskOut(status="no_source", mode="template", retrieval=None, answer=CHOOSE_COHORT, citations=[], as_of=as_of,
+                      scope_cohorts=cohorts, source_kind="records")
+    found = records.answer(db, p, topic, cohorts[0])
+    result = "answered" if found.has_data else "no_source"
+    audit.record(db, p, "assistant.ask", "cohort", cohorts[0], result=result, mode="template", source_kind="records",
+                 tool=found.tool, aggregate_only=found.aggregate_only)
+    db.commit()
+    return AskOut(
+        status=result, mode="template", retrieval=None, answer=found.text, citations=[], as_of=as_of, scope_cohorts=cohorts,
+        source_kind="records",
+        record=RecordSource(tool=found.tool, source=found.source, rule=found.rule, generated_at=found.generated_at,
+                            aggregate_only=found.aggregate_only),
+    )
+
+
 @router.post("/ask", response_model=AskOut, responses={403: {"description": "Sin documentos en tu ámbito o cohorte ajena"}},
              summary="Preguntar a la documentación del curso: respuesta citada o «no consta»")
 def ask(body: AskIn, p: CurrentPrincipal, db: DB) -> AskOut:
@@ -55,6 +79,12 @@ def ask(body: AskIn, p: CurrentPrincipal, db: DB) -> AskOut:
         scope = KnowledgeScope(cohorts=frozenset({cohort.id}), programs=frozenset({cohort.program_id}))
     if scope.is_empty:
         raise _forbidden(db, p, "El asistente de documentación es para el equipo docente, coordinación y coders matriculados.")
+
+    topic = records.topic_of(body.question)
+    if topic is not None:
+        cohorts = records.record_cohorts(db, p, topic, scope.cohorts)
+        if cohorts:
+            return _records_answer(db, p, topic, cohorts)
 
     as_of = today()
     embedder, _ = build_embedder(dry_run=False)
