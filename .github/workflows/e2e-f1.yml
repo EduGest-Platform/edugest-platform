@@ -37,6 +37,8 @@ jobs:
           python-version: "3.12"
       - name: F2 enrollment verifier regressions
         run: python -m unittest discover -s e2e/tests -v
+      - name: Public catalogue outcome regressions (KAN-227)
+        run: node --test e2e/tests/test_public_catalog_outcome.mjs
       - name: Disposable synthetic environment
         run: |
           DB_PASS=$(openssl rand -hex 24)
@@ -61,9 +63,10 @@ jobs:
           WEB_URL: http://localhost:8443/
           GISTAR_API: http://localhost:8000
           E2E_FIXTURE_ID: ci-public-catalog
+          E2E_CALL_ID: CONV-IA-2027A
         run: |
-          node e2e/public-catalog.mjs
-          node e2e/public-catalog.mjs
+          E2E_EXPECT_OUTCOME=created node e2e/public-catalog.mjs
+          E2E_EXPECT_OUTCOME=duplicate node e2e/public-catalog.mjs
       - name: Prepare F2 synthetic reference cohort (KAN-192)
         run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
       - name: F2 HTTP admission and repeat-run integrity (KAN-192)
