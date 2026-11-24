@@ -57,3 +57,16 @@ def test_self_review_is_forbidden_even_before_database_access():
         require_distinct_reviewer(actor, identity)
     assert error.value.status_code == 403
     require_distinct_reviewer(actor, uuid.uuid4())
+
+
+@pytest.mark.parametrize('state', ['used', 'revoked', 'missing', 'naive'])
+def test_invalid_invitation_states_are_unavailable(state):
+    now = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    row = SimpleNamespace(used_at=None, revoked_at=None, expires_at=now + timedelta(hours=1))
+    if state == 'missing':
+        row = None
+    elif state == 'naive':
+        row.expires_at = row.expires_at.replace(tzinfo=None)
+    else:
+        setattr(row, state + '_at', now)
+    assert invitation_available(row, now) is False
