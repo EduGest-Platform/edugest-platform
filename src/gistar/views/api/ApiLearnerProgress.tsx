@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { useCallback } from 'react'
 import { api } from '../../../shared/api/client'
 import { Card, Empty, PageTitle } from '../../ui'
@@ -21,7 +22,7 @@ async function loadProgress(enrollmentId: string, signal: AbortSignal) {
 function LatestProgress({ enrollmentId }: { enrollmentId: string }) {
   const load = useCallback((signal: AbortSignal) => loadProgress(enrollmentId, signal), [enrollmentId])
   const { state, retry } = useLearnerRead(load)
-  if (!state) return <p role="status" className="text-muted">Cargando progreso…</p>
+  if (!state) return <LoadingSkeleton label="Cargando progreso…" />
   if ('error' in state) return <LearnerReadProblem message={state.error} retry={retry} />
 
   const { attendance, competencies, deliveries } = state.data
