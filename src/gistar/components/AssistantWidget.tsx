@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { MessageSquareText, Send, Sparkles, X } from 'lucide-react'
-import { api, type Schemas } from '../../shared/api/client'
+import type { Schemas } from '../../shared/api/client'
+import { askAssistant } from '../views/api/askAssistant'
 import { describeApiError, problemText } from '../../shared/api/errors'
 import { DocumentAnswer } from '../views/api/ApiAssistant'
 
@@ -44,10 +45,7 @@ export function AssistantWidget() {
     setQuestion('')
     setError('')
     try {
-      const { data, error: apiError, response } = await api.POST('/api/v1/assistant/ask', {
-        body: { question: text, cohort_id: null },
-        signal: controller.signal,
-      })
+      const { data, error: apiError, response } = await askAssistant(text, controller.signal)
       if (controller.signal.aborted) return
       if (data) setMessages(previous => [...previous.slice(-9), { question: text, result: data }])
       else {
@@ -112,6 +110,7 @@ export function AssistantWidget() {
           <form onSubmit={event => void ask(event)} className="shrink-0 border-t border-line p-3">
             <div className="flex items-end gap-2 rounded-xl border border-line p-2 focus-within:border-blue">
               <textarea ref={input} aria-label="Pregunta al asistente" placeholder="Escribe tu pregunta…" rows={2} maxLength={500} value={question}
+                disabled={!!waiting}
                 onChange={event => setQuestion(event.target.value)}
                 onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }}
                 className="min-w-0 flex-1 resize-none bg-transparent p-1 text-sm" />
