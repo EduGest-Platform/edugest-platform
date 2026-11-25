@@ -5,9 +5,28 @@ import { Button, Field, Notice, inputCls } from '../../ui'
 import type { LearnerDelivery } from './learnerDeliveryStates'
 import { PORTFOLIO_LINK_MAX_LENGTH, validPortfolioLink } from './portfolioLink'
 
-export function LearnerSubmissionEditor({ item, enrollmentId, onCancel, onSaved, onRefresh }: {
+export function LearnerSubmissionDraft({ link, message, onClose }: {
+  link: string
+  message: string
+  onClose: () => void
+}) {
+  const fieldId = useId()
+  return (
+    <div className="mt-3 grid justify-items-start gap-3">
+      <Notice live="polite">{message} Puedes copiar el enlace del borrador.</Notice>
+      <Field label="Enlace del borrador" htmlFor={fieldId}>
+        <input id={fieldId} type="text" className={inputCls} value={link} readOnly />
+      </Field>
+      <Button size="sm" variant="ghost" onClick={onClose}>Cerrar borrador</Button>
+    </div>
+  )
+}
+
+export function LearnerSubmissionEditor({ item, enrollmentId, link, onLinkChange, onCancel, onSaved, onRefresh }: {
   item: LearnerDelivery
   enrollmentId: string
+  link: string
+  onLinkChange: (link: string) => void
   onCancel: () => void
   onSaved: () => void
   onRefresh: () => void
@@ -15,7 +34,6 @@ export function LearnerSubmissionEditor({ item, enrollmentId, onCancel, onSaved,
   const fieldId = useId()
   const submitting = useRef(false)
   const [busy, setBusy] = useState(false)
-  const [link, setLink] = useState(item.submission?.portfolio_url ?? '')
   const [error, setError] = useState<{ message: string; refresh?: boolean } | null>(null)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -53,7 +71,7 @@ export function LearnerSubmissionEditor({ item, enrollmentId, onCancel, onSaved,
           <input id={fieldId} type="url" className={inputCls} value={link} maxLength={PORTFOLIO_LINK_MAX_LENGTH}
             disabled={busy} aria-describedby={error ? fieldId + '-error' : undefined}
             onChange={event => {
-              setLink(event.target.value)
+              onLinkChange(event.target.value)
               if (!error?.refresh) setError(null)
             }} />
         </Field>
