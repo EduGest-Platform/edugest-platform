@@ -67,9 +67,9 @@ jobs:
         run: |
           E2E_EXPECT_OUTCOME=created node e2e/public-catalog.mjs
           E2E_EXPECT_OUTCOME=duplicate node e2e/public-catalog.mjs
-      - name: Prepare F2 synthetic reference cohort (KAN-192)
+      - name: Prepare F2 synthetic cohort and teacher (KAN-72)
         run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
-      - name: F2 HTTP admission and repeat-run integrity (KAN-192)
+      - name: F2 HTTP admission to attendance and repeat-run integrity (KAN-72)
         env:
           GISTAR_API: http://localhost:8000
           E2E_FIXTURE_ID: ci-f2-admission

@@ -1,4 +1,4 @@
-/** KAN-192: real HTTP journey on disposable local services, never direct application-stage writes. */
+/** KAN-192 / KAN-72: real HTTP admission and attendance on disposable local services. */
 const origin = new URL(process.env.GISTAR_API ?? 'http://localhost:8000')
 if (origin.protocol !== 'http:' || !['localhost', '127.0.0.1'].includes(origin.hostname) ||
     origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) {
@@ -31,6 +31,50 @@ async function request(path, expected, { method = 'GET', token, body } = {}) {
 
 async function login(email) {
   return (await request('/auth/login', 200, { method: 'POST', body: { email, password } })).data.access_token
+}
+
+async function verifyAttendance(enrollmentId, recruiter, firstRun) {
+  const teacher = await login('docente@gistar.example')
+  const date = '2026-01-01' // Held day in the scope of prepare-f2.py's synthetic cohort.
+  const window = `date_from=${date}&date_to=${date}`
+  const sessions = `/cohorts/${cohort}/attendance-sessions`
+  const summary = `/cohorts/${cohort}/attendance-summary?${window}&enrollment_id=${enrollmentId}`
+
+  await request(sessions, 403, { token: recruiter })
+
+  if (firstRun) {
+    const created = (await request(sessions, 201, {
+      method: 'POST', token: teacher, body: { session_date: date, shift: 'manana' },
+    })).data
+    check(created.held && created.duration_fraction === 0.5, 'Teacher creates a held half-day session')
+  }
+  const listed = (await request(`${sessions}?${window}`, 200, { token: teacher })).data
+  check(listed.items.length === 1 && listed.items[0].shift === 'manana', 'Exactly one half-day attendance session persists')
+  const session = listed.items[0]
+  const records = session.records.filter(record => record.enrollment_id === enrollmentId)
+  check(records.length === (firstRun ? 0 : 1), 'Attendance starts empty and persists between runs')
+  const recordPath = `/attendance-sessions/${session.id}/records/${enrollmentId}`
+
+  await request(recordPath, 403, {
+    method: 'PUT', token: recruiter, body: { status: 'ausente', justification: 'no_justificada' },
+  })
+  const before = (await request(summary, 200, { token: teacher })).data.items[0]
+  check(before.unrecorded_days === (firstRun ? 0.5 : 0) && before.unjustified_absence_days === 0,
+    'Denied write leaves attendance unchanged and missing data counts separately')
+
+  const recorded = (await request(recordPath, 200, {
+    method: 'PUT', token: teacher, body: { status: 'presente', modality: 'online' },
+  })).data
+  check(recorded.enrollment_id === enrollmentId && recorded.session_id === session.id && recorded.version === 1 &&
+    (firstRun || recorded.id === records[0].id), 'Teacher records attendance once on the admitted enrollment')
+  const revisions = (await request(`/attendance-records/${recorded.id}/revisions`, 200, { token: teacher })).data.items
+  check(revisions.length === 1 && revisions[0].version === 1 && revisions[0].status === 'presente' &&
+    revisions[0].modality === 'online', 'Repeat attendance submission preserves the initial revision')
+  const totals = (await request(summary, 200, { token: teacher })).data.items
+  check(totals.length === 1 && totals[0].enrollment_id === enrollmentId && totals[0].held_days === 0.5 &&
+    totals[0].attended_online_days === 0.5 && totals[0].unrecorded_days === 0 &&
+    totals[0].justified_absence_days === 0 && totals[0].unjustified_absence_days === 0,
+    'Attendance summary reports a half-day online for the admitted enrollment')
 }
 
 try {
@@ -85,9 +129,10 @@ try {
   check(dossier.stage === 'admitida' && dossier.events.filter(e => e.tipo === 'contacto' && e.resumen === contactText).length === 1,
     'CRM contact survives the complete journey without duplication')
   check(dossier.events.every(e => e.resumen !== 'Synthetic denied F2 note'), 'Denied foreign-program write left no CRM note')
-  console.log('PASS · F2 HTTP admission-to-enrollment journey')
+  await verifyAttendance(decision.enrollment_id, recruiter, submitted.status === 201)
+  console.log('PASS · F2 HTTP admission-to-attendance journey')
 } catch {
   // Never print bodies, exception text, tokens, credentials, names or email addresses.
-  console.error('FAIL · F2 HTTP admission-to-enrollment journey')
+  console.error('FAIL · F2 HTTP admission-to-attendance journey')
   process.exitCode = 1
 }

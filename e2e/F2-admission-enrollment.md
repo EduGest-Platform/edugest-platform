@@ -8,7 +8,7 @@ Este recorrido usa fetch contra una API HTTP real en localhost, no TestClient ni
 
 No es una nueva UI de selección ni un E2E de navegador completo. Complementa el registro de navegador y los tests API KAN-182 ya integrados, ejercitando la frontera HTTP del servidor en el Compose desechable.
 
-La preparación `prepare-f2.py` solo crea una cohorte de referencia si no existe; verifica convocatoria/programa y requiere `GISTAR_ENVIRONMENT=local` más el marcador explícito `GISTAR_E2E_FIXTURE=disposable-synthetic`. No resetea datos ni escribe etapas, decisiones o matrículas. El runner requiere URL HTTP local y contraseña sintética en entorno; no registra cuerpos, credenciales, tokens, nombres ni correos.
+La preparación `prepare-f2.py` crea la cohorte de referencia y la asignación docente de la prueba si faltan; verifica convocatoria/programa y requiere `GISTAR_ENVIRONMENT=local` más el marcador explícito `GISTAR_E2E_FIXTURE=disposable-synthetic`. El runner requiere URL HTTP local y contraseña sintética en entorno. Su salida se limita a etiquetas de prueba.
 
 Tras arrancar el Compose de pruebas con datos sintéticos (solo entorno propio desechable):
 
@@ -30,7 +30,7 @@ Owner Yohanna; sole requested reviewer Anas. Jira deadline **2026-11-25**, next 
 
 This is a real-local-HTTP service journey, not TestClient or mocked routes: public intake, unique dossier, CRM, foreign-program denial, human invitation, first pending approval, same-person duplicate denial, second distinct approval and persisted enrollment resolved through the academic submission endpoint. Repeated admission must preserve enrollment and CRM identities. It complements existing browser registration/API tests; it is not a new selection UI or complete browser journey.
 
-The guarded fixture adds only a matching synthetic reference cohort. It requires local environment plus an explicit disposable-fixture marker, and never writes application stages, decisions or enrollments. The runner accepts only a local HTTP API origin and uses environment-provided synthetic credentials, with fixed safe result labels instead of response/exception bodies. CI executes it twice before the existing disposable cleanup. The repeat run verifies a completed fixture, rather than silently repairing partial failures.
+The guarded fixture adds a synthetic reference cohort and a teaching assignment for that cohort. It requires the local environment and an explicit disposable-fixture marker. The runner accepts only a local HTTP API origin and uses environment-provided synthetic credentials. It emits fixed test labels. CI executes it twice before the existing disposable cleanup. The second run verifies the previously completed fixture.
 
 Local Node syntax, Python lint/compilation, workflow YAML and diff checks passed. Docker/database/real HTTP were not run locally, and CI completion is deliberately not checked. No Jira completion or deployment acceptance claimed.
 
@@ -41,3 +41,11 @@ ES: después de cada ejecución HTTP —incluido su intento de admisión repetid
 EN: after each HTTP run, including the rejected repeat admission, `verify-f2.py` starts a PostgreSQL read-only transaction. It enumerates **all** enrollments linked to the application, not only the decision's reference, and requires exactly one with matching person/cohort/status and decision linkage. Only technical IDs are retained in a temporary file in the disposable container; the second run must preserve them. PostgreSQL is never modified. Export any custom `E2E_FIXTURE_ID` so Node and the exec environment agree; when unset both scripts use the same local default.
 
 Local verifier regressions: four tests cover a valid row, an extra unreferenced row, missing/mismatched identity and changed cross-run IDs without overwriting the baseline. These are pure checks; the PostgreSQL read itself was not run locally. / Cuatro pruebas locales del verificador; consulta PostgreSQL no ejecutada localmente. CI completion is not checked / no se comprueba la finalización de CI.
+
+## Attendance after enrollment (KAN-72) / Asistencia tras la matrícula
+
+ES: La docente asignada crea una sesión de media jornada y registra asistencia online para la matrícula que devuelve la decisión de admisión. El recorrido verifica que captación recibe 403 al leer las sesiones y al intentar escribir un registro. Antes de la primera escritura docente, el resumen cuenta 0,5 días sin dato y cero ausencias injustificadas. Después, devuelve 0,5 días de asistencia online. En la segunda vuelta se exige que la sesión y el registro ya existan y que la misma escritura conserve el identificador y la única revisión. Para ejecutar este incremento, usa una base sintética desechable nueva si la cohorte de una ejecución anterior excluye el día de prueba, 1 de enero de 2026.
+
+EN: The assigned teacher creates a half-day session and records online attendance for the enrollment returned by the admission decision. The journey verifies 403 responses when recruitment staff try to read the sessions or write a record. Before the first teacher write, the summary counts 0.5 unrecorded days and zero unjustified absences. Afterward it reports 0.5 online attendance days. The second run requires the session and record to exist already and checks that repeating the write preserves the record ID and its sole revision. Use a fresh disposable synthetic database if an earlier fixture's cohort dates exclude the test date, 1 January 2026.
+
+Validación KAN-72, 25/11/2026: dos ejecuciones HTTP contra FastAPI y PostgreSQL 16 locales. El verificador de solo lectura confirmó una única matrícula y los mismos identificadores después de cada ejecución. / KAN-72 validation, 2026-11-25: two HTTP runs against local FastAPI and PostgreSQL 16. The read-only verifier confirmed one enrollment and the same IDs after both runs.
