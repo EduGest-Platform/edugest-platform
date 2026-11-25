@@ -10,12 +10,12 @@ The executable source is `ApplicationCreate` in `api/app/modules/admissions/sche
 
 | Campo / Field | Contrato vigente / Current contract | Destino / Destination |
 |---|---|---|
-| `call_id` | Identificador de oferta de hasta 30 caracteres. El alta exige que la oferta esté publicada y abierta. / Offer ID up to 30 characters. Registration requires a published, open offer. | Candidatura / Application |
+| `call_id` | Identificador de oferta de 1–30 caracteres con al menos un carácter visible. El alta exige que la oferta esté publicada y abierta. / Offer ID of 1–30 characters with at least one non-whitespace character. Registration requires a published, open offer. | Candidatura / Application |
 | `nombre` | 2–120 caracteres tras recortar extremos. / 2–120 characters after trimming. | Ficha de persona al crearla. / Person record on creation. |
 | `email` | Correo normalizado y validado. Identidad única por correo y candidatura única por persona y convocatoria. / Normalized, validated email. One person per email and one application per person and call. | Ficha de persona / Person record |
 | `motivacion` | 10–2000 caracteres tras recortar extremos. / 10–2000 characters after trimming. | Candidatura / Application |
 | `disponibilidad` | `Mañana`, `Tarde`, `Flexible`. | Candidatura / Application |
-| `acepta_datos_sinteticos` | Confirmación obligatoria. La especificación declara el valor booleano `true`. Pydantic admite también el número `1` en este snapshot. / Required acknowledgement. The schema declares boolean `true`. Pydantic also accepts numeric `1` in this snapshot. | Candidatura / Application |
+| `acepta_datos_sinteticos` | Confirmación obligatoria con el valor booleano JSON `true`. / Required acknowledgement with the JSON boolean value `true`. | Candidatura / Application |
 
 ## Campos pendientes de implementación / Fields awaiting implementation
 

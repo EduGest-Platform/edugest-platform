@@ -54,9 +54,15 @@ def test_whitespace_only_crm_summary_is_rejected(client, db):
         ("email", "a" * 65 + "@example.test"),
         ("email", "two@@example.test"),
         ("email", "two words@example.test"),
+        ("call_id", ""),
+        ("call_id", "  "),
         ("call_id", "C" * 31),
         ("disponibilidad", "Nocturna"),
         ("acepta_datos_sinteticos", None),
+        ("acepta_datos_sinteticos", False),
+        ("acepta_datos_sinteticos", 1),
+        ("acepta_datos_sinteticos", 1.0),
+        ("acepta_datos_sinteticos", "true"),
     ],
 )
 def test_invalid_fields_have_no_persistence_or_counter_side_effects(client, db, field, value):
