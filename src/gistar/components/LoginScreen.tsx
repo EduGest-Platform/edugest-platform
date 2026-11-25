@@ -5,7 +5,8 @@ import { useApiSession } from '../../shared/api/session'
 import { InscriptionForm } from '../views/api/ApiAdmissions'
 import { PublicCatalog } from '../views/api/PublicCatalog'
 import type { PublicCourse } from '../../shared/api/publicCatalog'
-import { Button, Card, Field, Notice, Segmented, inputCls } from '../ui'
+import { Button, Card, Field, Notice, inputCls } from '../ui'
+import { PublicAccessNavigation, type PublicAccessView } from './PublicAccessNavigation'
 
 /** Synthetic demo accounts created by `python -m app.seed`. Password: GISTAR_DEMO_PASSWORD (default documented in api/README). */
 const DEMO_ACCOUNTS = [
@@ -21,7 +22,7 @@ const DEMO_ACCOUNTS = [
 
 export function LoginScreen() {
   const { login, apiDown, notice } = useApiSession()
-  const [tab, setTab] = useState<'login' | 'inscripcion' | 'catalogo'>('login')
+  const [tab, setTab] = useState<PublicAccessView>('login')
   const [selectedCourse, setSelectedCourse] = useState<PublicCourse | null>(null)
   const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[1][0])
   const [password, setPassword] = useState('')
@@ -59,7 +60,7 @@ export function LoginScreen() {
         )}
         {apiDown && <Notice tone="warning" live="assertive">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
         <div className="mb-4">
-          <Segmented label="Acceso" value={tab} onChange={(next) => { setTab(next); setSelectedCourse(null) }} options={[{ id: 'login', label: 'Iniciar sesión' }, { id: 'inscripcion', label: 'Quiero inscribirme' }, { id: 'catalogo', label: 'Ver formaciones' }]} />
+          <PublicAccessNavigation view={tab} onNavigate={(next) => { setTab(next); setSelectedCourse(null) }} />
         </div>
         {tab === 'login' ? (
           <Card title="Iniciar sesión">
