@@ -71,6 +71,17 @@ export GISTAR_ENVIRONMENT=local
 
 ## 3. Contracts & E2E / Contratos y pruebas de recorrido
 
+### Model-only ERD/dictionary / ERD y diccionario de modelos (KAN-216)
+
+From repository root, with `GISTAR_ENVIRONMENT=local`: / Desde la raíz, con ese entorno:
+
+```bash
+python api/scripts/export_schema_reference.py          # regenerate; review the diff / regenerar y revisar
+python api/scripts/export_schema_reference.py --check  # read-only freshness check / comprobar sin reescribir
+```
+
+No database connection, migration or deployed-schema inspection. A failed check does not overwrite the reference. CI runs it from `api`; keep `alembic check` separate. / No conecta a una BD ni ejecuta migraciones. El fallo no reescribe la referencia; la comprobación de migraciones sigue siendo independiente.
+
 ```powershell
 pnpm gen:api         # generates TypeScript from contracts; review diff before commit
 pnpm e2e:local      # requires local web services/browser conditions

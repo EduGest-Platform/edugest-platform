@@ -147,6 +147,8 @@ jobs:
         # Versión fijada para que el resultado no cambie solo. Las reglas de estilo (orden de imports, etc.)
         # se activan cuando el código de api/ esté limpio.
         run: pip install ruff==0.17.5 && ruff check . --select E4,E7,E9,F
+      - name: Model-only ERD and dictionary freshness (KAN-216)
+        run: python scripts/export_schema_reference.py --check
       - name: Migraciones sin deriva respecto a los modelos
         env:
           GISTAR_DATABASE_URL: postgresql+psycopg://gistar:gistar@localhost:5432/gistar_test

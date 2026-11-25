@@ -35,6 +35,8 @@ API y PostgreSQL: ver [`api/README.md`](api/README.md); requieren `infra/.env` y
 
 ## Gobierno del proyecto / Project governance
 
+Esquema registrado: [ERD y diccionario generado](docs/data/schema-reference.md) y [estados frente a transiciones y permisos](docs/data/state-boundaries.md). Se generan de modelos, sin consultar una base; `--check` detecta documentación obsoleta. / Registered schema: generated ERD/dictionary and workflow boundaries, without database inspection; freshness is checked separately from migrations and runtime behavior.
+
 | Documento | Qué es / What it is |
 |---|---|
 | [`CONSTITUTION.md`](CONSTITUTION.md) · [ES](CONSTITUTION.es.md) | Constitución: principios y reglas fundamentales / Constitution: core principles |
