@@ -17,7 +17,7 @@ from app.modules.requirements.service import require_access
 from app.modules.selection.models import SelectionApproval, SelectionDecision
 from app.modules.selection.authority import signature_authority
 from app.modules.selection.schemas import (
-    WAITING_ORDER_BASIS, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
+    WAITING_ORDER_BASIS, OwnSelectionOutcome, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
 )
 
 # An admission decision can be taken while the application is in selection, or from the waiting list (promotion or final refusal).
@@ -30,6 +30,33 @@ CRM_TEXT = {
     "lista_espera": "Selección terminada: en lista de espera",
     "no_admitida": "Selección terminada: no admitida en esta convocatoria",
 }
+
+
+def own_selection_outcome(db: Session, actor: Principal, application_id: uuid.UUID) -> OwnSelectionOutcome:
+    person_id = actor.user.person_id
+    if person_id is None:
+        raise _own_application_not_found()
+
+    applied = (
+        select(SelectionDecision.decision, SelectionDecision.to_stage, SelectionDecision.occurred_at)
+        .where(SelectionDecision.application_id == Application.id)
+        .order_by(SelectionDecision.occurred_at.desc(), SelectionDecision.id.desc())
+        .limit(1)
+        .correlate(Application)
+        .lateral()
+    )
+    result = db.execute(
+        select(Application.id, Application.stage, applied.c.decision, applied.c.occurred_at)
+        .outerjoin(applied, (applied.c.decision == Application.stage) & (applied.c.to_stage == Application.stage))
+        .where(Application.id == application_id, Application.person_id == person_id)
+    ).one_or_none()
+    if result is None:
+        raise _own_application_not_found()
+    return OwnSelectionOutcome(application_id=result.id, stage=result.stage, outcome=result.decision, decided_at=result.occurred_at)
+
+
+def _own_application_not_found() -> UserFacingError:
+    return UserFacingError(status.HTTP_404_NOT_FOUND, "application_not_found", "No encontramos una candidatura para tu cuenta.")
 
 
 def waiting_list_order(db: Session, call_id: str) -> list[tuple[Application, datetime]]:

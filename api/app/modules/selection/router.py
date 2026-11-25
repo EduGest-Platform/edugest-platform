@@ -12,13 +12,23 @@ from app.modules.catalog.models import Call
 from app.modules.identity.models import User
 from app.modules.selection.models import SelectionApproval, SelectionDecision
 from app.modules.selection.schemas import (
-    SelectionApprovalOut, SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview, SelectionPendingOut, SelectionPolicy,
+    OwnSelectionOutcome, SelectionApprovalOut, SelectionDecisionList, SelectionDecisionOut, SelectionDecisionWrite, SelectionOverview, SelectionPendingOut, SelectionPolicy,
 )
-from app.modules.selection.service import decide, pending_approvals, require_selection_access, selection_overview
+from app.modules.selection.service import decide, own_selection_outcome, pending_approvals, require_selection_access, selection_overview
 
 router = APIRouter(tags=["selection"])
 
 _ERRORS = {403: {"description": "Sin permiso sobre el ámbito"}, 404: {"description": "No encontrado"}}
+
+
+@router.get(
+    "/me/applications/{application_id}/selection-outcome",
+    response_model=OwnSelectionOutcome,
+    responses={401: {"description": "Se requiere una sesión"}, 404: {"description": "Candidatura no encontrada en tu cuenta"}},
+    summary="Consultar el resultado aplicado a una candidatura propia",
+)
+def get_own_selection_outcome(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> OwnSelectionOutcome:
+    return own_selection_outcome(db, p, application_id)
 
 
 def _out(decision: SelectionDecision, actor_name: str | None, votes: list[SelectionApprovalOut]) -> SelectionDecisionOut:

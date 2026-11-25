@@ -3408,6 +3408,67 @@
         "title": "OverviewSubmissions",
         "type": "object"
       },
+      "OwnSelectionOutcome": {
+        "properties": {
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "admitida",
+                  "lista_espera",
+                  "no_admitida"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Decisión vigente registrada; nulo mientras no exista una decisión aplicada.",
+            "title": "Outcome"
+          },
+          "stage": {
+            "enum": [
+              "enviada",
+              "requisitos_en_revision",
+              "convocada",
+              "evaluacion_en_curso",
+              "pendiente_decision_humana",
+              "admitida",
+              "lista_espera",
+              "no_admitida",
+              "retirada"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "stage",
+          "outcome",
+          "decided_at"
+        ],
+        "title": "OwnSelectionOutcome",
+        "type": "object"
+      },
       "PendingSubmissions": {
         "properties": {
           "assignments": {
@@ -10518,6 +10579,60 @@
         "summary": "Candidaturas propias de la persona autenticada",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/me/applications/{application_id}/selection-outcome": {
+      "get": {
+        "operationId": "get_own_selection_outcome_api_v1_me_applications__application_id__selection_outcome_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnSelectionOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Se requiere una sesión"
+          },
+          "404": {
+            "description": "Candidatura no encontrada en tu cuenta"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar el resultado aplicado a una candidatura propia",
+        "tags": [
+          "selection"
         ]
       }
     },

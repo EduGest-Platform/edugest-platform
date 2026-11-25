@@ -912,6 +912,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/applications/{application_id}/selection-outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar el resultado aplicado a una candidatura propia */
+        get: operations["get_own_selection_outcome_api_v1_me_applications__application_id__selection_outcome_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/enrollments": {
         parameters: {
             query?: never;
@@ -2748,6 +2765,26 @@ export interface components {
             rule: string;
             /** Suppressed */
             suppressed: boolean;
+        };
+        /** OwnSelectionOutcome */
+        OwnSelectionOutcome: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Decided At */
+            decided_at: string | null;
+            /**
+             * Outcome
+             * @description Decisión vigente registrada; nulo mientras no exista una decisión aplicada.
+             */
+            outcome: ("admitida" | "lista_espera" | "no_admitida") | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "enviada" | "requisitos_en_revision" | "convocada" | "evaluacion_en_curso" | "pendiente_decision_humana" | "admitida" | "lista_espera" | "no_admitida" | "retirada";
         };
         /** PendingSubmissions */
         PendingSubmissions: {
@@ -7162,6 +7199,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationSelfView"][];
+                };
+            };
+        };
+    };
+    get_own_selection_outcome_api_v1_me_applications__application_id__selection_outcome_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnSelectionOutcome"];
+                };
+            };
+            /** @description Se requiere una sesión */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura no encontrada en tu cuenta */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
