@@ -50,3 +50,13 @@
     outline-color: #d2caff;
   }
 }
+
+@keyframes dialog-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-enter {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
