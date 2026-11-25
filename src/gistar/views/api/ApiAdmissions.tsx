@@ -7,6 +7,7 @@ import { humanize } from '../../config'
 import { useGistar } from '../../store'
 import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
+import { ServerDiscussions } from './ServerDiscussions'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
@@ -463,6 +464,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
             </p>
             <ServerRequirementReview key={`${d.id}:${d.call_id}`} applicationId={d.id} callId={d.call_id} />
             <ServerSelection applicationId={d.id} callId={d.call_id} onDirty={setSelectionDirty} onChanged={() => { void load(); onChanged() }} />
+            <ServerDiscussions key={d.id} applicationId={d.id} />
           </section>
           <section>
             <h3 className="mb-3 text-sm font-semibold">Historial CRM</h3>
