@@ -17,6 +17,7 @@ export function Modal({
   footer,
   dirty = false,
   size = 'xl',
+  placement = 'center',
 }: {
   open: boolean
   onClose: () => void
@@ -26,6 +27,7 @@ export function Modal({
   footer?: ReactNode | ((requestClose: () => void) => ReactNode)
   dirty?: boolean
   size?: 'md' | 'lg' | 'xl'
+  placement?: 'center' | 'end'
 }) {
   const titleId = useId()
   const subtitleId = useId()
@@ -77,7 +79,7 @@ export function Modal({
 
   const width = size === 'md' ? 'sm:max-w-xl' : size === 'lg' ? 'sm:max-w-3xl' : 'sm:max-w-6xl'
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-[#0d1f30]/45 p-2 backdrop-blur-[2px] sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && requestClose()}>
+    <div className={`fixed inset-0 z-50 flex bg-[#0d1f30]/45 backdrop-blur-[2px] motion-safe:animate-[dialog-fade_180ms_ease-out] ${placement === 'end' ? 'items-stretch justify-end' : 'items-stretch justify-center p-2 sm:items-center sm:p-6'}`} onMouseDown={(e) => e.target === e.currentTarget && requestClose()}>
       <div
         ref={ref}
         role="dialog"
@@ -86,9 +88,9 @@ export function Modal({
         aria-describedby={subtitle ? subtitleId : undefined}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        className={`flex max-h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_64px_rgba(13,31,48,0.35)] outline-none sm:max-h-[90vh] ${width}`}
+        className={`flex max-h-full w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_64px_rgba(13,31,48,0.35)] outline-none motion-safe:animate-[dialog-enter_200ms_ease-out] ${placement === 'end' ? 'sm:max-w-xl rounded-r-none' : `sm:max-h-[90dvh] ${width}`}`}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <h2 id={titleId} className="text-lg font-semibold tracking-tight text-ink">
               {title}
@@ -99,8 +101,8 @@ export function Modal({
             <X className="size-5" aria-hidden />
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
-        {footer && <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-[#fafcfd] px-5 py-3.5 sm:px-6">{typeof footer === 'function' ? footer(requestClose) : footer}</footer>}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">{children}</div>
+        {footer && <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-[#fafcfd] px-5 py-3.5 sm:px-6">{typeof footer === 'function' ? footer(requestClose) : footer}</footer>}
       </div>
     </div>,
     document.body,
