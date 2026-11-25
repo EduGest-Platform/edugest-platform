@@ -929,6 +929,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List enrollments for the signed-in person */
+        get: operations["list_own_enrollments_api_v1_me_enrollments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/enrollments/{enrollment_id}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read attendance totals for the signed-in person's active enrollment */
+        get: operations["own_attendance_api_v1_me_enrollments__enrollment_id__attendance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/enrollments/{enrollment_id}/competencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read current competency levels for the signed-in person's active enrollment */
+        get: operations["own_competencies_api_v1_me_enrollments__enrollment_id__competencies_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/competency-frameworks": {
         parameters: {
             query?: never;
@@ -2535,6 +2586,57 @@ export interface components {
             expires_hours: number;
         };
         JsonValue: unknown;
+        /** LearnerAttendance */
+        LearnerAttendance: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Date From */
+            date_from: string | null;
+            /** Date To */
+            date_to: string | null;
+            /**
+             * Rule
+             * @default Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.
+             */
+            rule: string;
+            /** Timezone */
+            timezone: string;
+            totals: components["schemas"]["EnrollmentAttendance"];
+        };
+        /** LearnerCompetencies */
+        LearnerCompetencies: {
+            /** Current */
+            current: components["schemas"]["CurrentLevel"][];
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /** Framework Version */
+            framework_version: number | null;
+        };
+        /** LearnerEnrollment */
+        LearnerEnrollment: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Cohort Name */
+            cohort_name: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "activa" | "finalizada" | "baja_voluntaria";
+        };
+        /** LearnerEnrollments */
+        LearnerEnrollments: {
+            /** Items */
+            items: components["schemas"]["LearnerEnrollment"][];
+        };
         /** LevelCount */
         LevelCount: {
             /** Level 1 */
@@ -7129,6 +7231,105 @@ export interface operations {
                 content?: never;
             };
             /** @description Candidatura no encontrada en tu cuenta */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_own_enrollments_api_v1_me_enrollments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnerEnrollments"];
+                };
+            };
+        };
+    };
+    own_attendance_api_v1_me_enrollments__enrollment_id__attendance_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnerAttendance"];
+                };
+            };
+            /** @description No active enrollment for the signed-in person */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    own_competencies_api_v1_me_enrollments__enrollment_id__competencies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnerCompetencies"];
+                };
+            };
+            /** @description No active enrollment for the signed-in person */
             404: {
                 headers: {
                     [name: string]: unknown;

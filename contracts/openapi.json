@@ -2958,6 +2958,143 @@
         "type": "object"
       },
       "JsonValue": {},
+      "LearnerAttendance": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "rule": {
+            "default": "Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.",
+            "title": "Rule",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/EnrollmentAttendance"
+          }
+        },
+        "required": [
+          "cohort_id",
+          "timezone",
+          "date_from",
+          "date_to",
+          "totals"
+        ],
+        "title": "LearnerAttendance",
+        "type": "object"
+      },
+      "LearnerCompetencies": {
+        "properties": {
+          "current": {
+            "items": {
+              "$ref": "#/components/schemas/CurrentLevel"
+            },
+            "title": "Current",
+            "type": "array"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "framework_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Framework Version"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "framework_version",
+          "current"
+        ],
+        "title": "LearnerCompetencies",
+        "type": "object"
+      },
+      "LearnerEnrollment": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "cohort_name": {
+            "title": "Cohort Name",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "activa",
+              "finalizada",
+              "baja_voluntaria"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "cohort_id",
+          "cohort_name",
+          "status"
+        ],
+        "title": "LearnerEnrollment",
+        "type": "object"
+      },
+      "LearnerEnrollments": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LearnerEnrollment"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "LearnerEnrollments",
+        "type": "object"
+      },
       "LevelCount": {
         "properties": {
           "level_1": {
@@ -10496,6 +10633,168 @@
         "summary": "Consultar el resultado aplicado a una candidatura propia",
         "tags": [
           "selection"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments": {
+      "get": {
+        "operationId": "list_own_enrollments_api_v1_me_enrollments_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerEnrollments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List enrollments for the signed-in person",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/attendance": {
+      "get": {
+        "operationId": "own_attendance_api_v1_me_enrollments__enrollment_id__attendance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerAttendance"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No active enrollment for the signed-in person"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read attendance totals for the signed-in person's active enrollment",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/competencies": {
+      "get": {
+        "operationId": "own_competencies_api_v1_me_enrollments__enrollment_id__competencies_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerCompetencies"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No active enrollment for the signed-in person"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read current competency levels for the signed-in person's active enrollment",
+        "tags": [
+          "learning"
         ]
       }
     },
