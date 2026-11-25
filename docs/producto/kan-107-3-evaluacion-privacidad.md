@@ -1,5 +1,11 @@
 # KAN-107 · Entregable 3 — Evaluación de privacidad / Privacy assessment
 
+## Acreditación documental KAN-49 (24/11/2026) / Documentary accreditation
+
+ES: la matrícula añade estado/versión documental y el identificador/fecha de la persona administradora que acredita. Son metadatos operativos vinculados a la matrícula; no son nuevos campos del formulario, documentos, URLs ni categorías especiales. La proyección del alumno omite la identidad verificadora; el registro protegido y la auditoría conservan la atribución. Estado inicial pendiente, sin inferir revisiones históricas. Solo datos sintéticos; no acredita cumplimiento jurídico ni autoriza tratar documentos reales. Alcance, permisos y límites: [informe KAN-49](../reports/KAN-49-enrollment-documentation.md).
+
+EN: enrollment adds documentary state/version and accrediting administrator ID/time. These are operational metadata linked to enrollment, not new form fields, document contents/URLs or special-category fields. Learner responses omit verifier identity; protected persistence/audit retain attribution. Initial pending status does not infer historical review. Synthetic data only; no legal-compliance claim or authorization for real documents. Scope and limits: [KAN-49 report](../reports/KAN-49-enrollment-documentation.md).
+
 ## Actualización técnica KAN-226 (24/11/2026) / Technical update
 
 ES: `call.publication_state` (`draft`/`published`) y `call.publication_version` (entero >= 1) son metadatos editoriales de la oferta. No añaden datos personales, preguntas, consentimiento ni versión de formulario. La migración `0018` conserva la visibilidad de las ofertas ya públicas; las nuevas quedan en borrador por defecto. El filtrado de borradores en catálogo e inscripción se completa en los tramos dependientes del stack, no en el PR de modelo aislado. No acredita aceptación PO ni conformidad jurídica.
