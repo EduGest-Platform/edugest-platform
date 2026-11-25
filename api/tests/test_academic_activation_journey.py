@@ -1,15 +1,19 @@
 """HTTP evidence for cohort activation and its downstream academic records."""
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
+
+from app.core.config import settings
 
 from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Cohort
 from app.modules.competencies.models import CohortCompetencyFramework
 from app.modules.identity.models import User
-from tests.conftest import ADMIN, ASPIRANTE, CODER, DOCENTE, login
+from app.modules.learning.models import Enrollment
+from tests.conftest import ADMIN, ASPIRANTE, CODER, COORD, DOCENTE, login
 from tests.test_attendance import ONLINE, UNJUSTIFIED, put
 from tests.test_learner_enrollments import own_seed_enrollment
+from tests.test_submissions import new_assignment, review, submit
 from tests.test_competencies import COHORT, assess, assign, published_tree
 
 
@@ -127,3 +131,60 @@ def test_new_publication_preserves_assigned_levels_until_explicit_reassignment(c
     assert current["competency_id"] == second["competencies"][0]["id"] and current["level"] is None
     history = client.get(staff_path, headers=teacher)
     assert history.status_code == 200 and history.json()["history"] == [assessment]
+
+
+def test_overview_applies_attendance_window_and_keeps_other_indicators_current(
+    client, db, monkeypatch, half_day_record, assessed_framework,
+):
+    teacher, enrollment, morning_id = half_day_record
+    _, _, framework, _ = assessed_framework
+    coordinator = login(client, COORD)
+    cohort_size = db.scalar(select(func.count()).select_from(Enrollment).where(
+        Enrollment.cohort_id == enrollment.cohort_id, Enrollment.estado != "baja_voluntaria",
+    ))
+    assert cohort_size > 0
+    monkeypatch.setattr(settings, "min_group_size", cohort_size)
+    assignment = new_assignment(client, teacher, cohort_id=enrollment.cohort_id)
+    link = "https://example.test/synthetic-overview-delivery"
+    submitted = submit(client, login(client, CODER), assignment["id"], enrollment.id, portfolio_url=link)
+    assert submitted.status_code == 200, submitted.text
+    assert review(client, teacher, submitted.json()).status_code == 200
+
+    path = f"/api/v1/cohorts/{enrollment.cohort_id}/progress-overview"
+    window = {"attendance_from": HELD_DATE, "attendance_to": HELD_DATE}
+    baseline = client.get(path, headers=coordinator, params=window)
+    assert baseline.status_code == 200 and baseline.headers["cache-control"] == "no-store"
+    first = baseline.json()
+    assert first["aggregate_only"] is True
+    assert first["attendance"]["totals"]["unjustified_absence_days"] == 0.5
+    assert first["competencies"]["framework_version"] == framework["version"]
+    assert first["competencies"]["distribution"][0]["counts"]["level_2"] == 1
+    delivery, = first["submissions"]["assignments"]
+    assert delivery["assignment_id"] == assignment["id"] and delivery["counts"]["reviewed"] == 1
+    assert str(enrollment.id) not in baseline.text and link not in baseline.text
+
+    fixed = put(client, teacher, morning_id, enrollment.id, {**ONLINE, "reason": "Synthetic attendance correction"})
+    assert fixed.status_code == 200, fixed.text
+    response = client.get(path, headers=coordinator, params=window)
+    assert response.status_code == 200
+    totals = response.json()["attendance"]["totals"]
+    assert totals["attended_days"] == 0.5 and totals["unjustified_absence_days"] == 0
+    assert totals["attendance_rate"] == 1
+
+    other_day = {"attendance_from": "2026-09-15", "attendance_to": "2026-09-15"}
+    outside = client.get(path, headers=coordinator, params=other_day)
+    assert outside.status_code == 200
+    outside_body = outside.json()
+    assert outside_body["attendance"]["has_data"] is False
+    assert outside_body["attendance"]["totals"]["attendance_rate"] is None
+    assert outside_body["competencies"] == first["competencies"]
+    assert outside_body["submissions"]["assignments"] == [delivery]
+
+    monkeypatch.setattr(settings, "min_group_size", cohort_size + 1)
+    filtered = client.get(path, headers=coordinator, params=window)
+    assert filtered.status_code == 200
+    hidden = filtered.json()
+    assert all(hidden[section]["has_data"] is None for section in ("attendance", "competencies", "submissions"))
+    assert hidden["attendance"]["totals"]["attendance_rate"] is None
+    assert hidden["competencies"]["distribution"][0]["counts"] is None
+    assert hidden["submissions"]["assignments"][0]["counts"] is None
