@@ -73,3 +73,16 @@ def test_user_lock_serializes_eligibility_without_conflicting_with_fk_key_share(
     query = lock_query(User, uuid.uuid4(), user=True)
     assert str(query.compile(dialect=postgresql.dialect())).endswith('FOR NO KEY UPDATE')
     assert query.get_execution_options()['populate_existing'] is True
+
+
+def test_status_does_not_verify_another_users_or_another_roles_assignment():
+    from app.modules.staff.application_service import application_out
+
+    _, _, profile, row = context()
+    row.id, row.applied_assignment_id, row.state = uuid.uuid4(), uuid.uuid4(), 'applied'
+    grant = SimpleNamespace(id=row.applied_assignment_id, user_id=profile.user_id, role=row.requested_role,
+                            scope_type=row.scope_type, scope_id=row.scope_id, revoked_at=None)
+    assert application_out(row, profile, grant).assignment_active is True
+    grant.user_id = uuid.uuid4()
+    result = application_out(row, profile, grant)
+    assert result.assignment_id is None and result.assignment_active is None

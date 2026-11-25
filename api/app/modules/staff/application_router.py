@@ -21,3 +21,10 @@ def preview_application(request_id: uuid.UUID, p: CurrentPrincipal, db: DB):
              summary='Explicit global-admin application of an approved role request; idempotent for this request')
 def apply_access(request_id: uuid.UUID, body: AccessApply, p: CurrentPrincipal, db: DB):
     return service.apply_access(db, p, request_id, body)
+
+
+@router.get('/{request_id}/application', response_model=AccessApplicationOut,
+            responses={**ERRORS, 409: {'description': 'Active internal staff profile required for own-request reads'}},
+            summary='Own or global-administrative request application status; no effective-permission claim')
+def read_application(request_id: uuid.UUID, p: CurrentPrincipal, db: DB):
+    return service.read_application(db, p, request_id)

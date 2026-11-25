@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
 from app.core import audit
+from app.core.authz import Scope
 from app.core.errors import UserFacingError
 from app.modules.catalog.models import Call, Cohort, Program
 from app.modules.identity.models import RoleAssignment, User
@@ -9,6 +10,7 @@ from app.modules.staff.application_schemas import AccessApplicationOut, AccessAp
 from app.modules.staff.models import AccessChangeRequest, StaffProfile
 from app.modules.staff.policy import require_admin
 from app.modules.staff.schemas import AccessRequestCreate
+from app.modules.staff.service import active_own_profile
 
 
 def request_not_found():
@@ -78,9 +80,26 @@ def locked_application(db, actor, request_id):
 
 
 def application_out(row, profile, assignment):
-    active = assignment.revoked_at is None if assignment_matches(row, profile, assignment) else None
+    verified = assignment_matches(row, profile, assignment)
+    active = assignment.revoked_at is None if verified else None
     return AccessApplicationOut(request_id=row.id, request_state=row.state,
-                                assignment_id=row.applied_assignment_id, assignment_active=active)
+                                assignment_id=row.applied_assignment_id if verified else None, assignment_active=active)
+
+
+def read_application(db, actor, request_id):
+    if actor.can('staff.manage', Scope()):
+        row, profile = request_profile(db, request_id)
+    else:
+        profile = active_own_profile(db, actor)
+        row = db.scalar(select(AccessChangeRequest).where(AccessChangeRequest.id == request_id,
+                                                        AccessChangeRequest.staff_profile_id == profile.id))
+        if row is None:
+            raise request_not_found()
+    assignment = db.get(RoleAssignment, row.applied_assignment_id) if row.applied_assignment_id else None
+    result = application_out(row, profile, assignment)
+    audit.record(db, actor, 'staff.access_application_viewed', 'access_change_request', str(row.id))
+    db.commit()
+    return result
 
 
 def apply_access(db, actor, request_id, body):

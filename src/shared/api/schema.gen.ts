@@ -982,6 +982,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/access-requests/{request_id}/application": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own or global-administrative request application status; no effective-permission claim */
+        get: operations["read_application_api_v1_staff_access_requests__request_id__application_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/access-requests/{request_id}/application-preview": {
         parameters: {
             query?: never;
@@ -1257,7 +1274,10 @@ export interface components {
              * @description Whether the linked role row is unrevoked; not a claim of effective permissions or account activation.
              */
             assignment_active: boolean | null;
-            /** Assignment Id */
+            /**
+             * Assignment Id
+             * @description Null before application or when the linked assignment cannot be verified.
+             */
             assignment_id: string | null;
             /**
              * Request Id
@@ -7307,6 +7327,58 @@ export interface operations {
                 content?: never;
             };
             /** @description Cuenta/ficha no elegible o invitación ya utilizada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_application_api_v1_staff_access_requests__request_id__application_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Active internal staff profile required for own-request reads */
             409: {
                 headers: {
                     [name: string]: unknown;

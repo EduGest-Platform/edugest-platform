@@ -9,3 +9,4 @@ def test_access_application_requires_authentication():
     with TestClient(app) as client:
         assert client.get(PATH + '/application-preview').status_code == 401
         assert client.post(PATH + '/apply', json={'confirm': True, 'requested_role': 'docente', 'scope_type': 'cohort', 'scope_id': 'COH-IA'}).status_code == 401
+        assert client.get(PATH + '/application').status_code == 401

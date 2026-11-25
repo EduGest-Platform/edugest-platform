@@ -70,6 +70,7 @@
                 "type": "null"
               }
             ],
+            "description": "Null before application or when the linked assignment cannot be verified.",
             "title": "Assignment Id"
           },
           "request_id": {
@@ -10759,6 +10760,63 @@
           }
         ],
         "summary": "Solicitar un cambio para la ficha propia; no aplica permisos",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests/{request_id}/application": {
+      "get": {
+        "operationId": "read_application_api_v1_staff_access_requests__request_id__application_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessApplicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Global administration required"
+          },
+          "404": {
+            "description": "Request not found"
+          },
+          "409": {
+            "description": "Active internal staff profile required for own-request reads"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Own or global-administrative request application status; no effective-permission claim",
         "tags": [
           "staff"
         ]

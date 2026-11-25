@@ -27,5 +27,5 @@ class AccessApplicationPreview(BaseModel):
 class AccessApplicationOut(BaseModel):
     request_id: uuid.UUID
     request_state: str
-    assignment_id: uuid.UUID | None
+    assignment_id: uuid.UUID | None = Field(description='Null before application or when the linked assignment cannot be verified.')
     assignment_active: bool | None = Field(description='Whether the linked role row is unrevoked; not a claim of effective permissions or account activation.')

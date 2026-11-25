@@ -1,8 +1,10 @@
 from sqlalchemy import func, select
+import uuid
 
+from app.core.db import utcnow
 from app.modules.identity.models import RoleAssignment
 from app.modules.audit.models import AuditEvent
-from tests.conftest import ADMIN, SEL_IA, login
+from tests.conftest import ADMIN, CAPT_IA, SEL_IA, login
 from tests.test_staff_access_review import active_profile, request
 
 
@@ -53,4 +55,27 @@ def test_echo_mismatch_and_non_admin_application_do_not_create_roles(client, db)
     body = confirmation(row)
     assert client.post(path(row['id']) + '/apply', headers=owner, json=body).status_code == 403
     assert client.post(path(row['id']) + '/apply', headers=admin, json={**body, 'scope_id': 'COH-DATA'}).status_code == 409
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
+
+
+def test_status_is_own_or_global_admin_only(client, db):
+    row, owner, admin = approved_request(client, db)
+    applied = client.post(path(row['id']) + '/apply', headers=admin, json=confirmation(row))
+    assert client.get(path(row['id']) + '/application', headers=owner).json() == applied.json()
+    outsider = active_profile(client, db, CAPT_IA)
+    assert client.get(path(row['id']) + '/application', headers=outsider).status_code == 404
+    assert client.get(path(uuid.uuid4()) + '/application', headers=outsider).status_code == 404
+
+
+def test_retry_reports_a_revoked_assignment_without_regranting_it(client, db):
+    row, owner, admin = approved_request(client, db)
+    applied = client.post(path(row['id']) + '/apply', headers=admin, json=confirmation(row)).json()
+    grant = db.get(RoleAssignment, uuid.UUID(applied['assignment_id']))
+    grant.revoked_at = utcnow()
+    db.commit()
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    status = client.get(path(row['id']) + '/application', headers=owner)
+    assert status.status_code == 200 and status.json()['assignment_active'] is False
+    retried = client.post(path(row['id']) + '/apply', headers=admin, json=confirmation(row))
+    assert retried.status_code == 200 and retried.json() == status.json()
     assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
