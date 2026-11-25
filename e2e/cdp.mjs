@@ -93,6 +93,7 @@ export async function newBrowser() {
       if (blocked.error) throw new Error(blocked.error.message)
     },
     tab: () => pressKey('Tab', 9),
+    enter: () => pressKey('Enter', 13),
     escape: () => pressKey('Escape', 27),
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
