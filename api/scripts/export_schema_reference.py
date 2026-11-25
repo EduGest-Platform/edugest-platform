@@ -3,12 +3,36 @@ import argparse
 from pathlib import Path
 import sys
 
-from sqlalchemy import CheckConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 
 
 def cell(value) -> str:
     return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def globally_unique_columns(table):
+    keys = [frozenset(table.primary_key.columns.keys())] if len(table.primary_key.columns) else []
+    keys += [frozenset(constraint.columns.keys()) for constraint in table.constraints if isinstance(constraint, UniqueConstraint)]
+    for index in table.indexes:
+        if (index.unique and index.dialect_options['postgresql'].get('where') is None
+                and all(isinstance(expression, Column) for expression in index.expressions)):
+            keys.append(frozenset(column.name for column in index.expressions))
+    return [key for key in keys if key]
+
+
+def foreign_key_relations(table):
+    """One edge per FK constraint, including composite and self-referencing constraints."""
+    for constraint in sorted(table.foreign_key_constraints, key=lambda item: (
+            tuple(item.columns.keys()), tuple(element.target_fullname for element in item.elements), item.name or '')):
+        local = list(constraint.columns)
+        unique = any(key <= frozenset(column.name for column in local) for key in globally_unique_columns(table))
+        left = '|o' if any(column.nullable for column in local) else '||'
+        right = 'o|' if unique else 'o{'
+        label = ','.join(column.name for column in local)
+        if len(local) > 1:
+            label = f'"{label}"'
+        yield f"    {constraint.referred_table.name} {left}--{right} {table.name} : {label}"
 
 
 def render(metadata) -> str:
@@ -22,7 +46,7 @@ def render(metadata) -> str:
         "PowerShell: establecer `$env:GISTAR_ENVIRONMENT='local'` antes del mismo comando / set the environment before running it.", "",
         "## Relaciones / Relationships", "",
         "Solo claves foráneas declaradas, sin inferir permisos ni transiciones. / Declared foreign keys only, not permissions or transitions.",
-        "Los marcadores muestran nulabilidad y unicidad simple; no inferir restricciones de negocio compuestas. / Markers describe nullability and single-column uniqueness, not composite business constraints.", "", "```mermaid", "erDiagram",
+        "Una relación por restricción FK, incluidas las compuestas. Nulabilidad y unicidad global declaradas determinan los marcadores; índices parciales o de expresión no implican unicidad global. / One edge per FK constraint, including composites; markers use declared nullability/global uniqueness, never partial or expression indexes.", "", "```mermaid", "erDiagram",
     ]
     for table in tables:
         lines.append(f"    {table.name} {{")
@@ -30,15 +54,7 @@ def render(metadata) -> str:
             lines.append(f"        string {column.name} PK")
         lines.append("    }")
     for table in tables:
-        for fk in sorted(table.foreign_keys, key=lambda item: (item.parent.name, item.target_fullname)):
-            column = fk.parent
-            single_primary_key = len(table.primary_key.columns) == 1 and column.primary_key
-            unique = single_primary_key or column.unique or any(
-                isinstance(c, UniqueConstraint) and list(c.columns) == [column] for c in table.constraints
-            )
-            left = "|o" if column.nullable else "||"
-            right = "o|" if unique else "o{"
-            lines.append(f"    {fk.column.table.name} {left}--{right} {table.name} : {column.name}")
+        lines.extend(foreign_key_relations(table))
     lines += ["```", "", "## Campos y estados almacenados / Fields and stored states", "",
               "Las restricciones CHECK conservan el vocabulario real de estados. Las reglas de transición y autorización viven en servicios y routers, no en este diagrama.",
               "CHECK constraints preserve the stored state vocabulary. Transition/authorization rules live in services and routers, not this diagram.", ""]

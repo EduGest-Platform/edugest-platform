@@ -10,7 +10,7 @@ PowerShell: establecer `$env:GISTAR_ENVIRONMENT='local'` antes del mismo comando
 ## Relaciones / Relationships
 
 Solo claves foráneas declaradas, sin inferir permisos ni transiciones. / Declared foreign keys only, not permissions or transitions.
-Los marcadores muestran nulabilidad y unicidad simple; no inferir restricciones de negocio compuestas. / Markers describe nullability and single-column uniqueness, not composite business constraints.
+Una relación por restricción FK, incluidas las compuestas. Nulabilidad y unicidad global declaradas determinan los marcadores; índices parciales o de expresión no implican unicidad global. / One edge per FK constraint, including composites; markers use declared nullability/global uniqueness, never partial or expression indexes.
 
 ```mermaid
 erDiagram
@@ -165,15 +165,15 @@ erDiagram
     program ||--o{ competency_framework : program_id
     app_user ||--o{ discussion_comment : actor_user_id
     app_user |o--o{ discussion_comment : deleted_by
-    discussion_comment |o--o{ discussion_comment : parent_id
-    discussion_comment ||--o{ discussion_comment : thread_id
     discussion_thread ||--o{ discussion_comment : thread_id
+    discussion_comment |o--o{ discussion_comment : "thread_id,parent_id"
     application |o--o{ discussion_thread : application_id
     app_user ||--o{ discussion_thread : created_by
     program |o--o{ discussion_thread : program_id
     app_user |o--o{ discussion_thread : resolved_by
     application |o--o{ enrollment : application_id
     cohort ||--o{ enrollment : cohort_id
+    app_user |o--o{ enrollment : documentation_accredited_by
     person ||--o{ enrollment : person_id
     app_user ||--o{ intervention : actor_user_id
     risk_alert ||--o{ intervention : alert_id
@@ -445,8 +445,14 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | silence_max_contacts | INTEGER | no | — |
 | silence_warning_contacts | INTEGER | no | — |
 | selection_quorum | INTEGER | no | — |
+| publication_state | VARCHAR(10) | no | — |
+| publication_version | INTEGER | no | — |
 
 - CHECK `ck_call_estado`: `estado IN ('abierta','cerrada')`
+
+- CHECK `ck_call_publication_state`: `publication_state IN ('draft','published')`
+
+- CHECK `ck_call_publication_version`: `publication_version >= 1`
 
 - CHECK `ck_call_selection_quorum`: `selection_quorum BETWEEN 1 AND 5`
 
@@ -619,6 +625,16 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | application_id | UUID | sí / yes | application.id |
 | estado | VARCHAR(20) | no | — |
 | created_at | TIMESTAMP WITH TIME ZONE | no | — |
+| documentation_state | VARCHAR(12) | no | — |
+| documentation_version | INTEGER | no | — |
+| documentation_accredited_by | UUID | sí / yes | app_user.id |
+| documentation_accredited_at | TIMESTAMP WITH TIME ZONE | sí / yes | — |
+
+- CHECK `ck_enrollment_documentation_evidence`: `(documentation_state = 'pending' AND documentation_accredited_by IS NULL AND documentation_accredited_at IS NULL) OR (documentation_state = 'accredited' AND documentation_accredited_by IS NOT NULL AND documentation_accredited_at IS NOT NULL)`
+
+- CHECK `ck_enrollment_documentation_state`: `documentation_state IN ('pending','accredited')`
+
+- CHECK `ck_enrollment_documentation_version`: `documentation_version >= 1`
 
 - CHECK `ck_enrollment_estado`: `estado IN ('activa','finalizada','baja_voluntaria')`
 

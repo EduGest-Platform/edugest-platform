@@ -1,5 +1,5 @@
 """Offline generated-dictionary regressions, without PostgreSQL claims."""
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, MetaData, String, Table, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint, Index, Integer, MetaData, String, Table, UniqueConstraint
 
 from scripts.export_schema_reference import render
 
@@ -61,3 +61,33 @@ def test_individual_columns_of_composite_primary_key_are_not_unique():
     text = render(data)
     assert 'cohort ||--o{ framework : cohort_id' in text
     assert 'cohort ||--o| framework : cohort_id' not in text
+
+
+def test_composite_foreign_key_remains_one_relation_with_tuple_uniqueness():
+    data = MetaData()
+    Table('parent', data, Column('id', Integer, primary_key=True), Column('version', Integer, primary_key=True))
+    Table('child', data, Column('id', Integer, primary_key=True), Column('parent_id', Integer, nullable=False),
+          Column('parent_version', Integer, nullable=False),
+          ForeignKeyConstraint(['parent_id', 'parent_version'], ['parent.id', 'parent.version']),
+          UniqueConstraint('parent_id', 'parent_version'))
+    edges = [line for line in render(data).splitlines() if '--' in line and ' child :' in line]
+    assert edges == ['    parent ||--o| child : "parent_id,parent_version"']
+
+
+def test_partial_unique_index_does_not_make_all_foreign_keys_one_to_one():
+    data = MetaData()
+    Table('parent', data, Column('id', Integer, primary_key=True))
+    child = Table('child', data, Column('id', Integer, primary_key=True), Column('parent_id', Integer, ForeignKey('parent.id'), nullable=False),
+                  Column('active', Integer))
+    index = Index('uq_active_parent', child.c.parent_id, unique=True, postgresql_where=child.c.active == 1)
+    assert 'parent ||--o{ child : parent_id' in render(data)
+    index.dialect_options['postgresql']['where'] = None
+    assert 'parent ||--o| child : parent_id' in render(data)
+
+
+def test_nullable_composite_self_reference_is_optional_as_a_single_edge():
+    data = MetaData()
+    Table('comment', data, Column('id', Integer, primary_key=True), Column('thread_id', Integer, nullable=False),
+          Column('reply_to_id', Integer), UniqueConstraint('id', 'thread_id'),
+          ForeignKeyConstraint(['reply_to_id', 'thread_id'], ['comment.id', 'comment.thread_id']))
+    assert 'comment |o--o{ comment : "reply_to_id,thread_id"' in render(data)
