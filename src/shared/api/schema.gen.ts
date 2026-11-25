@@ -1906,6 +1906,7 @@ export interface components {
             attendance: components["schemas"]["OverviewAttendance"];
             /** Cohort Id */
             cohort_id: string;
+            competencies: components["schemas"]["OverviewCompetencies"];
             /**
              * Generated At
              * Format: date-time
@@ -2480,6 +2481,33 @@ export interface components {
             rule: string;
             totals: components["schemas"]["CohortAttendance"];
         };
+        /** OverviewCompetencies */
+        OverviewCompetencies: {
+            /** Distribution */
+            distribution: components["schemas"]["CompetencyDistribution"][];
+            /** Framework Version */
+            framework_version: number | null;
+            /**
+             * Has Data
+             * @description Null when suppressed; false means no current assessments, never level zero.
+             */
+            has_data: boolean | null;
+            /** Min Group Size */
+            min_group_size: number;
+            /**
+             * Period
+             * @default current_assigned_framework
+             * @constant
+             */
+            period: "current_assigned_framework";
+            /**
+             * Rule
+             * @default Nivel actual = última evaluación docente (1–3) en la versión del árbol asignada a la cohorte. Sin evaluación = sin evaluar, nunca 0.
+             */
+            rule: string;
+            /** Suppressed */
+            suppressed: boolean;
+        };
         /** OverviewSubmissions */
         OverviewSubmissions: {
             /**
@@ -2489,7 +2517,10 @@ export interface components {
             as_of: string;
             /** Assignments */
             assignments: components["schemas"]["AssignmentStatus"][];
-            /** Has Data */
+            /**
+             * Has Data
+             * @description Null when suppressed; false means no assignment/enrollment basis, not a zero completion rate.
+             */
             has_data: boolean | null;
             /** Min Group Size */
             min_group_size: number;

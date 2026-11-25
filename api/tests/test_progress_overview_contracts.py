@@ -32,5 +32,5 @@ def test_suppressed_groups_do_not_reveal_record_presence(suppressed, available, 
 
 
 def test_overview_contract_has_no_per_person_rows_or_names():
-    assert set(CohortProgressOverview.model_fields) == {'cohort_id', 'timezone', 'generated_at', 'aggregate_only', 'attendance', 'submissions'}
+    assert set(CohortProgressOverview.model_fields) == {'cohort_id', 'timezone', 'generated_at', 'aggregate_only', 'attendance', 'submissions', 'competencies'}
     assert set(OverviewAttendance.model_fields) == {'date_from', 'date_to', 'rule', 'has_data', 'totals'}

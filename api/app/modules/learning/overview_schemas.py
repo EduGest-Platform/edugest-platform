@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.modules.attendance.schemas import SUMMARY_RULE, CohortAttendance
-from app.modules.assistant_tools.schemas import AssignmentStatus
+from app.modules.assistant_tools.schemas import COMPETENCY_RULE, AssignmentStatus, CompetencyDistribution
 from app.modules.submissions.schemas import DELIVERY_RULE
 
 
@@ -20,10 +20,20 @@ class OverviewSubmissions(BaseModel):
     as_of: datetime
     period: Literal['current_published_assignments'] = 'current_published_assignments'
     rule: str = DELIVERY_RULE
-    has_data: bool | None
+    has_data: bool | None = Field(description='Null when suppressed; false means no assignment/enrollment basis, not a zero completion rate.')
     suppressed: bool
     min_group_size: int
     assignments: list[AssignmentStatus]
+
+
+class OverviewCompetencies(BaseModel):
+    period: Literal['current_assigned_framework'] = 'current_assigned_framework'
+    rule: str = COMPETENCY_RULE
+    framework_version: int | None
+    has_data: bool | None = Field(description='Null when suppressed; false means no current assessments, never level zero.')
+    suppressed: bool
+    min_group_size: int
+    distribution: list[CompetencyDistribution]
 
 
 class CohortProgressOverview(BaseModel):
@@ -33,3 +43,4 @@ class CohortProgressOverview(BaseModel):
     aggregate_only: Literal[True] = True
     attendance: OverviewAttendance
     submissions: OverviewSubmissions
+    competencies: OverviewCompetencies
