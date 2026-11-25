@@ -22,6 +22,11 @@ async function waitFor(page, expression) {
   return false
 }
 
+function stageCount(stage, count) {
+  return `[...document.querySelectorAll('main dt')].some(label =>
+    label.textContent === ${JSON.stringify(stage)} && label.nextElementSibling?.textContent === ${JSON.stringify(count)})`
+}
+
 try {
   const page = await newBrowser()
   await page.goto(web.href)
@@ -50,6 +55,24 @@ try {
     const options = [...document.querySelectorAll('#coordination-call option')].map(option => option.value);
     return options.length > 0 && options.every(id => id.startsWith('CONV-IA-'));
   })()`))
+  requireCheck('IA totals match the synthetic fixture', await waitFor(page,
+    `(() => {
+      const metrics = new Map([...document.querySelectorAll('main .tabular-nums')]
+        .map(value => [value.previousElementSibling?.textContent, value.textContent]));
+      return metrics.get('Candidaturas totales') === '50' && metrics.get('Plazas ofertadas') === '25';
+    })()`) && await waitFor(page, stageCount('enviada', '16'))
+    && await waitFor(page, stageCount('convocada', '12')))
+  requireCheck('Small stage count stays hidden and an actual zero remains visible',
+    await waitFor(page, stageCount('admitida', 'Oculta')) && await waitFor(page, stageCount('lista espera', '0')))
+
+  requireCheck('Empty seeded call is selectable', await page.set('#coordination-call', 'CONV-IA-2026B'))
+  requireCheck('Small call hides the whole breakdown', await page.waitText('El total y el desglose se ocultan')
+    && await page.ev(`!document.querySelector('main dt') && document.querySelector('main').innerText.includes('Ocultas')`))
+
+  requireCheck('Data program can be selected', await page.set('#coordination-program', 'P-DATA'))
+  requireCheck('Data totals replace IA totals', await waitFor(page, stageCount('enviada', '21'))
+    && await waitFor(page, stageCount('convocada', '6'))
+    && !(await page.ev(stageCount('enviada', '16'))))
   requireCheck('No uncaught browser exceptions', errors.length === 0)
 } catch (error) {
   check('Coordination dashboard journey completes', false, error instanceof Error ? error.message : 'Unknown error')
