@@ -9,10 +9,10 @@ export function PublicCourseDetail({ state, onBack, onRetry, onApply }: {
   onApply: (course: PublicCourse) => void
 }) {
   return <section aria-labelledby="public-course-title" className="grid gap-4">
-    <Button variant="ghost" onClick={onBack}>Volver al catálogo</Button>
     <h1 id="public-course-title" tabIndex={-1} className="text-2xl font-bold text-navy">
       {state.status === 'ready' ? state.data.name : 'Ficha de formación'}
     </h1>
+    <Button className="justify-self-start" variant="ghost" onClick={onBack}>Volver al catálogo</Button>
     {state.status === 'loading' && <p role="status">Cargando la ficha de formación…</p>}
     {state.status === 'error' && <>
       <Notice tone="warning" live="assertive">{state.message}</Notice>
