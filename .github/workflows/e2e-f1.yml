@@ -78,6 +78,11 @@ jobs:
           docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic -e E2E_FIXTURE_ID="${E2E_FIXTURE_ID:-local-f2-admission}" api python < e2e/verify-f2.py
           node e2e/f2-admission-enrollment.mjs
           docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic -e E2E_FIXTURE_ID="${E2E_FIXTURE_ID:-local-f2-admission}" api python < e2e/verify-f2.py
+      - name: Learner progress and isolation between browser sessions (KAN-49)
+        env:
+          WEB_URL: http://localhost:8443/
+          GISTAR_API: http://localhost:8000
+        run: node e2e/learner-progress.mjs
       - name: Remove disposable data
         if: always()
         run: docker compose -f infra/compose.yaml down -v

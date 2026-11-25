@@ -1,4 +1,5 @@
 """Shared attendance reads; authorization remains the caller's responsibility."""
+import uuid
 from datetime import date
 
 from sqlalchemy import select
@@ -19,6 +20,13 @@ def sessions_in(db: Session, cohort_id: str, date_from: date | None, date_to: da
     return list(db.scalars(query.order_by(AttendanceSession.session_date, AttendanceSession.shift)))
 
 
-def records_of(db: Session, sessions: list[AttendanceSession]) -> list[AttendanceRecord]:
+def records_of(
+    db: Session, sessions: list[AttendanceSession], *, enrollment_id: uuid.UUID | None = None
+) -> list[AttendanceRecord]:
     ids = [session.id for session in sessions]
-    return list(db.scalars(select(AttendanceRecord).where(AttendanceRecord.session_id.in_(ids)))) if ids else []
+    if not ids:
+        return []
+    query = select(AttendanceRecord).where(AttendanceRecord.session_id.in_(ids))
+    if enrollment_id is not None:
+        query = query.where(AttendanceRecord.enrollment_id == enrollment_id)
+    return list(db.scalars(query))
