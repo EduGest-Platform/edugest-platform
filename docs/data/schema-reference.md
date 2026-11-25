@@ -294,6 +294,44 @@ erDiagram
     app_user |o--o{ submission : reviewed_by
 ```
 
+## Dominios textuales declarados / Declared text domains
+
+Índice conservador de CHECK completos de la forma `columna IN ('texto', ...)`; no analiza expresiones compuestas ni infiere transiciones, permisos u obligatoriedad de negocio. / Conservative index of complete simple text IN checks, not compound predicates, transitions or permissions.
+Las restricciones completas siguen debajo; que un campo no aparezca aquí no implica que no tenga reglas. / Full checks remain below; an omitted field is not necessarily unrestricted.
+
+| Tabla / Table | Campo / Field | CHECK | Valores permitidos / Allowed values |
+|---|---|---|---|
+| access_change_request | requested_role | ck_access_request_role | `["admin", "captacion", "seleccion", "docente", "coordinacion"]` |
+| access_change_request | scope_type | ck_access_request_scope | `["global", "program", "call", "cohort"]` |
+| access_change_request | state | ck_access_request_state | `["requested", "approved", "rejected", "applied", "revoked"]` |
+| application | stage | ck_application_stage | `["enviada", "requisitos_en_revision", "convocada", "evaluacion_en_curso", "pendiente_decision_humana", "admitida", "lista_espera", "no_admitida", "retirada"]` |
+| application_event | tipo | ck_application_event_tipo | `["creada", "contacto", "nota", "recordatorio", "cambio_etapa"]` |
+| assignment | status | ck_assignment_status | `["draft", "published"]` |
+| attendance_record | status | ck_attendance_record_status | `["presente", "retraso", "ausente"]` |
+| attendance_session | shift | ck_attendance_session_shift | `["manana", "tarde", "completa"]` |
+| automation_execution | outcome | ck_automation_execution_outcome | `["human_review", "no_action"]` |
+| call | estado | ck_call_estado | `["abierta", "cerrada"]` |
+| call | publication_state | ck_call_publication_state | `["draft", "published"]` |
+| call_requirement | kind | ck_call_requirement_kind | `["required", "recommended"]` |
+| cohort | timezone | ck_cohort_timezone | `["Europe/Madrid", "Atlantic/Canary", "Europe/Lisbon"]` |
+| competency_framework | estado | ck_competency_framework_estado | `["borrador", "publicada", "archivada"]` |
+| enrollment | documentation_state | ck_enrollment_documentation_state | `["pending", "accredited"]` |
+| enrollment | estado | ck_enrollment_estado | `["activa", "finalizada", "baja_voluntaria"]` |
+| intervention | kind | ck_intervention_kind | `["contact", "support", "closure"]` |
+| knowledge_document | scope_type | ck_knowledge_document_scope_type | `["program", "call", "cohort"]` |
+| knowledge_document | status | ck_knowledge_document_status | `["vigente", "obsoleto"]` |
+| preselection_decision | decision | ck_preselection_decision_decision | `["convocada", "retirada_expresa", "silencio_confirmado", "silencio_reprogramado"]` |
+| requirement_review | result | ck_requirement_review_result | `["pending", "met", "not_met", "exception_under_review", "exception_approved"]` |
+| requirement_review_revision | result | ck_requirement_review_revision_result | `["met", "not_met", "exception_under_review", "exception_approved"]` |
+| risk_alert | review_state | ck_risk_alert_review_state | `["pending", "in_review", "closed"]` |
+| role_assignment | role | ck_role_assignment_role | `["admin", "captacion", "seleccion", "docente", "coordinacion"]` |
+| role_assignment | scope_type | ck_role_assignment_scope_type | `["global", "program", "call", "cohort"]` |
+| selection_approval | decision | ck_selection_approval_decision | `["admitida", "lista_espera", "no_admitida"]` |
+| selection_decision | decision | ck_selection_decision_decision | `["admitida", "lista_espera", "no_admitida"]` |
+| simulated_reminder | kind | ck_simulated_reminder_kind | `["documentation", "exercises"]` |
+| staff_profile | state | ck_staff_profile_state | `["pending", "active", "inactive"]` |
+| submission | status | ck_submission_status | `["submitted", "reviewed"]` |
+
 ## Campos y estados almacenados / Fields and stored states
 
 Las restricciones CHECK conservan el vocabulario real de estados. Las reglas de transición y autorización viven en servicios y routers, no en este diagrama.

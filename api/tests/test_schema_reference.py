@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint, Index, Integer, MetaData, String, Table, UniqueConstraint, text
 
-from scripts.export_schema_reference import render
+from scripts.export_schema_reference import render, state_domains
 
 
 def metadata(reverse=False):
@@ -172,3 +172,25 @@ def test_unnamed_foreign_keys_on_the_same_column_sort_by_target():
               *(ForeignKeyConstraint(['parent_id'], [target]) for target in targets))
         results.append(render(data))
     assert results[0] == results[1]
+
+
+def test_text_domains_decode_sql_quotes_without_executing_expressions():
+    data = MetaData()
+    table = Table('example', data, Column('state', String(30)), CheckConstraint("state IN ('pending', 'it''s reviewed')", name='ck_state'))
+    assert state_domains(table) == [('state', 'ck_state', ['pending', "it's reviewed"])]
+
+
+def test_domain_index_does_not_invent_states_from_compound_or_numeric_checks():
+    data = MetaData()
+    table = Table('example', data, Column('state', String(30)), Column('count', Integer),
+        CheckConstraint("state IN ('pending', 'reviewed') OR state IS NULL", name='ck_compound'),
+        CheckConstraint('count IN (1, 2)', name='ck_count'))
+    assert state_domains(table) == []
+    rendered = render(data)
+    assert "state IN ('pending', 'reviewed') OR state IS NULL" in rendered
+
+
+def test_domain_index_preserves_storage_vocabulary_without_creating_transitions():
+    rendered = render(metadata())
+    assert '| child | state | ck_state | `["pending", "reviewed"]` |' in rendered
+    assert 'not compound predicates, transitions or permissions' in rendered

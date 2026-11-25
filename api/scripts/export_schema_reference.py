@@ -1,5 +1,6 @@
 """Render model-only ERD/dictionary deterministically; never connect to a database."""
 import argparse
+import json
 from pathlib import Path
 import re
 import sys
@@ -40,6 +41,22 @@ def declared_default(column):
         # Never invoke Python defaults or publish their runtime values.
         parts.append('application (not evaluated / sin evaluar)')
     return '; '.join(parts) or '—'
+
+
+def state_domains(table):
+    """Extract only complete, simple text IN checks; never infer workflow transitions."""
+    domains = []
+    literal = r"'((?:[^']|'')*)'"
+    literals = rf"\s*{literal}(?:\s*,\s*{literal})*\s*"
+    for constraint in table.constraints:
+        if not isinstance(constraint, CheckConstraint):
+            continue
+        match = re.fullmatch(r'\s*([A-Za-z_][A-Za-z0-9_]*)\s+IN\s*\((.*)\)\s*', str(constraint.sqltext), re.IGNORECASE | re.DOTALL)
+        if match is None or match.group(1) not in table.c or re.fullmatch(literals, match.group(2)) is None:
+            continue
+        values = [value.replace("''", "'") for value in re.findall(literal, match.group(2))]
+        domains.append((match.group(1), constraint.name or 'unnamed', values))
+    return sorted(domains, key=lambda item: (item[0], item[1], item[2]))
 
 
 def globally_unique_columns(table):
@@ -87,7 +104,14 @@ def render(metadata) -> str:
         lines.append("    }")
     for table in tables:
         lines.extend(foreign_key_relations(table))
-    lines += ["```", "", "## Campos y estados almacenados / Fields and stored states", "",
+    lines += ["```", "", "## Dominios textuales declarados / Declared text domains", "",
+              "Índice conservador de CHECK completos de la forma `columna IN ('texto', ...)`; no analiza expresiones compuestas ni infiere transiciones, permisos u obligatoriedad de negocio. / Conservative index of complete simple text IN checks, not compound predicates, transitions or permissions.",
+              "Las restricciones completas siguen debajo; que un campo no aparezca aquí no implica que no tenga reglas. / Full checks remain below; an omitted field is not necessarily unrestricted.", "",
+              "| Tabla / Table | Campo / Field | CHECK | Valores permitidos / Allowed values |", "|---|---|---|---|"]
+    for table in tables:
+        for column, name, values in state_domains(table):
+            lines.append(f"| {table.name} | {column} | {cell(name)} | `{cell(json.dumps(values, ensure_ascii=False))}` |")
+    lines += ["", "## Campos y estados almacenados / Fields and stored states", "",
               "Las restricciones CHECK conservan el vocabulario real de estados. Las reglas de transición y autorización viven en servicios y routers, no en este diagrama.",
               "CHECK constraints preserve the stored state vocabulary. Transition/authorization rules live in services and routers, not this diagram.", ""]
     for table in tables:
