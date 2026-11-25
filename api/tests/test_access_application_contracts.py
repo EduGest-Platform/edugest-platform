@@ -1,0 +1,65 @@
+import uuid
+from datetime import datetime, timezone
+from types import SimpleNamespace
+
+import pytest
+from fastapi import HTTPException
+from pydantic import ValidationError
+
+from app.modules.staff.application_policy import application_blockers, require_matching_confirmation
+from app.modules.staff.application_schemas import AccessApply
+
+
+def context():
+    target = uuid.uuid4()
+    actor = SimpleNamespace(user=SimpleNamespace(id=uuid.uuid4()))
+    user = SimpleNamespace(id=target, is_active=True, person_id=None)
+    profile = SimpleNamespace(user_id=target, state='active')
+    row = SimpleNamespace(requested_by=target, requested_role='docente', scope_type='cohort', scope_id='COH-IA',
+                          state='approved', reviewed_by=actor.user.id, reviewed_at=datetime.now(timezone.utc))
+    return actor, user, profile, row
+
+
+@pytest.mark.parametrize('changes', [{'confirm': False}, {'confirm': 1}, {'confirm': 'true'},
+    {'requested_role': 'coder'}, {'scope_type': 'global', 'scope_id': 'COH-IA'}, {'reviewed_by': str(uuid.uuid4())}])
+def test_apply_requires_explicit_boolean_confirmation_and_cannot_spoof_review(changes):
+    with pytest.raises(ValidationError):
+        AccessApply(**({'confirm': True, 'requested_role': 'docente', 'scope_type': 'cohort', 'scope_id': 'COH-IA'} | changes))
+
+
+def test_confirmation_echo_must_match_the_stored_role_and_scope():
+    _, _, _, row = context()
+    body = AccessApply(confirm=True, requested_role='docente', scope_type='cohort', scope_id='COH-IA')
+    require_matching_confirmation(row, body)
+    body.scope_id = 'COH-DATA'
+    with pytest.raises(HTTPException) as error:
+        require_matching_confirmation(row, body)
+    assert error.value.status_code == 409
+
+
+@pytest.mark.parametrize('problem,expected', [
+    (None, None), ('state', 'request_not_approved'), ('inactive', 'staff_account_required'),
+    ('person', 'staff_account_required'), ('profile', 'active_staff_profile_required'),
+    ('owner', 'invalid_request_owner'), ('reviewer', 'invalid_review'), ('review_time', 'invalid_review'),
+    ('self', 'self_application'), ('scope', 'scope_not_found'), ('existing', 'active_assignment_exists'),
+])
+def test_preflight_is_conservative_without_granting_or_borrowing_access(problem, expected):
+    actor, user, profile, row = context()
+    if problem == 'state':
+        row.state = 'requested'
+    elif problem == 'inactive':
+        user.is_active = False
+    elif problem == 'person':
+        user.person_id = uuid.uuid4()
+    elif problem == 'profile':
+        profile.state = 'inactive'
+    elif problem == 'owner':
+        row.requested_by = uuid.uuid4()
+    elif problem == 'reviewer':
+        row.reviewed_by = row.requested_by
+    elif problem == 'review_time':
+        row.reviewed_at = None
+    elif problem == 'self':
+        actor.user.id = row.requested_by
+    result = application_blockers(actor, user, profile, row, problem != 'scope', object() if problem == 'existing' else None)
+    assert result == ([] if expected is None else [expected])
