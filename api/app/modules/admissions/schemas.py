@@ -17,12 +17,26 @@ def _strip_if_str(value: object) -> object:
 class ApplicationCreate(BaseModel):
     """Public inscription form. Only the minimum data needed for pre-selection (data minimisation)."""
 
-    call_id: str = Field(max_length=30)
+    call_id: str = Field(min_length=1, max_length=30)
     nombre: str = Field(min_length=2, max_length=120)
     email: str = Field(max_length=254)
     motivacion: str = Field(min_length=10, max_length=2000)
     disponibilidad: Literal["Mañana", "Tarde", "Flexible"]
     acepta_datos_sinteticos: Literal[True] = Field(description="Confirmación obligatoria: el entorno solo usa datos sintéticos")
+
+    @field_validator("call_id")
+    @classmethod
+    def _nonblank_call(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Selecciona una convocatoria.")
+        return value
+
+    @field_validator("acepta_datos_sinteticos", mode="before")
+    @classmethod
+    def _explicit_synthetic_confirmation(cls, value: object) -> Literal[True]:
+        if value is not True:
+            raise ValueError("Confirma el uso de datos sintéticos.")
+        return True
 
     @field_validator("email")
     @classmethod

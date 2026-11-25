@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from psycopg.errors import UniqueViolation
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -12,6 +13,15 @@ from app.modules.catalog.publication_policy import require_published
 from app.modules.identity.models import Person
 
 
+def _duplicates_constraint(error: IntegrityError, constraint_name: str) -> bool:
+    cause = error.orig
+    return isinstance(cause, UniqueViolation) and cause.diag.constraint_name == constraint_name
+
+
+def _duplicate_application() -> HTTPException:
+    return HTTPException(status.HTTP_409_CONFLICT, "Ya existe una candidatura con este correo en esta convocatoria")
+
+
 def _find_or_create_person(db: Session, body: ApplicationCreate) -> tuple[Person, bool]:
     """Return the Person for this email and whether it already existed (one expediente per human being)."""
     person = db.scalar(select(Person).where(Person.email == body.email))
@@ -21,7 +31,9 @@ def _find_or_create_person(db: Session, body: ApplicationCreate) -> tuple[Person
         with db.begin_nested():  # savepoint: a lost race must not undo the call lock or the transaction
             person = Person(display_name=body.nombre, email=body.email, is_synthetic=True)
             db.add(person)
-    except IntegrityError:
+    except IntegrityError as exc:
+        if not _duplicates_constraint(exc, "ix_person_email"):
+            raise
         # Another request may have created the same Person after our lookup: reuse it. If no Person with this email
         # exists, the violation was something else and must surface, not be disguised as a race.
         existing = db.scalar(select(Person).where(Person.email == body.email))
@@ -41,7 +53,7 @@ def create_application(db: Session, body: ApplicationCreate, actor: Principal | 
 
     person, reused = _find_or_create_person(db, body)
     if reused and db.scalar(select(Application.id).where(Application.person_id == person.id, Application.call_id == call.id)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una candidatura con este correo en esta convocatoria")
+        raise _duplicate_application()
 
     app = Application(
         codigo=f"{call.codigo_prefix}-{call.next_seq:04d}",
@@ -56,9 +68,11 @@ def create_application(db: Session, body: ApplicationCreate, actor: Principal | 
     db.add(app)
     try:
         db.flush()
-    except IntegrityError as e:  # concurrent duplicate submission
+    except IntegrityError as exc:
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una candidatura con este correo en esta convocatoria") from e
+        if _duplicates_constraint(exc, "uq_application_person_call"):
+            raise _duplicate_application() from exc
+        raise
     db.add(ApplicationEvent(application_id=app.id, tipo="creada", resumen="Inscripción recibida por formulario", actor_user_id=actor.user.id if actor else None))
     audit.record(db, actor, "application.created", "application", str(app.id), codigo=app.codigo, call_id=call.id, person_reused=reused)
     db.commit()

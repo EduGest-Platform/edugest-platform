@@ -54,9 +54,15 @@ def test_whitespace_only_crm_summary_is_rejected(client, db):
         ("email", "a" * 65 + "@example.test"),
         ("email", "two@@example.test"),
         ("email", "two words@example.test"),
+        ("call_id", ""),
+        ("call_id", "  "),
         ("call_id", "C" * 31),
         ("disponibilidad", "Nocturna"),
         ("acepta_datos_sinteticos", None),
+        ("acepta_datos_sinteticos", False),
+        ("acepta_datos_sinteticos", 1),
+        ("acepta_datos_sinteticos", 1.0),
+        ("acepta_datos_sinteticos", "true"),
     ],
 )
 def test_invalid_fields_have_no_persistence_or_counter_side_effects(client, db, field, value):
@@ -113,6 +119,23 @@ def test_rejected_duplicate_preserves_every_record_counter_and_original_identity
     assert snapshot(db) == before
     person = db.scalar(select(Person).where(Person.email == "nueva.persona@example.test"))
     assert person.display_name == "Nombre Sintético Original"
+
+
+def test_application_code_collision_rolls_back_and_returns_a_generic_server_error(client, db):
+    body = new_application()
+    call_id = body["call_id"]
+    original_sequence = db.get(Call, call_id).next_seq
+    assert client.post("/api/v1/applications", json=body).status_code == 201
+
+    # A deliberately inconsistent counter exercises a different, real PostgreSQL unique constraint.
+    db.get(Call, call_id, populate_existing=True).next_seq = original_sequence
+    db.commit()
+    before = snapshot(db)
+    unrelated_email = "codigo.colision@example.test"
+    failed = client.post("/api/v1/applications", json=new_application(email=unrelated_email))
+    assert failed.status_code == 500
+    assert "Ya existe una candidatura" not in failed.text and unrelated_email not in failed.text
+    assert snapshot(db) == before
 
 
 def test_public_registration_cannot_choose_stage_identity_or_event_author(client, db):

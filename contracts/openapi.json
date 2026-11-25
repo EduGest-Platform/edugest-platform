@@ -369,6 +369,7 @@
           },
           "call_id": {
             "maxLength": 30,
+            "minLength": 1,
             "title": "Call Id",
             "type": "string"
           },
