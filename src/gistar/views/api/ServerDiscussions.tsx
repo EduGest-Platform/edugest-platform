@@ -106,65 +106,113 @@ function CommentContent({ comment, userId }: { comment: Comment; userId?: string
   )
 }
 
-function ThreadComments({ thread, onDirty }: { thread: Thread; onDirty: (dirty: boolean) => void }) {
+function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dirty: boolean) => void }) {
   const { me } = useApiSession()
   const [offset, setOffset] = useState(0)
   const [body, setBody] = useState('')
   const [parent, setParent] = useState<Comment | null>(null)
+  const [editing, setEditing] = useState<Comment | null>(null)
   const [notice, setNotice] = useState('')
   const commentId = useId()
   const textarea = useRef<HTMLTextAreaElement>(null)
   const { save, busy, error } = useDiscussionWrite()
 
   useEffect(() => {
-    onDirty(Boolean(body.trim()) || busy)
-  }, [body, busy, onDirty])
+    onDirty(Boolean(body.trim()) || Boolean(editing) || busy)
+  }, [body, editing, busy, onDirty])
 
-  const read = useCallback((signal: AbortSignal) => api.GET('/api/v1/discussion-threads/{thread_id}/comments', {
-    params: { path: { thread_id: thread.id }, query: { limit: PAGE_SIZE, offset } },
-    signal,
-  }), [thread.id, offset])
+  const read = useCallback(async (signal: AbortSignal): Promise<Resource<{ thread: Thread; comments: Schemas['CommentList'] }>> => {
+    const path = { thread_id: threadId }
+    const [thread, comments] = await Promise.all([
+      api.GET('/api/v1/discussion-threads/{thread_id}', { params: { path }, signal }),
+      api.GET('/api/v1/discussion-threads/{thread_id}/comments', {
+        params: { path, query: { limit: PAGE_SIZE, offset } }, signal,
+      }),
+    ])
+    if (!thread.data) return { response: thread.response, error: thread.error }
+    if (!comments.data) return { response: comments.response, error: comments.error }
+    return { response: comments.response, data: { thread: thread.data, comments: comments.data } }
+  }, [threadId, offset])
   const { state, refresh } = useDiscussionRead(read)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!body.trim() || thread.resolved_at) return
+    if (!body.trim() || !state || 'error' in state || state.data.thread.resolved_at) return
     setNotice('')
-    const saved = await save(() => api.POST('/api/v1/discussion-threads/{thread_id}/comments', {
-      params: { path: { thread_id: thread.id } },
-      body: { body: body.trim(), parent_id: parent?.id },
-    }))
+    const text = body.trim()
+    const saved = await save(() => editing
+      ? api.PATCH('/api/v1/discussion-comments/{comment_id}', {
+        params: { path: { comment_id: editing.id } },
+        body: { body: text, expected_version: editing.version },
+      })
+      : api.POST('/api/v1/discussion-threads/{thread_id}/comments', {
+        params: { path: { thread_id: threadId } },
+        body: { body: text, parent_id: parent?.id },
+      }))
     if (!saved) return
     setBody('')
     setParent(null)
-    setNotice('Comentario guardado.')
-    if (state && 'data' in state) setOffset(Math.floor(state.data.total / PAGE_SIZE) * PAGE_SIZE)
+    setEditing(null)
+    setNotice(editing ? 'Comentario actualizado.' : 'Comentario guardado.')
+    if (!editing) setOffset(Math.floor(state.data.comments.total / PAGE_SIZE) * PAGE_SIZE)
     refresh()
+  }
+
+  async function changeResolution(thread: Thread) {
+    const resolved = !thread.resolved_at
+    setNotice('')
+    const saved = await save(() => api.POST('/api/v1/discussion-threads/{thread_id}/resolution', {
+      params: { path: { thread_id: threadId } },
+      body: { resolved, expected_version: thread.version },
+    }))
+    if (saved) {
+      setNotice(resolved ? 'Hilo resuelto.' : 'Hilo reabierto.')
+      refresh()
+    }
   }
 
   if (!state) return <p role="status" className="text-sm text-muted">Cargando comentarios…</p>
   if ('error' in state) return <DiscussionReadError message={state.error} retry={refresh} />
-  const { items, total } = state.data
+  const { thread, comments: { items, total } } = state.data
+  const drafting = Boolean(body.trim()) || Boolean(editing)
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted">{thread.resolved_at ? 'Hilo resuelto' : 'Hilo abierto'}</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted">{thread.resolved_at ? 'Hilo resuelto' : 'Hilo abierto'}</p>
+        {thread.created_by === me?.id && (
+          <Button size="sm" variant="ghost" disabled={busy || drafting} onClick={() => void changeResolution(thread)}>
+            {thread.resolved_at ? 'Reabrir hilo' : 'Resolver hilo'}
+          </Button>
+        )}
+      </div>
       {items.length === 0 ? <Empty>El hilo todavía no tiene comentarios.</Empty> : (
         <ol aria-label="Comentarios del hilo" className="grid gap-2">
           {items.map(comment => (
             <li key={comment.id} className={`rounded-lg border border-line p-3 ${comment.parent_id ? 'ml-3 border-l-2' : ''}`}>
               <CommentContent comment={comment} userId={me?.id} />
               {!thread.resolved_at && comment.body !== null && (
-                <Button size="sm" variant="subtle" disabled={busy} onClick={() => {
-                  setParent(comment)
-                  textarea.current?.focus()
-                }}>Responder</Button>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <Button size="sm" variant="subtle" disabled={busy || drafting} onClick={() => {
+                    setParent(comment)
+                    textarea.current?.focus()
+                  }}>Responder</Button>
+                  {comment.actor_user_id === me?.id && (
+                    <Button size="sm" variant="subtle" disabled={busy || drafting} onClick={() => {
+                      setParent(null)
+                      setEditing(comment)
+                      setBody(comment.body ?? '')
+                      textarea.current?.focus()
+                    }}>Editar comentario</Button>
+                  )}
+                </div>
               )}
             </li>
           ))}
         </ol>
       )}
-      <PageControls label="Páginas de comentarios" offset={offset} total={total} onPage={setOffset} />
+      {!drafting && !busy && <PageControls label="Páginas de comentarios" offset={offset} total={total} onPage={setOffset} />}
       {notice && <p role="status" className="text-sm">{notice}</p>}
+      {error && <Notice tone="warning" live="polite">{error}</Notice>}
       {!thread.resolved_at && (
         <form className="grid justify-items-start gap-2" onSubmit={submit}>
           {parent && (
@@ -175,13 +223,20 @@ function ThreadComments({ thread, onDirty }: { thread: Thread; onDirty: (dirty: 
             </div>
           )}
           <div className="w-full">
-            <Field label={parent ? 'Tu respuesta' : 'Nuevo comentario'} htmlFor={commentId}>
+            <Field label={editing ? 'Editar tu comentario' : parent ? 'Tu respuesta' : 'Nuevo comentario'} htmlFor={commentId}>
               <textarea id={commentId} ref={textarea} rows={3} maxLength={2000} value={body} disabled={busy}
                 onChange={event => setBody(event.target.value)} className={inputCls} />
             </Field>
           </div>
-          {error && <Notice tone="warning" live="polite">{error}</Notice>}
-          <Button size="sm" type="submit" disabled={busy || !body.trim()}>{parent ? 'Enviar respuesta' : 'Enviar comentario'}</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" type="submit" disabled={busy || !body.trim()}>
+              {editing ? 'Guardar edición' : parent ? 'Enviar respuesta' : 'Enviar comentario'}
+            </Button>
+            {editing && <Button size="sm" variant="ghost" disabled={busy} onClick={() => {
+              setEditing(null)
+              setBody('')
+            }}>Cancelar edición</Button>}
+          </div>
         </form>
       )}
     </div>
@@ -249,7 +304,7 @@ function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: str
             setNewThread(null)
             setSelection('')
           }} />}
-          <ThreadComments key={thread.id} thread={thread} onDirty={setCommentDirty} />
+          <ThreadComments key={thread.id} threadId={thread.id} onDirty={setCommentDirty} />
         </>
       ) : <Empty>Este expediente todavía no tiene hilos.</Empty>}
     </div>
