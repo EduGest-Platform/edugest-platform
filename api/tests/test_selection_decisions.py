@@ -3,7 +3,7 @@
 import itertools
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -448,6 +448,34 @@ def test_waiting_list_is_ordered_by_entry_and_only_proposes_the_first(client, db
     assert [entry["position"] for entry in body["waiting_list"]] == [1, 2, 3]
     assert [entry["is_next"] for entry in body["waiting_list"]] == [True, False, False]
     assert body["waiting_order_basis"] == "entrada_en_lista" and body["waiting_order_confirmed"] is False
+
+
+def test_waiting_list_uses_latest_entry_for_each_current_application_in_the_call(client, db):
+    empty_waiting_list(db)
+    legacy = make_application(db, stage="lista_espera")
+    history = make_application(db, stage="lista_espera")
+    foreign = make_application(db, call_id=DATA_CALL, stage="lista_espera")
+    first_day = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    second_day = datetime(2026, 10, 2, tzinfo=timezone.utc)
+    third_day = datetime(2026, 10, 3, tzinfo=timezone.utc)
+    legacy.updated_at = second_day
+    history.updated_at = first_day
+    foreign.updated_at = first_day
+    actor_id = db.scalar(select(User.id).where(User.email == SEL_IA))
+    for application, when in ((history, first_day), (history, third_day), (foreign, first_day)):
+        db.add(SelectionDecision(
+            application_id=application.id, decision="lista_espera", from_stage="pendiente_decision_humana",
+            to_stage="lista_espera", reason=REASON, actor_user_id=actor_id, occurred_at=when,
+        ))
+    db.commit()
+
+    response = overview(client, login(client, SEL_IA))
+    assert response.status_code == 200
+    rows = response.json()["waiting_list"]
+    assert [(row["application_id"], row["position"], row["is_next"]) for row in rows] == [
+        (str(legacy.id), 1, True), (str(history.id), 2, False),
+    ]
+    assert [datetime.fromisoformat(row["since"]) for row in rows] == [second_day, third_day]
 
 
 def test_promoting_from_the_waiting_list_moves_the_next_person_up(client, db):
