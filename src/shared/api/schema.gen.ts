@@ -1912,6 +1912,7 @@ export interface components {
              * @description Response assembly time, not a historical or transaction snapshot.
              */
             generated_at: string;
+            submissions: components["schemas"]["OverviewSubmissions"];
             /** Timezone */
             timezone: string;
         };
@@ -2478,6 +2479,33 @@ export interface components {
              */
             rule: string;
             totals: components["schemas"]["CohortAttendance"];
+        };
+        /** OverviewSubmissions */
+        OverviewSubmissions: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentStatus"][];
+            /** Has Data */
+            has_data: boolean | null;
+            /** Min Group Size */
+            min_group_size: number;
+            /**
+             * Period
+             * @default current_published_assignments
+             * @constant
+             */
+            period: "current_published_assignments";
+            /**
+             * Rule
+             * @default Plazo en la hora local de la cohorte. Entregada antes del plazo = a tiempo; después = tarde. Sin entrega y plazo abierto = pendiente; sin entrega y plazo vencido = vencida. Se puede reentregar hasta la revisión docente; se conserva la primera fecha.
+             */
+            rule: string;
+            /** Suppressed */
+            suppressed: boolean;
         };
         /** PendingSubmissions */
         PendingSubmissions: {

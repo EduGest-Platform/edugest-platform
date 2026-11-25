@@ -1650,6 +1650,9 @@
             "title": "Generated At",
             "type": "string"
           },
+          "submissions": {
+            "$ref": "#/components/schemas/OverviewSubmissions"
+          },
           "timezone": {
             "title": "Timezone",
             "type": "string"
@@ -1659,7 +1662,8 @@
           "cohort_id",
           "timezone",
           "generated_at",
-          "attendance"
+          "attendance",
+          "submissions"
         ],
         "title": "CohortProgressOverview",
         "type": "object"
@@ -3009,6 +3013,61 @@
           "totals"
         ],
         "title": "OverviewAttendance",
+        "type": "object"
+      },
+      "OverviewSubmissions": {
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentStatus"
+            },
+            "title": "Assignments",
+            "type": "array"
+          },
+          "has_data": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Data"
+          },
+          "min_group_size": {
+            "title": "Min Group Size",
+            "type": "integer"
+          },
+          "period": {
+            "const": "current_published_assignments",
+            "default": "current_published_assignments",
+            "title": "Period",
+            "type": "string"
+          },
+          "rule": {
+            "default": "Plazo en la hora local de la cohorte. Entregada antes del plazo = a tiempo; después = tarde. Sin entrega y plazo abierto = pendiente; sin entrega y plazo vencido = vencida. Se puede reentregar hasta la revisión docente; se conserva la primera fecha.",
+            "title": "Rule",
+            "type": "string"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "as_of",
+          "has_data",
+          "suppressed",
+          "min_group_size",
+          "assignments"
+        ],
+        "title": "OverviewSubmissions",
         "type": "object"
       },
       "PendingSubmissions": {

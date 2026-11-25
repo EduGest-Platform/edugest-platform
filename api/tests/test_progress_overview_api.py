@@ -19,3 +19,12 @@ def test_unauthorized_role_is_denied_before_reversed_period_validation(client):
     assert client.get(PATH + query, headers=login(client, CAPT_IA)).status_code == 403
     response = client.get(PATH + query, headers=login(client, COORD))
     assert response.status_code == 422 and response.json()['code'] == 'invalid_date_window'
+
+
+def test_overview_submission_counts_match_the_existing_aggregate_tool(client):
+    headers = login(client, COORD)
+    overview = client.get(PATH, headers=headers)
+    previous = client.get('/api/v1/tools/pending-submissions?cohort_id=COH-IA', headers=headers)
+    assert overview.status_code == previous.status_code == 200
+    assert overview.json()['submissions']['assignments'] == previous.json()['data']['assignments']
+    assert 'items' not in overview.json()['submissions']
