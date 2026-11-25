@@ -11,6 +11,20 @@ const WEB = process.env.WEB_URL ?? 'http://127.0.0.1:4173/'
 const unique = `e2e.${Date.now()}@example.test`
 const A = await newBrowser()
 const B = await newBrowser()
+await B.initScript(`(() => {
+  const original = window.fetch.bind(window)
+  window.assistantTestCalls = []
+  window.fetch = async (request, options) => {
+    const url = new URL(typeof request === 'string' ? request : request.url, location.href)
+    const method = options?.method ?? request.method ?? 'GET'
+    if (url.pathname !== '/api/v1/assistant/ask' || method.toUpperCase() !== 'POST') return original(request, options)
+    const status = window.assistantTestError ? 503 : 200
+    const body = request instanceof Request ? await request.clone().json() : JSON.parse(options.body)
+    window.assistantTestCalls.push({ question: body.question, status })
+    await new Promise(resolve => setTimeout(resolve, 800))
+    return new Response(JSON.stringify(status === 503 ? {detail:'Synthetic unavailable'} : {status:'no_source', answer:'', citations:[], scope_cohorts:[], source_kind:'documents'}), {status, headers:{'Content-Type':'application/json'}})
+  }
+})()`)
 
 // 1 · A: captación IA inicia sesión y ve solo su ámbito
 await A.goto(WEB)
@@ -80,32 +94,27 @@ check('Vistas no migradas señalan datos locales', await B.waitText('datos local
 // KAN-268 · Floating assistant: deterministic browser responses, real keyboard events.
 const editor = '[aria-label="Pregunta al asistente"]'
 const launch = '[aria-label="Abrir asistente EduGest"]'
-await B.ev(`(() => {
-  const original = window.fetch.bind(window)
-  window.fetch = async (request, options) => {
-    const url = typeof request === 'string' ? request : request.url
-    if (!url?.endsWith('/api/v1/assistant/ask')) return original(request, options)
-    await new Promise(resolve => setTimeout(resolve, 800))
-    if (window.assistantTestError) return new Response('{}', { status: 503, headers: { 'Content-Type': 'application/json' } })
-    return new Response(JSON.stringify({status:'no_source', answer:'', citations:[], scope_cohorts:[], source_kind:'documents'}), {headers:{'Content-Type':'application/json'}})
-  }
-})()`)
 await B.ev(`document.querySelector('${launch}').click()`)
 await B.set(editor, 'Pregunta sintética de prueba')
 await B.enter()
 check('Asistente conserva foco durante consulta por Enter', await B.ev(`document.activeElement.matches('${editor}') && document.activeElement.readOnly`))
 check('Asistente muestra respuesta', await B.waitText('No consta en la documentación'))
+check('Interceptor atendió primera consulta', await B.ev(`JSON.stringify(window.assistantTestCalls) === JSON.stringify([{question:'Pregunta sintética de prueba',status:200}])`))
 check('Editor conserva foco y vuelve a ser editable', await B.ev(`document.activeElement.matches('${editor}') && !document.activeElement.readOnly`))
 await B.set(editor, 'Segunda pregunta sintética')
 await B.ev('window.assistantTestError = true')
 await B.enter()
-check('Asistente muestra error', await B.waitText('HTTP 503') || await B.ev('!!document.querySelector("dialog [role=alert]")'))
+check('Asistente muestra error 503 esperado', await B.waitText('El servidor ha tenido un problema. Inténtalo de nuevo en unos minutos.'))
+check('Mensaje exacto del error', await B.ev(`document.querySelector('dialog [role=alert]')?.textContent === 'El servidor ha tenido un problema. Inténtalo de nuevo en unos minutos.'`))
+check('Interceptor atendió segunda consulta', await B.ev(`window.assistantTestCalls.length === 2 && window.assistantTestCalls[1].question === 'Segunda pregunta sintética' && window.assistantTestCalls[1].status === 503`))
 check('Editor editable y enfocado tras error', await B.ev(`document.activeElement.matches('${editor}') && !document.activeElement.readOnly`))
 await B.set(editor, 'Tercera pregunta sintética')
+await B.ev('window.assistantTestError = false')
 await B.ev('document.querySelector("[aria-label=\\"Enviar pregunta\\"]").focus(); document.activeElement.click()')
 check('Envío por botón devuelve foco al editor', await B.ev(`document.activeElement.matches('${editor}')`))
 await B.ev('document.querySelector("[aria-label=\\"Cerrar asistente\\"]").focus()')
-await sleep(1200)
+check('Tercera respuesta completada', await B.waitText('No consta en la documentación') && await B.ev(`new Promise(resolve => { const deadline = Date.now() + 6000; const poll = () => { if (!document.querySelector('${editor}').readOnly) resolve(true); else if (Date.now() > deadline) resolve(false); else setTimeout(poll, 50) }; poll() })`))
+check('Interceptor atendió tercera consulta', await B.ev(`window.assistantTestCalls.length === 3 && window.assistantTestCalls[2].question === 'Tercera pregunta sintética' && window.assistantTestCalls[2].status === 200`))
 check('Respuesta no roba foco al usuario', await B.ev('document.activeElement.getAttribute("aria-label") === "Cerrar asistente"'))
 await B.escape()
 await sleep(200)
