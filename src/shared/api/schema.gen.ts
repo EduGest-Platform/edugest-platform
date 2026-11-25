@@ -912,6 +912,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List enrollments for the signed-in person */
+        get: operations["list_own_enrollments_api_v1_me_enrollments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/programs/{program_id}/competency-frameworks": {
         parameters: {
             query?: never;
@@ -2518,6 +2535,28 @@ export interface components {
             expires_hours: number;
         };
         JsonValue: unknown;
+        /** LearnerEnrollment */
+        LearnerEnrollment: {
+            /** Cohort Id */
+            cohort_id: string;
+            /** Cohort Name */
+            cohort_name: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "activa" | "finalizada" | "baja_voluntaria";
+        };
+        /** LearnerEnrollments */
+        LearnerEnrollments: {
+            /** Items */
+            items: components["schemas"]["LearnerEnrollment"][];
+        };
         /** LevelCount */
         LevelCount: {
             /** Level 1 */
@@ -7060,6 +7099,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationSelfView"][];
+                };
+            };
+        };
+    };
+    list_own_enrollments_api_v1_me_enrollments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearnerEnrollments"];
                 };
             };
         };

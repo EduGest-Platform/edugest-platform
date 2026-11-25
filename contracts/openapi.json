@@ -2958,6 +2958,56 @@
         "type": "object"
       },
       "JsonValue": {},
+      "LearnerEnrollment": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "cohort_name": {
+            "title": "Cohort Name",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "activa",
+              "finalizada",
+              "baja_voluntaria"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "cohort_id",
+          "cohort_name",
+          "status"
+        ],
+        "title": "LearnerEnrollment",
+        "type": "object"
+      },
+      "LearnerEnrollments": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LearnerEnrollment"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "LearnerEnrollments",
+        "type": "object"
+      },
       "LevelCount": {
         "properties": {
           "level_1": {
@@ -10381,6 +10431,32 @@
         "summary": "Candidaturas propias de la persona autenticada",
         "tags": [
           "admissions"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments": {
+      "get": {
+        "operationId": "list_own_enrollments_api_v1_me_enrollments_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerEnrollments"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List enrollments for the signed-in person",
+        "tags": [
+          "learning"
         ]
       }
     },
