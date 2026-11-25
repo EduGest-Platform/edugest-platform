@@ -3,6 +3,7 @@
 import uuid
 
 from fastapi import status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.authz import Principal, Scope
@@ -34,3 +35,16 @@ def require_enrollment(db: Session, p: Principal, perm: str, enrollment_id: uuid
     if not enrollment:
         raise UserFacingError(status.HTTP_404_NOT_FOUND, "enrollment_not_found", "No encontramos esta matrícula. Vuelve a la cohorte y ábrela de nuevo.")
     return enrollment, require_cohort(db, p, perm, enrollment.cohort_id)
+
+
+def require_own_active_enrollment(db: Session, p: Principal, enrollment_id: uuid.UUID) -> Enrollment:
+    enrollment = None
+    if p.user.person_id is not None:
+        enrollment = db.scalar(
+            select(Enrollment).where(
+                Enrollment.id == enrollment_id, Enrollment.person_id == p.user.person_id, Enrollment.estado == "activa"
+            )
+        )
+    if enrollment is None:
+        raise UserFacingError(404, "enrollment_not_found", "No encontramos una matrícula activa para tu cuenta.")
+    return enrollment

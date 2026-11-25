@@ -4,6 +4,7 @@ import { ApiCohorts } from './views/api/ApiCohorts'
 import { ApiCohortOverview } from './views/api/ApiCohortOverview'
 import { ApiAttendance } from './views/api/ApiAttendance'
 import { ApiAssistant } from './views/api/ApiAssistant'
+import { ApiLearnerProgress } from './views/api/ApiLearnerProgress'
 import { ApiApplications, ApiAudit, ApiInscription, ApiMyApplications } from './views/api/ApiAdmissions'
 
 /**
@@ -15,6 +16,7 @@ export const API_SCREENS: Partial<Record<View, () => ReactElement>> = {
   analitica: ApiCohortOverview,
   asistencia: ApiAttendance,
   asistente: ApiAssistant,
+  progreso: ApiLearnerProgress,
   inscripcion: ApiInscription,
   candidatura: ApiMyApplications,
   candidaturas: ApiApplications,
