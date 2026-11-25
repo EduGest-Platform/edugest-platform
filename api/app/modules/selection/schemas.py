@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.modules.admissions.schemas import Stage
+
 Decision = Literal["admitida", "lista_espera", "no_admitida"]
 
 
@@ -79,6 +81,13 @@ class SelectionDecisionList(BaseModel):
     items: list[SelectionDecisionOut]
     quorum: int = Field(description="Personas distintas que deben coincidir en esta convocatoria")
     pending_votes: list[SelectionApprovalOut] = Field(description="Votos que aún no han alcanzado el quórum")
+
+
+class OwnSelectionOutcome(BaseModel):
+    application_id: uuid.UUID
+    stage: Stage
+    outcome: Decision | None = Field(description="Decisión vigente registrada; nulo mientras no exista una decisión aplicada.")
+    decided_at: datetime | None
 
 
 # Provisional rule until the foundation confirms the priority criteria (review of PR #95, point 2).
