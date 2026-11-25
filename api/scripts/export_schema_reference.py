@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import sys
 
-from sqlalchemy import CheckConstraint, Column, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 
 
@@ -23,6 +23,23 @@ def diagram_key(column):
     token = re.sub(r'[^A-Za-z0-9_]', '_', sql_type.split('(')[0]).strip('_')
     flags = ','.join(flag for flag, present in [('PK', column.primary_key), ('FK', bool(column.foreign_keys))] if present)
     return f"        {token} {diagram_identifier(column.name)} {flags}"
+
+
+def sql(expression):
+    if hasattr(expression, 'compile'):
+        return str(expression.compile(dialect=postgresql.dialect(), compile_kwargs={'literal_binds': True}))
+    return str(expression)
+
+
+def declared_default(column):
+    parts = []
+    if column.server_default is not None:
+        value = getattr(column.server_default, 'arg', None)
+        parts.append('server: ' + (sql(value) if value is not None else 'generated / generado'))
+    if column.default is not None:
+        # Never invoke Python defaults or publish their runtime values.
+        parts.append('application (not evaluated / sin evaluar)')
+    return '; '.join(parts) or '—'
 
 
 def globally_unique_columns(table):
@@ -74,21 +91,34 @@ def render(metadata) -> str:
               "Las restricciones CHECK conservan el vocabulario real de estados. Las reglas de transición y autorización viven en servicios y routers, no en este diagrama.",
               "CHECK constraints preserve the stored state vocabulary. Transition/authorization rules live in services and routers, not this diagram.", ""]
     for table in tables:
-        lines += [f"### {table.name}", "", "| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference |",
-                  "|---|---|---|---|"]
+        lines += [f"### {table.name}", "", "| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |",
+                  "|---|---|---|---|---|"]
         for column in table.columns:
             references = ", ".join(sorted(fk.target_fullname for fk in column.foreign_keys)) or "—"
-            lines.append(f"| {column.name} | {cell(column.type.compile(dialect=postgresql.dialect()))} | {'sí / yes' if column.nullable else 'no'} | {references} |")
+            lines.append(f"| {column.name} | {cell(column.type.compile(dialect=postgresql.dialect()))} | {'sí / yes' if column.nullable else 'no'} | {references} | {cell(declared_default(column))} |")
         for constraint in sorted(table.constraints, key=lambda item: (
-            type(item).__name__, item.name or "", tuple(item.columns.keys()), str(getattr(item, 'sqltext', ''))
+            type(item).__name__, item.name or "", tuple(item.columns.keys()), str(getattr(item, 'sqltext', '')),
+            tuple(element.target_fullname for element in item.elements) if isinstance(item, ForeignKeyConstraint) else (),
+            str(getattr(item, 'ondelete', None)), str(getattr(item, 'onupdate', None))
         )):
             if isinstance(constraint, CheckConstraint):
                 lines.append(f"\n- CHECK `{constraint.name}`: `{cell(constraint.sqltext)}`")
             elif isinstance(constraint, UniqueConstraint):
                 lines.append(f"\n- UNIQUE `{constraint.name or 'unnamed'}`: `{', '.join(constraint.columns.keys())}`")
+            elif isinstance(constraint, ForeignKeyConstraint):
+                targets = ', '.join(element.target_fullname for element in constraint.elements)
+                lines.append(f"\n- FK `{constraint.name or 'unnamed'}`: `({', '.join(constraint.columns.keys())}) -> ({targets})`; "
+                             f"ON DELETE `{constraint.ondelete or 'NO ACTION'}`; ON UPDATE `{constraint.onupdate or 'NO ACTION'}`")
+        for index in sorted(table.indexes, key=lambda item: (item.name or '', tuple(sql(expression) for expression in item.expressions),
+                            bool(item.unique), sql(item.dialect_options['postgresql'].get('where')))):
+            expressions = ', '.join(sql(expression) for expression in index.expressions)
+            predicate = index.dialect_options['postgresql'].get('where')
+            condition = f" WHERE `{cell(sql(predicate))}`" if predicate is not None else ''
+            lines.append(f"\n- {'UNIQUE INDEX' if index.unique else 'INDEX'} `{index.name or 'unnamed'}`: `{cell(expressions)}`{condition}")
         lines.append("")
     lines += ["## Límites / Limits", "",
               "Los tipos del ERD son identificadores esquemáticos; la tabla contiene el tipo PostgreSQL exacto. / ERD field types are schematic; the dictionary provides exact PostgreSQL types.",
+              "Defaults SQL son expresiones declaradas; defaults Python solo se marcan, nunca se ejecutan. Índices y acciones FK describen metadatos, no un catálogo inspeccionado. / SQL defaults are declared expressions; Python defaults are labelled, never executed. Indexes and FK actions are model metadata, not inspected database objects.",
               "No incluye datos, credenciales, valores de filas ni evidencia de ejecución. No certifica aceptación, permisos, despliegue o ausencia de deriva. Verificar migraciones con PostgreSQL y revisión humana.",
               "No row data, credentials or execution evidence are included. This does not certify acceptance, permissions, deployment or drift absence. Verify migrations against PostgreSQL and obtain human review.", ""]
     return "\n".join(lines)

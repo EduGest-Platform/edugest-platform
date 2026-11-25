@@ -1,6 +1,6 @@
 """Offline generated-dictionary regressions, without PostgreSQL claims."""
 import pytest
-from sqlalchemy import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint, Index, Integer, MetaData, String, Table, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint, Index, Integer, MetaData, String, Table, UniqueConstraint, text
 
 from scripts.export_schema_reference import render
 
@@ -122,3 +122,53 @@ def test_registered_model_diagram_contains_each_foreign_key_constraint_once():
     text = render(Base.metadata)
     edges = [line for line in text.splitlines() if '--' in line and ' : ' in line]
     assert len(edges) == sum(len(table.foreign_key_constraints) for table in Base.metadata.tables.values())
+
+
+def test_defaults_are_described_without_executing_python_generators():
+    def forbidden_default():
+        raise AssertionError('Python defaults must never run during documentation export')
+
+    data = MetaData()
+    Table('example', data, Column('id', Integer, primary_key=True, default=forbidden_default),
+          Column('state', String(20), server_default='pending'), Column('created_at', String(30), server_default=text('CURRENT_TIMESTAMP')))
+    rendered = render(data)
+    assert 'application (not evaluated / sin evaluar)' in rendered
+    assert 'server: pending' in rendered and 'server: CURRENT_TIMESTAMP' in rendered
+
+
+def test_partial_unique_index_predicate_and_fk_delete_action_are_visible():
+    data = MetaData()
+    Table('parent', data, Column('id', Integer, primary_key=True))
+    child = Table('child', data, Column('id', Integer, primary_key=True),
+                  Column('parent_id', Integer, ForeignKey('parent.id', ondelete='CASCADE')), Column('active', Integer))
+    Index('uq_active_parent', child.c.parent_id, unique=True, postgresql_where=child.c.active == 1)
+    rendered = render(data)
+    assert 'UNIQUE INDEX `uq_active_parent`' in rendered
+    assert 'WHERE `child.active = 1`' in rendered
+    assert 'ON DELETE `CASCADE`' in rendered
+
+
+def test_multiple_unnamed_composite_foreign_keys_have_stable_order():
+    results = []
+    for reverse in (False, True):
+        data = MetaData()
+        Table('parent', data, Column('a', Integer, primary_key=True), Column('b', Integer, primary_key=True))
+        constraints = [ForeignKeyConstraint(['first_a', 'first_b'], ['parent.a', 'parent.b']),
+                       ForeignKeyConstraint(['last_a', 'last_b'], ['parent.a', 'parent.b'])]
+        Table('child', data, Column('id', Integer, primary_key=True),
+              *(Column(name, Integer) for name in ('first_a', 'first_b', 'last_a', 'last_b')),
+              *(reversed(constraints) if reverse else constraints))
+        results.append(render(data))
+    assert results[0] == results[1]
+
+
+def test_unnamed_foreign_keys_on_the_same_column_sort_by_target():
+    results = []
+    for targets in (['first.id', 'second.id'], ['second.id', 'first.id']):
+        data = MetaData()
+        for name in ('first', 'second'):
+            Table(name, data, Column('id', Integer, primary_key=True))
+        Table('child', data, Column('id', Integer, primary_key=True), Column('parent_id', Integer),
+              *(ForeignKeyConstraint(['parent_id'], [target]) for target in targets))
+        results.append(render(data))
+    assert results[0] == results[1]
