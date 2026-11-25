@@ -53,7 +53,7 @@ export function Button({
     <button
       type="button"
       {...props}
-      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold motion-safe:active:scale-[0.98] motion-safe:transition-[color,background-color,border-color,transform]  motion-safe:duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
         size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2.5 text-sm'
       } ${variants[variant]} ${className}`}
     />
@@ -154,7 +154,7 @@ export function Kpi({ label, value, icon }: { label: string; value: ReactNode; i
 export function Progress({ value }: { value: number }) {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e7eef3]" role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100}>
-      <span className="block h-full rounded-full bg-teal transition-[width]" style={{ width: `${value}%` }} />
+      <span className="block h-full rounded-full bg-teal motion-safe:transition-[width] motion-safe:duration-200" style={{ width: `${value}%` }} />
     </div>
   )
 }
@@ -195,7 +195,7 @@ export function Chips<T extends string>({ options, value, onChange, label }: { o
             type="button"
             aria-pressed={on}
             onClick={() => onChange(on ? value.filter((x) => x !== o.id) : [...value, o.id])}
-            className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? 'border-navy bg-navy text-white' : 'border-line bg-white text-ink/80 hover:border-blue/40'}`}
+            className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium motion-safe:transition-colors motion-safe:duration-200 ${on ? 'border-navy bg-navy text-white' : 'border-line bg-white text-ink/80 hover:border-blue/40'}`}
           >
             {o.label}
           </button>
@@ -215,7 +215,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
           role="radio"
           aria-checked={value === o.id}
           onClick={() => onChange(o.id)}
-          className={`cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${value === o.id ? 'bg-white text-navy shadow-sm' : 'text-muted hover:text-navy'}`}
+          className={`cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-semibold motion-safe:transition-colors motion-safe:duration-200 ${value === o.id ? 'bg-white text-navy shadow-sm' : 'text-muted hover:text-navy'}`}
         >
           {o.label}
         </button>
