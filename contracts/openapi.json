@@ -3408,6 +3408,35 @@
         "title": "OverviewSubmissions",
         "type": "object"
       },
+      "OwnOutcomeEnrollment": {
+        "properties": {
+          "cohort_id": {
+            "title": "Cohort Id",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "activa",
+              "finalizada",
+              "baja_voluntaria"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "cohort_id",
+          "status"
+        ],
+        "title": "OwnOutcomeEnrollment",
+        "type": "object"
+      },
       "OwnSelectionOutcome": {
         "properties": {
           "application_id": {
@@ -3426,6 +3455,17 @@
               }
             ],
             "title": "Decided At"
+          },
+          "enrollment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnOutcomeEnrollment"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Matrícula vinculada y verificada de la persona solicitante."
           },
           "outcome": {
             "anyOf": [
@@ -3464,7 +3504,8 @@
           "application_id",
           "stage",
           "outcome",
-          "decided_at"
+          "decided_at",
+          "enrollment"
         ],
         "title": "OwnSelectionOutcome",
         "type": "object"

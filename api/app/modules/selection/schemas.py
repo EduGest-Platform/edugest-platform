@@ -83,11 +83,18 @@ class SelectionDecisionList(BaseModel):
     pending_votes: list[SelectionApprovalOut] = Field(description="Votos que aún no han alcanzado el quórum")
 
 
+class OwnOutcomeEnrollment(BaseModel):
+    enrollment_id: uuid.UUID
+    cohort_id: str
+    status: Literal["activa", "finalizada", "baja_voluntaria"]
+
+
 class OwnSelectionOutcome(BaseModel):
     application_id: uuid.UUID
     stage: Stage
     outcome: Decision | None = Field(description="Decisión vigente registrada; nulo mientras no exista una decisión aplicada.")
     decided_at: datetime | None
+    enrollment: OwnOutcomeEnrollment | None = Field(description="Matrícula vinculada y verificada de la persona solicitante.")
 
 
 # Provisional rule until the foundation confirms the priority criteria (review of PR #95, point 2).

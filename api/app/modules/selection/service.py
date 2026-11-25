@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -17,7 +17,7 @@ from app.modules.requirements.service import require_access
 from app.modules.selection.models import SelectionApproval, SelectionDecision
 from app.modules.selection.authority import signature_authority
 from app.modules.selection.schemas import (
-    WAITING_ORDER_BASIS, OwnSelectionOutcome, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
+    WAITING_ORDER_BASIS, OwnOutcomeEnrollment, OwnSelectionOutcome, SelectionCandidate, SelectionDecisionWrite, SelectionOverview, WaitingListEntry,
 )
 
 # An admission decision can be taken while the application is in selection, or from the waiting list (promotion or final refusal).
@@ -38,7 +38,8 @@ def own_selection_outcome(db: Session, actor: Principal, application_id: uuid.UU
         raise _own_application_not_found()
 
     applied = (
-        select(SelectionDecision.decision, SelectionDecision.to_stage, SelectionDecision.occurred_at)
+        select(SelectionDecision.decision, SelectionDecision.to_stage, SelectionDecision.occurred_at,
+               SelectionDecision.cohort_id, SelectionDecision.enrollment_id)
         .where(SelectionDecision.application_id == Application.id)
         .order_by(SelectionDecision.occurred_at.desc(), SelectionDecision.id.desc())
         .limit(1)
@@ -46,13 +47,26 @@ def own_selection_outcome(db: Session, actor: Principal, application_id: uuid.UU
         .lateral()
     )
     result = db.execute(
-        select(Application.id, Application.stage, applied.c.decision, applied.c.occurred_at)
+        select(Application.id, Application.stage, applied.c.decision, applied.c.occurred_at,
+               Enrollment.id.label("enrollment_id"), Enrollment.cohort_id, Enrollment.estado)
         .outerjoin(applied, (applied.c.decision == Application.stage) & (applied.c.to_stage == Application.stage))
+        .outerjoin(Enrollment, and_(
+            applied.c.decision == "admitida",
+            Enrollment.id == applied.c.enrollment_id,
+            Enrollment.cohort_id == applied.c.cohort_id,
+            Enrollment.application_id == Application.id,
+            Enrollment.person_id == Application.person_id,
+        ))
         .where(Application.id == application_id, Application.person_id == person_id)
     ).one_or_none()
     if result is None:
         raise _own_application_not_found()
-    return OwnSelectionOutcome(application_id=result.id, stage=result.stage, outcome=result.decision, decided_at=result.occurred_at)
+    enrollment = None
+    if result.enrollment_id is not None:
+        enrollment = OwnOutcomeEnrollment(enrollment_id=result.enrollment_id, cohort_id=result.cohort_id, status=result.estado)
+    return OwnSelectionOutcome(
+        application_id=result.id, stage=result.stage, outcome=result.decision, decided_at=result.occurred_at, enrollment=enrollment,
+    )
 
 
 def _own_application_not_found() -> UserFacingError:

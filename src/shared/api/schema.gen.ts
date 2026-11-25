@@ -2766,6 +2766,21 @@ export interface components {
             /** Suppressed */
             suppressed: boolean;
         };
+        /** OwnOutcomeEnrollment */
+        OwnOutcomeEnrollment: {
+            /** Cohort Id */
+            cohort_id: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "activa" | "finalizada" | "baja_voluntaria";
+        };
         /** OwnSelectionOutcome */
         OwnSelectionOutcome: {
             /**
@@ -2775,6 +2790,8 @@ export interface components {
             application_id: string;
             /** Decided At */
             decided_at: string | null;
+            /** @description Matrícula vinculada y verificada de la persona solicitante. */
+            enrollment: components["schemas"]["OwnOutcomeEnrollment"] | null;
             /**
              * Outcome
              * @description Decisión vigente registrada; nulo mientras no exista una decisión aplicada.
