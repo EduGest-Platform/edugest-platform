@@ -8,6 +8,7 @@ type Thread = Schemas['ThreadOut']
 type Comment = Schemas['CommentOut']
 type Resource<T> = { data?: T; error?: unknown; response: Response }
 type ReadState<T> = { data: T } | { error: string } | null
+type WriteError = { message: string; status?: number; code?: string }
 
 const PAGE_SIZE = 20
 const formatTime = new Intl.DateTimeFormat('es-ES', {
@@ -51,7 +52,7 @@ function DiscussionReadError({ message, retry }: { message: string; retry: () =>
 function useDiscussionWrite() {
   const lock = useRef(false)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<WriteError | null>(null)
 
   async function save<T>(write: () => Promise<Resource<T>>): Promise<T | undefined> {
     if (lock.current) return
@@ -61,16 +62,22 @@ function useDiscussionWrite() {
     try {
       const result = await write()
       if (result.data !== undefined) return result.data
-      setError(problemText(describeApiError(result.response.status, result.error)))
+      const code = result.error && typeof result.error === 'object' && 'code' in result.error
+        ? result.error.code : undefined
+      setError({
+        message: problemText(describeApiError(result.response.status, result.error)),
+        status: result.response.status,
+        code: typeof code === 'string' ? code : undefined,
+      })
     } catch {
-      setError('No se pudo confirmar el cambio. Revisa el hilo antes de volver a intentarlo.')
+      setError({ message: 'No se pudo confirmar el cambio. Revisa el hilo antes de volver a intentarlo.' })
     } finally {
       lock.current = false
       setBusy(false)
     }
   }
 
-  return { save, busy, error }
+  return { save, busy, error, clearError: () => setError(null) }
 }
 
 function PageControls({ label, offset, total, onPage }: {
@@ -115,7 +122,7 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
   const [notice, setNotice] = useState('')
   const commentId = useId()
   const textarea = useRef<HTMLTextAreaElement>(null)
-  const { save, busy, error } = useDiscussionWrite()
+  const { save, busy, error, clearError } = useDiscussionWrite()
 
   useEffect(() => {
     onDirty(Boolean(body.trim()) || Boolean(editing) || busy)
@@ -134,10 +141,29 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
     return { response: comments.response, data: { thread: thread.data, comments: comments.data } }
   }, [threadId, offset])
   const { state, refresh } = useDiscussionRead(read)
+  const conflict = error?.status === 409 || error?.code === 'parent_not_found'
+  const staleEdit = error?.code === 'stale_comment'
+  const latest = state && 'data' in state && editing
+    ? state.data.comments.items.find(item => item.id === editing.id)
+    : undefined
+  const differentRevision = Boolean(editing && latest && latest.version !== editing.version)
+
+  function refreshThread() {
+    if (!staleEdit || differentRevision) clearError()
+    setNotice('')
+    refresh()
+  }
+
+  function discardDraft() {
+    setEditing(null)
+    setParent(null)
+    setBody('')
+    clearError()
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!body.trim() || !state || 'error' in state || state.data.thread.resolved_at) return
+    if (!body.trim() || !state || 'error' in state || state.data.thread.resolved_at || conflict || differentRevision) return
     setNotice('')
     const text = body.trim()
     const saved = await save(() => editing
@@ -179,11 +205,15 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted">{thread.resolved_at ? 'Hilo resuelto' : 'Hilo abierto'}</p>
-        {thread.created_by === me?.id && (
-          <Button size="sm" variant="ghost" disabled={busy || drafting} onClick={() => void changeResolution(thread)}>
-            {thread.resolved_at ? 'Reabrir hilo' : 'Resolver hilo'}
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="ghost" disabled={busy} onClick={refreshThread}>Actualizar hilo</Button>
+          {thread.created_by === me?.id && (
+            <Button size="sm" variant="ghost" disabled={busy || conflict || (drafting && !thread.resolved_at)}
+              onClick={() => void changeResolution(thread)}>
+              {thread.resolved_at ? 'Reabrir hilo' : 'Resolver hilo'}
+            </Button>
+          )}
+        </div>
       </div>
       {items.length === 0 ? <Empty>El hilo todavía no tiene comentarios.</Empty> : (
         <ol aria-label="Comentarios del hilo" className="grid gap-2">
@@ -193,11 +223,13 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
               {!thread.resolved_at && comment.body !== null && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   <Button size="sm" variant="subtle" disabled={busy || drafting} onClick={() => {
+                    clearError()
                     setParent(comment)
                     textarea.current?.focus()
                   }}>Responder</Button>
                   {comment.actor_user_id === me?.id && (
                     <Button size="sm" variant="subtle" disabled={busy || drafting} onClick={() => {
+                      clearError()
                       setParent(null)
                       setEditing(comment)
                       setBody(comment.body ?? '')
@@ -212,14 +244,29 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
       )}
       {!drafting && !busy && <PageControls label="Páginas de comentarios" offset={offset} total={total} onPage={setOffset} />}
       {notice && <p role="status" className="text-sm">{notice}</p>}
-      {error && <Notice tone="warning" live="polite">{error}</Notice>}
-      {!thread.resolved_at && (
+      {error && <Notice tone="warning" live="polite">{error.message}</Notice>}
+      {differentRevision && latest?.body != null && (
+        <div className="grid justify-items-start gap-2 rounded-lg border border-line p-3">
+          <p className="text-sm font-semibold">Versión actual del comentario</p>
+          <p className="whitespace-pre-wrap break-words text-sm">{latest.body}</p>
+          <Button size="sm" variant="ghost" onClick={() => {
+            setEditing(latest)
+            clearError()
+            textarea.current?.focus()
+          }}>Conservar mi borrador y usar esta versión</Button>
+        </div>
+      )}
+      {differentRevision && latest?.body === null && <Notice tone="warning" live="polite">El comentario se eliminó. Puedes copiar tu borrador.</Notice>}
+      {(!thread.resolved_at || drafting) && (
         <form className="grid justify-items-start gap-2" onSubmit={submit}>
           {parent && (
             <div className="w-full rounded-lg border-l-2 border-line bg-mist p-2">
               <p className="text-xs font-semibold">En respuesta a</p>
               <p className="line-clamp-2 whitespace-pre-wrap break-words text-xs">{parent.body}</p>
-              <Button size="sm" variant="subtle" disabled={busy} onClick={() => setParent(null)}>Quitar respuesta</Button>
+              <Button size="sm" variant="subtle" disabled={busy} onClick={() => {
+                setParent(null)
+                clearError()
+              }}>Quitar respuesta</Button>
             </div>
           )}
           <div className="w-full">
@@ -229,13 +276,10 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
             </Field>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" type="submit" disabled={busy || !body.trim()}>
+            <Button size="sm" type="submit" disabled={busy || !body.trim() || conflict || differentRevision || Boolean(thread.resolved_at)}>
               {editing ? 'Guardar edición' : parent ? 'Enviar respuesta' : 'Enviar comentario'}
             </Button>
-            {editing && <Button size="sm" variant="ghost" disabled={busy} onClick={() => {
-              setEditing(null)
-              setBody('')
-            }}>Cancelar edición</Button>}
+            {drafting && <Button size="sm" variant="ghost" disabled={busy} onClick={discardDraft}>Descartar borrador</Button>}
           </div>
         </form>
       )}
@@ -288,8 +332,9 @@ function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: str
               onChange={event => setSubject(event.target.value)} />
           </Field>
         </div>
-        {error && <Notice tone="warning" live="polite">{error}</Notice>}
+        {error && <Notice tone="warning" live="polite">{error.message}</Notice>}
         <Button size="sm" type="submit" disabled={busy || commentDirty || !subject.trim()}>Crear hilo</Button>
+        <Button size="sm" variant="ghost" disabled={busy || commentDirty} onClick={refresh}>Actualizar hilos</Button>
       </form>
       {thread ? (
         <>
