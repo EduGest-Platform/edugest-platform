@@ -108,12 +108,23 @@ try {
   requireCheck('Resubmission preserves the ID and first submission time', second?.id === first.id &&
     second.first_submitted_at === first.first_submitted_at && second.revision === 2 && second.portfolio_url === null)
 
+  const draftLink = 'https://example.test/unsaved-after-review'
+  requireCheck('Open an edit from the delivered filter', await page.set('#delivery-filter', 'delivered') &&
+    await page.click('Editar enlace y reenviar', `(${card})`) && await setPortfolio(page, draftLink))
   await request(`/submissions/${second.id}/review`, 200, {
     method: 'POST', token: teacher, body: { expected_revision: second.revision },
   })
-  requireCheck('Reload the learner view after the teacher review', await page.nav('Inicio') && await page.nav('Entregas'))
-  requireCheck('Reviewed delivery is visible and closed to edits', await waitFor(page,
-    `(${card})?.textContent.includes('Revisada') && !(${card})?.querySelector('button')`))
+  requireCheck('Saving the stale editor reports the review conflict', await page.click('Guardar reentrega', `(${card})`) &&
+    await page.waitText('Esta entrega ya está revisada'))
+  requireCheck('Refresh keeps the exact draft in a selectable read-only field', await page.click('Actualizar actividad', `(${card})`) &&
+    await waitFor(page, `(${card})?.querySelector('input[readonly]')?.value === ${JSON.stringify(draftLink)} &&
+      !(${card})?.querySelector('button[type=submit]')`))
+  const reviewed = (await ownDelivery()).submission
+  requireCheck('The reviewed revision and saved portfolio remain intact',
+    reviewed.status === 'reviewed' && reviewed.revision === second.revision && reviewed.portfolio_url === null)
+  requireCheck('Close the draft and verify the reviewed activity stays locked', await page.click('Cerrar borrador', `(${card})`) &&
+    await page.set('#delivery-filter', 'all') && await waitFor(page,
+      `(${card})?.textContent.includes('Revisada') && !(${card})?.querySelector('button')`))
 
   await request(deliveries, 403, { token: reader })
   requireCheck('API rejects the unauthorized reader', true)
