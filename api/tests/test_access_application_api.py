@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 
 from app.modules.identity.models import RoleAssignment
+from app.modules.audit.models import AuditEvent
 from tests.conftest import ADMIN, SEL_IA, login
 from tests.test_staff_access_review import active_profile, request
 
@@ -26,3 +27,30 @@ def test_preview_leaves_roles_unchanged_and_owner_cannot_preview_administrativel
     assert response.json()['requested'] == {'requested_role': 'docente', 'scope_type': 'cohort', 'scope_id': 'COH-IA'}
     assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
     assert client.get(path(row['id']) + '/application-preview', headers=owner).status_code == 403
+
+
+def confirmation(row):
+    return {'confirm': True, 'requested_role': row['requested_role'], 'scope_type': row['scope_type'], 'scope_id': row['scope_id']}
+
+
+def test_application_grants_exact_scope_once_and_existing_session_sees_the_role(client, db):
+    row, owner, admin = approved_request(client, db)
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    response = client.post(path(row['id']) + '/apply', headers=admin, json=confirmation(row))
+    assert response.status_code == 200 and response.json()['assignment_active'] is True
+    assert response.json()['request_state'] == 'applied'
+    repeated = client.post(path(row['id']) + '/apply', headers=admin, json=confirmation(row))
+    assert repeated.status_code == 200 and repeated.json() == response.json()
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before + 1
+    assert db.scalar(select(func.count()).select_from(AuditEvent).where(AuditEvent.action == 'staff.access_applied')) == 1
+    roles = client.get('/api/v1/auth/me', headers=owner).json()['roles']
+    assert {'role': 'docente', 'scope_type': 'cohort', 'scope_id': 'COH-IA'} in roles
+
+
+def test_echo_mismatch_and_non_admin_application_do_not_create_roles(client, db):
+    row, owner, admin = approved_request(client, db)
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    body = confirmation(row)
+    assert client.post(path(row['id']) + '/apply', headers=owner, json=body).status_code == 403
+    assert client.post(path(row['id']) + '/apply', headers=admin, json={**body, 'scope_id': 'COH-DATA'}).status_code == 409
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before

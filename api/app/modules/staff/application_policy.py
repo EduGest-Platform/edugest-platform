@@ -10,6 +10,12 @@ def require_matching_confirmation(row, body):
         raise UserFacingError(409, 'access_confirmation_mismatch', 'La confirmación no coincide con el rol y ámbito solicitados. Actualiza la solicitud antes de continuar.')
 
 
+def assignment_matches(row, profile, assignment):
+    return (assignment is not None and assignment.id == row.applied_assignment_id
+            and assignment.user_id == profile.user_id
+            and (assignment.role, assignment.scope_type, assignment.scope_id) == request_tuple(row))
+
+
 def application_blockers(actor, user, profile, row, scope_exists, active_assignment):
     blockers = []
     if row.state != 'approved':

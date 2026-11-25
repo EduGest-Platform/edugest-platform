@@ -63,3 +63,13 @@ def test_preflight_is_conservative_without_granting_or_borrowing_access(problem,
         actor.user.id = row.requested_by
     result = application_blockers(actor, user, profile, row, problem != 'scope', object() if problem == 'existing' else None)
     assert result == ([] if expected is None else [expected])
+
+
+def test_user_lock_serializes_eligibility_without_conflicting_with_fk_key_share():
+    from sqlalchemy.dialects import postgresql
+    from app.modules.identity.models import User
+    from app.modules.staff.application_service import lock_query
+
+    query = lock_query(User, uuid.uuid4(), user=True)
+    assert str(query.compile(dialect=postgresql.dialect())).endswith('FOR NO KEY UPDATE')
+    assert query.get_execution_options()['populate_existing'] is True

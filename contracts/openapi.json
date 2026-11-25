@@ -46,6 +46,51 @@
         "title": "AcademicCohortOut",
         "type": "object"
       },
+      "AccessApplicationOut": {
+        "properties": {
+          "assignment_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether the linked role row is unrevoked; not a claim of effective permissions or account activation.",
+            "title": "Assignment Active"
+          },
+          "assignment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignment Id"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "request_state": {
+            "title": "Request State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "request_state",
+          "assignment_id",
+          "assignment_active"
+        ],
+        "title": "AccessApplicationOut",
+        "type": "object"
+      },
       "AccessApplicationPreview": {
         "properties": {
           "blockers": {
@@ -81,6 +126,57 @@
           "blockers"
         ],
         "title": "AccessApplicationPreview",
+        "type": "object"
+      },
+      "AccessApply": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm": {
+            "description": "Explicit administrative confirmation of the echoed role and scope.",
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "requested_role": {
+            "enum": [
+              "admin",
+              "captacion",
+              "seleccion",
+              "docente",
+              "coordinacion"
+            ],
+            "title": "Requested Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "enum": [
+              "global",
+              "program",
+              "call",
+              "cohort"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested_role",
+          "scope_type",
+          "confirm"
+        ],
+        "title": "AccessApply",
         "type": "object"
       },
       "AccessRequestCreate": {
@@ -10717,6 +10813,73 @@
           }
         ],
         "summary": "Preview application blockers without changing access; revalidated on application",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests/{request_id}/apply": {
+      "post": {
+        "operationId": "apply_access_api_v1_staff_access_requests__request_id__apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessApply"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessApplicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Global administration required"
+          },
+          "404": {
+            "description": "Request not found"
+          },
+          "409": {
+            "description": "Confirmation mismatch or application blocked"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Explicit global-admin application of an approved role request; idempotent for this request",
         "tags": [
           "staff"
         ]
