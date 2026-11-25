@@ -83,6 +83,13 @@ jobs:
         run: node e2e/intake-human-review.mjs
       - name: Prepare F2 synthetic cohort and teacher (KAN-72)
         run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
+      - name: F2 HTTP waitlist promotion and private applicant outcome (KAN-49)
+        env:
+          GISTAR_API: http://localhost:8000
+        run: |
+          docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-waitlist.py
+          node e2e/waitlist-outcome.mjs
+          node e2e/waitlist-outcome.mjs
       - name: F2 HTTP admission to attendance and repeat-run integrity (KAN-72)
         env:
           GISTAR_API: http://localhost:8000
