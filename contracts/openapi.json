@@ -3011,6 +3011,40 @@
         "title": "LearnerAttendance",
         "type": "object"
       },
+      "LearnerCompetencies": {
+        "properties": {
+          "current": {
+            "items": {
+              "$ref": "#/components/schemas/CurrentLevel"
+            },
+            "title": "Current",
+            "type": "array"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "framework_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Framework Version"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "framework_version",
+          "current"
+        ],
+        "title": "LearnerCompetencies",
+        "type": "object"
+      },
       "LearnerEnrollment": {
         "properties": {
           "cohort_id": {
@@ -10593,6 +10627,57 @@
           }
         ],
         "summary": "Read attendance totals for the signed-in person's active enrollment",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/competencies": {
+      "get": {
+        "operationId": "own_competencies_api_v1_me_enrollments__enrollment_id__competencies_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearnerCompetencies"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No active enrollment for the signed-in person"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read current competency levels for the signed-in person's active enrollment",
         "tags": [
           "learning"
         ]

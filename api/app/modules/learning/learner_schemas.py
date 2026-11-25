@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from app.modules.attendance.schemas import SUMMARY_RULE, EnrollmentAttendance
+from app.modules.competencies.schemas import CurrentLevel
 
 
 class LearnerEnrollment(BaseModel):
@@ -25,3 +26,9 @@ class LearnerAttendance(BaseModel):
     date_to: date | None
     rule: str = SUMMARY_RULE
     totals: EnrollmentAttendance
+
+
+class LearnerCompetencies(BaseModel):
+    enrollment_id: uuid.UUID
+    framework_version: int | None
+    current: list[CurrentLevel]

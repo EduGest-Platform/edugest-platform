@@ -8,8 +8,9 @@ from app.core.deps import DB, CurrentPrincipal
 from app.modules.attendance.queries import records_of, sessions_in
 from app.modules.attendance.service import summarize
 from app.modules.catalog.models import Cohort
+from app.modules.competencies.service import cohort_framework, current_enrollment_levels
 from app.modules.learning.access import load_cohort, require_own_active_enrollment
-from app.modules.learning.learner_schemas import LearnerAttendance, LearnerEnrollment, LearnerEnrollments
+from app.modules.learning.learner_schemas import LearnerAttendance, LearnerCompetencies, LearnerEnrollment, LearnerEnrollments
 from app.modules.learning.models import Enrollment
 
 router = APIRouter(prefix="/me/enrollments", tags=["learning"])
@@ -50,4 +51,18 @@ def own_attendance(
     totals, = summarize(sessions, records, [enrollment.id], cohort.timezone)
     return LearnerAttendance(
         cohort_id=cohort.id, timezone=cohort.timezone, date_from=date_from, date_to=date_to, totals=totals
+    )
+
+
+@router.get(
+    "/{enrollment_id}/competencies", response_model=LearnerCompetencies, responses=OWN_ENROLLMENT_ERRORS,
+    summary="Read current competency levels for the signed-in person's active enrollment",
+)
+def own_competencies(enrollment_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> LearnerCompetencies:
+    enrollment = require_own_active_enrollment(db, p, enrollment_id)
+    framework = cohort_framework(db, enrollment.cohort_id)
+    return LearnerCompetencies(
+        enrollment_id=enrollment.id,
+        framework_version=framework.version if framework else None,
+        current=current_enrollment_levels(db, enrollment.id, framework.id) if framework else [],
     )
