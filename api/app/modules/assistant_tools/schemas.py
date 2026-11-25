@@ -15,6 +15,7 @@ from app.modules.attendance.schemas import AttendanceSummary
 from app.modules.submissions.schemas import CheckResults, DeliveryState
 
 T = TypeVar("T")
+COMPETENCY_RULE = "Nivel actual = última evaluación docente (1–3) en la versión del árbol asignada a la cohorte. Sin evaluación = sin evaluar, nunca 0."
 
 
 class ToolScope(BaseModel):

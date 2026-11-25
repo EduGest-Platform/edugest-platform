@@ -21,6 +21,7 @@ from app.modules.attendance.schemas import (
 )
 from app.core.authz import ATTENDANCE_AGGREGATE_PERMISSION, Principal
 from app.modules.attendance.service import cohort_totals, create_session, is_held, save_record, summarize
+from app.modules.attendance.queries import records_of as _records_of, sessions_in as _sessions_in
 from app.modules.catalog.models import Cohort
 from app.modules.identity.models import User
 from app.modules.learning.access import cohort_scope, load_cohort, require_cohort, require_enrollment
@@ -44,22 +45,6 @@ def _session_out(s: AttendanceSession, records: list[AttendanceRecord], timezone
         id=s.id, cohort_id=s.cohort_id, session_date=s.session_date, shift=s.shift, duration_fraction=float(s.duration_fraction),
         held=is_held(s, timezone), records=[_record_out(r) for r in records],
     )
-
-
-def _sessions_in(db: DB, cohort_id: str, date_from: date | None, date_to: date | None) -> list[AttendanceSession]:
-    if date_from is not None and date_to is not None and date_from > date_to:
-        raise UserFacingError(422, "invalid_date_window", "La fecha de inicio no puede ser posterior a la fecha de fin.")
-    query = select(AttendanceSession).where(AttendanceSession.cohort_id == cohort_id)
-    if date_from:
-        query = query.where(AttendanceSession.session_date >= date_from)
-    if date_to:
-        query = query.where(AttendanceSession.session_date <= date_to)
-    return list(db.scalars(query.order_by(AttendanceSession.session_date, AttendanceSession.shift)))
-
-
-def _records_of(db: DB, sessions: list[AttendanceSession]) -> list[AttendanceRecord]:
-    ids = [s.id for s in sessions]
-    return list(db.scalars(select(AttendanceRecord).where(AttendanceRecord.session_id.in_(ids)))) if ids else []
 
 
 def _load_session(db: DB, session_id: uuid.UUID) -> AttendanceSession:

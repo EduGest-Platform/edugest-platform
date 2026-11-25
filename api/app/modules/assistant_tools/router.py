@@ -13,6 +13,7 @@ from app.core import audit
 from app.core.db import utcnow
 from app.core.deps import DB, CurrentPrincipal
 from app.modules.assistant_tools.schemas import (
+    COMPETENCY_RULE,
     AttendanceToolResponse,
     CompetencyToolResponse,
     PendingToolResponse,
@@ -30,7 +31,6 @@ from app.modules.learning.access import cohort_scope, load_cohort, require_cohor
 router = APIRouter(prefix="/tools", tags=["assistant-tools"])
 
 _ERRORS = {403: {"description": "Sin permiso sobre la cohorte"}, 404: {"description": "No encontrado"}}
-COMPETENCY_RULE = "Nivel actual = última evaluación docente (1–3) en la versión del árbol asignada a la cohorte. Sin evaluación = sin evaluar, nunca 0."
 NO_PERIOD = ToolPeriod(date_from=None, date_to=None)
 CohortQuery = Query(max_length=20, description="Cohorte consultada")
 

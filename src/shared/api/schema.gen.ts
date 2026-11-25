@@ -618,6 +618,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/progress-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregate-only academic overview, never learner-level rows */
+        get: operations["get_progress_overview_api_v1_cohorts__cohort_id__progress_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/teaching-team": {
         parameters: {
             query?: never;
@@ -1878,6 +1895,28 @@ export interface components {
              */
             framework_id: string;
         };
+        /** CohortProgressOverview */
+        CohortProgressOverview: {
+            /**
+             * Aggregate Only
+             * @default true
+             * @constant
+             */
+            aggregate_only: true;
+            attendance: components["schemas"]["OverviewAttendance"];
+            /** Cohort Id */
+            cohort_id: string;
+            competencies: components["schemas"]["OverviewCompetencies"];
+            /**
+             * Generated At
+             * Format: date-time
+             * @description Response assembly time, not a historical or transaction snapshot.
+             */
+            generated_at: string;
+            submissions: components["schemas"]["OverviewSubmissions"];
+            /** Timezone */
+            timezone: string;
+        };
         /** CommentCreate */
         CommentCreate: {
             /**
@@ -2423,6 +2462,81 @@ export interface components {
             person_id: string | null;
             /** Roles */
             roles: components["schemas"]["RoleAssignmentOut"][];
+        };
+        /** OverviewAttendance */
+        OverviewAttendance: {
+            /** Date From */
+            date_from: string | null;
+            /** Date To */
+            date_to: string | null;
+            /**
+             * Has Data
+             * @description Null when suppressed; false means no recorded attendance, never a zero attendance rate.
+             */
+            has_data: boolean | null;
+            /**
+             * Rule
+             * @default Día completo = 1, mañana o tarde = 0,5. Solo cuentan sesiones ya celebradas, según la hora local de la cohorte. Llegar con retraso cuenta como asistencia y se suma también aparte. Una sesión celebrada sin registro es «sin dato», nunca ausencia. Justificadas y no justificadas se suman por separado.
+             */
+            rule: string;
+            totals: components["schemas"]["CohortAttendance"];
+        };
+        /** OverviewCompetencies */
+        OverviewCompetencies: {
+            /** Distribution */
+            distribution: components["schemas"]["CompetencyDistribution"][];
+            /** Framework Version */
+            framework_version: number | null;
+            /**
+             * Has Data
+             * @description Null when suppressed; false means no current assessments, never level zero.
+             */
+            has_data: boolean | null;
+            /** Min Group Size */
+            min_group_size: number;
+            /**
+             * Period
+             * @default current_assigned_framework
+             * @constant
+             */
+            period: "current_assigned_framework";
+            /**
+             * Rule
+             * @default Nivel actual = última evaluación docente (1–3) en la versión del árbol asignada a la cohorte. Sin evaluación = sin evaluar, nunca 0.
+             */
+            rule: string;
+            /** Suppressed */
+            suppressed: boolean;
+        };
+        /** OverviewSubmissions */
+        OverviewSubmissions: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Assignments */
+            assignments: components["schemas"]["AssignmentStatus"][];
+            /**
+             * Has Data
+             * @description Null when suppressed; false means no assignment/enrollment basis, not a zero completion rate.
+             */
+            has_data: boolean | null;
+            /** Min Group Size */
+            min_group_size: number;
+            /**
+             * Period
+             * @default current_published_assignments
+             * @constant
+             */
+            period: "current_published_assignments";
+            /**
+             * Rule
+             * @default Plazo en la hora local de la cohorte. Entregada antes del plazo = a tiempo; después = tarde. Sin entrega y plazo abierto = pendiente; sin entrega y plazo vencido = vencida. Se puede reentregar hasta la revisión docente; se conserva la primera fecha.
+             */
+            rule: string;
+            /** Suppressed */
+            suppressed: boolean;
         };
         /** PendingSubmissions */
         PendingSubmissions: {
@@ -5747,6 +5861,54 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_progress_overview_api_v1_cohorts__cohort_id__progress_overview_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive attendance-only start */
+                attendance_from?: string | null;
+                /** @description Inclusive attendance-only end */
+                attendance_to?: string | null;
+            };
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CohortProgressOverview"];
+                };
+            };
+            /** @description Missing cohort aggregate permissions */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cohort not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid attendance period */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
