@@ -38,16 +38,15 @@ def waiting_list_order(db: Session, call_id: str) -> list[tuple[Application, dat
     The moment of entry is the latest «lista_espera» decision of the application; without one, its last update.
     The order is only a proposal: nobody is promoted by it, a person always decides.
     """
-    entered = (
-        select(SelectionDecision.application_id.label("application_id"), func.max(SelectionDecision.occurred_at).label("entered_at"))
-        .where(SelectionDecision.decision == "lista_espera")
-        .group_by(SelectionDecision.application_id)
-        .subquery()
+    entered_at = (
+        select(func.max(SelectionDecision.occurred_at))
+        .where(SelectionDecision.application_id == Application.id, SelectionDecision.decision == "lista_espera")
+        .correlate(Application)
+        .scalar_subquery()
     )
-    since = func.coalesce(entered.c.entered_at, Application.updated_at)
+    since = func.coalesce(entered_at, Application.updated_at).label("since")
     rows = db.execute(
         select(Application, since)
-        .outerjoin(entered, entered.c.application_id == Application.id)
         .where(Application.call_id == call_id, Application.stage == "lista_espera")
         .order_by(since, Application.codigo)
     ).all()
