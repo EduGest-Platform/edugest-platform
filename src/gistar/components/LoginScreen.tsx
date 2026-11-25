@@ -4,9 +4,9 @@ import { API_URL } from '../../shared/api/config'
 import { useApiSession } from '../../shared/api/session'
 import { InscriptionForm } from '../views/api/ApiAdmissions'
 import { PublicCatalog } from '../views/api/PublicCatalog'
-import type { PublicCourse } from '../../shared/api/publicCatalog'
 import { Button, Card, Field, Notice, inputCls } from '../ui'
-import { PublicAccessNavigation, type PublicAccessView } from './PublicAccessNavigation'
+import { PublicAccessNavigation } from './PublicAccessNavigation'
+import { publicAccessUrl, readPublicAccess, type PublicAccessLocation } from './publicAccessLocation'
 
 /** Synthetic demo accounts created by `python -m app.seed`. Password: GISTAR_DEMO_PASSWORD (default documented in api/README). */
 const DEMO_ACCOUNTS = [
@@ -22,16 +22,30 @@ const DEMO_ACCOUNTS = [
 
 export function LoginScreen() {
   const { login, apiDown, notice } = useApiSession()
-  const [tab, setTab] = useState<PublicAccessView>('login')
-  const [selectedCourse, setSelectedCourse] = useState<PublicCourse | null>(null)
+  const [location, setLocation] = useState(() => readPublicAccess(window.location.search))
+  const { view: tab, callId } = location
   const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[1][0])
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (tab === 'inscripcion' && selectedCourse) document.getElementById('ins-name')?.focus()
-  }, [tab, selectedCourse])
+    function restoreAccess() {
+      setLocation(readPublicAccess(window.location.search))
+    }
+    window.addEventListener('popstate', restoreAccess)
+    return () => window.removeEventListener('popstate', restoreAccess)
+  }, [])
+
+  useEffect(() => {
+    if (callId) document.getElementById('ins-name')?.focus()
+  }, [callId])
+
+  function navigateAccess(next: PublicAccessLocation) {
+    const url = publicAccessUrl(window.location.href, next)
+    if (url.href !== window.location.href) window.history.pushState(null, '', url)
+    setLocation(next)
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -62,7 +76,7 @@ export function LoginScreen() {
             <Button
               variant="ghost"
               className="mt-5"
-              onClick={() => setTab('catalogo')}
+              onClick={() => navigateAccess({ view: 'catalogo' })}
             >
               Explorar el catálogo
             </Button>
@@ -75,7 +89,7 @@ export function LoginScreen() {
         )}
         {apiDown && <Notice tone="warning" live="assertive">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
         <div className="mb-4">
-          <PublicAccessNavigation view={tab} onNavigate={(next) => { setTab(next); setSelectedCourse(null) }} />
+          <PublicAccessNavigation view={tab} onNavigate={(view) => navigateAccess({ view })} />
         </div>
         {tab === 'login' ? (
           <Card title="Iniciar sesión">
@@ -124,14 +138,14 @@ export function LoginScreen() {
             <p className="mt-4 text-xs text-muted">Cada pestaña mantiene su propia sesión: abre otra pestaña para actuar con otro perfil a la vez. Los permisos los comprueba la API.</p>
           </Card>
         ) : tab === 'catalogo' ? (
-          <PublicCatalog onApply={(course) => { setSelectedCourse(course); setTab('inscripcion') }} />
+          <PublicCatalog onApply={(course) => navigateAccess({ view: 'inscripcion', callId: course.id })} />
         ) : (
-          <Card title={selectedCourse ? `Solicitud: ${selectedCourse.name}` : 'Solicitud de acceso'}>
-            {selectedCourse && <div className="mb-4 grid gap-2">
+          <Card title="Solicitud de acceso">
+            {callId && <div className="mb-4 grid gap-2">
               <p className="text-sm">Solicitud para la formación elegida. Enviar no garantiza admisión.</p>
-              <Button variant="ghost" onClick={() => { setSelectedCourse(null); setTab('catalogo') }}>Volver al catálogo</Button>
+              <Button variant="ghost" onClick={() => navigateAccess({ view: 'catalogo' })}>Volver al catálogo</Button>
             </div>}
-            <InscriptionForm key={selectedCourse?.id ?? 'general'} initialCallId={selectedCourse?.id} />
+            <InscriptionForm key={callId ?? 'general'} initialCallId={callId} />
           </Card>
         )}
       </div>
