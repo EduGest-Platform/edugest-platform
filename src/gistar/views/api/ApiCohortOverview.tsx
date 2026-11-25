@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
@@ -70,7 +71,7 @@ function OverviewForCohort({ cohortId }: { cohortId: string }) {
         {invalidPeriod && <p id="overview-period-error" role="alert" className="mt-3 text-sm text-amber-800">
           La fecha de inicio debe ser anterior o igual a la fecha final.
         </p>}
-        {!state && <p role="status" className="mt-4 text-sm text-muted">Cargando resumen académico…</p>}
+        {!state && <LoadingSkeleton label="Cargando resumen académico…" />}
         {state && 'error' in state && (
           <div className="mt-4 space-y-3">
             <Notice tone="warning" live="polite">{state.error}</Notice>
@@ -94,7 +95,7 @@ export function ApiCohortOverview() {
     <div className="space-y-5">
       <PageTitle title="Analítica del grupo" sub="Consulta el progreso agregado de tus cohortes." />
       <Card title="Cohorte">
-        {loading && <p role="status" className="text-sm text-muted">Cargando cohortes…</p>}
+        {loading && <LoadingSkeleton label="Cargando cohortes…" rows={1} />}
         {error && (
           <div className="space-y-3">
             <Notice tone="warning" live="polite">{error}</Notice>
