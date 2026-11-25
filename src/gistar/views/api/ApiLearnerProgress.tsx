@@ -1,14 +1,8 @@
 import { useCallback } from 'react'
-import { api, type Schemas } from '../../../shared/api/client'
+import { api } from '../../../shared/api/client'
 import { Card, Empty, PageTitle } from '../../ui'
 import { LearnerReadProblem, OwnEnrollmentPicker, requireLearnerResponse, useLearnerRead } from './OwnEnrollmentPicker'
-
-const deliveryStatus: Record<Schemas['EnrollmentDelivery']['state'], string> = {
-  on_time: 'A tiempo',
-  late: 'Con retraso',
-  pending: 'Pendiente',
-  overdue: 'Vencida',
-}
+import { deliveryStateLabel } from './learnerDeliveryStates'
 
 async function loadProgress(enrollmentId: string, signal: AbortSignal) {
   const params = { path: { enrollment_id: enrollmentId } }
@@ -78,7 +72,7 @@ function LatestProgress({ enrollmentId }: { enrollmentId: string }) {
               <li key={delivery.assignment_id} className="flex flex-wrap justify-between gap-2 py-2">
                 <span>{delivery.title}</span>
                 <span className="text-muted">
-                  {deliveryStatus[delivery.state]}{delivery.reviewed && ' · Revisada'}
+                  {deliveryStateLabel[delivery.state]}{delivery.reviewed && ' · Revisada'}
                   {' · '}{deadline.format(new Date(delivery.due_at))}
                 </span>
               </li>
