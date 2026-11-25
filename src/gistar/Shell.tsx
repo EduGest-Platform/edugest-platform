@@ -60,7 +60,7 @@ export function Shell() {
   const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
   const session = useApiSession()
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
-  const source = dataSourceFor(view)
+  const source = dataSourceFor(view, API_MODE, role)
   const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
 
   // In API mode the role is never free: it comes from the server-side assignments of the session.

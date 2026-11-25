@@ -1,27 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { api, type Schemas } from '../../../shared/api/client'
-import { describeApiError, problemText } from '../../../shared/api/errors'
-import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
-
-type Enrollment = Schemas['LearnerEnrollment']
-type DataState<T> = { data: T } | { error: string } | null
-
-const enrollmentStatus: Record<Enrollment['status'], string> = {
-  activa: 'Activa',
-  finalizada: 'Finalizada',
-  baja_voluntaria: 'Baja voluntaria',
-}
+import { Card, Empty, PageTitle } from '../../ui'
+import { LearnerReadProblem, OwnEnrollmentPicker, requireLearnerResponse, useLearnerRead } from './OwnEnrollmentPicker'
 
 const deliveryStatus: Record<Schemas['EnrollmentDelivery']['state'], string> = {
   on_time: 'A tiempo',
   late: 'Con retraso',
   pending: 'Pendiente',
   overdue: 'Vencida',
-}
-
-function requireResponse<T>({ data, response }: { data?: T; response: Response }): T {
-  if (data === undefined) throw new Error(problemText(describeApiError(response.status)))
-  return data
 }
 
 async function loadProgress(enrollmentId: string, signal: AbortSignal) {
@@ -32,47 +18,17 @@ async function loadProgress(enrollmentId: string, signal: AbortSignal) {
     api.GET('/api/v1/enrollments/{enrollment_id}/submissions', { params, signal }),
   ])
   return {
-    attendance: requireResponse(attendance),
-    competencies: requireResponse(competencies),
-    deliveries: requireResponse(deliveries),
+    attendance: requireLearnerResponse(attendance),
+    competencies: requireLearnerResponse(competencies),
+    deliveries: requireLearnerResponse(deliveries),
   }
-}
-
-function LoadProblem({ message, retry }: { message: string; retry: () => void }) {
-  return (
-    <div className="space-y-3">
-      <Notice tone="warning" live="polite">{message}</Notice>
-      <Button variant="ghost" onClick={retry}>Reintentar</Button>
-    </div>
-  )
-}
-
-function loadError(error: unknown) {
-  return error instanceof TypeError
-    ? problemText(describeApiError(undefined))
-    : error instanceof Error ? error.message : 'No se ha podido cargar el progreso.'
 }
 
 function LatestProgress({ enrollmentId }: { enrollmentId: string }) {
-  const [state, setState] = useState<DataState<Awaited<ReturnType<typeof loadProgress>>>>(null)
-  const [attempt, setAttempt] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    loadProgress(enrollmentId, controller.signal)
-      .then(data => {
-        if (!controller.signal.aborted) setState({ data })
-      })
-      .catch(error => {
-        if (!controller.signal.aborted) setState({ error: loadError(error) })
-      })
-    return () => controller.abort()
-  }, [enrollmentId, attempt])
-
+  const load = useCallback((signal: AbortSignal) => loadProgress(enrollmentId, signal), [enrollmentId])
+  const { state, retry } = useLearnerRead(load)
   if (!state) return <p role="status" className="text-muted">Cargando progreso…</p>
-  if ('error' in state) {
-    return <LoadProblem message={state.error} retry={() => { setState(null); setAttempt(attempt + 1) }} />
-  }
+  if ('error' in state) return <LearnerReadProblem message={state.error} retry={retry} />
 
   const { attendance, competencies, deliveries } = state.data
   const { totals, timezone } = attendance
@@ -135,57 +91,12 @@ function LatestProgress({ enrollmentId }: { enrollmentId: string }) {
 }
 
 export function ApiLearnerProgress() {
-  const [state, setState] = useState<DataState<Enrollment[]>>(null)
-  const [attempt, setAttempt] = useState(0)
-  const [selectedId, setSelectedId] = useState('')
-
-  useEffect(() => {
-    const controller = new AbortController()
-    api.GET('/api/v1/me/enrollments', { signal: controller.signal })
-      .then(result => {
-        if (controller.signal.aborted) return
-        const { items } = requireResponse(result)
-        setState({ data: items })
-        setSelectedId(previous => items.find(item => item.enrollment_id === previous)?.enrollment_id
-          ?? items.find(item => item.status === 'activa')?.enrollment_id ?? items[0]?.enrollment_id ?? '')
-      })
-      .catch(error => {
-        if (!controller.signal.aborted) setState({ error: loadError(error) })
-      })
-    return () => controller.abort()
-  }, [attempt])
-
-  const enrolled = state && 'data' in state ? state.data : []
-  const selected = enrolled.find(item => item.enrollment_id === selectedId)
   return (
     <div className="space-y-5">
       <PageTitle title="Mi progreso" sub="Consulta la asistencia, las competencias y las entregas de tu matrícula." />
-      {!state && <p role="status" className="text-muted">Cargando matrículas…</p>}
-      {state && 'error' in state && (
-        <LoadProblem message={state.error} retry={() => { setState(null); setAttempt(attempt + 1) }} />
-      )}
-      {state && 'data' in state && enrolled.length === 0 && <Empty>No tienes matrículas asociadas.</Empty>}
-      {selected && (
-        <>
-          <Field label="Matrícula" htmlFor="learner-enrollment">
-            <select
-              id="learner-enrollment"
-              className={`${inputCls} max-w-md`}
-              value={selectedId}
-              onChange={event => setSelectedId(event.target.value)}
-            >
-              {enrolled.map(item => (
-                <option key={item.enrollment_id} value={item.enrollment_id}>
-                  {item.cohort_name} · {enrollmentStatus[item.status]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {selected.status === 'activa'
-            ? <LatestProgress key={selectedId} enrollmentId={selectedId} />
-            : <Empty>El progreso está disponible para matrículas activas.</Empty>}
-        </>
-      )}
+      <OwnEnrollmentPicker fieldId="learner-enrollment">
+        {enrollment => <LatestProgress key={enrollment.enrollment_id} enrollmentId={enrollment.enrollment_id} />}
+      </OwnEnrollmentPicker>
     </div>
   )
 }

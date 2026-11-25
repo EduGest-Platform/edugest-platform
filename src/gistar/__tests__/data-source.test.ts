@@ -11,8 +11,15 @@ describe('dataSourceFor (KAN-89)', () => {
   })
 
   it('uses the API only for migrated views in API mode', () => {
-    const apiViews = ALL_VIEWS.filter((view) => dataSourceFor(view, true) === 'api')
+    const apiViews = ALL_VIEWS.filter((view) => dataSourceFor(view, true, 'coder') === 'api')
     expect(apiViews.sort()).toEqual([...API_VIEWS].sort())
+  })
+
+  it('opens server deliveries for coders while preserving the teacher demo view', () => {
+    expect(dataSourceFor('entregas', true, 'coder')).toBe('api')
+    expect(dataSourceFor('entregas', true, 'docente')).toBe('local')
+    expect(dataSourceFor('entregas', false, 'coder')).toBe('local')
+    expect(dataSourceFor('entregas', true)).toBe('local')
   })
 
   it('treats unknown views as local, never as API', () => {
