@@ -1,33 +1,43 @@
 import { useEffect, useState } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { humanize } from '../../config'
-import { Card, Empty, Field, Kpi, Notice, PageTitle, inputCls } from '../../ui'
+import { Button, Card, Empty, Field, Kpi, Notice, PageTitle, inputCls } from '../../ui'
 
 type Call = Schemas['CallOut']
 type CallSummary = Schemas['CallSummaryOut']
 type LoadState<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'error'; message: string }
 
 function CoordinationSummary({ call }: { call: Call }) {
-  const [summary, setSummary] = useState<LoadState<CallSummary>>({ status: 'loading' })
+  const [summary, setSummary] = useState<LoadState<CallSummary> | { status: 'denied' }>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
     void api.GET('/api/v1/calls/{call_id}/summary', {
       params: { path: { call_id: call.id } },
       signal: controller.signal,
-    }).then(({ data, error }) => {
+    }).then(({ data, error, response }) => {
       if (controller.signal.aborted) return
-      if (data?.call_id === call.id) setSummary({ status: 'ready', data })
+      if (response.status === 403) setSummary({ status: 'denied' })
+      else if (data?.call_id === call.id) setSummary({ status: 'ready', data })
       else setSummary({ status: 'error', message: errorMessage(error, 'No se pudo consultar el resumen.') })
     }).catch(() => {
       if (!controller.signal.aborted) setSummary({ status: 'error', message: 'No se pudo conectar con la API.' })
     })
     return () => controller.abort()
-  }, [call.id])
+  }, [call.id, attempt])
 
   return (
-    <Card title={call.nombre}>
+    <Card title={call.nombre} action={
+      <Button variant="ghost" onClick={() => {
+        setSummary({ status: 'loading' })
+        setAttempt(value => value + 1)
+      }}>Actualizar indicadores</Button>
+    }>
       {summary.status === 'loading' && <p role="status">Cargando indicadores…</p>}
+      {summary.status === 'denied' && (
+        <Notice tone="warning" live="assertive">Tu cuenta no tiene permiso para consultar los indicadores de esta convocatoria.</Notice>
+      )}
       {summary.status === 'error' && <Notice tone="warning" live="assertive">{summary.message}</Notice>}
       {summary.status === 'ready' && (
         <div className="space-y-4">
@@ -61,6 +71,7 @@ export function ApiCoordinationDashboard() {
   const [calls, setCalls] = useState<LoadState<Call[]>>({ status: 'loading' })
   const [programId, setProgramId] = useState('')
   const [callId, setCallId] = useState('')
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -72,7 +83,7 @@ export function ApiCoordinationDashboard() {
       if (!controller.signal.aborted) setCalls({ status: 'error', message: 'No se pudo conectar con la API.' })
     })
     return () => controller.abort()
-  }, [])
+  }, [attempt])
 
   const available = calls.status === 'ready' ? calls.data : []
   const programs = new Map(available.map(call => [call.program_id, call.program_nombre]))
@@ -83,7 +94,15 @@ export function ApiCoordinationDashboard() {
     <div className="space-y-5">
       <PageTitle title="Seguimiento de convocatorias" sub="Plazas e indicadores agregados de admisión del servidor." />
       {calls.status === 'loading' && <p role="status">Cargando convocatorias…</p>}
-      {calls.status === 'error' && <Notice tone="warning" live="assertive">{calls.message}</Notice>}
+      {calls.status === 'error' && (
+        <div>
+          <Notice tone="warning" live="assertive">{calls.message}</Notice>
+          <Button variant="ghost" onClick={() => {
+            setCalls({ status: 'loading' })
+            setAttempt(value => value + 1)
+          }}>Reintentar convocatorias</Button>
+        </div>
+      )}
       {calls.status === 'ready' && !available.length && <Empty>No hay convocatorias publicadas.</Empty>}
       {Boolean(available.length) && (
         <Card title="Filtros del seguimiento">
