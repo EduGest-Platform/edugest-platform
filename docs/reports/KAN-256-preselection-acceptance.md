@@ -1,0 +1,18 @@
+# Evidencia de aceptación de preselección / Preselection acceptance evidence
+
+**ES** — Revisión técnica del tramo de requisitos, excepciones y traspaso a Selección. Los criterios se contrastan con el [plan de proyecto](../../projectplan.md), la historia KAN-46 y las [decisiones documentadas de admisión](selection-decision-enrollment.md). El [guion de demo](KAN-141-preselection-demo.md) indica cómo reproducir los pasos.
+
+**EN** — Technical review of requirement checks, exceptions and the handoff to Selection. The criteria are cross-checked against the [project plan](../../projectplan.md), story KAN-46 and the [documented admissions decisions](selection-decision-enrollment.md). The [demo script](KAN-141-preselection-demo.md) shows how to reproduce the steps.
+
+| Criterio / Criterion | Evidencia automatizada / Automated evidence | Límite / Limit |
+|---|---|---|
+| Los requisitos pendientes se derivan a revisión humana. / Open requirements go to human review. | [`test_open_requirement_can_be_reviewed_after_the_human_handoff`](../../api/tests/test_preselection_review_journey.py). ES: La evaluación propone revisión, mantiene la etapa y permite que una persona convoque. EN: Evaluation proposes human review, preserves the stage and lets a staff member invite the applicant. | ES: El caso verifica un requisito obligatorio. La ponderación de talleres opcionales queda fuera de esta evidencia. EN: The scenario covers one required item. Weighting optional workshops falls outside this evidence. |
+| Cada revisión conserva persona, fecha y motivo. / Each revision retains its author, time and reason. | [`test_exception_revisions_keep_actor_and_reason_in_scoped_history`](../../api/tests/test_preselection_review_journey.py). ES: El historial conserva ambas revisiones. Las escrituras rechazadas no añaden revisiones y la auditoría guarda códigos. EN: History preserves both revisions. Rejected writes add no revision and audit metadata carries codes. | ES: Los motivos usados son sintéticos. EN: All reasons in the evidence are synthetic. |
+| Solo el personal con ámbito puede convocar. / Only in-scope staff can make the handoff. | [`test_only_the_calls_staff_can_advance_an_application`](../../api/tests/test_preselection_review_journey.py). ES: Dos convocatorias, con denegaciones antes y después del traspaso y una sola decisión persistida. EN: Two calls, denials before and after the handoff and exactly one saved decision. | ES: Los escenarios usan personal de Captación con ámbito de programa. EN: The scenarios use Recruitment staff with programme scopes. |
+| La matrícula se crea tras la decisión humana. / Enrollment follows the human decision. | [`test_public_intake_reaches_only_the_explicit_human_outcome`](../../api/tests/test_admission_outcome_journeys.py). ES: Una prueba separada comprueba quórum, matrícula única y rechazo de un voto repetido tras la decisión. EN: A separate test checks quorum, unique enrollment and rejection of a repeated vote after the decision. | ES: El quórum depende de la convocatoria. La demo usa dos personas. EN: Quorum depends on the call. The demo uses two voters. |
+
+## Estado y aceptación / Status and acceptance
+
+**ES** — La ejecución local con FastAPI y PostgreSQL 16 cubre la matriz anterior (`VERIFIED_RUNNING`). Para aceptación del producto quedan la revisión de Elizabeth, el ensayo manual en navegador y la trazabilidad de los demás objetivos del briefing.
+
+**EN** — The local FastAPI and PostgreSQL 16 run covers the matrix above (`VERIFIED_RUNNING`). Product acceptance still requires Elizabeth's review, a manual browser rehearsal and traceability for the remaining briefing objectives.
