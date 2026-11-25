@@ -42,9 +42,9 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas px-4 py-10">
+    <main className="min-h-screen bg-canvas px-4 py-6 sm:py-10">
       <div className={`mx-auto ${tab === 'catalogo' ? 'max-w-4xl' : 'max-w-xl'}`}>
-        <div className="mb-6 flex items-center gap-2.5">
+        <div className="mb-6 flex flex-wrap items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-lg bg-navy text-gold">
             <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
               <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" />
@@ -53,6 +53,21 @@ export function LoginScreen() {
           <span className="text-2xl font-extrabold tracking-tight text-navy">EduGest</span>
           <span className="ml-auto rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold text-[#6d5014]">DEMO · Datos sintéticos</span>
         </div>
+        {tab === 'login' && (
+          <section aria-labelledby="public-welcome" className="mb-6 rounded-2xl bg-navy px-6 py-7 text-white sm:px-8">
+            <h1 id="public-welcome" className="text-2xl font-bold tracking-tight sm:text-3xl">Encuentra tu próxima formación</h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-white/90">
+              Consulta las convocatorias publicadas, compara fechas y solicita plaza en la formación que te interesa.
+            </p>
+            <Button
+              variant="ghost"
+              className="mt-5"
+              onClick={() => setTab('catalogo')}
+            >
+              Explorar el catálogo
+            </Button>
+          </section>
+        )}
         {notice && !apiDown && (
           <Notice tone="warning" live="polite">
             {notice}
@@ -120,6 +135,6 @@ export function LoginScreen() {
           </Card>
         )}
       </div>
-    </div>
+    </main>
   )
 }
