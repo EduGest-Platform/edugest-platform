@@ -77,6 +77,40 @@ await sleep(500)
 // 7 · B: docente -> la API deniega expedientes (403)
 await B.login('docente@gistar.example')
 check('Vistas no migradas señalan datos locales', await B.waitText('datos locales de demostración'))
+// KAN-268 · Floating assistant: deterministic browser responses, real keyboard events.
+const editor = '[aria-label="Pregunta al asistente"]'
+const launch = '[aria-label="Abrir asistente EduGest"]'
+await B.ev(`(() => {
+  const original = window.fetch.bind(window)
+  window.fetch = async (request, options) => {
+    const url = typeof request === 'string' ? request : request.url
+    if (!url?.endsWith('/api/v1/assistant/ask')) return original(request, options)
+    await new Promise(resolve => setTimeout(resolve, 800))
+    if (window.assistantTestError) return new Response('{}', { status: 503, headers: { 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({status:'no_source', answer:'', citations:[], scope_cohorts:[], source_kind:'documents'}), {headers:{'Content-Type':'application/json'}})
+  }
+})()`)
+await B.ev(`document.querySelector('${launch}').click()`)
+await B.set(editor, 'Pregunta sintética de prueba')
+await B.enter()
+check('Asistente conserva foco durante consulta por Enter', await B.ev(`document.activeElement.matches('${editor}') && document.activeElement.readOnly`))
+check('Asistente muestra respuesta', await B.waitText('No consta en la documentación'))
+check('Editor conserva foco y vuelve a ser editable', await B.ev(`document.activeElement.matches('${editor}') && !document.activeElement.readOnly`))
+await B.set(editor, 'Segunda pregunta sintética')
+await B.ev('window.assistantTestError = true')
+await B.enter()
+check('Asistente muestra error', await B.waitText('HTTP 503') || await B.ev('!!document.querySelector("dialog [role=alert]")'))
+check('Editor editable y enfocado tras error', await B.ev(`document.activeElement.matches('${editor}') && !document.activeElement.readOnly`))
+await B.set(editor, 'Tercera pregunta sintética')
+await B.ev('document.querySelector("[aria-label=\\"Enviar pregunta\\"]").focus(); document.activeElement.click()')
+check('Envío por botón devuelve foco al editor', await B.ev(`document.activeElement.matches('${editor}')`))
+await B.ev('document.querySelector("[aria-label=\\"Cerrar asistente\\"]").focus()')
+await sleep(1200)
+check('Respuesta no roba foco al usuario', await B.ev('document.activeElement.getAttribute("aria-label") === "Cerrar asistente"'))
+await B.escape()
+await sleep(200)
+check('Escape cierra asistente y restaura foco', await B.ev(`!document.querySelector('dialog[open]') && document.activeElement.matches('${launch}')`))
+
 await B.nav('Candidaturas')
 check('Docente recibe denegación de la API', await B.waitText('HTTP 403'))
 await B.click('Salir')
