@@ -8,6 +8,8 @@ import sys
 from sqlalchemy import CheckConstraint, Column, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 
+OUT = Path(__file__).resolve().parents[2] / 'docs/data/schema-reference.md'
+
 
 def cell(value) -> str:
     return str(value).replace("|", "\\|").replace("\n", " ")
@@ -148,22 +150,29 @@ def render(metadata) -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
+def synchronize_reference(output, content, check=False):
+    """Checking freshness never creates directories or replaces a stale reference."""
+    if check:
+        try:
+            return output.is_file() and output.read_text(encoding='utf-8') == content
+        except UnicodeError:
+            return False
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(content, encoding='utf-8', newline='\n')
+    return True
+
+
+def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from app import models  # noqa: F401
     from app.core.db import Base
-    output = Path(__file__).resolve().parents[2] / 'docs/data/schema-reference.md'
     content = render(Base.metadata)
-    if args.check:
-        if not output.is_file() or output.read_text(encoding='utf-8') != content:
-            print('Schema reference is missing or stale; regenerate and review it.')
-            return 1
-    else:
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(content, encoding='utf-8', newline='\n')
+    if not synchronize_reference(OUT, content, check=args.check):
+        print('Schema reference is missing, invalid or stale; regenerate with python scripts/export_schema_reference.py and review it.')
+        return 1
     print('Schema reference matches registered models; no database was inspected.')
     return 0
 

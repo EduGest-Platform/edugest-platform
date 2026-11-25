@@ -96,6 +96,8 @@ Risk ML: baseline trained on documented synthetic data, model card and limitatio
 
 ## 6.1 Current repository conventions / Convenciones actuales
 
+- Model metadata changes regenerate `docs/data/schema-reference.md` with `GISTAR_ENVIRONMENT=local python api/scripts/export_schema_reference.py` from the repository root. CI checks it with `--check`. This is model-document freshness, not database/migration parity; preserve `alembic check` and runtime authorization tests. / Los cambios de metadatos regeneran esa referencia y CI exige `--check`; la frescura documental no sustituye migraciones ni pruebas de permisos.
+
 - Offline synthetic dropout experiments live in `ml/`, with isolated pinned dependencies and the `dropout` CI job. A green experiment does not approve a target, threshold, production use or Jira completion. / Los experimentos sintéticos offline de abandono están en `ml/`, con dependencias aisladas y CI `dropout`; no implican aceptación funcional ni tareas terminadas.
   The job also evaluates held-out synthetic periods and exports a reproducible ML-only table; validation-selected thresholds are experimental, not an accepted intervention policy. / El job evalúa periodos sintéticos reservados y exporta la tabla de ML; sus umbrales experimentales no aprueban intervenciones.
   Offline scoring and generated model cards must retain explicit synthetic-only, abstention and human-review labels; they do not create application alerts. / Scoring offline y model cards conservan avisos de síntesis, abstención y revisión humana; no crean alertas del producto.

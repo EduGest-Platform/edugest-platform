@@ -21,6 +21,8 @@
 
 ## EN — Contribution workflow
 
+**Metadatos y documentación (KAN-216):** si cambia un modelo, regenerar `docs/data/schema-reference.md` desde los modelos y revisar el diff; CI exige `python scripts/export_schema_reference.py --check` desde `api`. No sustituye migraciones ni tests de permisos. / **Model documentation:** regenerate/review the reference when models change; CI checks freshness without inspecting the database, independently of migration and permission tests.
+
 - PO Elizabeth prioritises and accepts stories; SM Yohanna facilitates Scrum events and resolves blockers.
 - Each small PR has one owner, different reviewer, task description, acceptance, related API/schema and evidence of tests.
 - Use short branches based on `dev` (`type/KAN-x-slug` with a ticket, `type/slug` for maintenance without one), no direct merge without review; code, commits and PR titles in English; PR body and deliverable docs ES/EN; GitHub comments and reviews always in English (see [`AGENTS.md` §6, rule 4](AGENTS.md#6-guardrails-for-every-contributor-or-ai-agent)).

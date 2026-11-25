@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint, Index, Integer, MetaData, String, Table, UniqueConstraint, text
 
-from scripts.export_schema_reference import render, state_domains
+from scripts.export_schema_reference import render, state_domains, synchronize_reference
 
 
 def metadata(reverse=False):
@@ -194,3 +194,41 @@ def test_domain_index_preserves_storage_vocabulary_without_creating_transitions(
     rendered = render(metadata())
     assert '| child | state | ck_state | `["pending", "reviewed"]` |' in rendered
     assert 'not compound predicates, transitions or permissions' in rendered
+
+
+def test_missing_reference_check_never_creates_directories(tmp_path):
+    destination = tmp_path / 'missing' / 'reference.md'
+    assert synchronize_reference(destination, 'expected', check=True) is False
+    assert not destination.parent.exists()
+
+
+def test_stale_and_invalid_reference_checks_do_not_overwrite_evidence(tmp_path):
+    destination = tmp_path / 'reference.md'
+    for evidence in (b'previous reference\n', b'\xff\xfe\x00'):
+        destination.write_bytes(evidence)
+        assert synchronize_reference(destination, 'expected', check=True) is False
+        assert destination.read_bytes() == evidence
+
+
+def test_reference_update_then_check_is_idempotent(tmp_path):
+    destination = tmp_path / 'reference.md'
+    assert synchronize_reference(destination, 'expected\n') is True
+    before = destination.stat().st_mtime_ns
+    assert synchronize_reference(destination, 'expected\n', check=True) is True
+    assert destination.stat().st_mtime_ns == before
+
+
+def test_cli_check_uses_current_metadata_without_connecting_to_database(tmp_path, monkeypatch):
+    from app.core.db import engine
+    from scripts import export_schema_reference as exporter
+
+    def forbidden_connection(*args, **kwargs):
+        raise AssertionError('Schema documentation must not connect to a database')
+
+    monkeypatch.setattr(engine, 'connect', forbidden_connection)
+    destination = tmp_path / 'reference.md'
+    monkeypatch.setattr(exporter, 'OUT', destination)
+    assert exporter.main(['--check']) == 1
+    assert not destination.exists()
+    assert exporter.main([]) == 0
+    assert exporter.main(['--check']) == 0
