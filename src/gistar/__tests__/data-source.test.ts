@@ -11,7 +11,7 @@ describe('dataSourceFor (KAN-89)', () => {
   })
 
   it('uses the API only for migrated views in API mode', () => {
-    const apiViews = ALL_VIEWS.filter((view) => dataSourceFor(view, true, 'coder') === 'api')
+    const apiViews = ALL_VIEWS.filter((view) => ['coder', 'coordinacion'].some((role) => dataSourceFor(view, true, role) === 'api'))
     expect(apiViews.sort()).toEqual([...API_VIEWS].sort())
   })
 
@@ -20,6 +20,12 @@ describe('dataSourceFor (KAN-89)', () => {
     expect(dataSourceFor('entregas', true, 'docente')).toBe('local')
     expect(dataSourceFor('entregas', false, 'coder')).toBe('local')
     expect(dataSourceFor('entregas', true)).toBe('local')
+  })
+
+  it('opens the API dashboard for coordination and keeps other home views local', () => {
+    expect(dataSourceFor('dashboard', true, 'coordinacion')).toBe('api')
+    expect(dataSourceFor('dashboard', false, 'coordinacion')).toBe('local')
+    expect(dataSourceFor('dashboard', true, 'docente')).toBe('local')
   })
 
   it('treats unknown views as local, never as API', () => {

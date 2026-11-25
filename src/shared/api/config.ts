@@ -6,7 +6,7 @@ export const API_URL: string | undefined = import.meta.env.VITE_GISTAR_API_URL?.
 export const API_MODE = !!API_URL
 
 /** Views whose data already comes from the API in API mode (increment F1). */
-export const API_VIEWS = new Set(['inscripcion', 'candidatura', 'candidaturas', 'auditoria', 'cohortes', 'asistencia', 'asistente', 'progreso', 'analitica', 'entregas'])
+export const API_VIEWS = new Set(['inscripcion', 'candidatura', 'candidaturas', 'auditoria', 'cohortes', 'asistencia', 'asistente', 'progreso', 'analitica', 'entregas', 'dashboard'])
 
 export type DataSource = 'api' | 'local'
 
@@ -15,6 +15,8 @@ export type DataSource = 'api' | 'local'
  * API mode: only the migrated views in API_VIEWS use the API; a view never mixes both sources (ADR-0004).
  */
 export function dataSourceFor(view: string, apiMode: boolean = API_MODE, role?: string): DataSource {
-  const migrated = API_VIEWS.has(view) && (view !== 'entregas' || role === 'coder')
-  return apiMode && migrated ? 'api' : 'local'
+  if (!API_VIEWS.has(view) || !apiMode) return 'local'
+  if (view === 'entregas' && role !== 'coder') return 'local'
+  if (view === 'dashboard' && role !== 'coordinacion') return 'local'
+  return 'api'
 }
