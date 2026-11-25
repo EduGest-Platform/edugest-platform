@@ -15,115 +15,198 @@ Una relación por restricción FK, incluidas las compuestas. Nulabilidad y unici
 ```mermaid
 erDiagram
     access_change_request {
-        string id PK
+        UUID id PK
+        UUID staff_profile_id FK
+        UUID requested_by FK
+        UUID reviewed_by FK
+        UUID applied_assignment_id FK
     }
     app_user {
-        string id PK
+        UUID id PK
+        UUID person_id FK
     }
     application {
-        string id PK
+        UUID id PK
+        UUID person_id FK
+        VARCHAR call_id FK
     }
     application_event {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        UUID actor_user_id FK
     }
     assignment {
-        string id PK
+        UUID id PK
+        VARCHAR cohort_id FK
+        UUID created_by FK
     }
     attendance_record {
-        string id PK
+        UUID id PK
+        UUID session_id FK
+        UUID enrollment_id FK
+        UUID recorded_by FK
     }
     attendance_record_revision {
-        string id PK
+        UUID id PK
+        UUID record_id FK
+        UUID changed_by FK
     }
     attendance_session {
-        string id PK
+        UUID id PK
+        VARCHAR cohort_id FK
+        UUID created_by FK
     }
     audit_event {
-        string id PK
+        BIGINT id PK
+        UUID actor_user_id FK
     }
     auth_session {
-        string id PK
+        UUID id PK
+        UUID user_id FK
     }
     automation_execution {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        VARCHAR call_id FK
+        UUID recorded_by FK
     }
     call {
-        string id PK
+        VARCHAR id PK
+        VARCHAR program_id FK
     }
     call_requirement {
-        string id PK
+        UUID id PK
+        VARCHAR call_id FK
+        UUID created_by FK
     }
     cohort {
-        string id PK
+        VARCHAR id PK
+        VARCHAR program_id FK
+        VARCHAR call_id FK
     }
     cohort_competency_framework {
-        string cohort_id PK
+        VARCHAR cohort_id PK,FK
+        UUID framework_id FK
+        UUID assigned_by FK
     }
     competency {
-        string id PK
+        UUID id PK
+        UUID framework_id FK
     }
     competency_assessment {
-        string id PK
+        UUID id PK
+        UUID enrollment_id FK
+        UUID competency_id FK
+        UUID assessed_by FK
     }
     competency_framework {
-        string id PK
+        UUID id PK
+        VARCHAR program_id FK
+        UUID based_on_id FK
+        UUID created_by FK
     }
     discussion_comment {
-        string id PK
+        UUID id PK
+        UUID thread_id FK
+        UUID parent_id FK
+        UUID actor_user_id FK
+        UUID deleted_by FK
     }
     discussion_thread {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        VARCHAR program_id FK
+        UUID created_by FK
+        UUID resolved_by FK
     }
     enrollment {
-        string id PK
+        UUID id PK
+        UUID person_id FK
+        VARCHAR cohort_id FK
+        UUID application_id FK
+        UUID documentation_accredited_by FK
     }
     intervention {
-        string id PK
+        UUID id PK
+        UUID alert_id FK
+        UUID actor_user_id FK
     }
     knowledge_chunk {
-        string id PK
+        UUID id PK
+        UUID document_id FK
     }
     knowledge_document {
-        string id PK
+        UUID id PK
     }
     person {
-        string id PK
+        UUID id PK
     }
     preselection_decision {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        UUID actor_user_id FK
     }
     program {
-        string id PK
+        VARCHAR id PK
     }
     requirement_review {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        UUID requirement_definition_id FK
+        UUID reviewer_user_id FK
     }
     requirement_review_revision {
-        string id PK
+        UUID id PK
+        UUID review_id FK
+        UUID requirement_definition_id FK
+        UUID reviewer_user_id FK
     }
     risk_alert {
-        string id PK
+        UUID id PK
+        UUID enrollment_id FK
+        UUID assigned_to FK
     }
     role_assignment {
-        string id PK
+        UUID id PK
+        UUID user_id FK
+        UUID granted_by FK
     }
     selection_approval {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        VARCHAR cohort_id FK
+        UUID actor_user_id FK
+        UUID decision_id FK
     }
     selection_decision {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        UUID actor_user_id FK
+        VARCHAR cohort_id FK
+        UUID enrollment_id FK
     }
     simulated_reminder {
-        string id PK
+        UUID id PK
+        UUID application_id FK
+        VARCHAR call_id FK
+        UUID recorded_by FK
     }
     staff_invitation {
-        string id PK
+        UUID id PK
+        UUID staff_profile_id FK
+        UUID created_by FK
     }
     staff_profile {
-        string id PK
+        UUID id PK
+        UUID user_id FK
+        UUID created_by FK
     }
     submission {
-        string id PK
+        UUID id PK
+        UUID assignment_id FK
+        UUID enrollment_id FK
+        UUID recorded_by FK
+        UUID reviewed_by FK
     }
     role_assignment |o--o{ access_change_request : applied_assignment_id
     app_user ||--o{ access_change_request : requested_by

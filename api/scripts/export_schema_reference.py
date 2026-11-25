@@ -1,6 +1,7 @@
 """Render model-only ERD/dictionary deterministically; never connect to a database."""
 import argparse
 from pathlib import Path
+import re
 import sys
 
 from sqlalchemy import CheckConstraint, Column, UniqueConstraint
@@ -9,6 +10,19 @@ from sqlalchemy.dialects import postgresql
 
 def cell(value) -> str:
     return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def diagram_identifier(value):
+    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
+        raise ValueError(f'Unsupported ERD identifier: {value!r}')
+    return value
+
+
+def diagram_key(column):
+    sql_type = str(column.type.compile(dialect=postgresql.dialect()))
+    token = re.sub(r'[^A-Za-z0-9_]', '_', sql_type.split('(')[0]).strip('_')
+    flags = ','.join(flag for flag, present in [('PK', column.primary_key), ('FK', bool(column.foreign_keys))] if present)
+    return f"        {token} {diagram_identifier(column.name)} {flags}"
 
 
 def globally_unique_columns(table):
@@ -32,7 +46,7 @@ def foreign_key_relations(table):
         label = ','.join(column.name for column in local)
         if len(local) > 1:
             label = f'"{label}"'
-        yield f"    {constraint.referred_table.name} {left}--{right} {table.name} : {label}"
+        yield f"    {diagram_identifier(constraint.referred_table.name)} {left}--{right} {diagram_identifier(table.name)} : {label}"
 
 
 def render(metadata) -> str:
@@ -49,9 +63,10 @@ def render(metadata) -> str:
         "Una relación por restricción FK, incluidas las compuestas. Nulabilidad y unicidad global declaradas determinan los marcadores; índices parciales o de expresión no implican unicidad global. / One edge per FK constraint, including composites; markers use declared nullability/global uniqueness, never partial or expression indexes.", "", "```mermaid", "erDiagram",
     ]
     for table in tables:
-        lines.append(f"    {table.name} {{")
-        for column in table.primary_key.columns:
-            lines.append(f"        string {column.name} PK")
+        lines.append(f"    {diagram_identifier(table.name)} {{")
+        for column in table.columns:
+            if column.primary_key or column.foreign_keys:
+                lines.append(diagram_key(column))
         lines.append("    }")
     for table in tables:
         lines.extend(foreign_key_relations(table))

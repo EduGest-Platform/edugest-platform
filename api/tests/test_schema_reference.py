@@ -1,4 +1,5 @@
 """Offline generated-dictionary regressions, without PostgreSQL claims."""
+import pytest
 from sqlalchemy import CheckConstraint, Column, ForeignKey, ForeignKeyConstraint, Index, Integer, MetaData, String, Table, UniqueConstraint
 
 from scripts.export_schema_reference import render
@@ -91,3 +92,33 @@ def test_nullable_composite_self_reference_is_optional_as_a_single_edge():
           Column('reply_to_id', Integer), UniqueConstraint('id', 'thread_id'),
           ForeignKeyConstraint(['reply_to_id', 'thread_id'], ['comment.id', 'comment.thread_id']))
     assert 'comment |o--o{ comment : "reply_to_id,thread_id"' in render(data)
+
+
+def test_diagram_keys_distinguish_integer_primary_keys_and_foreign_keys():
+    text = render(metadata())
+    assert 'INTEGER id PK' in text
+    assert 'INTEGER parent_id FK' in text
+    assert 'string id PK' not in text
+
+
+def test_a_key_can_be_both_primary_and_foreign_without_duplicating_the_field():
+    data = MetaData()
+    Table('parent', data, Column('id', Integer, primary_key=True))
+    Table('child', data, Column('parent_id', Integer, ForeignKey('parent.id'), primary_key=True))
+    assert render(data).count('INTEGER parent_id PK,FK') == 1
+
+
+def test_unsupported_diagram_identifiers_fail_instead_of_injecting_markup():
+    data = MetaData()
+    Table('unsafe table', data, Column('id', Integer, primary_key=True))
+    with pytest.raises(ValueError, match='Unsupported ERD identifier'):
+        render(data)
+
+
+def test_registered_model_diagram_contains_each_foreign_key_constraint_once():
+    from app import models  # noqa: F401
+    from app.core.db import Base
+
+    text = render(Base.metadata)
+    edges = [line for line in text.splitlines() if '--' in line and ' : ' in line]
+    assert len(edges) == sum(len(table.foreign_key_constraints) for table in Base.metadata.tables.values())
