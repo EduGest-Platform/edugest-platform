@@ -88,7 +88,7 @@ export function Shell() {
                 type="button"
                 onClick={() => navigate(v)}
                 aria-current={active ? 'page' : undefined}
-                className={`flex shrink-0 cursor-pointer items-center gap-3 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors ${
+                className={`flex shrink-0 cursor-pointer items-center gap-3 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-left text-sm font-medium motion-safe:transition-colors motion-safe:duration-200 ${
                   active ? 'bg-white/12 text-white' : 'text-[#e9e5ff] hover:bg-white/6 hover:text-white'
                 }`}
               >
@@ -140,7 +140,7 @@ export function Shell() {
             </Button>
           </div>
         </header>
-        <main key={`${role}-${view}`} className="mx-auto max-w-[1400px] px-5 py-8 md:px-8">
+        <main key={`${role}-${view}`} className="motion-safe:animate-[view-enter_180ms_ease-out] mx-auto max-w-[1400px] px-5 py-8 md:px-8">
           {API_MODE && source === 'local' && (
             <p className="mb-5 flex items-center gap-2 rounded-xl border border-dashed border-line bg-white px-4 py-2.5 text-xs text-muted">
               <CloudOff className="size-3.5 shrink-0" aria-hidden />
@@ -159,7 +159,7 @@ export function Shell() {
       <div
         role="status"
         aria-live="polite"
-        className={`fixed bottom-6 right-6 z-50 rounded-xl bg-navy px-5 py-3.5 text-sm text-white shadow-[0_12px_32px_rgba(24,45,66,0.3)] transition-all duration-200 ${
+        className={`fixed bottom-6 right-6 z-50 rounded-xl bg-navy px-5 py-3.5 text-sm text-white shadow-[0_12px_32px_rgba(24,45,66,0.3)] motion-safe:transition-[opacity,transform] motion-safe:duration-200 ${
           toastMsg ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
         }`}
       >
