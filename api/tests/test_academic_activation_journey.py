@@ -10,7 +10,7 @@ from app.modules.identity.models import User
 from tests.conftest import ADMIN, ASPIRANTE, CODER, DOCENTE, login
 from tests.test_attendance import ONLINE, UNJUSTIFIED, put
 from tests.test_learner_enrollments import own_seed_enrollment
-from tests.test_competencies import COHORT, assign, published_tree
+from tests.test_competencies import COHORT, assess, assign, published_tree
 
 
 def test_publication_and_assignment_are_separate_audited_actions(client, db):
@@ -89,3 +89,41 @@ def test_attendance_correction_reaches_the_learner_without_filling_missing_sessi
     assert totals["attended_online_days"] == 0.5 and totals["unjustified_absence_days"] == 0
     assert totals["unrecorded_days"] == 0.5 and totals["attendance_rate"] == 1
     assert client.get(path, headers=login(client, ASPIRANTE), params=window).status_code == 404
+
+
+@pytest.fixture
+def assessed_framework(client, db):
+    teacher = login(client, DOCENTE)
+    enrollment = own_seed_enrollment(db)
+    framework = published_tree(client, teacher, codes=("C1",))
+    attached = assign(client, teacher, framework["id"], cohort=enrollment.cohort_id)
+    assert attached.status_code == 200, attached.text
+    competency_id = framework["competencies"][0]["id"]
+    recorded = assess(client, teacher, enrollment.id, competency_id, 2, evidence="Synthetic level two evidence")
+    assert recorded.status_code == 201, recorded.text
+    return teacher, enrollment, framework, recorded.json()
+
+
+def test_new_publication_preserves_assigned_levels_until_explicit_reassignment(client, assessed_framework):
+    teacher, enrollment, first, assessment = assessed_framework
+    owner = login(client, CODER)
+    learner_path = f"/api/v1/me/enrollments/{enrollment.id}/competencies"
+    staff_path = f"/api/v1/enrollments/{enrollment.id}/assessments"
+    baseline = client.get(learner_path, headers=owner)
+    assert baseline.status_code == 200 and baseline.json()["current"][0]["level"] == 2
+
+    second = published_tree(client, teacher, codes=("C1",))
+    still_assigned = client.get(learner_path, headers=owner)
+    assert still_assigned.status_code == 200 and still_assigned.json() == baseline.json()
+    premature = assess(client, teacher, enrollment.id, second["competencies"][0]["id"], 3)
+    assert premature.status_code == 409 and premature.json()["code"] == "competency_not_in_cohort"
+
+    assert assign(client, teacher, second["id"], cohort=enrollment.cohort_id).status_code == 200
+    stale = assess(client, teacher, enrollment.id, first["competencies"][0]["id"], 3)
+    assert stale.status_code == 409 and stale.json()["code"] == "competency_not_in_cohort"
+    updated = client.get(learner_path, headers=owner).json()
+    current, = updated["current"]
+    assert updated["framework_version"] == second["version"]
+    assert current["competency_id"] == second["competencies"][0]["id"] and current["level"] is None
+    history = client.get(staff_path, headers=teacher)
+    assert history.status_code == 200 and history.json()["history"] == [assessment]
