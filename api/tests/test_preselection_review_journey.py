@@ -89,3 +89,40 @@ def test_exception_revisions_keep_actor_and_reason_in_scoped_history(client, db,
     for event, email in zip(audit, (CAPT_IA, SEL_IA), strict=True):
         assert db.get(User, event.actor_user_id).email == email
         assert set(event.meta) == {"codigo", "requirement_ref", "result", "from_result", "revision"}
+
+
+def test_open_requirement_can_be_reviewed_after_the_human_handoff(client, db, required_document):
+    definition, receipt, path = required_document
+    recruiter = login(client, CAPT_IA)
+    selector = login(client, SEL_IA)
+    prefilter_path = f"{path}/requirement-prefilter"
+    refs = {"requirement_refs": [definition["ref"]]}
+    review_path = f"{path}/requirement-reviews/{definition['ref']}"
+    initial = mutation_snapshot(db, receipt)
+
+    first = request(client, "POST", prefilter_path, recruiter, refs)
+    assert first["evaluation_only"] is True
+    assert first["human_review_required"] is True
+    assert first["unresolved_required_refs"] == [definition["ref"]]
+    request(client, "PUT", review_path, recruiter, {
+        "result": "exception_under_review",
+        "reason": "Synthetic alternative evidence needs review",
+    }, expected=201)
+    assert mutation_snapshot(db, receipt) == initial
+
+    invitation = invite(client, path, recruiter)
+    assert invitation["evidence"]["unresolved_requirement_reviews"] == 1
+    after_handoff = mutation_snapshot(db, receipt)
+    request(client, "PUT", review_path, selector, {
+        "result": "exception_approved",
+        "reason": "Synthetic alternative evidence accepted after handoff",
+        "expected_version": 1,
+    })
+    resolved = request(client, "POST", prefilter_path, selector, refs)
+    assert resolved["human_review_required"] is False
+    assert resolved["unresolved_required_refs"] == []
+    assert resolved["items"][0]["review_version"] == 2
+    assert request(client, "GET", f"{path}/preselection-decisions", selector)["items"] == [invitation]
+    assert mutation_snapshot(db, receipt) == after_handoff
+    assert after_handoff[0] == "convocada"
+    assert not after_handoff[1] and not after_handoff[2]
