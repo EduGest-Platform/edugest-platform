@@ -4,8 +4,9 @@ import { API_URL } from '../../shared/api/config'
 import { useApiSession } from '../../shared/api/session'
 import { InscriptionForm } from '../views/api/ApiAdmissions'
 import { PublicCatalog } from '../views/api/PublicCatalog'
-import type { PublicCourse } from '../../shared/api/publicCatalog'
-import { Button, Card, Field, Notice, Segmented, inputCls } from '../ui'
+import { Button, Card, Field, Notice, inputCls } from '../ui'
+import { PublicAccessNavigation } from './PublicAccessNavigation'
+import { publicAccessUrl, readPublicAccess, type PublicAccessLocation } from './publicAccessLocation'
 
 /** Synthetic demo accounts created by `python -m app.seed`. Password: GISTAR_DEMO_PASSWORD (default documented in api/README). */
 const DEMO_ACCOUNTS = [
@@ -21,16 +22,30 @@ const DEMO_ACCOUNTS = [
 
 export function LoginScreen() {
   const { login, apiDown, notice } = useApiSession()
-  const [tab, setTab] = useState<'login' | 'inscripcion' | 'catalogo'>('login')
-  const [selectedCourse, setSelectedCourse] = useState<PublicCourse | null>(null)
+  const [location, setLocation] = useState(() => readPublicAccess(window.location.search))
+  const { view: tab, callId } = location
   const [email, setEmail] = useState<string>(DEMO_ACCOUNTS[1][0])
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (tab === 'inscripcion' && selectedCourse) document.getElementById('ins-name')?.focus()
-  }, [tab, selectedCourse])
+    function restoreAccess() {
+      setLocation(readPublicAccess(window.location.search))
+    }
+    window.addEventListener('popstate', restoreAccess)
+    return () => window.removeEventListener('popstate', restoreAccess)
+  }, [])
+
+  useEffect(() => {
+    if (callId) document.getElementById('ins-name')?.focus()
+  }, [callId])
+
+  function navigateAccess(next: PublicAccessLocation) {
+    const url = publicAccessUrl(window.location.href, next)
+    if (url.href !== window.location.href) window.history.pushState(null, '', url)
+    setLocation(next)
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -41,9 +56,9 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas px-4 py-10">
+    <main className="min-h-screen bg-canvas px-4 py-6 sm:py-10">
       <div className={`mx-auto ${tab === 'catalogo' ? 'max-w-4xl' : 'max-w-xl'}`}>
-        <div className="mb-6 flex items-center gap-2.5">
+        <div className="mb-6 flex flex-wrap items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-lg bg-navy text-gold">
             <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
               <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z" />
@@ -52,6 +67,21 @@ export function LoginScreen() {
           <span className="text-2xl font-extrabold tracking-tight text-navy">EduGest</span>
           <span className="ml-auto rounded-md bg-[#fff0cc] px-2 py-0.5 text-[11px] font-bold text-[#6d5014]">DEMO · Datos sintéticos</span>
         </div>
+        {tab === 'login' && (
+          <section aria-labelledby="public-welcome" className="mb-6 rounded-2xl bg-navy px-6 py-7 text-white sm:px-8">
+            <h1 id="public-welcome" className="text-2xl font-bold tracking-tight sm:text-3xl">Encuentra tu próxima formación</h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-white/90">
+              Consulta las convocatorias publicadas, compara fechas y solicita plaza en la formación que te interesa.
+            </p>
+            <Button
+              variant="ghost"
+              className="mt-5"
+              onClick={() => navigateAccess({ view: 'catalogo' })}
+            >
+              Explorar el catálogo
+            </Button>
+          </section>
+        )}
         {notice && !apiDown && (
           <Notice tone="warning" live="polite">
             {notice}
@@ -59,7 +89,7 @@ export function LoginScreen() {
         )}
         {apiDown && <Notice tone="warning" live="assertive">No se puede conectar con la API en {API_URL}. Arranca el backend (ver api/README.md).</Notice>}
         <div className="mb-4">
-          <Segmented label="Acceso" value={tab} onChange={(next) => { setTab(next); setSelectedCourse(null) }} options={[{ id: 'login', label: 'Iniciar sesión' }, { id: 'inscripcion', label: 'Quiero inscribirme' }, { id: 'catalogo', label: 'Ver formaciones' }]} />
+          <PublicAccessNavigation view={tab} onNavigate={(view) => navigateAccess({ view })} />
         </div>
         {tab === 'login' ? (
           <Card title="Iniciar sesión">
@@ -108,17 +138,17 @@ export function LoginScreen() {
             <p className="mt-4 text-xs text-muted">Cada pestaña mantiene su propia sesión: abre otra pestaña para actuar con otro perfil a la vez. Los permisos los comprueba la API.</p>
           </Card>
         ) : tab === 'catalogo' ? (
-          <PublicCatalog onApply={(course) => { setSelectedCourse(course); setTab('inscripcion') }} />
+          <PublicCatalog onApply={(course) => navigateAccess({ view: 'inscripcion', callId: course.id })} />
         ) : (
-          <Card title={selectedCourse ? `Solicitud: ${selectedCourse.name}` : 'Solicitud de acceso'}>
-            {selectedCourse && <div className="mb-4 grid gap-2">
+          <Card title="Solicitud de acceso">
+            {callId && <div className="mb-4 grid gap-2">
               <p className="text-sm">Solicitud para la formación elegida. Enviar no garantiza admisión.</p>
-              <Button variant="ghost" onClick={() => { setSelectedCourse(null); setTab('catalogo') }}>Volver al catálogo</Button>
+              <Button variant="ghost" onClick={() => navigateAccess({ view: 'catalogo' })}>Volver al catálogo</Button>
             </div>}
-            <InscriptionForm key={selectedCourse?.id ?? 'general'} initialCallId={selectedCourse?.id} />
+            <InscriptionForm key={callId ?? 'general'} initialCallId={callId} />
           </Card>
         )}
       </div>
-    </div>
+    </main>
   )
 }

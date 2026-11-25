@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { publicCatalog, type PublicCourse } from '../../../shared/api/publicCatalog'
 import { PublicCourseList, COURSE_PAGE_SIZE, type CatalogAdmissionFilter, type PublicResource } from './PublicCourseList'
 import { PublicCourseDetail } from './PublicCourseDetail'
@@ -34,11 +34,23 @@ export function PublicCatalog({ onApply }: { onApply: (course: PublicCourse) => 
   const [admission, setAdmission] = useState<CatalogAdmissionFilter>('')
   const [offset, setOffset] = useState(0)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const returningToList = useRef(false)
+
   useEffect(() => {
-    document.getElementById(selectedId ? 'public-course-title' : 'public-catalog-title')?.focus()
+    const target = returningToList.current
+      ? 'public-admission-filter'
+      : selectedId ? 'public-course-title' : 'public-catalog-title'
+    document.getElementById(target)?.focus()
+    returningToList.current = false
   }, [selectedId])
+
+  function returnToList() {
+    returningToList.current = true
+    setSelectedId(null)
+  }
+
   return selectedId
-    ? <CourseDetail key={selectedId} id={selectedId} onBack={() => setSelectedId(null)} onApply={onApply} />
+    ? <CourseDetail key={selectedId} id={selectedId} onBack={returnToList} onApply={onApply} />
     : <CourseList admission={admission} offset={offset} onFilter={(filter) => { setAdmission(filter); setOffset(0) }}
       onPage={setOffset} onOpen={(course) => setSelectedId(course.id)} />
 }

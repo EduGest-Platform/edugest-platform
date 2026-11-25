@@ -70,18 +70,24 @@ export function InscriptionForm({ onViewApplications, initialCallId }: { onViewA
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [receipt, setReceipt] = useState<Schemas['ApplicationReceipt'] | null>(null)
+  const feedbackRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (receipt || error) feedbackRef.current?.focus()
+  }, [receipt, error])
+
   const target = inscriptionTarget(calls, f.call_id, initialCallId)
   const callId = target.id
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (busy || callsLoading || callsError || !target.available) return
+    if (busy || callsLoading || callsError || !target.available || !f.acepta) return
     setBusy(true)
     setError(null)
 
     try {
       const { data, error: err, response } = await api.POST('/api/v1/applications', {
-        body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: true },
+        body: { call_id: callId, nombre: f.nombre, email: f.email, motivacion: f.motivacion, disponibilidad: f.disponibilidad, acepta_datos_sinteticos: f.acepta },
       })
       if (err || !data) {
         setError(problemText(describeApiError(response.status, err)))
@@ -99,10 +105,12 @@ export function InscriptionForm({ onViewApplications, initialCallId }: { onViewA
   if (receipt)
     return (
       <div className="grid gap-3">
-        <Notice live="polite">
-          <CircleCheck className="mr-1 inline size-4 align-[-3px] text-teal-700" aria-hidden />
-          Candidatura recibida con el código <b className="font-mono">{receipt.codigo}</b>. Se ha registrado en tu expediente único y en el historial.
-        </Notice>
+        <div ref={feedbackRef} tabIndex={-1} data-application-feedback>
+          <Notice live="polite">
+            <CircleCheck className="mr-1 inline size-4 align-[-3px] text-teal-700" aria-hidden />
+            Candidatura recibida con el código <b className="font-mono">{receipt.codigo}</b>. Se ha registrado en tu expediente único y en el historial.
+          </Notice>
+        </div>
         <div className="flex flex-wrap gap-2">
           {onViewApplications && <Button onClick={onViewApplications}>Ir a Mi candidatura</Button>}
           <Button
@@ -162,9 +170,9 @@ export function InscriptionForm({ onViewApplications, initialCallId }: { onViewA
         Entiendo que esta plataforma utiliza exclusivamente datos sintéticos
       </label>
       {error && (
-        <Notice tone="warning" live="assertive">
-          {error}
-        </Notice>
+        <div ref={feedbackRef} tabIndex={-1} data-application-feedback>
+          <Notice tone="warning" live="assertive">{error}</Notice>
+        </div>
       )}
       <div>
         <Button type="submit" disabled={busy || callsLoading || !!callsError || !target.available}>

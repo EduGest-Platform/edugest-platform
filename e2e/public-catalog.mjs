@@ -37,8 +37,16 @@ try {
   const page = await newBrowser()
   await page.goto(web)
   requireCheck('API login entry remains available', await page.waitText('Iniciar sesión'))
+  requireCheck('Public welcome introduces the catalogue', await page.waitText('Encuentra tu próxima formación'))
+  await page.tab()
+  requireCheck('Keyboard reaches the catalogue action with a visible focus outline', await page.ev(`(() => {
+    const action = document.activeElement;
+    return action?.textContent.trim() === 'Explorar el catálogo'
+      && action.matches(':focus-visible') && getComputedStyle(action).outlineStyle !== 'none'
+  })()`))
   await page.blockUrls(['*/api/v1/public/courses*'])
-  requireCheck('Public catalogue entry is available without login', await page.click('Ver formaciones'))
+  requireCheck('Public catalogue entry is available without login', await page.click('Explorar el catálogo'))
+  requireCheck('Public navigation identifies the active view', await page.ev(`document.querySelector('nav[aria-label="Acceso público"] [aria-current="page"]')?.textContent.trim() === 'Ver formaciones'`))
   requireCheck('Connectivity failure offers a retry', await page.waitText('Volver a cargar formaciones'))
   await page.blockUrls([])
   await page.click('Volver a cargar formaciones')
@@ -52,7 +60,8 @@ try {
   requireCheck('Closed detail has loaded', await page.waitText('Plazas ofertadas'))
   requireCheck('Closed offer has no apply action', await page.ev(`![...document.querySelectorAll('button')].some(item => item.textContent.trim() === 'Solicitar plaza')`))
   await page.click('Volver al catálogo')
-  requireCheck('Returning preserves the admission filter', await waitFor(page, `document.querySelector('#public-admission-filter')?.value === 'cerrada'`))
+  requireCheck('Returning preserves the admission filter and restores focus', await waitFor(page,
+    `document.activeElement?.id === 'public-admission-filter' && document.activeElement.value === 'cerrada'`))
   await page.set('#public-admission-filter', 'abierta')
   requireCheck('Open published offer appears', await page.waitText(offer.name))
   await page.ev(`document.querySelector('#public-admission-filter').focus()`)
@@ -67,6 +76,15 @@ try {
   requireCheck('Human application CTA is available', await page.click('Solicitar plaza'))
   requireCheck('Chosen call stays pinned', await waitFor(page, `document.querySelector('#ins-call')?.value === ${JSON.stringify(offer.id)} && document.querySelector('#ins-call')?.disabled`))
   requireCheck('Application name receives focus', await page.ev(`document.activeElement?.id === 'ins-name'`))
+  const selectedApplication = await page.ev('location.href')
+  await page.ev('history.back()')
+  requireCheck('Browser Back returns to the catalogue', await page.waitText('Formaciones disponibles'))
+  await page.ev('history.forward()')
+  requireCheck('Browser Forward restores the same pinned call', await waitFor(page,
+    `document.querySelector('#ins-call')?.value === ${JSON.stringify(offer.id)} && document.querySelector('#ins-call')?.disabled`))
+  await page.goto(selectedApplication)
+  requireCheck('Reload keeps the selected call pinned', await waitFor(page,
+    `document.querySelector('#ins-call')?.value === ${JSON.stringify(offer.id)} && document.querySelector('#ins-call')?.disabled`))
   await page.set('#ins-name', 'Persona Catálogo Sintética')
   await page.set('#ins-email', `catalog.${fixture.toLowerCase()}@example.test`)
   await page.set('#ins-mot', 'Solicitud sintética desde la ficha de formación publicada para verificar el recorrido.')
@@ -75,6 +93,8 @@ try {
   requireCheck('Server returns a registration result', await waitFor(page, `document.body.innerText.includes('Candidatura recibida') || document.body.innerText.includes('Ya existe una candidatura')`))
   requireCheck(expected === 'created' ? 'First execution requires a receipt' : 'Repeat execution requires duplicate rejection',
     matchesApplicationOutcome(expected, await page.text()))
+  requireCheck('Focus moves to the application result', await waitFor(page,
+    'document.activeElement?.hasAttribute("data-application-feedback")'))
   requireCheck('No uncaught browser exceptions', errors.length === 0)
 } catch (error) {
   check('Public catalogue journey completes', false, error instanceof Error ? error.message : 'Unknown error')
