@@ -41,6 +41,7 @@ export function AssistantWidget() {
     if (pending.current || text.length < 3 || text.length > 500) return
     const controller = new AbortController()
     pending.current = controller
+    input.current?.focus()
     setWaiting(text)
     setQuestion('')
     setError('')
@@ -110,9 +111,9 @@ export function AssistantWidget() {
           <form onSubmit={event => void ask(event)} className="shrink-0 border-t border-line p-3">
             <div className="flex items-end gap-2 rounded-xl border border-line p-2 focus-within:border-blue">
               <textarea ref={input} aria-label="Pregunta al asistente" placeholder="Escribe tu pregunta…" rows={2} maxLength={500} value={question}
-                disabled={!!waiting}
+                readOnly={!!waiting}
                 onChange={event => setQuestion(event.target.value)}
-                onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }}
+                onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!pending.current) event.currentTarget.form?.requestSubmit() } }}
                 className="min-w-0 flex-1 resize-none bg-transparent p-1 text-sm" />
               <button type="submit" aria-label="Enviar pregunta" disabled={!!waiting || question.trim().length < 3} className="rounded-xl bg-blue p-3 text-white disabled:opacity-40">
                 <Send className="size-4" aria-hidden />
