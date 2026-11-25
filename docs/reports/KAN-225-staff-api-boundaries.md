@@ -1,5 +1,11 @@
 # KAN-225 — Staff API review / Revisión de API interna
 
+## Addendum 25/11/2026 / Adenda
+
+ES: Los límites siguientes documentan el stack original de invitaciones. La aplicación explícita se añade en un stack posterior: [contrato y límites actuales](KAN-225-access-application.md). Aprobar sigue sin aplicar roles; la revocación por solicitud continúa pendiente.
+
+EN: The original invitation-stack boundaries below remain historical evidence. A later stack adds [explicit application](KAN-225-access-application.md). Approval alone still grants no roles; request-based revocation remains pending.
+
 ## ES
 
 Este stack implementa una parte de KAN-225 sobre los modelos integrados de KAN-223. No declara terminada la tarea ni aprobada la decisión de producto KAN-222.

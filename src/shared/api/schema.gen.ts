@@ -982,6 +982,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/access-requests/{request_id}/application": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Own or global-administrative request application status; no effective-permission claim */
+        get: operations["read_application_api_v1_staff_access_requests__request_id__application_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/access-requests/{request_id}/application-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview application blockers without changing access; revalidated on application */
+        get: operations["preview_application_api_v1_staff_access_requests__request_id__application_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/access-requests/{request_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Explicit global-admin application of an approved role request; idempotent for this request */
+        post: operations["apply_access_api_v1_staff_access_requests__request_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/access-requests/{request_id}/review": {
         parameters: {
             query?: never;
@@ -1215,6 +1266,64 @@ export interface components {
             program_id: string;
             /** Timezone */
             timezone: string;
+        };
+        /** AccessApplicationOut */
+        AccessApplicationOut: {
+            /**
+             * Assignment Active
+             * @description Whether the linked role row is unrevoked; not a claim of effective permissions or account activation.
+             */
+            assignment_active: boolean | null;
+            /**
+             * Assignment Id
+             * @description Null before application or when the linked assignment cannot be verified.
+             */
+            assignment_id: string | null;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request State */
+            request_state: string;
+        };
+        /** AccessApplicationPreview */
+        AccessApplicationPreview: {
+            /** Blockers */
+            blockers: string[];
+            /** Can Apply */
+            can_apply: boolean;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            requested: components["schemas"]["AccessRequestCreate"];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** AccessApply */
+        AccessApply: {
+            /**
+             * Confirm
+             * @description Explicit administrative confirmation of the echoed role and scope.
+             */
+            confirm: boolean;
+            /**
+             * Requested Role
+             * @enum {string}
+             */
+            requested_role: "admin" | "captacion" | "seleccion" | "docente" | "coordinacion";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Scope Type
+             * @enum {string}
+             */
+            scope_type: "global" | "program" | "call" | "cohort";
         };
         /** AccessRequestCreate */
         AccessRequestCreate: {
@@ -7218,6 +7327,159 @@ export interface operations {
                 content?: never;
             };
             /** @description Cuenta/ficha no elegible o invitación ya utilizada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_application_api_v1_staff_access_requests__request_id__application_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Active internal staff profile required for own-request reads */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_application_api_v1_staff_access_requests__request_id__application_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationPreview"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_access_api_v1_staff_access_requests__request_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessApply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Confirmation mismatch or application blocked */
             409: {
                 headers: {
                     [name: string]: unknown;
