@@ -3,6 +3,7 @@ import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
 import { useAcademicCohorts } from './ApiCohorts'
 import { OverviewAttendanceCard } from './OverviewAttendanceCard'
+import { OverviewDeliveriesCard } from './OverviewDeliveriesCard'
 
 type Overview = Schemas['CohortProgressOverview']
 type OverviewState = { data: Overview } | { error: string } | null
@@ -78,6 +79,7 @@ function OverviewForCohort({ cohortId }: { cohortId: string }) {
         {updated && <p className="mt-4 text-sm text-muted">Consulta generada el {updated} ({data?.timezone}).</p>}
       </Card>
       {data && <OverviewAttendanceCard attendance={data.attendance} />}
+      {data && <OverviewDeliveriesCard submissions={data.submissions} timezone={data.timezone} />}
     </>
   )
 }
