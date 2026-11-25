@@ -1,19 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
 import { useAcademicCohorts } from './ApiCohorts'
+import { OverviewAttendanceCard } from './OverviewAttendanceCard'
 
 type Overview = Schemas['CohortProgressOverview']
 type OverviewState = { data: Overview } | { error: string } | null
+type AttendancePeriod = { attendance_from?: string; attendance_to?: string }
 
 function OverviewForCohort({ cohortId }: { cohortId: string }) {
   const [state, setState] = useState<OverviewState>(null)
-  const [attempt, setAttempt] = useState(0)
+  const [period, setPeriod] = useState<AttendancePeriod>({})
+  const [invalidPeriod, setInvalidPeriod] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
     void api.GET('/api/v1/cohorts/{cohort_id}/progress-overview', {
-      params: { path: { cohort_id: cohortId } },
+      params: { path: { cohort_id: cohortId }, query: period },
       signal: controller.signal,
     }).then(({ data, error }) => {
       if (controller.signal.aborted) return
@@ -23,31 +26,59 @@ function OverviewForCohort({ cohortId }: { cohortId: string }) {
       if (!controller.signal.aborted) setState({ error: 'No se pudo conectar con la API.' })
     })
     return () => controller.abort()
-  }, [cohortId, attempt])
+  }, [cohortId, period])
 
-  function retry() {
+  function loadPeriod(next: AttendancePeriod) {
     setState(null)
-    setAttempt(previous => previous + 1)
+    setPeriod(next)
   }
 
-  if (state && 'error' in state) {
-    return (
-      <Card title="Resumen académico" action={<Button variant="ghost" onClick={retry}>Reintentar</Button>}>
-        <Notice tone="warning" live="polite">{state.error}</Notice>
-      </Card>
-    )
+  function applyPeriod(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const fields = new FormData(event.currentTarget)
+    const from = String(fields.get('attendance_from') ?? '')
+    const to = String(fields.get('attendance_to') ?? '')
+    if (from && to && from > to) {
+      setInvalidPeriod(true)
+      return
+    }
+    setInvalidPeriod(false)
+    loadPeriod({ attendance_from: from || undefined, attendance_to: to || undefined })
   }
 
-  const updated = state ? new Intl.DateTimeFormat(
-    'es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: state.data.timezone },
-  ).format(new Date(state.data.generated_at)) : null
+  const data = state && 'data' in state ? state.data : null
+  const updated = data ? new Intl.DateTimeFormat(
+    'es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: data.timezone },
+  ).format(new Date(data.generated_at)) : null
 
   return (
-    <Card title="Resumen académico" action={<Button variant="ghost" onClick={retry} disabled={!state}>Actualizar datos</Button>}>
-      {updated
-        ? <p className="text-sm text-muted">Consulta generada el {updated} ({state?.data.timezone}).</p>
-        : <p role="status" className="text-sm text-muted">Cargando resumen académico…</p>}
-    </Card>
+    <>
+      <Card title="Resumen académico">
+        <form className="flex flex-wrap items-end gap-3" onSubmit={applyPeriod} onChange={() => setInvalidPeriod(false)}>
+          <Field label="Asistencia desde" htmlFor="overview-attendance-from">
+            <input id="overview-attendance-from" name="attendance_from" className={inputCls} type="date"
+              aria-invalid={invalidPeriod || undefined} aria-describedby={invalidPeriod ? 'overview-period-error' : undefined} />
+          </Field>
+          <Field label="Asistencia hasta" htmlFor="overview-attendance-to">
+            <input id="overview-attendance-to" name="attendance_to" className={inputCls} type="date"
+              aria-invalid={invalidPeriod || undefined} aria-describedby={invalidPeriod ? 'overview-period-error' : undefined} />
+          </Field>
+          <Button type="submit">Aplicar periodo</Button>
+        </form>
+        {invalidPeriod && <p id="overview-period-error" role="alert" className="mt-3 text-sm text-amber-800">
+          La fecha de inicio debe ser anterior o igual a la fecha final.
+        </p>}
+        {!state && <p role="status" className="mt-4 text-sm text-muted">Cargando resumen académico…</p>}
+        {state && 'error' in state && (
+          <div className="mt-4 space-y-3">
+            <Notice tone="warning" live="polite">{state.error}</Notice>
+            <Button variant="ghost" onClick={() => loadPeriod({ ...period })}>Reintentar</Button>
+          </div>
+        )}
+        {updated && <p className="mt-4 text-sm text-muted">Consulta generada el {updated} ({data?.timezone}).</p>}
+      </Card>
+      {data && <OverviewAttendanceCard attendance={data.attendance} />}
+    </>
   )
 }
 
