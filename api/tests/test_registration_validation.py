@@ -121,6 +121,23 @@ def test_rejected_duplicate_preserves_every_record_counter_and_original_identity
     assert person.display_name == "Nombre Sintético Original"
 
 
+def test_application_code_collision_rolls_back_and_returns_a_generic_server_error(client, db):
+    body = new_application()
+    call_id = body["call_id"]
+    original_sequence = db.get(Call, call_id).next_seq
+    assert client.post("/api/v1/applications", json=body).status_code == 201
+
+    # A deliberately inconsistent counter exercises a different, real PostgreSQL unique constraint.
+    db.get(Call, call_id, populate_existing=True).next_seq = original_sequence
+    db.commit()
+    before = snapshot(db)
+    unrelated_email = "codigo.colision@example.test"
+    failed = client.post("/api/v1/applications", json=new_application(email=unrelated_email))
+    assert failed.status_code == 500
+    assert "Ya existe una candidatura" not in failed.text and unrelated_email not in failed.text
+    assert snapshot(db) == before
+
+
 def test_public_registration_cannot_choose_stage_identity_or_event_author(client, db):
     response = client.post("/api/v1/applications", json=new_application(
         stage="admitida", role="admin", person_id=str(uuid.uuid4()), actor_user_id=str(uuid.uuid4()),
