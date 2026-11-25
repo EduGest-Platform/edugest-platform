@@ -2,9 +2,21 @@ import { useCallback, useState } from 'react'
 import { api } from '../../../shared/api/client'
 import { Card, Empty, Field, PageTitle, Status, inputCls } from '../../ui'
 import { deliveryStateLabel, matchesDeliveryFilter, type DeliveryFilter } from './learnerDeliveryStates'
+import { validPortfolioLink } from './portfolioLink'
 import { LearnerReadProblem, OwnEnrollmentPicker, requireLearnerResponse, useLearnerRead } from './OwnEnrollmentPicker'
 
 const deadline = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
+
+function PortfolioReference({ value, title }: { value: string; title: string }) {
+  const href = validPortfolioLink(value)
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      aria-label={`Abrir portfolio de ${title} en otra pestaña`}
+      className="mt-2 inline-block text-sm font-medium text-blue underline">
+      Abrir portfolio
+    </a>
+  ) : <p className="mt-2 text-sm text-muted">El enlace guardado requiere un formato HTTPS válido.</p>
+}
 
 function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
   const [filter, setFilter] = useState<DeliveryFilter>('all')
@@ -49,6 +61,7 @@ function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
               <>Primer envío · <time dateTime={item.submission.first_submitted_at}>{deadline.format(new Date(item.submission.first_submitted_at))}</time></>
             ) : 'Aún no hay un envío registrado.'}
           </p>
+          {item.submission?.portfolio_url && <PortfolioReference value={item.submission.portfolio_url} title={item.title} />}
         </Card>
       ))}
     </div>
