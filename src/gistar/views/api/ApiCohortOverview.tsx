@@ -3,6 +3,7 @@ import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
 import { useAcademicCohorts } from './ApiCohorts'
 import { OverviewAttendanceCard } from './OverviewAttendanceCard'
+import { OverviewCompetenciesCard } from './OverviewCompetenciesCard'
 import { OverviewDeliveriesCard } from './OverviewDeliveriesCard'
 
 type Overview = Schemas['CohortProgressOverview']
@@ -80,6 +81,7 @@ function OverviewForCohort({ cohortId }: { cohortId: string }) {
       </Card>
       {data && <OverviewAttendanceCard attendance={data.attendance} />}
       {data && <OverviewDeliveriesCard submissions={data.submissions} timezone={data.timezone} />}
+      {data && <OverviewCompetenciesCard competencies={data.competencies} />}
     </>
   )
 }
