@@ -13,7 +13,7 @@ from app.core.db import utcnow
 from app.core.errors import UserFacingError
 from app.modules.catalog.models import Cohort, Program
 from app.modules.competencies.models import CohortCompetencyFramework, Competency, CompetencyAssessment, CompetencyFramework
-from app.modules.competencies.schemas import AssessmentWrite, CompetencyWrite
+from app.modules.competencies.schemas import AssessmentWrite, CompetencyWrite, CurrentLevel
 from app.modules.learning.access import cohort_scope
 from app.modules.learning.models import Enrollment
 
@@ -122,6 +122,30 @@ def cohort_framework(db: Session, cohort_id: str) -> CompetencyFramework | None:
 
 
 # ---------- Assessments ----------
+
+
+def current_enrollment_levels(db: Session, enrollment_id: uuid.UUID, framework_id: uuid.UUID) -> list[CurrentLevel]:
+    competencies = competencies_of(db, framework_id)
+    if not competencies:
+        return []
+    assessment = CompetencyAssessment
+    rows = db.execute(
+        select(assessment.competency_id, assessment.level, assessment.assessed_at)
+        .where(assessment.enrollment_id == enrollment_id, assessment.competency_id.in_([c.id for c in competencies]))
+        .order_by(assessment.assessed_at, assessment.id)
+    )
+    latest = {row.competency_id: row for row in rows}
+    levels = []
+    for competency in competencies:
+        evaluation = latest.get(competency.id)
+        levels.append(CurrentLevel(
+            competency_id=competency.id,
+            codigo=competency.codigo,
+            nombre=competency.nombre,
+            level=evaluation.level if evaluation else None,
+            assessed_at=evaluation.assessed_at if evaluation else None,
+        ))
+    return levels
 
 
 def assess(db: Session, p: Principal, enrollment: Enrollment, body: AssessmentWrite) -> CompetencyAssessment:
