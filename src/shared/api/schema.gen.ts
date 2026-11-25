@@ -982,6 +982,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/access-requests/{request_id}/application-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview application blockers without changing access; revalidated on application */
+        get: operations["preview_application_api_v1_staff_access_requests__request_id__application_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/access-requests/{request_id}/review": {
         parameters: {
             query?: never;
@@ -1215,6 +1232,24 @@ export interface components {
             program_id: string;
             /** Timezone */
             timezone: string;
+        };
+        /** AccessApplicationPreview */
+        AccessApplicationPreview: {
+            /** Blockers */
+            blockers: string[];
+            /** Can Apply */
+            can_apply: boolean;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            requested: components["schemas"]["AccessRequestCreate"];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** AccessRequestCreate */
         AccessRequestCreate: {
@@ -7219,6 +7254,51 @@ export interface operations {
             };
             /** @description Cuenta/ficha no elegible o invitación ya utilizada */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_application_api_v1_staff_access_requests__request_id__application_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationPreview"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

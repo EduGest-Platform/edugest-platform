@@ -46,6 +46,43 @@
         "title": "AcademicCohortOut",
         "type": "object"
       },
+      "AccessApplicationPreview": {
+        "properties": {
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "can_apply": {
+            "title": "Can Apply",
+            "type": "boolean"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "requested": {
+            "$ref": "#/components/schemas/AccessRequestCreate"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "user_id",
+          "requested",
+          "can_apply",
+          "blockers"
+        ],
+        "title": "AccessApplicationPreview",
+        "type": "object"
+      },
       "AccessRequestCreate": {
         "additionalProperties": false,
         "properties": {
@@ -10626,6 +10663,60 @@
           }
         ],
         "summary": "Solicitar un cambio para la ficha propia; no aplica permisos",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests/{request_id}/application-preview": {
+      "get": {
+        "operationId": "preview_application_api_v1_staff_access_requests__request_id__application_preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessApplicationPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Global administration required"
+          },
+          "404": {
+            "description": "Request not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview application blockers without changing access; revalidated on application",
         "tags": [
           "staff"
         ]

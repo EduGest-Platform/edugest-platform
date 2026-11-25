@@ -34,6 +34,7 @@ from app.modules.learning.overview_router import router as progress_overview_rou
 from app.modules.selection.router import router as selection_router
 from app.modules.submissions.router import router as submissions_router
 from app.modules.staff.router import router as staff_router
+from app.modules.staff.application_router import router as access_application_router
 
 app = FastAPI(
     title="EduGest API",
@@ -77,6 +78,7 @@ for r in (
     enrollment_documentation_router,
     progress_overview_router,
     staff_router,
+    access_application_router,
     audit_router,
     discussion_router,
 ):
