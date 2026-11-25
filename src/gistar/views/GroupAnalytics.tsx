@@ -5,15 +5,8 @@ import { fmtDay, fmtShort, timeOf } from '../dates'
 import { MIN_GROUP, activeTasks, cohortOf, effectiveCompetencies, nominalCohorts, programOf, todayOf } from '../domain'
 import { useGistar } from '../store'
 import { AttendanceModal } from '../components/AttendanceModal'
-import { ColumnChart, LEVEL_STYLE, LevelCell, LevelLegend, LineChart, SegmentLegend, StackedBar, type Segment } from '../components/charts'
+import { ColumnChart, LevelCell, LevelLegend, LineChart, SegmentLegend, StackedBar, levelSegments } from '../components/charts'
 import { Button, Card, Chips, Empty, Field, Formula, Metric, Notice, PageTitle, SyntheticBadge, inputCls } from '../ui'
-
-const distSegments = (d: { n1: number; n2: number; n3: number; none: number }): Segment[] => [
-  { key: 'n1', value: d.n1, color: LEVEL_STYLE[1].bg, label: 'Nivel 1' },
-  { key: 'n2', value: d.n2, color: LEVEL_STYLE[2].bg, label: 'Nivel 2' },
-  { key: 'n3', value: d.n3, color: LEVEL_STYLE[3].bg, label: 'Nivel 3' },
-  { key: 'none', value: d.none, color: '', label: 'Sin evaluar', pattern: true },
-]
 
 export function GroupAnalytics() {
   const { data, role, teacherCohort, setTeacherCohort, setFocusStudent, setFocusComp, navigate } = useGistar()
@@ -184,7 +177,7 @@ export function GroupAnalytics() {
         </Card>
 
         <Card title="Distribución por competencia" action={<span className="text-xs text-muted">N = {g.coders.length} coders</span>}>
-          <SegmentLegend segments={distSegments({ n1: 0, n2: 0, n3: 0, none: 0 })} />
+          <SegmentLegend segments={levelSegments({ n1: 0, n2: 0, n3: 0, none: 0 })} />
           <ul className="mt-4 grid gap-3">
             {g.dist.map((d) => (
               <li key={d.comp.id}>
@@ -197,7 +190,7 @@ export function GroupAnalytics() {
                       N1 {d.n1} · N2 {d.n2} · N3 {d.n3} · sin evaluar {d.none} / {d.N}
                     </span>
                   </div>
-                  <StackedBar total={d.N} segments={distSegments(d)} />
+                  <StackedBar total={d.N} segments={levelSegments(d)} />
                 </button>
               </li>
             ))}
@@ -386,9 +379,9 @@ export function GroupAnalytics() {
                 const d = g.dist.find((x) => x.comp.id === exploreComp.id)!
                 return (
                   <div className="mt-4">
-                    <StackedBar total={d.N} height="h-4" segments={distSegments(d)} />
+                    <StackedBar total={d.N} height="h-4" segments={levelSegments(d)} />
                     <div className="mt-2">
-                      <SegmentLegend segments={distSegments(d)} total={d.N} />
+                      <SegmentLegend segments={levelSegments(d)} total={d.N} />
                     </div>
                   </div>
                 )

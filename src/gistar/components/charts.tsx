@@ -121,6 +121,16 @@ export interface Segment {
   label: string
   pattern?: boolean
 }
+
+export function levelSegments({ n1, n2, n3, none }: { n1: number; n2: number; n3: number; none: number }): Segment[] {
+  return [
+    { key: 'n1', value: n1, color: LEVEL_STYLE[1].bg, label: LEVEL_STYLE[1].label },
+    { key: 'n2', value: n2, color: LEVEL_STYLE[2].bg, label: LEVEL_STYLE[2].label },
+    { key: 'n3', value: n3, color: LEVEL_STYLE[3].bg, label: LEVEL_STYLE[3].label },
+    { key: 'none', value: none, color: '', label: LEVEL_STYLE[0].label, pattern: true },
+  ]
+}
+
 export function StackedBar({ segments, total, height = 'h-3' }: { segments: Segment[]; total: number; height?: string }) {
   return (
     <div className={`flex w-full overflow-hidden rounded-full bg-[#eef2f5] ${height}`} role="img" aria-label={segments.map((s) => `${s.label}: ${s.value} de ${total}`).join(', ')}>
