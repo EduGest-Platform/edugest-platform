@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { api } from '../../../shared/api/client'
-import { Card, Empty, Field, PageTitle, Status, inputCls } from '../../ui'
+import { Button, Card, Empty, Field, PageTitle, Status, inputCls } from '../../ui'
+import { LearnerSubmissionEditor } from './LearnerSubmissionEditor'
 import { deliveryStateLabel, matchesDeliveryFilter, type DeliveryFilter } from './learnerDeliveryStates'
 import { validPortfolioLink } from './portfolioLink'
 import { LearnerReadProblem, OwnEnrollmentPicker, requireLearnerResponse, useLearnerRead } from './OwnEnrollmentPicker'
@@ -20,6 +21,8 @@ function PortfolioReference({ value, title }: { value: string; title: string }) 
 
 function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
   const [filter, setFilter] = useState<DeliveryFilter>('all')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [notice, setNotice] = useState('')
   const load = useCallback(async (signal: AbortSignal) => requireLearnerResponse(
     await api.GET('/api/v1/enrollments/{enrollment_id}/submissions', {
       params: { path: { enrollment_id: enrollmentId } }, signal,
@@ -35,7 +38,7 @@ function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
   return (
     <div className="grid gap-4">
       <Field label="Estado de entrega" htmlFor="delivery-filter">
-        <select id="delivery-filter" className={`${inputCls} max-w-md`} value={filter}
+        <select id="delivery-filter" className={`${inputCls} max-w-md`} value={filter} disabled={editingId !== null}
           onChange={event => setFilter(event.target.value as DeliveryFilter)}>
           <option value="all">Todas las actividades</option>
           <option value="outstanding">Pendientes y vencidas</option>
@@ -44,6 +47,7 @@ function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
         </select>
       </Field>
       <p role="status" className="text-sm text-muted">{visible.length} de {state.data.items.length} actividades</p>
+      {notice && <p role="status" className="text-sm">{notice}</p>}
       {!visible.length && <Empty>No hay actividades con este estado.</Empty>}
       {visible.map(item => (
         <Card key={item.assignment_id} title={item.title} action={
@@ -62,6 +66,23 @@ function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
             ) : 'Aún no hay un envío registrado.'}
           </p>
           {item.submission?.portfolio_url && <PortfolioReference value={item.submission.portfolio_url} title={item.title} />}
+          {!item.reviewed && (editingId === item.assignment_id ? (
+            <LearnerSubmissionEditor item={item} enrollmentId={enrollmentId}
+              onCancel={() => setEditingId(null)}
+              onRefresh={() => { setEditingId(null); retry() }}
+              onSaved={() => {
+                setEditingId(null)
+                setNotice('Envío guardado.')
+                retry()
+              }} />
+          ) : (
+            <div className="mt-3">
+              <Button size="sm" variant="ghost" disabled={editingId !== null} onClick={() => {
+                setNotice('')
+                setEditingId(item.assignment_id)
+              }}>{item.submission ? 'Editar enlace y reenviar' : 'Registrar entrega'}</Button>
+            </div>
+          ))}
         </Card>
       ))}
     </div>
@@ -71,7 +92,7 @@ function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
 export function ApiLearnerDeliveries() {
   return (
     <div className="space-y-5">
-      <PageTitle title="Mis entregas" sub="Consulta las actividades publicadas para tu matrícula." />
+      <PageTitle title="Mis entregas" sub="Consulta las actividades y registra tus entregas antes de la revisión." />
       <OwnEnrollmentPicker fieldId="delivery-enrollment">
         {enrollment => <OwnDeliveries key={enrollment.enrollment_id} enrollmentId={enrollment.enrollment_id} />}
       </OwnEnrollmentPicker>
