@@ -112,3 +112,23 @@ def test_approved_queue_supports_explicit_application_and_owner_followup(client,
     assert applied.json()['assignment_active'] is True
     assert filtered(admin, state='approved') == []
     assert client.get(f'{target}/application', headers=owner).json() == applied.json()
+
+
+def test_rejected_request_cannot_be_applied_or_reviewed_again(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    admin = login(client, ADMIN)
+    row = request(client, owner)
+    target = '/api/v1/staff/access-requests/' + row['id']
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    rejected = client.post(f'{target}/review', headers=admin, json={'approved': False})
+    assert rejected.status_code == 200
+    assert rejected.json()['state'] == 'rejected'
+    assert rejected.json()['applied_assignment_id'] is None
+    assert client.post(f'{target}/review', headers=admin, json={'approved': True}).status_code == 409
+    response = client.post(f'{target}/apply', headers=admin, json={
+        'requested_role': 'docente', 'scope_type': 'cohort', 'scope_id': 'COH-IA', 'confirm': True})
+    assert response.status_code == 409
+    listed = client.get('/api/v1/staff/access-requests', headers=owner, params={'state': 'rejected'})
+    assert listed.status_code == 200
+    assert [item['id'] for item in listed.json()['items']] == [row['id']]
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
