@@ -7,6 +7,8 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
   const [loading, setLoading] = useState(true)
   const [recipient, setRecipient] = useState('')
   const [topic, setTopic] = useState('')
+  const [scheduled, setScheduled] = useState(false)
+  const [sendAt, setSendAt] = useState('')
   const [draft, setDraft] = useState<{ enrollment_id: string; topic: string; available_at: string; idempotency_key: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -48,7 +50,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
     })
     return () => controller.abort()
   }, [cohortId])
-  const valid = recipients.includes(recipient) && topic.trim().length > 0 && topic.trim().length <= 120 && !Array.from(topic).some(c => c.charCodeAt(0) < 32)
+  const valid = (!scheduled || (Number.isFinite(Date.parse(sendAt)) && Date.parse(sendAt) > Date.now())) && recipients.includes(recipient) && topic.trim().length > 0 && topic.trim().length <= 120 && !Array.from(topic).some(c => c.charCodeAt(0) < 32)
   async function submit() {
     if (!draft || lock.current) return
     lock.current = true
@@ -64,6 +66,8 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         setDraft(null)
         setTopic('')
         setRecipient('')
+        setScheduled(false)
+        setSendAt('')
       } else setError(errorMessage(result.error))
     } catch {
       setError('No se pudo confirmar la solicitud. Reintenta con la misma referencia para evitar duplicados.')
@@ -87,15 +91,23 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
     <Field label="Tema del aviso" htmlFor="email-topic">
       <input id="email-topic" className={inputCls} maxLength={120} value={topic} disabled={busy || !!draft} onChange={e => { setTopic(e.target.value); setMessage('') }} />
     </Field>
+    <label className="flex items-center gap-2 text-sm">
+      <input type="checkbox" checked={scheduled} disabled={busy || !!draft} onChange={e => setScheduled(e.target.checked)} /> Programar envío
+    </label>
+    {scheduled && <Field label="Fecha y hora de envío (hora local)" htmlFor="email-send-at">
+      <input id="email-send-at" type="datetime-local" className={inputCls} value={sendAt} disabled={busy || !!draft} onChange={e => setSendAt(e.target.value)} />
+    </Field>}
     {!draft ? <Button disabled={!valid || busy} onClick={() => {
+      if (!valid || (scheduled && Date.parse(sendAt) <= Date.now())) return
       setError('')
-      setDraft({ enrollment_id: recipient, topic: topic.trim(), available_at: new Date().toISOString(), idempotency_key: crypto.randomUUID() })
+      setDraft({ enrollment_id: recipient, topic: topic.trim(), available_at: scheduled ? new Date(sendAt).toISOString() : new Date().toISOString(), idempotency_key: crypto.randomUUID() })
     }}>Revisar aviso</Button> : <>
       <div className="grid gap-2 text-sm">
         <p><b>Asunto:</b> Aviso académico: {draft.topic}</p>
         <p>Hay una actualización relacionada con {draft.topic}.</p>
         <p>Consulta EduGest para conocer los detalles.</p>
         <p>Destinatario: {draft.enrollment_id}</p>
+        <p>Disponible para envío: {new Date(draft.available_at).toLocaleString('es-ES', { timeZoneName: 'short' })}</p>
       </div>
       <Button disabled={busy} onClick={() => void submit()}>Confirmar solicitud de envío</Button>
       <Button variant="ghost" disabled={busy} onClick={() => { setDraft(null); setError('') }}>Descartar revisión</Button>
@@ -109,6 +121,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
       {!historyLoading && !historyError && history.map(item => <div key={item.message_id} className="grid gap-1 text-sm">
         <b>{{ pending: 'Pendiente', sending: 'En proceso', sent: 'Aceptado por SMTP', failed: 'Fallido', uncertain: 'Resultado incierto', cancelled: 'Cancelado' }[item.status as 'pending'] ?? item.status}</b>
         <span>Intentos: {item.attempts} · {new Date(item.created_at).toLocaleString('es-ES')}</span>
+        <span>Disponible desde: {new Date(item.available_at).toLocaleString('es-ES')}</span>
         <span className="break-all text-xs">{item.message_id}</span>
       </div>)}
     </section>
