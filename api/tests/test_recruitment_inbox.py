@@ -69,3 +69,10 @@ def test_inbox_pagination_preserves_scope_and_total(client, db):
     assert len(seen) == len(set(seen)) == 3
     assert set(seen) == set(own)
     assert foreign not in seen
+
+
+def test_inbox_rejects_invalid_pagination(client):
+    headers = login(client, CAPT_IA)
+    for params in ({"limit": 0}, {"offset": -1}, {"limit": "invalid"}):
+        response = client.get(URL, headers=headers, params=params)
+        assert response.status_code == 422, response.text
