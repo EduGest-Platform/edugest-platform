@@ -187,7 +187,7 @@ El inventario KAN-92/93 es la fuente de opciones y obligatoriedad; estos destino
 | Etapa | `stage` (existe) | enum de 9 valores | Auto | A | TEC | Existe; las decisiones de admisión son **humanas** |
 | Referencia legado | `legacy_ref` (existe) | `str(20)` | Auto | P/A | TEC | Solo datos semilla |
 | Marca sintética | `is_synthetic` (existe) | `bool` | Auto | P | TEC | Existe |
-| Eventos CRM | `application_event.resumen` (existe) | `str(500)` | — | A | ORD | Ya avisa: "No incluir datos de salud…". Ver R7 |
+| Eventos CRM | `application_event.resumen`, `application_event.next_action` (existen) | `str(500)`, `str(200)` | — | A | ORD | Ya avisa: "No incluir datos de salud…". Ver R7 |
 
 ### 2.3 Gobierno por campo (resumen agrupado)
 
