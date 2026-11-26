@@ -66,7 +66,10 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     <p className="text-sm">Disponible únicamente si la institución ha habilitado Zoom. La hora corresponde a la zona local del dispositivo.</p>
     {error && <Notice tone="warning" live="assertive">{error}</Notice>}
     {message && <Notice live="polite">{message}</Notice>}
-    {blocked && <Notice>Consulta con administración antes de repetir una solicitud no confirmada. Para otra sesión, vuelve a abrir la pantalla.</Notice>}
+    {blocked && <>
+      <Notice>Consulta con administración antes de repetir una solicitud no confirmada. Puedes comprobar si la reunión quedó registrada sin crear otra.</Notice>
+      <Button variant="ghost" disabled={busy || lookup === null} onClick={() => { setLookup(null); setLookupAttempt(n => n + 1) }}>Comprobar registro de reunión</Button>
+    </>}
     <Field label="Sesión académica" htmlFor="zoom-session">
       <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => { setSessionId(e.target.value); setLookup(null); setMessage(""); setError(""); setTopic(""); setStart(""); setDuration("60"); setMode("authenticated") }}>
         <option value="">Selecciona una sesión</option>
