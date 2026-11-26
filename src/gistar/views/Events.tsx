@@ -5,14 +5,15 @@ import { useGistar } from '../store'
 import type { EventType } from '../types'
 import { Button, Card, Field, PageTitle, inputCls } from '../ui'
 import { useVisibleItems } from './Calendar'
-import { filterEvents } from '../events'
+import { eventPhase, filterEvents } from '../events'
 
 export function Events() {
   const { data, navigate } = useGistar()
   const [query, setQuery] = useState('')
   const [type, setType] = useState<EventType | ''>('')
   const [upcoming, setUpcoming] = useState(true)
-  const items = filterEvents(useVisibleItems(), nowOf(data), query, type, upcoming)
+  const now = nowOf(data)
+  const items = filterEvents(useVisibleItems(), now, query, type, upcoming)
 
   return (
     <>
@@ -39,6 +40,7 @@ export function Events() {
         {!items.length && <Card title="Sin eventos"><p className="text-sm text-muted">No hay eventos con los filtros seleccionados.</p></Card>}
         {items.map(item => (
           <Card key={item.id} title={item.titulo}>
+            <span className="mb-2 inline-block rounded-full border border-line px-2 py-1 text-xs font-semibold text-ink">{{ upcoming: 'Próximo', ongoing: 'En curso', ended: 'Finalizado' }[eventPhase(item, now)]}</span>
             <p className="text-sm text-muted">{EVENT_TYPES[item.tipo].label} · {fmtShort(item.inicio)} {timeOf(item.inicio)} – {fmtShort(item.fin)} {timeOf(item.fin)}</p>
             <details className="mt-3 text-sm">
               <summary className="cursor-pointer font-semibold">Ver detalle</summary>

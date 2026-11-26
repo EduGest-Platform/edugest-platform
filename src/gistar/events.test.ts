@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { canOpen, MENUS } from './config'
-import { filterEvents } from './events'
+import { eventPhase, filterEvents } from './events'
 import type { CalItem, Role } from './types'
 
 const now = '2026-11-26T10:00'
@@ -24,6 +24,12 @@ describe('Eventos', () => {
     const items = [event('past', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:00' }), event('ongoing', { inicio: '2026-11-26T09:00' })]
     expect(filterEvents(items, now, '', '', true).map(x => x.id)).toEqual(['ongoing'])
     expect(filterEvents(items, now, '', '', false)).toHaveLength(2)
+  })
+  it('classifies upcoming, ongoing and ended events at boundaries', () => {
+    expect(eventPhase(event('future'), now)).toBe('upcoming')
+    expect(eventPhase(event('start', { inicio: now }), now)).toBe('ongoing')
+    expect(eventPhase(event('end', { inicio: '2026-11-26T09:00', fin: now }), now)).toBe('ongoing')
+    expect(eventPhase(event('past', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:59' }), now)).toBe('ended')
   })
   it('matches accented titles without requiring accents', () => {
     const items = [event('a', { titulo: 'Orientación académica' }), event('b', { titulo: 'Taller' })]
