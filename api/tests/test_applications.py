@@ -37,15 +37,15 @@ def test_duplicate_in_same_call_is_rejected_after_normalisation(client, db):
     assert count(db, Application) == total
 
 
-def test_same_person_reused_across_calls(client, db):
+def test_same_email_in_another_call_gets_its_own_record(client, db):
     a = client.post("/api/v1/applications", json=new_application()).json()
     persons = count(db, Person)
     b = client.post("/api/v1/applications", json=new_application(call_id="CONV-DATA-2027A", nombre="Otro nombre")).json()
     assert b["codigo"].startswith("DA27A-")
-    assert count(db, Person) == persons
+    assert count(db, Person) == persons + 1
     pa = db.scalar(select(Application.person_id).where(Application.id == a["id"]))
     pb = db.scalar(select(Application.person_id).where(Application.id == b["id"]))
-    assert pa == pb
+    assert pa != pb
 
 
 def test_validation_and_closed_calls(client):

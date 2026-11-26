@@ -9,6 +9,7 @@ from app.core import audit
 from app.core.authz import Principal
 from app.core.db import utcnow
 from app.core.errors import UserFacingError
+from app.modules.admissions.identity_reviews import has_pending_review
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.catalog.models import Call, Cohort
 from app.modules.learning.models import Enrollment
@@ -157,6 +158,17 @@ def _check_stage(application: Application, decision: str) -> None:
     )
 
 
+def _check_identity(db: Session, application: Application) -> None:
+    """An enrollment must belong to a settled record: linking it afterwards would mean moving academic data (KAN-274)."""
+    if has_pending_review(db, application.id):
+        raise _conflict(
+            "dossier_check_pending",
+            # Deciders such as coordination may not see duplicate warnings, so the message does not say what is pending.
+            "Todavía no se puede admitir: el expediente tiene una comprobación pendiente. "
+            "Pide a Captación o a administración que lo revise.",
+        )
+
+
 def _check_cohort(db: Session, application: Application, call: Call, cohort_id: str) -> Cohort:
     cohort = db.get(Cohort, cohort_id)
     if cohort is None or cohort.call_id != call.id:
@@ -206,6 +218,8 @@ def decide(db: Session, actor: Principal, application_id: uuid.UUID, body: Selec
     application, call = row
     require_selection_access(db, actor, "selection.decide", call)
     _check_stage(application, body.decision)
+    if body.decision == "admitida":
+        _check_identity(db, application)
     # Checked on every vote, so a wrong cohort or a full call is caught before anyone waits for a second person.
     cohort = _check_cohort(db, application, call, body.cohort_id or "") if body.decision == "admitida" else None
     if cohort:

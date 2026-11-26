@@ -39,11 +39,12 @@ async function checkQueue(selector, applicationId, expected) {
 }
 
 try {
-  const submitted = await request('/applications', [201, 409], { method: 'POST', body: {
+  // The applicant applies signed in: an anonymous application is never linked to an account on its own (KAN-274).
+  const owner = await login(email)
+  const submitted = await request('/applications', [201, 409], { method: 'POST', token: owner, body: {
     call_id: call, nombre: 'Persona sintética en lista de espera', email,
     motivacion: 'Motivación sintética para verificar la promoción y la matrícula.', disponibilidad: 'Flexible', acepta_datos_sinteticos: true,
   } })
-  const owner = await login(email)
   const selector = await login('seleccion.ia@gistar.example')
   const coordinator = await login('coordinacion@gistar.example')
   const applications = (await request('/me/applications', 200, { token: owner })).data.filter(row => row.call_id === call)

@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, utcnow
@@ -25,7 +26,11 @@ CONTACT_RESULTS = ("respondida", "sin_respuesta")
 
 
 class Application(Base):
-    """One application per Person and Call. The Person is reused across calls (no duplicate expedientes)."""
+    """One application per Person and Call.
+
+    A public application never joins an existing Person on its own (KAN-274): it gets a new record and, when the email
+    is already known, an IdentityReview that a member of staff resolves.
+    """
 
     __tablename__ = "application"
     __table_args__ = (
@@ -72,3 +77,33 @@ class ApplicationEvent(Base):
     next_action_due_on: Mapped[date | None] = mapped_column(Date)
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+IDENTITY_DECISIONS = ("misma_persona", "persona_distinta")
+
+
+class IdentityReview(Base):
+    """KAN-274: an application whose email already belongs to another record, waiting for a person to decide.
+
+    The decision is recorded once, with its author, date and reason. Only «misma_persona» moves the application to the
+    linked Person; `original_person_id` keeps the record created at intake, so what was submitted is never lost.
+    """
+
+    __tablename__ = "identity_review"
+    __table_args__ = (
+        CheckConstraint(f"decision IS NULL OR decision IN {IDENTITY_DECISIONS}", name="ck_identity_review_decision"),
+        CheckConstraint("num_nonnulls(decision, reason, decided_by, decided_at) IN (0, 4)", name="ck_identity_review_complete"),
+        CheckConstraint("(linked_person_id IS NOT NULL) = (decision IS NOT DISTINCT FROM 'misma_persona')", name="ck_identity_review_link"),
+        CheckConstraint("reason IS NULL OR length(btrim(reason)) > 0", name="ck_identity_review_reason"),
+        CheckConstraint("cardinality(candidate_person_ids) > 0", name="ck_identity_review_candidates"),
+    )
+    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), primary_key=True)
+    original_person_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("person.id"))
+    # Fixed at intake, so which records are compared never depends on clocks.
+    candidate_person_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(Uuid))
+    decision: Mapped[str | None] = mapped_column(String(20))
+    linked_person_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("person.id"))
+    reason: Mapped[str | None] = mapped_column(String(500))
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

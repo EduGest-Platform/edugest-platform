@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.main import app
-from app.modules.admissions.models import Application, ApplicationEvent
+from app.modules.admissions.models import Application, ApplicationEvent, IdentityReview
 from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Call
 from app.modules.identity.models import Person
@@ -30,8 +30,8 @@ def submit_in_parallel(payloads):
 
 def assert_created_once_per_call(db, calls, responses):
     db.expire_all()
-    person = db.scalars(select(Person).where(Person.email == EMAIL)).one()
-    applications = db.scalars(select(Application).where(Application.person_id == person.id)).all()
+    query = select(Application).join(Person, Person.id == Application.person_id)
+    applications = db.scalars(query.where(Person.email == EMAIL)).all()
     assert sorted(row.call_id for row in applications) == sorted(calls)
     created_ids = {response.json()["id"] for response in responses if response.status_code == 201}
     assert created_ids == {str(row.id) for row in applications}
@@ -58,7 +58,7 @@ def test_simultaneous_double_submission_consumes_one_sequence_and_writes_once(db
     assert db.get(Call, IA_CALL).next_seq == sequence + 1
 
 
-def test_simultaneous_applications_in_two_calls_share_only_the_person(db):
+def test_simultaneous_applications_in_two_calls_keep_separate_records_and_one_review(db):
     baseline = {call_id: db.get(Call, call_id).next_seq for call_id in (IA_CALL, DATA_CALL)}
     responses = submit_in_parallel([
         new_application(call_id=IA_CALL, email=EMAIL),
@@ -67,5 +67,8 @@ def test_simultaneous_applications_in_two_calls_share_only_the_person(db):
     assert [response.status_code for response in responses] == [201, 201]
     applications = assert_created_once_per_call(db, [IA_CALL, DATA_CALL], responses)
     assert len({row.codigo for row in applications}) == 2
+    assert len({row.person_id for row in applications}) == 2
+    review = db.scalars(select(IdentityReview)).one()
+    assert review.decision is None and review.application_id in {row.id for row in applications}
     for call_id, sequence in baseline.items():
         assert db.get(Call, call_id).next_seq == sequence + 1
