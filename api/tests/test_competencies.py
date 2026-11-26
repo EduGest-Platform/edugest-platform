@@ -175,3 +175,22 @@ def test_non_teaching_roles_cannot_configure_or_assess(client, email):
     headers = login(client, email)
     assert client.post(f"/api/v1/programs/{PROGRAM}/competency-frameworks", json=tree("C1"), headers=headers).status_code == 403
     assert client.get(f"/api/v1/cohorts/{COHORT}/competencies", headers=headers).status_code == 403
+
+
+def test_assessment_roster_only_shows_the_assigned_cohort(client, db):
+    user_id = db.scalar(select(User.id).where(User.email == DOCENTE))
+    assignment = db.scalar(select(RoleAssignment).where(
+        RoleAssignment.user_id == user_id, RoleAssignment.scope_id == OTHER_COHORT,
+    ))
+    db.delete(assignment)
+    db.commit()
+    teacher = login(client, DOCENTE)
+    path = f"/api/v1/cohorts/{COHORT}/competency-roster"
+    roster = client.get(path, headers=teacher)
+    assert roster.status_code == 200
+    items = roster.json()["items"]
+    assert items and all(set(item) == {"enrollment_id", "display_name"} for item in items)
+    assert enrollment_of(db) in {item["enrollment_id"] for item in items}
+    assert client.get(f"/api/v1/cohorts/{OTHER_COHORT}/competency-roster", headers=teacher).status_code == 403
+    assert client.get(path, headers=login(client, COORD)).status_code == 403
+    assert client.get(path).status_code == 401

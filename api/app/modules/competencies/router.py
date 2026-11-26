@@ -10,7 +10,9 @@ from app.modules.competencies.schemas import (
     AssessmentWrite,
     CohortCompetencies,
     CohortFrameworkWrite,
+    CompetencyLearner,
     CompetencyOut,
+    CompetencyRoster,
     CurrentLevel,
     EnrollmentAssessments,
     FrameworkList,
@@ -28,8 +30,9 @@ from app.modules.competencies.service import (
     require_program,
     update_draft,
 )
-from app.modules.identity.models import User
+from app.modules.identity.models import Person, User
 from app.modules.learning.access import require_cohort, require_enrollment
+from app.modules.learning.models import Enrollment
 
 router = APIRouter(tags=["competencies"])
 
@@ -93,6 +96,20 @@ def get_cohort_competencies(p: CurrentPrincipal, db: DB, cohort_id: str = Cohort
     require_cohort(db, p, "competencies.read", cohort_id)
     framework = cohort_framework(db, cohort_id)
     return CohortCompetencies(cohort_id=cohort_id, framework=_framework_out(db, framework) if framework else None)
+
+
+@router.get("/cohorts/{cohort_id}/competency-roster", response_model=CompetencyRoster, responses=_ERRORS,
+            summary="Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente")
+def get_competency_roster(p: CurrentPrincipal, db: DB, cohort_id: str = CohortId) -> CompetencyRoster:
+    require_cohort(db, p, "competencies.assess", cohort_id)
+    rows = db.execute(
+        select(Enrollment.id, Person.display_name).join(Person, Person.id == Enrollment.person_id)
+        .where(Enrollment.cohort_id == cohort_id, Enrollment.estado != "baja_voluntaria")
+        .order_by(Person.display_name, Enrollment.id)
+    )
+    return CompetencyRoster(items=[
+        CompetencyLearner(enrollment_id=enrollment_id, display_name=name) for enrollment_id, name in rows
+    ])
 
 
 @router.post("/enrollments/{enrollment_id}/assessments", response_model=AssessmentOut, status_code=201, responses={**_ERRORS, **_CONFLICT},

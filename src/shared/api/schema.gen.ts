@@ -653,6 +653,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente */
+        get: operations["get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/progress-overview": {
         parameters: {
             query?: never;
@@ -2200,6 +2217,16 @@ export interface components {
             /** Nombre */
             nombre: string;
         };
+        /** CompetencyLearner */
+        CompetencyLearner: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+        };
         /** CompetencyOut */
         CompetencyOut: {
             /** Codigo */
@@ -2237,6 +2264,11 @@ export interface components {
             min_group_size: number;
             /** Suppressed */
             suppressed: boolean;
+        };
+        /** CompetencyRoster */
+        CompetencyRoster: {
+            /** Items */
+            items: components["schemas"]["CompetencyLearner"][];
         };
         /** CompetencyWrite */
         CompetencyWrite: {
@@ -6384,6 +6416,51 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyRoster"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import type { View } from './types'
 import { ApiCoordinationDashboard } from './views/api/ApiCoordinationDashboard'
+import { ApiCompetencies } from './views/api/ApiCompetencies'
 import { ApiCohorts } from './views/api/ApiCohorts'
 import { ApiCohortOverview } from './views/api/ApiCohortOverview'
 import { ApiAttendance } from './views/api/ApiAttendance'
@@ -16,6 +17,8 @@ import { ApiApplications, ApiAudit, ApiInscription, ApiMyApplications } from './
 export const API_SCREENS: Partial<Record<View, () => ReactElement>> = {
   dashboard: ApiCoordinationDashboard,
   cohortes: ApiCohorts,
+  competencias: ApiCompetencies,
+  rubricas: ApiCompetencies,
   analitica: ApiCohortOverview,
   asistencia: ApiAttendance,
   asistente: ApiAssistant,
