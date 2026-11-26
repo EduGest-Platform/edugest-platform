@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { MessageSquareText, Send, Sparkles, X } from 'lucide-react'
 import type { Schemas } from '../../shared/api/client'
-import { askAssistant } from '../views/api/askAssistant'
-import { describeApiError, problemText } from '../../shared/api/errors'
+import { AssistantStreamError, streamAssistant } from '../../shared/api/assistantStream'
 import { DocumentAnswer } from '../views/api/ApiAssistant'
 
 type Exchange = { question: string; result: Schemas['AskOut'] }
@@ -12,6 +11,7 @@ export function AssistantWidget() {
   const [cohort, setCohort] = useState('')
   const [messages, setMessages] = useState<Exchange[]>([])
   const [waiting, setWaiting] = useState('')
+  const [partial, setPartial] = useState('')
   const [error, setError] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
   const launcher = useRef<HTMLButtonElement>(null)
@@ -25,13 +25,14 @@ export function AssistantWidget() {
       block: 'nearest',
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     })
-  }, [messages, waiting, error])
+  }, [messages, waiting, partial, error])
 
   function clear() {
     pending.current?.abort()
     pending.current = null
     setMessages([])
     setWaiting('')
+    setPartial('')
     setQuestion('')
     setError('')
   }
@@ -44,25 +45,28 @@ export function AssistantWidget() {
     pending.current = controller
     input.current?.focus()
     setWaiting(text)
+    setPartial('')
     setQuestion('')
     setError('')
     try {
-      const { data, error: apiError, response } = await askAssistant(text, controller.signal, cohort)
-      if (controller.signal.aborted) return
-      if (data) setMessages(previous => [...previous.slice(-9), { question: text, result: data }])
-      else {
-        setError(problemText(describeApiError(response.status, apiError)))
-        setQuestion(text)
-      }
-    } catch {
-      if (!controller.signal.aborted) {
-        setError('No se pudo consultar el asistente. Inténtalo de nuevo.')
+      const result = await streamAssistant({ question: text, cohort_id: cohort.trim() || null }, controller.signal, {
+        onPhase: () => {},
+        onDelta: delta => {
+          if (pending.current === controller) setPartial(previous => previous + delta)
+        },
+      })
+      if (pending.current !== controller) return
+      setMessages(previous => [...previous.slice(-9), { question: text, result }])
+    } catch (cause) {
+      if (pending.current === controller) {
+        setError(cause instanceof AssistantStreamError ? cause.message : 'No se pudo consultar el asistente. Inténtalo de nuevo.')
         setQuestion(text)
       }
     } finally {
       if (pending.current === controller) {
         pending.current = null
         setWaiting('')
+        setPartial('')
       }
     }
   }
@@ -108,9 +112,10 @@ export function AssistantWidget() {
             ))}
             {waiting && <>
               <p className="ml-8 whitespace-pre-wrap break-words rounded-2xl rounded-br-sm bg-navy px-4 py-3 text-white">{waiting}</p>
+              {partial && <p className="mr-3 whitespace-pre-wrap break-words rounded-2xl border border-line bg-white p-3 text-sm">{partial}</p>}
               <div role="status" className="flex items-center gap-2 text-sm text-muted">
                 <span aria-hidden className="flex gap-1">{[0, 1, 2].map(i => <span key={i} className="size-2 rounded-full bg-blue motion-safe:animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />)}</span>
-                Consultando fuentes…
+                {partial ? 'Recibiendo respuesta…' : 'Consultando fuentes…'}
               </div>
             </>}
             {error && <p role="alert" className="rounded-lg border border-line bg-white p-3 text-sm">{error}</p>}
