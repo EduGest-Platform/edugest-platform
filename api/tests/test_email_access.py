@@ -59,3 +59,24 @@ def test_rejected_notification_never_enqueues(case):
         record.assert_not_called()
         if case == "denied":
             db.get.assert_not_called()
+
+
+@pytest.mark.parametrize("status", ["pending", "cancelled", "sending", "sent", "failed", "uncertain", None])
+def test_cancel_notification_state_boundary(status):
+    db, principal, enrollment, _, _ = setup()
+    message_id = uuid4()
+    item = SimpleNamespace(status=status) if status is not None else None
+    db.scalars.return_value.one_or_none.return_value = item
+    with patch.object(access, "require_cohort") as require, patch.object(access.audit, "record") as record:
+        if status in {"pending", "cancelled"}:
+            access.cancel_notification(db, principal, cohort_id=enrollment.cohort_id, message_id=message_id)
+            assert item.status == "cancelled"
+        else:
+            with pytest.raises(UserFacingError):
+                access.cancel_notification(db, principal, cohort_id=enrollment.cohort_id, message_id=message_id)
+            if item is not None:
+                assert item.status == status
+        require.assert_called_once_with(db, principal, "email.send", enrollment.cohort_id)
+        assert record.call_count == (1 if status == "pending" else 0)
+        assert db.flush.call_count == (1 if status == "pending" else 0)
+    db.commit.assert_not_called()
