@@ -124,8 +124,8 @@ def active_own_profile(db, actor, lock=False):
     return profile
 
 
-def request_out(row):
-    return AccessRequestOut.model_validate(row, from_attributes=True)
+def request_out(row, name=None):
+    return AccessRequestOut.model_validate(row, from_attributes=True).model_copy(update={'requested_by_name': name})
 
 
 def create_access_request(db, actor, body):
@@ -136,7 +136,7 @@ def create_access_request(db, actor, body):
     db.flush()
     audit.record(db, actor, 'staff.access_requested', 'access_change_request', str(row.id), staff_profile_id=str(profile.id))
     db.commit()
-    return request_out(row)
+    return request_out(row, actor.user.display_name)
 
 
 def list_access_requests(db, actor, limit, offset, pending_only=False):
@@ -149,10 +149,11 @@ def list_access_requests(db, actor, limit, offset, pending_only=False):
         profile = active_own_profile(db, actor)
         query = query.where(AccessChangeRequest.staff_profile_id == profile.id)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    rows = db.execute(query.order_by(AccessChangeRequest.requested_at, AccessChangeRequest.id).limit(limit).offset(offset)).all()
+    ordering = (AccessChangeRequest.requested_at, AccessChangeRequest.id) if is_admin else (AccessChangeRequest.requested_at.desc(), AccessChangeRequest.id.desc())
+    rows = db.execute(query.order_by(*ordering).limit(limit).offset(offset)).all()
     audit.record(db, actor, 'staff.access_requests_viewed', 'staff_profile', str(profile.id) if profile else None, administrative=is_admin)
     db.commit()
-    return dict(items=[request_out(row).model_copy(update={'requested_by_name': name}) for row, name in rows], total=total)
+    return dict(items=[request_out(row, name) for row, name in rows], total=total)
 
 
 def review_access_request(db, actor, request_id, body):
@@ -178,4 +179,4 @@ def review_access_request(db, actor, request_id, body):
     audit.record(db, actor, 'staff.access_reviewed', 'access_change_request', str(row.id), state=row.state)
     # Human review is recorded separately from application. RoleAssignment is deliberately untouched.
     db.commit()
-    return request_out(row)
+    return request_out(row, db.scalar(select(User.display_name).where(User.id == row.requested_by)))
