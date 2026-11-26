@@ -4,14 +4,21 @@ from typing import Literal
 from fastapi import APIRouter, Query
 
 from app.core.deps import DB, CurrentPrincipal
-from app.modules.staff import service
-from app.modules.staff.schemas import InvitationCreate, InvitationIssued, InvitationOut, InvitationRenew
+from app.modules.staff import invitation_directory, service
+from app.modules.staff.schemas import InvitationCreate, InvitationDirectory, InvitationIssued, InvitationOut, InvitationRenew
 from app.modules.staff.schemas import InvitationAccept, StaffProfileOut
 from app.modules.staff.schemas import AccessRequestCreate, AccessRequestList, AccessRequestOut, AccessReview
 
 router = APIRouter(prefix='/staff', tags=['staff'])
 ERRORS = {403: {'description': 'Administración global requerida'}, 404: {'description': 'Invitación no encontrada'},
           409: {'description': 'Cuenta/ficha no elegible o invitación ya utilizada'}}
+
+
+@router.get('/invitation-accounts', response_model=InvitationDirectory, responses=ERRORS,
+            summary='Buscar cuentas internas elegibles y consultar su última invitación sin revelar el código')
+def invitation_accounts(p: CurrentPrincipal, db: DB, search: str = Query(default='', max_length=100),
+                        offset: int = Query(default=0, ge=0), limit: int = Query(default=20, ge=1, le=50)):
+    return invitation_directory.list_invitation_accounts(db, p, search, offset, limit)
 
 
 @router.post('/invitations', response_model=InvitationIssued, status_code=201, responses=ERRORS,

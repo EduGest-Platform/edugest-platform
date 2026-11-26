@@ -3,6 +3,7 @@ import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
 import type { Me } from '../../../shared/api/session'
 import { Modal } from '../../components/Modal'
+import { StaffInvitationConsole } from './StaffInvitationConsole'
 import { Button, Field, Notice, inputCls } from '../../ui'
 
 type Profile = Schemas['StaffProfileOut']
@@ -217,6 +218,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
             </form>
           )}
         </section>
+        {canReview && <StaffInvitationConsole />}
         {profile?.state === 'active' && (
           <form className="grid gap-3 rounded-xl border border-line p-3" onSubmit={requestAccess}>
             <h3 className="font-semibold">Solicitar acceso</h3>
