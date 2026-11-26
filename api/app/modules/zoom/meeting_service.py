@@ -53,3 +53,21 @@ def provision_meeting(
     db.add(row)
     db.flush()
     return row
+
+
+def provision_institutional_meeting(
+    db: Session, principal: Principal, client: ZoomClient, *, session_id: UUID,
+    topic: str, start_at: datetime, duration_minutes: int, mode: AuthenticationMode,
+) -> ZoomMeeting:
+    """Public-facing service boundary: host and profile are exclusively server configured."""
+    config = client.config
+    if not config.zoom_enabled or not config.zoom_provisioning_enabled or not config.zoom_host_id:
+        raise UserFacingError(404, "zoom_disabled", "Creación de reuniones no disponible.")
+    profile_id = config.zoom_institutional_profile_id if mode == "institutional" else None
+    if mode == "institutional" and not profile_id:
+        raise UserFacingError(409, "zoom_profile_unavailable", "Perfil institucional no configurado.")
+    return provision_meeting(
+        db, principal, client, session_id=session_id, topic=topic,
+        start_at=start_at, duration_minutes=duration_minutes,
+        host_id=config.zoom_host_id, mode=mode, profile_id=profile_id,
+    )
