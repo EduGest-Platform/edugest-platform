@@ -36,6 +36,30 @@ class Settings(BaseSettings):
     rag_embed: bool = False
     # Read from GEMINI_API_KEY (no GISTAR_ prefix), the name used across the project. Never printed or logged.
     gemini_api_key: SecretStr | None = Field(default=None, validation_alias="GEMINI_API_KEY")
+    # Institutional email is opt-in; SMTP is the initial transport.
+    email_enabled: bool = False
+    email_smtp_host: str | None = None
+    email_smtp_port: int = Field(default=587, ge=1, le=65535)
+    email_smtp_security: Literal["starttls", "tls"] = "starttls"
+    email_smtp_username: SecretStr | None = None
+    email_smtp_password: SecretStr | None = None
+    email_from_address: str | None = None
+    email_timeout_seconds: int = Field(default=15, ge=1, le=60)
+
+    @model_validator(mode="after")
+    def require_email_configuration(self) -> "Settings":
+        if self.email_enabled:
+            if not self.email_smtp_host or not self.email_smtp_host.strip():
+                raise ValueError("Email requires an SMTP host")
+            if not self.email_from_address or not self.email_from_address.strip():
+                raise ValueError("Email requires a sender address")
+            if any(c in self.email_from_address for c in "\r\n"):
+                raise ValueError("Invalid email sender address")
+            if not all(value and value.get_secret_value().strip()
+                       for value in (self.email_smtp_username, self.email_smtp_password)):
+                raise ValueError("Email requires SMTP credentials")
+        return self
+
     # Aggregates for coordination are suppressed below these sizes.
     min_group_size: int = 5
     min_cell_size: int = 3
