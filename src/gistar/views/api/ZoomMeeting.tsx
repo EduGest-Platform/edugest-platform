@@ -31,6 +31,8 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
   }, [sessionId, lookupAttempt])
   const [notes, setNotes] = useState<Schemas["NotesOut"][] | null>(null)
   const [notesError, setNotesError] = useState("")
+  const [approving, setApproving] = useState(false)
+  const approvalLock = useRef(false)
   const [notesAttempt, setNotesAttempt] = useState(0)
   const meetingId = lookup?.id === sessionId && lookup.meeting ? sessionId : ""
   useEffect(() => {
@@ -49,6 +51,26 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     })
     return () => controller.abort()
   }, [meetingId, notesAttempt])
+  async function approveNote() {
+    const latest = notes?.[0]
+    if (!meetingId || !latest || latest.approved_at || approvalLock.current) return
+    if (!window.confirm(`¿Aprobar la versión ${latest.version} de las notas de esta reunión?`)) return
+    approvalLock.current = true
+    setApproving(true)
+    setNotesError("")
+    try {
+      const result = await api.POST("/api/v1/attendance-sessions/{session_id}/zoom/notes/approve", {
+        params: { path: { session_id: meetingId } }, body: { expected_version: latest.version },
+      })
+      if (!result.data) setNotesError(errorMessage(result.error))
+      else setNotes(previous => previous?.map(note => note.version === latest.version ? result.data! : note) ?? null)
+    } catch {
+      setNotesError("Resultado no confirmado. Actualiza las notas antes de volver a aprobar.")
+    } finally {
+      approvalLock.current = false
+      setApproving(false)
+    }
+  }
   const checked = lookup?.id === sessionId && !lookup.error && !lookup.meeting
   const valid = checked && sessions.some(s => s.id === sessionId) && !!topic.trim() &&
     Number.isFinite(Date.parse(start)) && Date.parse(start) > Date.now() &&
@@ -79,7 +101,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       setBusy(false)
     }
   }
-  const disabled = busy || review || blocked
+  const disabled = busy || review || blocked || approving
   const fieldsDisabled = disabled || !checked
   return <section className="grid gap-3">
     <h3 className="font-semibold">Gestionar reunión Zoom</h3>
@@ -105,9 +127,10 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min. No es necesario crear otra reunión para esta sesión.</Notice>}
     {meetingId && <section key={meetingId} className="grid gap-2 border-t border-line pt-3">
       <h4 className="font-semibold">Notas de reunión · revisión interna</h4>
-      <Button variant="ghost" disabled={notes === null && !notesError} onClick={() => { setNotes(null); setNotesError(""); setNotesAttempt(n => n + 1) }}>Actualizar notas</Button>
+      <Button variant="ghost" disabled={approving || (notes === null && !notesError)} onClick={() => { setNotes(null); setNotesError(""); setNotesAttempt(n => n + 1) }}>Actualizar notas</Button>
       {notesError && <Notice>{notesError}</Notice>}
       {notes === null && !notesError && <Notice live="polite">Consultando notas…</Notice>}
+      {notes?.[0] && !notes[0].approved_at && !notesError && <Button disabled={approving} onClick={() => void approveNote()}>Aprobar última versión</Button>}
       {notes?.length === 0 && <Notice>No hay versiones de notas.</Notice>}
       {notes?.map(note => <details key={note.version} className="text-sm">
         <summary>Versión {note.version} · {note.approved_at ? "Aprobada" : "Borrador"}</summary>
