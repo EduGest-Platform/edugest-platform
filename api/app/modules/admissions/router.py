@@ -8,6 +8,7 @@ from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal, OptionalPrincipal
 from app.core.text import LIKE_ESCAPE, escape_like
 from app.modules.admissions.models import Application, ApplicationEvent
+from app.modules.admissions.next_actions import eligible_owners, next_action_out, owner_names, rejection_reason
 from app.modules.admissions.schemas import (
     ApplicationCreate,
     ApplicationDetail,
@@ -15,6 +16,7 @@ from app.modules.admissions.schemas import (
     ApplicationReceipt,
     ApplicationSelfView,
     ApplicationSummary,
+    CrmOwnerOut,
     EventCreate,
     EventOut,
     PersonOut,
@@ -115,14 +117,27 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
     events = db.execute(
         select(ApplicationEvent, User.display_name).outerjoin(User, User.id == ApplicationEvent.actor_user_id).where(ApplicationEvent.application_id == a.id).order_by(ApplicationEvent.occurred_at)
     ).all()
+    names = owner_names(db, [e for e, _ in events])
+    outs = [
+        EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resultado=e.resultado, resumen=e.resumen, actor=name, occurred_at=e.occurred_at,
+                 next_action=next_action_out(e, names))
+        for e, name in events
+    ]
     audit.record(db, p, "application.viewed", "application", str(a.id), codigo=a.codigo)
     db.commit()
     return ApplicationDetail(
         **_summary(a, person, call).model_dump(),
         motivacion=a.motivacion,
         disponibilidad=a.disponibilidad,
-        events=[EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resultado=e.resultado, resumen=e.resumen, actor=name, occurred_at=e.occurred_at) for e, name in events],
+        events=outs,
+        next_action=next((o.next_action for o in reversed(outs) if o.next_action), None),
     )
+
+
+@router.get("/applications/{application_id}/crm-owners", response_model=list[CrmOwnerOut], summary="Personal que puede ser responsable de una próxima acción")
+def list_crm_owners(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> list[CrmOwnerOut]:
+    _, _, call = _load_in_scope(db, p, "applications.crm", application_id)
+    return [CrmOwnerOut(user_id=u.id, display_name=u.display_name) for u in eligible_owners(db, call)]
 
 
 @router.post("/applications/{application_id}/events", response_model=EventOut, status_code=201, summary="Registrar contacto, nota o recordatorio en el CRM")
@@ -130,12 +145,21 @@ def post_event(application_id: uuid.UUID, body: EventCreate, p: CurrentPrincipal
     a, _, call = _load_in_scope(db, p, "applications.crm", application_id)
     if body.resultado and body.tipo != "contacto":
         raise HTTPException(422, "El resultado solo se registra en eventos de contacto")
+    if body.next_action and body.tipo != "contacto":
+        raise HTTPException(422, "La próxima acción solo se registra en eventos de contacto")
+    if body.next_action and (reason := rejection_reason(db, call, body.next_action)):
+        raise HTTPException(422, reason)
     ev = ApplicationEvent(application_id=a.id, tipo=body.tipo, canal=body.canal, resultado=body.resultado, resumen=body.resumen.strip(), actor_user_id=p.user.id)
+    if body.next_action:
+        ev.next_action = body.next_action.description
+        ev.next_action_owner_id = body.next_action.owner_user_id
+        ev.next_action_due_on = body.next_action.due_on
     db.add(ev)
     db.flush()
     audit.record(db, p, "application.event_added", "application", str(a.id), codigo=a.codigo, tipo=body.tipo)
     db.commit()
-    return EventOut(id=ev.id, tipo=ev.tipo, canal=ev.canal, resultado=ev.resultado, resumen=ev.resumen, actor=p.user.display_name, occurred_at=ev.occurred_at)
+    return EventOut(id=ev.id, tipo=ev.tipo, canal=ev.canal, resultado=ev.resultado, resumen=ev.resumen, actor=p.user.display_name, occurred_at=ev.occurred_at,
+                    next_action=next_action_out(ev, owner_names(db, [ev])))
 
 
 @router.get("/me/applications", response_model=list[ApplicationSelfView], summary="Candidaturas propias de la persona autenticada")
