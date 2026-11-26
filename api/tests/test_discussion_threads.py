@@ -70,3 +70,24 @@ def test_program_board_counts_only_threads_matching_the_resolution_filter(client
         assert response.status_code == 200
         assert response.json()['total'] == 1
         assert [row['id'] for row in response.json()['items']] == [expected['id']]
+
+
+def test_cross_program_resolution_cannot_change_thread(client):
+    owner = login(client, CAPT_IA)
+    outsider = login(client, CAPT_DATA)
+    created = create(client, owner)
+    assert created.status_code == 201, created.text
+    thread = created.json()
+    path = f"/api/v1/discussion-threads/{thread['id']}/resolution"
+    for resolved in (True, False):
+        forbidden = client.post(path, headers=outsider,
+                                json={'resolved': resolved, 'expected_version': thread['version']})
+        assert forbidden.status_code == 403, forbidden.text
+        allowed = client.post(path, headers=owner,
+                              json={'resolved': resolved, 'expected_version': thread['version']})
+        assert allowed.status_code == 200, allowed.text
+        thread = allowed.json()
+        listed = client.get('/api/v1/discussion-threads', headers=owner,
+                            params={'scope_type': 'program', 'program_id': 'P-IA', 'resolved': resolved})
+        assert listed.status_code == 200
+        assert [row['id'] for row in listed.json()['items']] == [thread['id']]
