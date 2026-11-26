@@ -197,6 +197,20 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
     })
   }
 
+  function revoke(item: AccessRequest, application: Application) {
+    if (!canReview || item.requested_by === me.id || item.state !== 'applied' ||
+      application.request_id !== item.id || application.request_state !== 'applied' ||
+      !application.assignment_active || !application.assignment_id) return
+    if (!window.confirm(`¿Revocar el permiso de ${item.requested_by_name ?? 'esta cuenta'}?\nRol: ${item.requested_role}\nÁmbito: ${item.scope_type} ${item.scope_id ?? ''}\nSe conservará el historial.`)) return
+    void write(signal => api.POST('/api/v1/staff/access-requests/{request_id}/revoke-access', {
+      params: { path: { request_id: item.id } },
+      body: { requested_role: item.requested_role as RequestInput['requested_role'], scope_type: item.scope_type as RequestInput['scope_type'], scope_id: item.scope_id, assignment_id: application.assignment_id!, confirm: true }, signal,
+    }), () => {
+      setInspection(null)
+      setNotice('Revocación registrada. El historial de la asignación se conserva.')
+    })
+  }
+
   return (
     <Modal open onClose={() => { if (!pending.current) onClose() }} placement="end" size="md" title="Personal y accesos"
       dirty={!busy && Boolean(token || scopeId)}
@@ -305,6 +319,8 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
                           {details.application.assignment_active !== null && <p>
                             {details.application.assignment_active ? 'Asignación registrada sin revocación.' : 'La asignación está revocada.'}
                           </p>}
+                          {canReview && item.requested_by !== me.id && item.state === 'applied' && details.application.request_state === 'applied' && details.application.assignment_active && details.application.assignment_id &&
+                            <Button size="sm" variant="ghost" disabled={busy || uncertain} onClick={() => revoke(item, details.application)}>Revocar permiso</Button>}
                           {details.application.request_state === 'applied' && details.application.assignment_active === null &&
                             <p>No se pudo verificar la asignación vinculada.</p>}
                         </>}
