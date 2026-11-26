@@ -56,6 +56,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [uncertain, setUncertain] = useState(false)
   const pending = useRef<AbortController | null>(null)
 
   useEffect(() => () => pending.current?.abort(), [])
@@ -120,7 +121,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   }, [inspection, canReview, canList, attempt])
 
   async function write(send: (signal: AbortSignal) => Promise<Result<unknown>>, onSuccess: () => void) {
-    if (pending.current) return
+    if (pending.current || uncertain) return
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -134,6 +135,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
         setAttempt(value => value + 1)
       } else {
         setError(requestProblem(result))
+        if (result.response.status >= 500 || result.response.status === 408) setUncertain(true)
         if (result.response.status === 409) {
           setInspection(null)
           setQueue(undefined)
@@ -141,7 +143,10 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
         }
       }
     } catch {
-      if (!controller.signal.aborted) setError('No se pudo confirmar el cambio. Actualiza antes de volver a intentarlo.')
+      if (!controller.signal.aborted) {
+        setUncertain(true)
+        setError('No se pudo confirmar el cambio. Cierra y vuelve a abrir el panel para comprobar el estado antes de repetirlo.')
+      }
     } finally {
       pending.current = null
       if (!controller.signal.aborted) setBusy(false)
@@ -198,6 +203,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
       <div className="grid gap-5">
         {notice && <Notice live="polite">{notice}</Notice>}
         {error && <Notice live="assertive" tone="warning">{error}</Notice>}
+        {uncertain && <Notice tone="warning">Operaciones bloqueadas por un resultado incierto. Cierra y vuelve a abrir el panel para comprobar el estado antes de repetir la operación.</Notice>}
         <section className="grid gap-3" aria-label="Ficha interna">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">Mi ficha interna</h3>
@@ -213,14 +219,14 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
                 <input id="staff-invitation" type="password" autoComplete="off" required minLength={32} maxLength={128}
                   className={inputCls} value={token} readOnly={busy} onChange={event => setToken(event.target.value)} />
               </Field>
-              <Button className="justify-self-start" type="submit" disabled={busy}>Aceptar invitación</Button>
+              <Button className="justify-self-start" type="submit" disabled={busy || uncertain}>Aceptar invitación</Button>
             </form>
           )}
         </section>
         {profile?.state === 'active' && (
           <form className="grid gap-3 rounded-xl border border-line p-3" onSubmit={requestAccess}>
             <h3 className="font-semibold">Solicitar acceso</h3>
-            <fieldset disabled={busy} className="grid min-w-0 gap-3">
+            <fieldset disabled={busy || uncertain} className="grid min-w-0 gap-3">
               <Field label="Rol solicitado" htmlFor="staff-role">
                 <select id="staff-role" className={inputCls} value={role} onChange={event => setRole(event.target.value as typeof role)}>
                   {Object.entries(roles).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
@@ -247,7 +253,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
             {canReview && <>
               <p className="text-sm text-muted">Aprobar una solicitud deja constancia de la revisión. El permiso se aplica en un paso administrativo separado.</p>
               <Field label="Estado de solicitudes" htmlFor="staff-queue-state">
-                <select id="staff-queue-state" className={inputCls} value={filter} disabled={busy} onChange={event => {
+                <select id="staff-queue-state" className={inputCls} value={filter} disabled={busy || uncertain} onChange={event => {
                   setInspection(null)
                   setOffset(0)
                   setFilter(event.target.value as QueueFilter)
@@ -275,12 +281,12 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
                       <p className="text-sm">Esta solicitud requiere la revisión de otra persona administradora.</p>}
                     {canReview && item.state === 'requested' && item.requested_by !== me.id && (
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" disabled={busy} onClick={() => review(item, true)}>Aprobar solicitud</Button>
-                        <Button size="sm" variant="ghost" disabled={busy} onClick={() => review(item, false)}>Rechazar solicitud</Button>
+                        <Button size="sm" disabled={busy || uncertain} onClick={() => review(item, true)}>Aprobar solicitud</Button>
+                        <Button size="sm" variant="ghost" disabled={busy || uncertain} onClick={() => review(item, false)}>Rechazar solicitud</Button>
                       </div>
                     )}
                     {item.state !== 'requested' && <Button size="sm" variant="ghost" className="justify-self-start"
-                      aria-expanded={inspection?.id === item.id} disabled={busy}
+                      aria-expanded={inspection?.id === item.id} disabled={busy || uncertain}
                       onClick={() => {
                         setDetails(undefined)
                         setInspectionError('')
@@ -304,7 +310,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
                           <p className="font-medium">Aplicación para {item.requested_by_name ?? 'Cuenta interna'}</p>
                           <p>{roles[details.preview.requested.requested_role]} · {scopes[details.preview.requested.scope_type]}
                             {details.preview.requested.scope_id && ` · ${details.preview.requested.scope_id}`}</p>
-                          {details.preview.can_apply ? <Button size="sm" className="justify-self-start" disabled={busy}
+                          {details.preview.can_apply ? <Button size="sm" className="justify-self-start" disabled={busy || uncertain}
                             onClick={() => apply(details.preview)}>Confirmar y aplicar permiso</Button> :
                             <ul className="list-disc pl-4">{details.preview.blockers.map(code =>
                               <li key={code}>{blockers[code] ?? 'La revisión del servidor impide aplicar esta solicitud.'}</li>)}</ul>}
