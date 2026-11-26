@@ -3766,55 +3766,55 @@
         "type": "object"
       },
       "NotificationHistoryOut": {
-      "properties": {
-        "attempts": {
-          "title": "Attempts",
-          "type": "integer"
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "available_at": {
+            "format": "date-time",
+            "title": "Available At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
         },
-        "available_at": {
-          "format": "date-time",
-          "title": "Available At",
-          "type": "string"
-        },
-        "created_at": {
-          "format": "date-time",
-          "title": "Created At",
-          "type": "string"
-        },
-        "message_id": {
-          "format": "uuid",
-          "title": "Message Id",
-          "type": "string"
-        },
-        "sent_at": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Sent At"
-        },
-        "status": {
-          "title": "Status",
-          "type": "string"
-        }
+        "required": [
+          "message_id",
+          "status",
+          "attempts",
+          "created_at",
+          "available_at",
+          "sent_at"
+        ],
+        "title": "NotificationHistoryOut",
+        "type": "object"
       },
-      "required": [
-        "message_id",
-        "status",
-        "attempts",
-        "created_at",
-        "available_at",
-        "sent_at"
-      ],
-      "title": "NotificationHistoryOut",
-      "type": "object"
-    },
-    "OverviewAttendance": {
+      "OverviewAttendance": {
         "properties": {
           "date_from": {
             "anyOf": [
@@ -10095,55 +10095,55 @@
       }
     },
     "/api/v1/cohorts/{cohort_id}/email/notifications": {
-    "get": {
-      "operationId": "notification_history_api_v1_cohorts__cohort_id__email_notifications_get",
-      "parameters": [
-        {
-          "in": "path",
-          "name": "cohort_id",
-          "required": true,
-          "schema": {
-            "title": "Cohort Id",
-            "type": "string"
+      "get": {
+        "operationId": "notification_history_api_v1_cohorts__cohort_id__email_notifications_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
           }
-        }
-      ],
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "items": {
-                  "$ref": "#/components/schemas/NotificationHistoryOut"
-                },
-                "title": "Response Notification History Api V1 Cohorts  Cohort Id  Email Notifications Get",
-                "type": "array"
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationHistoryOut"
+                  },
+                  "title": "Response Notification History Api V1 Cohorts  Cohort Id  Email Notifications Get",
+                  "type": "array"
+                }
               }
-            }
+            },
+            "description": "Successful Response"
           },
-          "description": "Successful Response"
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
         },
-        "422": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HTTPValidationError"
-              }
-            }
-          },
-          "description": "Validation Error"
-        }
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Notification History",
+        "tags": [
+          "email"
+        ]
       },
-      "security": [
-        {
-          "HTTPBearer": []
-        }
-      ],
-      "summary": "Notification History",
-      "tags": [
-        "email"
-      ]
-    },
       "post": {
         "operationId": "request_academic_notification_api_v1_cohorts__cohort_id__email_notifications_post",
         "parameters": [
