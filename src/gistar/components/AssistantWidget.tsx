@@ -71,6 +71,7 @@ export function AssistantWidget() {
     setPartial('')
     setQuestion('')
     setError('')
+    input.current?.focus()
   }
 
   async function ask(event: FormEvent) {
@@ -165,7 +166,7 @@ export function AssistantWidget() {
           <p role="status" className="sr-only">{status}</p>
           <form onSubmit={event => void ask(event)} className="shrink-0 border-t border-line p-3">
             <div className="flex items-end gap-2 rounded-xl border border-line p-2 focus-within:border-blue">
-              <textarea ref={input} aria-label="Pregunta al asistente" placeholder="Escribe tu pregunta…" rows={2} maxLength={500} value={question}
+              <textarea ref={input} aria-label="Pregunta al asistente" aria-describedby="assistant-question-length" placeholder="Escribe tu pregunta…" rows={2} maxLength={500} value={question}
                 readOnly={!!waiting}
                 onChange={event => setQuestion(event.target.value)}
                 onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!pending.current) event.currentTarget.form?.requestSubmit() } }}
@@ -180,6 +181,7 @@ export function AssistantWidget() {
                 </button>
               )}
             </div>
+            <p id="assistant-question-length" className="mt-1 text-right text-xs text-muted">{question.length}/500 caracteres</p>
             <p className="mt-2 text-xs text-muted">No envíes datos sensibles. Cada consulta es independiente; el historial no se guarda.</p>
           </form>
         </div>
