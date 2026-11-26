@@ -20,7 +20,7 @@ def _address(value: str) -> Address:
     return address
 
 
-def send_email(config: Settings, *, recipient: str, subject: str, body: str) -> None:
+def send_email(config: Settings, *, recipient: str, subject: str, body: str, html_body: str | None = None) -> None:
     if not config.email_enabled:
         raise DeliveryError("Email integration disabled")
     if not config.email_smtp_host or not config.email_from_address or not config.email_smtp_username or not config.email_smtp_password:
@@ -29,11 +29,16 @@ def send_email(config: Settings, *, recipient: str, subject: str, body: str) -> 
         raise ValueError("Invalid email subject")
     if not body.strip() or len(body.encode("utf-8")) > 100000:
         raise ValueError("Invalid email body")
+    if html_body is not None and (not html_body.strip() or len(html_body.encode("utf-8")) > 100000):
+        raise ValueError("Invalid HTML email body")
     message = EmailMessage()
     message["From"] = _address(config.email_from_address)
     message["To"] = _address(recipient)
     message["Subject"] = subject
     message.set_content(body)
+    # HTML must come from trusted, escaped institutional templates.
+    if html_body is not None:
+        message.add_alternative(html_body, subtype="html")
     context = ssl.create_default_context()
     options = {"host": config.email_smtp_host, "port": config.email_smtp_port,
                "timeout": config.email_timeout_seconds}
