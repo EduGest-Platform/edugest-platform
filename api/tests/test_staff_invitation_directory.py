@@ -61,3 +61,31 @@ def test_directory_tracks_expiry_revocation_rotation_and_consumption(client, db)
     assert accept(third).status_code == 400
     assert current()['profile_state'] == 'active' and current()['latest_invitation']['used_at'] is not None
     assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
+
+
+def test_directory_pagination_preserves_accounts_and_hides_secrets(client):
+    admin = login(client, ADMIN)
+    full = client.get(DIRECTORY, headers=admin, params={'limit': 50})
+    assert full.status_code == 200
+    expected = full.json()['items']
+    assert len(expected) >= 2 and not full.json()['has_more']
+    issued = client.post(INVITATIONS, headers=admin,
+                         json={'user_id': expected[0]['user_id'], 'expires_hours': 2})
+    assert issued.status_code == 201, issued.text
+    secret = issued.json()['token']
+    seen = []
+    for offset in range(len(expected) + 1):
+        response = client.get(DIRECTORY, headers=admin, params={'limit': 1, 'offset': offset})
+        assert response.status_code == 200
+        assert response.headers['cache-control'] == 'no-store'
+        assert secret not in response.text
+        page = response.json()
+        assert page['has_more'] == (offset + 1 < len(expected))
+        assert len(page['items']) == (1 if offset < len(expected) else 0)
+        for account in page['items']:
+            seen.append(account['user_id'])
+            invitation = account['latest_invitation']
+            if invitation is not None:
+                assert 'token' not in invitation and 'token_hash' not in invitation
+    assert seen == [account['user_id'] for account in expected]
+    assert len(seen) == len(set(seen))
