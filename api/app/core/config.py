@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     zoom_client_id: SecretStr | None = None
     zoom_client_secret: SecretStr | None = None
     zoom_webhook_secret: SecretStr | None = None
+    # Provisioning is separately opt-in; never accept arbitrary hosts from HTTP clients.
+    zoom_provisioning_enabled: bool = False
+    zoom_host_id: str | None = None
+    zoom_institutional_profile_id: str | None = None
     # Aggregates for coordination are suppressed below these sizes.
     min_group_size: int = 5
     min_cell_size: int = 3
@@ -59,6 +63,17 @@ class Settings(BaseSettings):
                           self.zoom_client_secret, self.zoom_webhook_secret)
         ):
             raise ValueError("Zoom credentials must be configured when Zoom is enabled")
+        if self.zoom_provisioning_enabled and (
+            not self.zoom_enabled or not self.zoom_host_id
+            or not self.zoom_host_id.strip() or self.zoom_host_id.strip().lower() == "me"
+        ):
+            raise ValueError("Zoom provisioning requires an explicit configured host")
+        for value in (self.zoom_host_id, self.zoom_institutional_profile_id):
+            if value is not None and (
+                not value.strip() or len(value) > 255
+                or any(ord(char) < 32 or ord(char) == 127 for char in value)
+            ):
+                raise ValueError("Invalid Zoom institutional configuration")
         return self
 
 
