@@ -69,3 +69,24 @@ def test_teaching_roster_revocation_preserves_staff_grant_history_when_readded(c
     assert client.put(team, headers=admin).status_code == 200
     status = client.get(f'{target}/application', headers=owner).json()
     assert status['request_state'] == 'revoked' and status['assignment_active'] is False
+
+
+def test_old_revocation_cannot_remove_a_new_grant(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    admin = login(client, ADMIN)
+    old_target, old_confirmation = grant(client, owner, admin)
+    old_endpoint = f'{old_target}/revoke-access'
+    assert client.post(old_endpoint, headers=admin, json=old_confirmation).status_code == 200
+
+    new_target, new_confirmation = grant(client, owner, admin)
+    assert new_confirmation['assignment_id'] != old_confirmation['assignment_id']
+    assert client.post(old_endpoint, headers=admin, json=new_confirmation).status_code == 409
+    assert client.post(f'{new_target}/revoke-access', headers=admin, json=old_confirmation).status_code == 409
+    assert client.post(old_endpoint, headers=admin, json=old_confirmation).status_code == 200
+
+    current = client.get(f'{new_target}/application', headers=owner).json()
+    assert current['request_state'] == 'applied'
+    assert current['assignment_active'] is True
+    assert current['assignment_id'] == new_confirmation['assignment_id']
+    assert client.get('/api/v1/cohorts/COH-IA/teaching-team', headers=owner).status_code == 200
+    assert len(list(db.scalars(select(AuditEvent).where(AuditEvent.action == 'staff.access_revoked')))) == 1
