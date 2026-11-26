@@ -375,6 +375,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit Notes */
+        post: operations["edit_notes_api_v1_attendance_sessions__session_id__zoom_notes_edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -2513,6 +2530,12 @@ export interface components {
              * @description Versión que el docente estaba editando (evita pisar cambios ajenos)
              */
             expected_version: number;
+        };
+        /** EditNotesIn */
+        EditNotesIn: {
+            /** Expected Version */
+            expected_version: number;
+            draft: components["schemas"]["MeetingNotesDraft"];
         };
         /** EnrollmentAssessments */
         EnrollmentAssessments: {
@@ -5778,6 +5801,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ApprovalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_notes_api_v1_attendance_sessions__session_id__zoom_notes_edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditNotesIn"];
             };
         };
         responses: {
