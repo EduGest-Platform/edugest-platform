@@ -91,3 +91,29 @@ def test_refused_recipient_is_not_success():
         smtp.send_message.return_value = {"student@example.test": (550, b"Rejected")}
         with pytest.raises(DeliveryError, match="Recipient rejected"):
             deliver(config())
+
+
+def test_multipart_delivery():
+    from app.modules.email.templates import academic_notification
+
+    rendered = academic_notification(topic="Clase <A>")
+    with patch("app.modules.email.transport.smtplib.SMTP") as factory:
+        smtp = factory.return_value.__enter__.return_value
+        smtp.send_message.return_value = {}
+        deliver(config(), subject=rendered.subject, body=rendered.text, html_body=rendered.html)
+        message = smtp.send_message.call_args.args[0]
+        assert message.get_content_type() == "multipart/alternative"
+        plain, html = list(message.iter_parts())
+        assert plain.get_content_type() == "text/plain"
+        assert html.get_content_type() == "text/html"
+        assert plain.get_content().strip() == rendered.text
+        assert html.get_content().strip() == rendered.html
+        assert "&lt;A&gt;" in html.get_content()
+
+
+@pytest.mark.parametrize("html", ["", "   ", "x" * 100001])
+def test_invalid_html_never_connects(html):
+    with patch("app.modules.email.transport.smtplib.SMTP") as factory:
+        with pytest.raises(ValueError, match="Invalid HTML"):
+            deliver(config(), html_body=html)
+        factory.assert_not_called()
