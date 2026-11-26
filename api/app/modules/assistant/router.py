@@ -5,10 +5,14 @@ found, with its citation, or an explicit abstention. The audit keeps the outcome
 used, never the text of the question.
 """
 
+import json
+import logging
+from collections.abc import Iterator
 from datetime import date
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, status
+from fastapi.responses import StreamingResponse
 
 from app.core import audit
 from app.core.db import utcnow
@@ -23,6 +27,7 @@ from app.modules.knowledge.retrieval import Hit, retrieve
 from app.modules.knowledge.scope import KnowledgeScope, knowledge_scope
 
 router = APIRouter(prefix="/assistant", tags=["assistant"])
+logger = logging.getLogger(__name__)
 
 MADRID = ZoneInfo("Europe/Madrid")
 NO_SOURCE = "No consta en la documentación de tu curso. Consulta con tu equipo docente."
@@ -68,9 +73,7 @@ def _records_answer(db: DB, p: CurrentPrincipal, topic: records.Topic, cohorts: 
     )
 
 
-@router.post("/ask", response_model=AskOut, responses={403: {"description": "Sin documentos en tu ámbito o cohorte ajena"}},
-             summary="Preguntar a la documentación del curso: respuesta citada o «no consta»")
-def ask(body: AskIn, p: CurrentPrincipal, db: DB) -> AskOut:
+def _authorized_scope(body: AskIn, p: CurrentPrincipal, db: DB) -> KnowledgeScope:
     scope = knowledge_scope(db, p)
     if body.cohort_id is not None:
         if body.cohort_id not in scope.cohorts:
@@ -80,12 +83,18 @@ def ask(body: AskIn, p: CurrentPrincipal, db: DB) -> AskOut:
     if scope.is_empty:
         raise _forbidden(db, p, "El asistente de documentación es para el equipo docente, coordinación y coders matriculados.")
 
-    topic = records.topic_of(body.question)
-    if topic is not None:
-        cohorts = records.record_cohorts(db, p, topic, scope.cohorts)
-        if cohorts:
-            return _records_answer(db, p, topic, cohorts)
+    return scope
 
+
+def _records_request(db: DB, p: CurrentPrincipal, body: AskIn, scope: KnowledgeScope) -> tuple[records.Topic, list[str]] | None:
+    topic = records.topic_of(body.question)
+    if topic is None:
+        return None
+    cohorts = records.record_cohorts(db, p, topic, scope.cohorts)
+    return (topic, cohorts) if cohorts else None
+
+
+def _documents_answer(body: AskIn, p: CurrentPrincipal, db: DB, scope: KnowledgeScope) -> AskOut:
     as_of = today()
     embedder, _ = build_embedder(dry_run=False)
     try:
@@ -106,3 +115,53 @@ def ask(body: AskIn, p: CurrentPrincipal, db: DB) -> AskOut:
         answer=f"Según «{top.title}» ({top.version}): {_excerpt(top)}" if top else NO_SOURCE,
         citations=citations, as_of=as_of, scope_cohorts=sorted(scope.cohorts),
     )
+
+
+@router.post("/ask", response_model=AskOut, responses={403: {"description": "Sin documentos en tu ámbito o cohorte ajena"}},
+             summary="Preguntar a la documentación del curso: respuesta citada o «no consta»")
+def ask(body: AskIn, p: CurrentPrincipal, db: DB) -> AskOut:
+    scope = _authorized_scope(body, p, db)
+    request = _records_request(db, p, body, scope)
+    return _records_answer(db, p, *request) if request else _documents_answer(body, p, db, scope)
+
+
+def _event(name: str, data: dict) -> str:
+    return f"event: {name}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+@router.post(
+    "/ask/stream",
+    response_class=StreamingResponse,
+    responses={
+        200: {"content": {"text/event-stream": {"schema": {
+            "type": "string",
+            "description": "SSE: phase ({source_kind}), delta ({text}), answer (AskOut) o error ({code}). answer y error cierran el flujo.",
+        }}}},
+        401: {"description": "Sesión no válida"},
+        403: {"description": "Sin documentos en tu ámbito o cohorte ajena"},
+    },
+    summary="Consultar el asistente con progreso y respuesta mediante eventos SSE",
+)
+def ask_stream(body: AskIn, p: CurrentPrincipal, db: DB) -> StreamingResponse:
+    scope = _authorized_scope(body, p, db)
+    request = _records_request(db, p, body, scope)
+
+    def events() -> Iterator[str]:
+        yield _event("phase", {"source_kind": "records" if request else "documents"})
+        try:
+            result = _records_answer(db, p, *request) if request else _documents_answer(body, p, db, scope)
+        except Exception as exc:
+            # Database/provider errors can contain the question. Keep only the exception class.
+            logger.error("Assistant stream failed (%s)", type(exc).__name__)
+            yield _event("error", {"code": "assistant_unavailable"})
+            return
+
+        if result.status == "answered" or result.source_kind == "records":
+            for start in range(0, len(result.answer), 120):
+                yield _event("delta", {"text": result.answer[start:start + 120]})
+        yield _event("answer", result.model_dump(mode="json"))
+
+    return StreamingResponse(events(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-store, no-transform",
+        "X-Accel-Buffering": "no",
+    })

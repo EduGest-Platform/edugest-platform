@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, String, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base, utcnow
@@ -45,7 +45,8 @@ class RoleAssignment(Base):
 
     __tablename__ = "role_assignment"
     __table_args__ = (
-        UniqueConstraint("user_id", "role", "scope_type", "scope_id", name="uq_role_assignment"),
+        Index("uq_active_role_assignment", "user_id", "role", "scope_type", "scope_id",
+              unique=True, postgresql_where=text("revoked_at IS NULL")),
         CheckConstraint(f"role IN {ROLES}", name="ck_role_assignment_role"),
         CheckConstraint(f"scope_type IN {SCOPE_TYPES}", name="ck_role_assignment_scope_type"),
         CheckConstraint("(scope_type = 'global') = (scope_id IS NULL)", name="ck_role_assignment_scope_id"),

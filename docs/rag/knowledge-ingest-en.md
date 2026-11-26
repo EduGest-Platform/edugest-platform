@@ -53,7 +53,7 @@ The key lives only in `api/.env` locally and in the Render dashboard when deploy
 
 The corpus ships inside the image (`/data/corpus`, with `GISTAR_CORPUS_PATH`). Locally, Docker Compose mounts the `evals/rag/corpus` folder over it, so the version you are editing is used.
 
-On staging (`render.staging.yaml`), vectors start disabled (`GISTAR_RAG_EMBED: "false"`). To enable them: add `GEMINI_API_KEY` in the Render dashboard and then change the value to `"true"` in a reviewed PR.
+On staging (`render.staging.yaml`), vectors are enabled (`GISTAR_RAG_EMBED: "true"`, since 26/11/2026). `GEMINI_API_KEY` is set only in the Render dashboard; without it, the ingest stores text without vectors and search stays keyword-only. Documents already loaded get their vectors on the next start.
 
 ## What happens to each document
 

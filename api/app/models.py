@@ -16,3 +16,4 @@ from app.modules.selection.models import SelectionApproval, SelectionDecision  #
 from app.modules.risk.models import Intervention, RiskAlert  # noqa: F401
 from app.modules.staff.models import AccessChangeRequest, Invitation, StaffProfile  # noqa: F401
 from app.modules.discussions.models import DiscussionComment, DiscussionThread  # noqa: F401
+from app.modules.feedback.models import FeedbackDraft  # noqa: F401

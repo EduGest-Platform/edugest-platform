@@ -66,7 +66,7 @@ Se elige 0,70 y no 0,65 a propósito: el 24/24 se obtiene con el mismo banco que
 
 - **Sinónimos en modo solo palabras.** «Fecha límite» no encuentra «Entrega»: el modo por palabras se abstiene más (7/14 respondidas). El híbrido lo cubre (12/14).
 - **Sobreajuste.** Los umbrales se han ajustado con el mismo banco que los mide. KAN-188 debe añadir preguntas nuevas antes de volver a moverlos.
-- **Staging.** Los vectores siguen desactivados (`GISTAR_RAG_EMBED=false`): allí el asistente funciona en modo solo palabras. Activarlos es una operación posterior y controlada.
+- **Staging.** Los vectores están activados (`GISTAR_RAG_EMBED=true`) y necesitan `GEMINI_API_KEY` en el panel de Render. Sin la clave, o si Gemini falla, el asistente busca solo por palabras.
 - **Sin redacción.** La respuesta es el fragmento literal; el modo `generated` con verificación de la cita llega con T10.
 
 ## Auditoría

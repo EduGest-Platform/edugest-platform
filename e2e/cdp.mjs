@@ -79,9 +79,18 @@ export async function newBrowser() {
   await send('Runtime.enable', {}, s)
   await send('Page.enable', {}, s)
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
-  const pressKey = async (name, virtualKeyCode) => {
+  const waitFor = async (expression, timeoutMs = 15000) => {
+    const deadline = Date.now() + timeoutMs
+    do {
+      const value = await ev(expression)
+      if (value) return value
+      await sleep(100)
+    } while (Date.now() < deadline)
+    return null
+  }
+  const pressKey = async (name, virtualKeyCode, text) => {
     const key = { key: name, code: name, windowsVirtualKeyCode: virtualKeyCode }
-    await send('Input.dispatchKeyEvent', { ...key, type: 'rawKeyDown' }, s)
+    await send('Input.dispatchKeyEvent', { ...key, type: text ? 'keyDown' : 'rawKeyDown', text }, s)
     await send('Input.dispatchKeyEvent', { ...key, type: 'keyUp' }, s)
   }
   const page = {
@@ -92,7 +101,14 @@ export async function newBrowser() {
       const blocked = await send('Network.setBlockedURLs', { urls }, s)
       if (blocked.error) throw new Error(blocked.error.message)
     },
+    networkLatency: async (latency) => {
+      const result = await send('Network.emulateNetworkConditions', {
+        offline: false, latency, downloadThroughput: -1, uploadThroughput: -1,
+      }, s)
+      if (result.error) throw new Error(result.error.message)
+    },
     tab: () => pressKey('Tab', 9),
+    enter: () => pressKey('Enter', 13, '\r'),
     escape: () => pressKey('Escape', 27),
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
@@ -122,10 +138,20 @@ export async function newBrowser() {
     nav: (label) => ev(`(() => { const b = [...document.querySelectorAll('nav[aria-label="Navegación principal"] button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true })()`),
     rows: () => ev(`document.querySelectorAll('main tbody tr').length`),
     login: async (email) => {
+      if (!await waitFor("!!document.querySelector('#lg-email') && !!document.querySelector('#lg-pass')")) {
+        throw new Error('Synthetic login form did not load.')
+      }
       await page.set('#lg-email', email)
       await page.set('#lg-pass', PASSWORD)
-      await page.click('Entrar')
-      await sleep(900)
+      if (!await page.click('Entrar')) throw new Error('Synthetic login could not be submitted.')
+      const outcome = await waitFor(`(() => {
+        if (document.querySelector('#login-error')) return 'rejected'
+        if (document.querySelector('button[aria-label="Cerrar sesión"]')) return 'authenticated'
+        return null
+      })()`)
+      if (outcome !== 'authenticated') {
+        throw new Error(outcome === 'rejected' ? 'Synthetic login was rejected.' : 'Synthetic login did not complete.')
+      }
     },
   }
   return page

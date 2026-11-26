@@ -1,0 +1,56 @@
+.assistant-transcript {
+  min-block-size: min(16rem, 42dvh);
+  max-block-size: min(36rem, 53dvh);
+  scrollbar-gutter: stable;
+}
+
+.assistant-composer {
+  max-block-size: min(12rem, 28dvh);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.assistant-chat-action {
+  transition-duration: 180ms;
+}
+
+.assistant-message {
+  animation: assistant-message-in 240ms ease-out both;
+}
+
+.assistant-dots > span {
+  inline-size: 0.35rem;
+  block-size: 0.35rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: assistant-dot 900ms ease-in-out infinite;
+}
+
+.assistant-dots > span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.assistant-dots > span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes assistant-message-in {
+  from { opacity: 0; transform: translateY(0.35rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes assistant-dot {
+  0%, 65%, 100% { opacity: 0.45; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-0.2rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-message,
+  .assistant-dots > span {
+    animation: none;
+  }
+
+  .assistant-composer,
+  .assistant-chat-action {
+    transition: none;
+  }
+}
