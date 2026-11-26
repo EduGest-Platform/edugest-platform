@@ -43,3 +43,17 @@ def test_staff_request_listing_is_own_profile_only(client, db):
     assert [r['id'] for r in client.get('/api/v1/staff/access-requests', headers=one).json()['items']] == [first['id']]
     assert [r['id'] for r in client.get('/api/v1/staff/access-requests', headers=two).json()['items']] == [second['id']]
     assert client.get('/api/v1/staff/access-requests', headers=login(client, ADMIN)).json()['total'] == 2
+
+
+def test_admin_queue_filters_pending_and_shows_requester_name(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    approved = request(client, owner)
+    pending = request(client, owner)
+    admin = login(client, ADMIN)
+    path = '/api/v1/staff/access-requests'
+    assert client.post(path + '/' + approved['id'] + '/review', headers=admin, json={'approved': True}).status_code == 200
+    response = client.get(path, headers=admin, params={'pending_only': True, 'limit': 1})
+    assert response.status_code == 200
+    [item] = response.json()['items']
+    assert response.json()['total'] == 1 and item['id'] == pending['id']
+    assert item['requested_by_name'] == client.get('/api/v1/auth/me', headers=owner).json()['display_name']

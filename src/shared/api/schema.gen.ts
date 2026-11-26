@@ -1469,6 +1469,8 @@ export interface components {
              * Format: uuid
              */
             requested_by: string;
+            /** Requested By Name */
+            requested_by_name?: string | null;
             /** Requested Role */
             requested_role: string;
             /** Reviewed At */
@@ -7813,6 +7815,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                pending_only?: boolean;
             };
             header?: never;
             path?: never;

@@ -68,6 +68,7 @@ class AccessRequestOut(BaseModel):
     scope_id: str | None
     state: str
     requested_by: uuid.UUID
+    requested_by_name: str | None = None
     requested_at: datetime
     reviewed_by: uuid.UUID | None
     reviewed_at: datetime | None

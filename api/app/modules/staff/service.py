@@ -139,18 +139,20 @@ def create_access_request(db, actor, body):
     return request_out(row)
 
 
-def list_access_requests(db, actor, limit, offset):
+def list_access_requests(db, actor, limit, offset, pending_only=False):
     is_admin = actor.can('staff.manage', Scope())
-    query = select(AccessChangeRequest)
+    query = select(AccessChangeRequest, User.display_name).join(User, User.id == AccessChangeRequest.requested_by)
+    if pending_only:
+        query = query.where(AccessChangeRequest.state == 'requested')
     profile = None
     if not is_admin:
         profile = active_own_profile(db, actor)
         query = query.where(AccessChangeRequest.staff_profile_id == profile.id)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    rows = list(db.scalars(query.order_by(AccessChangeRequest.requested_at, AccessChangeRequest.id).limit(limit).offset(offset)))
+    rows = db.execute(query.order_by(AccessChangeRequest.requested_at, AccessChangeRequest.id).limit(limit).offset(offset)).all()
     audit.record(db, actor, 'staff.access_requests_viewed', 'staff_profile', str(profile.id) if profile else None, administrative=is_admin)
     db.commit()
-    return dict(items=[request_out(row) for row in rows], total=total)
+    return dict(items=[request_out(row).model_copy(update={'requested_by_name': name}) for row, name in rows], total=total)
 
 
 def review_access_request(db, actor, request_id, body):

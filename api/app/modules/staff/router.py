@@ -51,8 +51,9 @@ def create_access_request(body: AccessRequestCreate, p: CurrentPrincipal, db: DB
 
 @router.get('/access-requests', response_model=AccessRequestList, responses=ERRORS,
             summary='Solicitudes propias; administración global puede consultar todas')
-def list_access_requests(p: CurrentPrincipal, db: DB, limit: int = Query(default=50, ge=1, le=100), offset: int = Query(default=0, ge=0)):
-    return service.list_access_requests(db, p, limit, offset)
+def list_access_requests(p: CurrentPrincipal, db: DB, limit: int = Query(default=50, ge=1, le=100),
+                         offset: int = Query(default=0, ge=0), pending_only: bool = False):
+    return service.list_access_requests(db, p, limit, offset, pending_only)
 
 
 @router.post('/access-requests/{request_id}/review', response_model=AccessRequestOut,

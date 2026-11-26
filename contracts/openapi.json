@@ -275,6 +275,17 @@
             "title": "Requested By",
             "type": "string"
           },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
           "requested_role": {
             "title": "Requested Role",
             "type": "string"
@@ -11593,6 +11604,16 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pending_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Pending Only",
+              "type": "boolean"
             }
           }
         ],
