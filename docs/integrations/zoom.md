@@ -1,6 +1,6 @@
 # Zoom integration — draft design
 
-Status: proposed, not implemented. Target: staging first, synthetic data only.
+Status: partial backend implementation, disabled by default. Target: staging first, synthetic data only.
 
 ## Scope
 - Create and link Zoom meetings to existing academic sessions and cohorts; expose join links in the calendar only to authorized users.
@@ -17,7 +17,7 @@ Status: proposed, not implemented. Target: staging first, synthetic data only.
 - [ ] Regenerate OpenAPI and client; test cross-cohort denial, retries, duplicates and manual overrides.
 - [ ] Validate staging with synthetic participants and real provider sandbox/account; document rollback.
 
-No runtime integration is enabled by this document. Do not merge as a completed feature until implementation and verification are complete.
+Backend components exist for OAuth, meeting provisioning, webhook verification helpers, transcript processing and staff notes review. Calendar UI, attendance reconciliation and provider validation remain pending. No runtime integration is enabled by default. Do not merge as a completed feature until implementation and verification are complete.
 
 ## Per-session participant authentication (KAN-276)
 - Authorized session teachers and administrators can select open access (no Zoom account required), authenticated Zoom account access, or institutional access restricted to approved domains where supported by the Zoom account and authentication profile.
@@ -26,3 +26,7 @@ No runtime integration is enabled by this document. Do not merge as a completed 
 - Test all modes, updates, unsupported profiles, provider errors and cross-session authorization. Default mode requires PO confirmation.
 
 Jira: https://anasfady87-1789923749606.atlassian.net/browse/KAN-276
+
+## Local configuration
+
+Both GISTAR_ZOOM_ENABLED and GISTAR_ZOOM_PROVISIONING_ENABLED default to false. Supply GISTAR_ZOOM_ACCOUNT_ID, GISTAR_ZOOM_CLIENT_ID, GISTAR_ZOOM_CLIENT_SECRET and GISTAR_ZOOM_WEBHOOK_SECRET through the Compose environment (untracked .env or exported variables). Provisioning requires GISTAR_ZOOM_HOST_ID; institutional authentication requires GISTAR_ZOOM_INSTITUTIONAL_PROFILE_ID. Leave optional variables unset rather than empty. Never commit credentials or enable provisioning before institutional approval.

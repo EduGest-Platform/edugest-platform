@@ -33,6 +33,15 @@ services:
       GISTAR_CORS_ORIGINS: '["http://localhost:5173","http://localhost:8443"]'
       # La contraseña de las cuentas sintéticas no tiene valor por defecto: se define en infra/.env.
       GISTAR_DEMO_PASSWORD: ${GISTAR_DEMO_PASSWORD:?Set GISTAR_DEMO_PASSWORD in infra/.env}
+      # Optional Zoom configuration; unset values are not passed to the API.
+      GISTAR_ZOOM_ENABLED: ${GISTAR_ZOOM_ENABLED:-false}
+      GISTAR_ZOOM_PROVISIONING_ENABLED: ${GISTAR_ZOOM_PROVISIONING_ENABLED:-false}
+      GISTAR_ZOOM_ACCOUNT_ID:
+      GISTAR_ZOOM_CLIENT_ID:
+      GISTAR_ZOOM_CLIENT_SECRET:
+      GISTAR_ZOOM_WEBHOOK_SECRET:
+      GISTAR_ZOOM_HOST_ID:
+      GISTAR_ZOOM_INSTITUTIONAL_PROFILE_ID:
       # Para el código de ML (Abdur): registrar experimentos en el servicio mlflow.
       MLFLOW_TRACKING_URI: http://mlflow:5000
     ports: ["127.0.0.1:8000:8000"]
