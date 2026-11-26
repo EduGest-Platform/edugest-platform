@@ -158,6 +158,7 @@ export function ApiAssistant() {
     const text = question.trim()
     if (pending.current || text.length < 3 || text.length > 500) return
 
+    questionInput.current?.focus({ preventScroll: true })
     const controller = new AbortController()
     pending.current = controller
     const id = ++nextId.current
