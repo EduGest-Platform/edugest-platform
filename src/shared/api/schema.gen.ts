@@ -677,7 +677,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Notification History */
+        get: operations["notification_history_api_v1_cohorts__cohort_id__email_notifications_get"];
         put?: never;
         /** Request Academic Notification */
         post: operations["request_academic_notification_api_v1_cohorts__cohort_id__email_notifications_post"];
@@ -3109,6 +3110,27 @@ export interface components {
              * Format: uuid
              */
             message_id: string;
+        };
+        /** NotificationHistoryOut */
+        NotificationHistoryOut: {
+            /** Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Status */
+            status: string;
+            /** Attempts */
+            attempts: number;
+            /** Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Available At
+             * Format: date-time
+             */
+            available_at: string;
+            /** Sent At */
+            sent_at: string | null;
         };
         /** OverviewAttendance */
         OverviewAttendance: {
@@ -6727,6 +6749,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notification_history_api_v1_cohorts__cohort_id__email_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationHistoryOut"][];
+                };
             };
             /** @description Validation Error */
             422: {

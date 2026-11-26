@@ -89,3 +89,28 @@ def test_invalid_enqueue_rolls_back(context):
     assert "synthetic conflict" not in response.text
     db.rollback.assert_called_once()
     db.commit.assert_not_called()
+
+
+def test_notification_history(context):
+    from datetime import datetime, timezone
+    from app.modules.email.access import NotificationHistoryItem
+
+    _, client, db, _, _ = context
+    now = datetime.now(timezone.utc)
+    message_id = uuid4()
+    with patch.object(email, "list_notification_history", return_value=[
+        NotificationHistoryItem(message_id, "pending", 0, now, now, None)
+    ]) as history:
+        response = client.get(URL)
+    assert response.status_code == 200
+    assert response.json()[0]["message_id"] == str(message_id)
+    assert response.json()[0]["status"] == "pending"
+    assert set(response.json()[0]) == {"message_id", "status", "attempts", "created_at", "available_at", "sent_at"}
+    assert history.call_args.kwargs["cohort_id"] == "synthetic-cohort"
+    db.commit.assert_not_called()
+
+
+def test_notification_history_forbidden(context):
+    _, client, _, _, _ = context
+    with patch.object(email, "list_notification_history", side_effect=HTTPException(403)):
+        assert client.get(URL).status_code == 403

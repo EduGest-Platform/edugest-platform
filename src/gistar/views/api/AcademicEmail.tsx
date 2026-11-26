@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, errorMessage } from '../../../shared/api/client'
+import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { Button, Card, Field, Notice, inputCls } from '../../ui'
 
 export function AcademicEmail({ cohortId }: { cohortId: string }) {
@@ -12,6 +12,27 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const lock = useRef(false)
+  const [history, setHistory] = useState<Schemas['NotificationHistoryOut'][]>([])
+  const [historyError, setHistoryError] = useState('')
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [revision, setRevision] = useState(0)
+  useEffect(() => {
+    const controller = new AbortController()
+    setHistoryLoading(true)
+    setHistoryError('')
+    void api.GET('/api/v1/cohorts/{cohort_id}/email/notifications', {
+      params: { path: { cohort_id: cohortId } }, signal: controller.signal,
+    }).then(result => {
+      if (controller.signal.aborted) return
+      if (result.data) setHistory(result.data)
+      else { setHistory([]); setHistoryError(errorMessage(result.error)) }
+    }).catch(() => {
+      if (!controller.signal.aborted) { setHistory([]); setHistoryError('No se pudo consultar el historial.') }
+    }).finally(() => {
+      if (!controller.signal.aborted) setHistoryLoading(false)
+    })
+    return () => controller.abort()
+  }, [cohortId, revision])
   useEffect(() => {
     const controller = new AbortController()
     void api.GET('/api/v1/cohorts/{cohort_id}/attendance-summary', {
@@ -39,6 +60,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
       })
       if (result.data) {
         setMessage('Solicitud aceptada en la cola. No confirma la entrega. Referencia: ' + result.data.message_id)
+        setRevision(n => n + 1)
         setDraft(null)
         setTopic('')
         setRecipient('')
@@ -78,5 +100,17 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
       <Button disabled={busy} onClick={() => void submit()}>Confirmar solicitud de envío</Button>
       <Button variant="ghost" disabled={busy} onClick={() => { setDraft(null); setError('') }}>Descartar revisión</Button>
     </>}
+    <section className="mt-6 grid gap-3">
+      <h3 className="font-semibold">Mis comunicaciones recientes</h3>
+      <Button variant="ghost" disabled={historyLoading} onClick={() => setRevision(n => n + 1)}>Actualizar historial</Button>
+      {historyLoading && <Notice live="polite">Consultando historial…</Notice>}
+      {historyError && <Notice tone="warning">{historyError}</Notice>}
+      {!historyLoading && !historyError && !history.length && <Notice>No hay solicitudes registradas.</Notice>}
+      {!historyLoading && !historyError && history.map(item => <div key={item.message_id} className="grid gap-1 text-sm">
+        <b>{{ pending: 'Pendiente', sending: 'En proceso', sent: 'Aceptado por SMTP', failed: 'Fallido', uncertain: 'Resultado incierto', cancelled: 'Cancelado' }[item.status as 'pending'] ?? item.status}</b>
+        <span>Intentos: {item.attempts} · {new Date(item.created_at).toLocaleString('es-ES')}</span>
+        <span className="break-all text-xs">{item.message_id}</span>
+      </div>)}
+    </section>
   </Card>
 }

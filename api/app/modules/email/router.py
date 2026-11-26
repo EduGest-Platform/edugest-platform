@@ -1,4 +1,5 @@
 """Authenticated notification requests; delivery remains asynchronous."""
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -7,7 +8,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from app.core.config import settings
 from app.core.deps import CurrentPrincipal, DB
 from app.core.errors import UserFacingError
-from app.modules.email.access import enqueue_academic_notification
+from app.modules.email.access import enqueue_academic_notification, list_notification_history
 
 router = APIRouter(tags=["email"])
 
@@ -43,3 +44,19 @@ def request_academic_notification(
         raise UserFacingError(422, "email_invalid_request",
                               "Solicitud de notificación no válida.") from None
     return NotificationAcceptedOut(message_id=message_id)
+
+
+class NotificationHistoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    message_id: UUID
+    status: str
+    attempts: int
+    created_at: datetime
+    available_at: datetime
+    sent_at: datetime | None
+
+
+@router.get("/cohorts/{cohort_id}/email/notifications",
+            response_model=list[NotificationHistoryOut])
+def notification_history(cohort_id: str, p: CurrentPrincipal, db: DB):
+    return list_notification_history(db, p, cohort_id=cohort_id)
