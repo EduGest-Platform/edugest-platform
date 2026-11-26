@@ -14,7 +14,7 @@ export interface paths {
         /** Expedientes dentro del ámbito del usuario (captación / selección / administración) */
         get: operations["list_applications_api_v1_applications_get"];
         put?: never;
-        /** Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona */
+        /** Inscripción pública en oferta publicada: crea una ficha de persona sin unirla a otras */
         post: operations["post_application_api_v1_applications_post"];
         delete?: never;
         options?: never;
@@ -104,6 +104,24 @@ export interface paths {
         put?: never;
         /** Registrar contacto, nota o recordatorio en el CRM */
         post: operations["post_event_api_v1_applications__application_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/identity-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aviso de posible duplicado de una candidatura */
+        get: operations["get_identity_review_api_v1_applications__application_id__identity_review_get"];
+        put?: never;
+        /** Decidir si un posible duplicado es la misma persona (queda registrado quién, cuándo y por qué) */
+        post: operations["post_identity_review_api_v1_applications__application_id__identity_review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2552,6 +2570,90 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** IdentityDecisionCreate */
+        IdentityDecisionCreate: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "misma_persona" | "persona_distinta";
+            /**
+             * Linked Person Id
+             * @description Registro con el que se une. Solo con «misma_persona».
+             */
+            linked_person_id?: string | null;
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
+             */
+            reason: string;
+        };
+        /**
+         * IdentityMatch
+         * @description An earlier record with the same email, shown only to staff in scope for all its calls.
+         */
+        IdentityMatch: {
+            /** Applications */
+            applications: components["schemas"]["IdentityMatchApplication"][];
+            /** Display Name */
+            display_name: string;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+        };
+        /** IdentityMatchApplication */
+        IdentityMatchApplication: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "enviada" | "requisitos_en_revision" | "convocada" | "evaluacion_en_curso" | "pendiente_decision_humana" | "admitida" | "lista_espera" | "no_admitida" | "retirada";
+        };
+        /**
+         * IdentityReviewOut
+         * @description Possible duplicate of an application (KAN-274).
+         */
+        IdentityReviewOut: {
+            /**
+             * Blocker
+             * @description Si tiene valor, esta persona usuaria no puede resolver el aviso todavía.
+             */
+            blocker?: ("fuera_de_ambito" | "revision_anterior_pendiente") | null;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decided By */
+            decided_by?: string | null;
+            /**
+             * Has Hidden Matches
+             * @default false
+             */
+            has_hidden_matches: boolean;
+            /** Matches */
+            matches?: components["schemas"]["IdentityMatch"][];
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "sin_coincidencias" | "pendiente" | "misma_persona" | "persona_distinta";
+            /**
+             * Submitted Name
+             * @description Nombre escrito en esta inscripción.
+             */
+            submitted_name?: string | null;
+        };
         /** InvitationAccept */
         InvitationAccept: {
             /**
@@ -4445,6 +4547,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_identity_review_api_v1_applications__application_id__identity_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_identity_review_api_v1_applications__application_id__identity_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityDecisionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityReviewOut"];
                 };
             };
             /** @description Validation Error */

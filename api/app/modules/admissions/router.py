@@ -7,6 +7,7 @@ from app.core import audit
 from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal, OptionalPrincipal
 from app.core.text import LIKE_ESCAPE, escape_like
+from app.modules.admissions import identity_reviews
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.admissions.next_actions import eligible_owners, next_action_out, owner_names, rejection_reason
 from app.modules.admissions.schemas import (
@@ -19,6 +20,8 @@ from app.modules.admissions.schemas import (
     CrmOwnerOut,
     EventCreate,
     EventOut,
+    IdentityDecisionCreate,
+    IdentityReviewOut,
     PersonOut,
     Stage,
 )
@@ -71,7 +74,7 @@ def _load_in_scope(db: DB, p: CurrentPrincipal, perm: str, application_id: uuid.
 
 @router.post("/applications", response_model=ApplicationReceipt, status_code=201,
              responses={404: {"description": "Published offer not found"}},
-             summary="Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona")
+             summary="Inscripción pública en oferta publicada: crea una ficha de persona sin unirla a otras")
 def post_application(body: ApplicationCreate, db: DB, p: OptionalPrincipal) -> ApplicationReceipt:
     a = create_application(db, body, p)
     return ApplicationReceipt(id=a.id, codigo=a.codigo, call_id=a.call_id, stage=a.stage, created_at=a.created_at)
@@ -138,6 +141,23 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
 def list_crm_owners(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> list[CrmOwnerOut]:
     _, _, call = _load_in_scope(db, p, "applications.crm", application_id)
     return [CrmOwnerOut(user_id=u.id, display_name=u.display_name) for u in eligible_owners(db, call)]
+
+
+@router.get("/applications/{application_id}/identity-review", response_model=IdentityReviewOut, summary="Aviso de posible duplicado de una candidatura")
+def get_identity_review(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> IdentityReviewOut:
+    a, _, _ = _load_in_scope(db, p, identity_reviews.REVIEW_PERMISSION, application_id)
+    out = identity_reviews.review_out(db, p, a)
+    if out.status != "sin_coincidencias":
+        audit.record(db, p, "application.identity_review_viewed", "application", str(a.id), codigo=a.codigo, matches_shown=len(out.matches))
+        db.commit()
+    return out
+
+
+@router.post("/applications/{application_id}/identity-review", response_model=IdentityReviewOut, status_code=201,
+             summary="Decidir si un posible duplicado es la misma persona (queda registrado quién, cuándo y por qué)")
+def post_identity_review(application_id: uuid.UUID, body: IdentityDecisionCreate, p: CurrentPrincipal, db: DB) -> IdentityReviewOut:
+    a, _, _ = _load_in_scope(db, p, identity_reviews.REVIEW_PERMISSION, application_id)
+    return identity_reviews.decide(db, p, a, body)
 
 
 @router.post("/applications/{application_id}/events", response_model=EventOut, status_code=201, summary="Registrar contacto, nota o recordatorio en el CRM")

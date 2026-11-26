@@ -9,6 +9,7 @@ import { ApplicantSelectionOutcome } from './ApplicantSelectionOutcome'
 import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerDiscussions } from './ServerDiscussions'
+import { ServerIdentityReview } from './ServerIdentityReview'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
@@ -111,7 +112,7 @@ export function InscriptionForm({ onViewApplications, initialCallId }: { onViewA
         <div ref={feedbackRef} tabIndex={-1} data-application-feedback>
           <Notice live="polite">
             <CircleCheck className="mr-1 inline size-4 align-[-3px] text-teal-700" aria-hidden />
-            Candidatura recibida con el código <b className="font-mono">{receipt.codigo}</b>. Se ha registrado en tu expediente único y en el historial.
+            Candidatura recibida con el código <b className="font-mono">{receipt.codigo}</b>. Queda registrada en el historial.
           </Notice>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -190,7 +191,7 @@ export function ApiInscription() {
   const { navigate } = useGistar()
   return (
     <>
-      <PageTitle title="Inscripción" sub="Formulario único de solicitud. Se crea o reutiliza tu ficha de persona: nunca se duplica el expediente." />
+      <PageTitle title="Inscripción" sub="Formulario único de solicitud. Solo se admite una candidatura por correo y convocatoria." />
       <Card title="Solicitud de acceso" action={<ServerBadge />} className="max-w-2xl">
         <InscriptionForm onViewApplications={() => navigate('candidatura')} />
       </Card>
@@ -411,6 +412,7 @@ export function ApiApplications() {
 function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
   const [selectionDirty, setSelectionDirty] = useState(false)
   const [discussionDirty, setDiscussionDirty] = useState(false)
+  const [identityDirty, setIdentityDirty] = useState(false)
   const { toast } = useGistar()
   const [d, setD] = useState<Schemas['ApplicationDetail'] | null>(null)
   const [actorFilter, setActorFilter] = useState('')
@@ -468,7 +470,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
       open
       size="lg"
       onClose={onClose}
-      dirty={!!ev.resumen.trim() || nextActionState(nextAction) !== 'empty' || selectionDirty || discussionDirty}
+      dirty={!!ev.resumen.trim() || nextActionState(nextAction) !== 'empty' || selectionDirty || discussionDirty || identityDirty}
       title={d ? `${d.person.display_name} · ${d.codigo}` : 'Expediente'}
       subtitle={d ? `${d.call_id} · ${d.person.email}` : undefined}
       footer={(requestClose) => <Button onClick={requestClose}>Cerrar</Button>}
@@ -494,6 +496,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
             <p>
               <span className="text-muted">Disponibilidad:</span> {d.disponibilidad}
             </p>
+            <ServerIdentityReview key={`identity:${d.id}`} applicationId={d.id} onDirty={setIdentityDirty} onResolved={() => { void load(); onChanged() }} />
             <ServerRequirementReview key={`${d.id}:${d.call_id}`} applicationId={d.id} callId={d.call_id} />
             <ServerSelection applicationId={d.id} callId={d.call_id} onDirty={setSelectionDirty} onChanged={() => { void load(); onChanged() }} />
             <ServerDiscussions key={d.id} applicationId={d.id} onDirty={setDiscussionDirty} />

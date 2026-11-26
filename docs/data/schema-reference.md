@@ -127,6 +127,12 @@ erDiagram
         UUID application_id FK
         UUID documentation_accredited_by FK
     }
+    identity_review {
+        UUID application_id PK,FK
+        UUID original_person_id FK
+        UUID linked_person_id FK
+        UUID decided_by FK
+    }
     intervention {
         UUID id PK
         UUID alert_id FK
@@ -260,6 +266,10 @@ erDiagram
     cohort ||--o{ enrollment : cohort_id
     app_user |o--o{ enrollment : documentation_accredited_by
     person ||--o{ enrollment : person_id
+    application ||--o| identity_review : application_id
+    app_user |o--o{ identity_review : decided_by
+    person |o--o{ identity_review : linked_person_id
+    person ||--o{ identity_review : original_person_id
     app_user ||--o{ intervention : actor_user_id
     risk_alert ||--o{ intervention : alert_id
     knowledge_document ||--o{ knowledge_chunk : document_id
@@ -928,6 +938,38 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - INDEX `ix_enrollment_person_id`: `enrollment.person_id`
 
+### identity_review
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| application_id | UUID | no | application.id | — |
+| original_person_id | UUID | no | person.id | — |
+| candidate_person_ids | UUID[] | no | — | — |
+| decision | VARCHAR(20) | sí / yes | — | — |
+| linked_person_id | UUID | sí / yes | person.id | — |
+| reason | VARCHAR(500) | sí / yes | — | — |
+| decided_by | UUID | sí / yes | app_user.id | — |
+| decided_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_identity_review_candidates`: `cardinality(candidate_person_ids) > 0`
+
+- CHECK `ck_identity_review_complete`: `num_nonnulls(decision, reason, decided_by, decided_at) IN (0, 4)`
+
+- CHECK `ck_identity_review_decision`: `decision IS NULL OR decision IN ('misma_persona', 'persona_distinta')`
+
+- CHECK `ck_identity_review_link`: `(linked_person_id IS NOT NULL) = (decision IS NOT DISTINCT FROM 'misma_persona')`
+
+- CHECK `ck_identity_review_reason`: `reason IS NULL OR length(btrim(reason)) > 0`
+
+- FK `unnamed`: `(application_id) -> (application.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(decided_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(linked_person_id) -> (person.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(original_person_id) -> (person.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
 ### intervention
 
 | Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
@@ -1014,7 +1056,7 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - UNIQUE `unnamed`: `legacy_ref`
 
-- UNIQUE INDEX `ix_person_email`: `person.email`
+- INDEX `ix_person_email`: `person.email`
 
 ### preselection_decision
 

@@ -14,6 +14,7 @@ os.environ.setdefault("GISTAR_SCRYPT_N", "1024")
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from sqlalchemy import inspect, text  # noqa: E402
 
 from app.core.config import settings  # noqa: E402
 from app.core.db import SessionLocal  # noqa: E402
@@ -27,9 +28,18 @@ API_DIR = os.path.dirname(os.path.dirname(__file__))
 def _migrated():
     cfg = Config(os.path.join(API_DIR, "alembic.ini"))
     cfg.set_main_option("script_location", os.path.join(API_DIR, "alembic"))
+    _discard_leftover_people()
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
     yield
+
+
+def _discard_leftover_people() -> None:
+    """A previous run can leave two records with one email, and migration 0021 refuses to downgrade over them."""
+    with SessionLocal() as db:
+        if inspect(db.connection()).has_table("person"):
+            db.execute(text("TRUNCATE person CASCADE"))
+            db.commit()
 
 
 @pytest.fixture(autouse=True)
