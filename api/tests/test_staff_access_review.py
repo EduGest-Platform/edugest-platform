@@ -57,3 +57,26 @@ def test_admin_queue_filters_pending_and_shows_requester_name(client, db):
     [item] = response.json()['items']
     assert response.json()['total'] == 1 and item['id'] == pending['id']
     assert item['requested_by_name'] == client.get('/api/v1/auth/me', headers=owner).json()['display_name']
+
+
+def test_pending_filter_preserves_own_profile_boundary(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    other = active_profile(client, db, CAPT_IA)
+    approved = request(client, owner)
+    pending = request(client, owner)
+    request(client, other)
+    path = '/api/v1/staff/access-requests'
+    admin = login(client, ADMIN)
+    reviewed = client.post(path + '/' + approved['id'] + '/review', headers=admin, json={'approved': True})
+    assert reviewed.status_code == 200
+    name = client.get('/api/v1/auth/me', headers=owner).json()['display_name']
+    assert pending['requested_by_name'] == name
+    assert reviewed.json()['requested_by_name'] == name
+    response = client.get(path, headers=owner, params={'pending_only': True})
+    assert response.status_code == 200
+    assert response.json()['total'] == 1
+    assert [item['id'] for item in response.json()['items']] == [pending['id']]
+    response = client.get(path, headers=owner)
+    assert response.status_code == 200
+    assert response.json()['total'] == 2
+    assert [item['id'] for item in response.json()['items']] == [pending['id'], approved['id']]
