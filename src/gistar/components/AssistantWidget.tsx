@@ -9,6 +9,7 @@ type Exchange = { question: string; result: Schemas['AskOut'] }
 
 export function AssistantWidget() {
   const [question, setQuestion] = useState('')
+  const [cohort, setCohort] = useState('')
   const [messages, setMessages] = useState<Exchange[]>([])
   const [waiting, setWaiting] = useState('')
   const [error, setError] = useState('')
@@ -46,7 +47,7 @@ export function AssistantWidget() {
     setQuestion('')
     setError('')
     try {
-      const { data, error: apiError, response } = await askAssistant(text, controller.signal)
+      const { data, error: apiError, response } = await askAssistant(text, controller.signal, cohort)
       if (controller.signal.aborted) return
       if (data) setMessages(previous => [...previous.slice(-9), { question: text, result: data }])
       else {
@@ -89,6 +90,13 @@ export function AssistantWidget() {
           <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs">
             <span>Tu ámbito autorizado</span>
             <button type="button" onClick={clear} className="font-semibold text-blue hover:underline">Limpiar conversación</button>
+          </div>
+          <div className="shrink-0 border-b border-line px-4 py-2">
+            <label htmlFor="floating-assistant-cohort" className="block text-xs font-semibold text-muted">ID de cohorte (opcional)</label>
+            <input id="floating-assistant-cohort" value={cohort} maxLength={20} readOnly={!!waiting}
+              onChange={event => { clear(); setCohort(event.target.value) }}
+              placeholder="Ámbito autorizado"
+              className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm" />
           </div>
           <div role="log" aria-label="Conversación del asistente" aria-live="polite" className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-canvas p-4">
             <p className="mr-6 rounded-2xl rounded-tl-sm border border-line bg-white p-3 text-sm">¡Hola! Pregúntame sobre la documentación de tu formación. Consultaré las fuentes autorizadas.</p>
