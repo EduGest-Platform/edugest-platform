@@ -13,7 +13,7 @@ from app.modules.attendance.models import AttendanceSession
 from app.modules.learning.access import require_cohort
 from app.modules.zoom.ai_schemas import MeetingNotesDraft, SessionAISettings
 from app.modules.zoom.models import ZoomMeeting, ZoomNotesVersion
-from app.modules.zoom.notes_repository import approve_latest
+from app.modules.zoom.notes_repository import approve_latest, edit_latest
 
 router = APIRouter(tags=["zoom"])
 
@@ -64,6 +64,25 @@ def approve_notes(session_id: uuid.UUID, body: ApprovalIn, p: CurrentPrincipal, 
     except ValueError:
         db.rollback()
         raise UserFacingError(409, "notes_conflict", "Las notas han cambiado o no están disponibles.") from None
+    result = _out(row)
+    db.commit()
+    return result
+
+
+class EditNotesIn(BaseModel):
+    expected_version: int = Field(ge=1)
+    draft: MeetingNotesDraft
+
+
+@router.post("/attendance-sessions/{session_id}/zoom/notes/edit", response_model=NotesOut)
+def edit_notes(session_id: uuid.UUID, body: EditNotesIn, p: CurrentPrincipal, db: DB):
+    _access(db, p, session_id)
+    try:
+        row = edit_latest(db, session_id=session_id, actor_id=p.user.id,
+                          draft=body.draft, expected_version=body.expected_version)
+    except ValueError:
+        db.rollback()
+        raise UserFacingError(409, "notes_conflict", "Las notas han cambiado o la edición no es válida.") from None
     result = _out(row)
     db.commit()
     return result
