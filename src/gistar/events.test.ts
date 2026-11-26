@@ -42,3 +42,10 @@ describe('Eventos', () => {
     expect(filterEvents(items, now, 'missing', '', true)).toEqual([])
   })
 })
+
+
+it('orders by start before id and retains events ending exactly now', () => {
+  const items = [event('a'), event('z', { inicio: '2026-11-26T09:00', fin: now }), event('expired', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:59' })]
+  expect(filterEvents(items, now, '', '', true).map(x => x.id)).toEqual(['z', 'a'])
+  expect(filterEvents(items, now, '', '', false).map(x => x.id)).toEqual(['expired', 'z', 'a'])
+})
