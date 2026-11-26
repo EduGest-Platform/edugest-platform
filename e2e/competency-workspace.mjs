@@ -71,6 +71,14 @@ try {
   requireCheck('Shows the saved assessment and unlocks selection', await page.waitText('Evaluación guardada.')
     && await page.waitText('Evidencia sintética de revisión') && await page.ev("!document.querySelector('#competency-cohort').disabled"))
 
+  await page.set('#competency-learner', duplicateLabels[1].id)
+  requireCheck('Switches to the second enrollment', await page.waitText('Matrícula seleccionada: ' + duplicateLabels[1].label))
+  requireCheck('Second enrollment does not show first enrollment evidence', await waitFor(page,
+    "Boolean(document.querySelector('#assessment-evidence')) && !document.querySelector('main').textContent.includes('Evidencia sintética de revisión')"))
+  await page.set('#competency-learner', learner.id)
+  requireCheck('Returning to the original enrollment restores saved evidence', await page.waitText('Matrícula seleccionada: ' + learner.label)
+    && await page.waitText('Evidencia sintética de revisión'))
+
   requireCheck('Opens the framework editor', await page.click('Crear borrador'))
   await page.set('[id$="-nombre"]', 'Competencia sintética de revisión')
   for (const level of [1, 2, 3]) await page.set(`[id$="-level_${level}"]`, 'Evidencia del nivel ' + level)
