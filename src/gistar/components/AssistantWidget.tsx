@@ -12,6 +12,7 @@ export function AssistantWidget() {
   const [cohort, setCohort] = useState('')
   const [cohorts, setCohorts] = useState<Schemas['AcademicCohortOut'][]>([])
   const [cohortStatus, setCohortStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [cohortAttempt, setCohortAttempt] = useState(0)
   const [messages, setMessages] = useState<Exchange[]>([])
   const [waiting, setWaiting] = useState('')
   const [partial, setPartial] = useState('')
@@ -30,6 +31,7 @@ export function AssistantWidget() {
   }, [])
   useEffect(() => {
     const controller = new AbortController()
+    setCohortStatus('loading')
     void listAssistantCohorts(controller.signal).then(({ data }) => {
       if (controller.signal.aborted) return
       setCohorts(data ?? [])
@@ -38,7 +40,7 @@ export function AssistantWidget() {
       if (!controller.signal.aborted) setCohortStatus('error')
     })
     return () => controller.abort()
-  }, [])
+  }, [cohortAttempt])
   useEffect(() => {
     if (dialog.current?.open) end.current?.scrollIntoView({
       block: 'nearest',
@@ -60,8 +62,9 @@ export function AssistantWidget() {
   }
 
   function clear() {
-    pending.current?.abort()
+    const controller = pending.current
     pending.current = null
+    controller?.abort()
     setStatus('')
     setMessages([])
     setWaiting('')
@@ -138,7 +141,7 @@ export function AssistantWidget() {
               {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre} · {item.id}</option>)}
             </select>
             {cohortStatus === 'loading' && <p role="status" className="mt-1 text-xs text-muted">Cargando cohortes…</p>}
-            {cohortStatus === 'error' && <p role="status" className="mt-1 text-xs text-muted">No se pudo cargar la lista. Puedes consultar tu ámbito autorizado.</p>}
+            {cohortStatus === 'error' && <p role="status" className="mt-1 text-xs text-muted">No se pudo cargar la lista. Puedes consultar tu ámbito autorizado. <button type="button" disabled={!!waiting} onClick={() => setCohortAttempt(n => n + 1)} className="font-semibold text-blue underline disabled:opacity-40">Reintentar carga</button></p>}
           </div>
           <div role="log" aria-label="Conversación del asistente" aria-live="polite" className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-canvas p-4">
             <p className="mr-6 rounded-2xl rounded-tl-sm border border-line bg-white p-3 text-sm">¡Hola! Pregúntame sobre la documentación de tu formación. Consultaré las fuentes autorizadas.</p>
