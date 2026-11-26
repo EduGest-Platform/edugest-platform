@@ -12,6 +12,8 @@ import { ServerRequirementReview } from './ServerRequirementReview'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
 import { inscriptionTarget } from './inscriptionTarget'
+import { NextActionFields, NextActionSummary, useCrmOwners } from './ServerNextAction'
+import { emptyNextAction, nextActionProblem, nextActionState, teamToday } from '../../nextAction'
 import { Button, Card, Empty, Field, Notice, PageTitle, Status, Table, inputCls } from '../../ui'
 
 type Call = Schemas['CallOut']
@@ -411,6 +413,11 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
   const [error, setError] = useState<string | null>(null)
   const [ev, setEv] = useState<{ tipo: 'contacto' | 'nota' | 'recordatorio'; canal: '' | 'email' | 'telefono' | 'presencial' | 'videollamada'; resumen: string }>({ tipo: 'contacto', canal: 'telefono', resumen: '' })
   const [busy, setBusy] = useState(false)
+  const [nextAction, setNextAction] = useState(emptyNextAction)
+  // Only contacts take a next action; the draft is kept if the type is switched back and forth.
+  const sendsNextAction = ev.tipo === 'contacto' && nextActionState(nextAction) !== 'empty'
+  const owners = useCrmOwners(id)
+  const nextActionError = sendsNextAction ? nextActionProblem(nextAction, owners.items.map((owner) => owner.user_id), teamToday()) : null
 
   const load = useCallback(async () => {
     const { data, error: err, response } = await api.GET('/api/v1/applications/{application_id}', { params: { path: { application_id: id } } })
@@ -423,13 +430,25 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
 
   const add = async () => {
     setBusy(true)
-    const { error: err, response } = await api.POST('/api/v1/applications/{application_id}/events', {
-      params: { path: { application_id: id } },
-      body: { tipo: ev.tipo, canal: ev.canal || null, resumen: ev.resumen },
-    })
-    setBusy(false)
-    if (err) return toast(problemText(describeApiError(response.status, err)))
+    let result
+    try {
+      result = await api.POST('/api/v1/applications/{application_id}/events', {
+        params: { path: { application_id: id } },
+        body: { tipo: ev.tipo, canal: ev.canal || null, resumen: ev.resumen, next_action: sendsNextAction ? nextAction : null },
+      })
+    } catch {
+      return toast('No se pudo confirmar el registro. Revisa tu conexión y el historial antes de volver a intentarlo.')
+    } finally {
+      setBusy(false)
+    }
+    const { error: err, response } = result
+    if (err) {
+      // The owner may have lost access since the list was loaded.
+      if (sendsNextAction) owners.reload()
+      return toast(problemText(describeApiError(response.status, err)))
+    }
     setEv({ ...ev, resumen: '' })
+    if (sendsNextAction) setNextAction(emptyNextAction)
     toast('Evento registrado en el historial')
     await load()
     onChanged()
@@ -445,7 +464,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
       open
       size="lg"
       onClose={onClose}
-      dirty={!!ev.resumen.trim() || selectionDirty || discussionDirty}
+      dirty={!!ev.resumen.trim() || nextActionState(nextAction) !== 'empty' || selectionDirty || discussionDirty}
       title={d ? `${d.person.display_name} · ${d.codigo}` : 'Expediente'}
       subtitle={d ? `${d.call_id} · ${d.person.email}` : undefined}
       footer={(requestClose) => <Button onClick={requestClose}>Cerrar</Button>}
@@ -477,6 +496,9 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
           </section>
           <section>
             <h3 className="mb-3 text-sm font-semibold">Historial CRM</h3>
+            <div className="mb-3 rounded-lg border border-line px-3 py-2 text-sm">
+              {d.next_action ? <NextActionSummary action={d.next_action} label="Última próxima acción registrada" /> : <p className="text-muted">Sin próxima acción registrada.</p>}
+            </div>
             <div className="mb-3 max-w-xs">
               <Field label="Filtrar por agente" htmlFor="crm-event-actor">
                 <select id="crm-event-actor" className={inputCls} value={actorFilter} onChange={(event) => setActorFilter(event.target.value)}>
@@ -496,6 +518,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
                     {e.canal && ` · ${e.canal}`} · {actorLabel(e.actor)}
                   </p>
                   <p className="mt-0.5">{e.resumen}</p>
+                  {e.next_action && <NextActionSummary action={e.next_action} />}
                 </li>
               ))}
             </ol>
@@ -522,8 +545,10 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
                 value={ev.resumen}
                 onChange={(e) => setEv({ ...ev, resumen: e.target.value })}
               />
+              {ev.tipo === 'contacto' && <NextActionFields owners={owners} value={nextAction} problem={nextActionError} disabled={busy} onChange={setNextAction} />}
+              {ev.tipo !== 'contacto' && nextActionState(nextAction) !== 'empty' && <p className="text-xs text-muted">Tienes una próxima acción sin guardar. Solo se guarda con un contacto.</p>}
               <div>
-                <Button size="sm" disabled={busy || !ev.resumen.trim()} onClick={add}>
+                <Button size="sm" disabled={busy || !ev.resumen.trim() || !!nextActionError} onClick={add}>
                   Registrar en el historial
                 </Button>
               </div>

@@ -457,6 +457,17 @@
             "title": "Motivacion",
             "type": "string"
           },
+          "next_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextActionOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Próxima acción vigente: la del contacto más reciente que registró una."
+          },
           "person": {
             "$ref": "#/components/schemas/PersonOut"
           },
@@ -497,7 +508,8 @@
           "updated_at",
           "motivacion",
           "disponibilidad",
-          "events"
+          "events",
+          "next_action"
         ],
         "title": "ApplicationDetail",
         "type": "object"
@@ -2145,6 +2157,25 @@
         "title": "CompetencyWrite",
         "type": "object"
       },
+      "CrmOwnerOut": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name"
+        ],
+        "title": "CrmOwnerOut",
+        "type": "object"
+      },
       "CurrentLevel": {
         "properties": {
           "assessed_at": {
@@ -2607,6 +2638,17 @@
             ],
             "title": "Canal"
           },
+          "next_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextActionCreate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo para contactos. Opcional; si se envía, exige los tres campos."
+          },
           "resultado": {
             "anyOf": [
               {
@@ -2676,6 +2718,16 @@
             "title": "Id",
             "type": "string"
           },
+          "next_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextActionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "occurred_at": {
             "format": "date-time",
             "title": "Occurred At",
@@ -2708,7 +2760,8 @@
           "resultado",
           "resumen",
           "actor",
-          "occurred_at"
+          "occurred_at",
+          "next_action"
         ],
         "title": "EventOut",
         "type": "object"
@@ -3233,6 +3286,67 @@
           "enrollments"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "NextActionCreate": {
+        "description": "What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone.",
+        "properties": {
+          "description": {
+            "description": "Acción operativa. No incluir datos de salud, situación personal ni otros datos sensibles.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "due_on": {
+            "description": "Plazo; no puede ser anterior a hoy (Europe/Madrid).",
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "owner_user_id": {
+            "description": "Personal con permiso CRM en la convocatoria (ver crm-owners).",
+            "format": "uuid",
+            "title": "Owner User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "owner_user_id",
+          "due_on"
+        ],
+        "title": "NextActionCreate",
+        "type": "object"
+      },
+      "NextActionOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "due_on": {
+            "format": "date",
+            "title": "Due On",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "owner_user_id": {
+            "format": "uuid",
+            "title": "Owner User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description",
+          "owner_user_id",
+          "owner",
+          "due_on"
+        ],
+        "title": "NextActionOut",
         "type": "object"
       },
       "OverviewAttendance": {
@@ -6759,6 +6873,58 @@
         "summary": "Evaluar y registrar el prefiltro, nunca admitir ni entregar recordatorios",
         "tags": [
           "automation"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/crm-owners": {
+      "get": {
+        "operationId": "list_crm_owners_api_v1_applications__application_id__crm_owners_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CrmOwnerOut"
+                  },
+                  "title": "Response List Crm Owners Api V1 Applications  Application Id  Crm Owners Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Personal que puede ser responsable de una próxima acción",
+        "tags": [
+          "admissions"
         ]
       }
     },

@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base, utcnow
@@ -53,6 +53,13 @@ class ApplicationEvent(Base):
         CheckConstraint(f"tipo IN {EVENT_TYPES}", name="ck_application_event_tipo"),
         CheckConstraint(f"canal IS NULL OR canal IN {CHANNELS}", name="ck_application_event_canal"),
         CheckConstraint(f"resultado IS NULL OR (tipo = 'contacto' AND resultado IN {CONTACT_RESULTS})", name="ck_application_event_resultado"),
+        # KAN-272 (PO 26/11/2026): a next action is optional, only on contacts, and always complete.
+        CheckConstraint(
+            "num_nonnulls(next_action, next_action_owner_id, next_action_due_on) = 0 OR "
+            "(num_nonnulls(next_action, next_action_owner_id, next_action_due_on) = 3 "
+            "AND tipo = 'contacto' AND length(btrim(next_action)) > 0)",
+            name="ck_application_event_next_action",
+        ),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), index=True)
@@ -60,5 +67,8 @@ class ApplicationEvent(Base):
     canal: Mapped[str | None] = mapped_column(String(20))
     resultado: Mapped[str | None] = mapped_column(String(20))
     resumen: Mapped[str] = mapped_column(String(500))
+    next_action: Mapped[str | None] = mapped_column(String(200))
+    next_action_owner_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
+    next_action_due_on: Mapped[date | None] = mapped_column(Date)
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
