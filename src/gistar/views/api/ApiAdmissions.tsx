@@ -13,6 +13,8 @@ import { ServerIdentityReview } from './ServerIdentityReview'
 import { ServerManualIntake } from './ServerManualIntake'
 import { ORIGIN_LABELS } from '../../manualIntake'
 import { ServerRequirementReview } from './ServerRequirementReview'
+import { RecruitmentInbox } from './RecruitmentInbox'
+import { RecruitmentReminders } from './RecruitmentReminders'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
 import { inscriptionTarget } from './inscriptionTarget'
@@ -278,6 +280,8 @@ export function ApiMyApplications() {
 }
 
 export function ApiApplications() {
+  const { role } = useGistar()
+  const [inboxRevision, setInboxRevision] = useState(0)
   const { calls } = useCalls()
   const [callId, setCallId] = useState('')
   const [stage, setStage] = useState<Stage | ''>('')
@@ -408,8 +412,9 @@ export function ApiApplications() {
           </Table>
         )}
       </Card>
+      {role === 'fundacion' && <RecruitmentInbox onOpen={setOpen} revision={inboxRevision} />}
       <ServerSilenceReview callId={callId} onOpen={setOpen} />
-      {open && <ApplicationFile id={open} onClose={() => setOpen(null)} onChanged={load} />}
+      {open && <ApplicationFile id={open} onClose={() => setOpen(null)} onChanged={() => { void load(); setInboxRevision(value => value + 1) }} />}
     </>
   )
 }
@@ -418,7 +423,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
   const [selectionDirty, setSelectionDirty] = useState(false)
   const [discussionDirty, setDiscussionDirty] = useState(false)
   const [identityDirty, setIdentityDirty] = useState(false)
-  const { toast } = useGistar()
+  const { role, toast } = useGistar()
   const [d, setD] = useState<Schemas['ApplicationDetail'] | null>(null)
   const [actorFilter, setActorFilter] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -506,6 +511,8 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
               {d.registered_by && ` · registrada por ${d.registered_by}`}
             </p>
             <ServerIdentityReview key={`identity:${d.id}`} applicationId={d.id} onDirty={setIdentityDirty} onResolved={() => { void load(); onChanged() }} />
+            {role === 'fundacion' && <RecruitmentReminders key={id} applicationId={id}
+              canSimulate={d.stage === 'enviada' || d.stage === 'requisitos_en_revision'} />}
             <ServerRequirementReview key={`${d.id}:${d.call_id}`} applicationId={d.id} callId={d.call_id} />
             <ServerSelection applicationId={d.id} callId={d.call_id} onDirty={setSelectionDirty} onChanged={() => { void load(); onChanged() }} />
             <ServerDiscussions key={d.id} applicationId={d.id} onDirty={setDiscussionDirty} />

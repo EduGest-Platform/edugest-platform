@@ -81,3 +81,46 @@ def test_audit_never_stores_the_question(client, db):
 
 def test_too_long_question_is_rejected(client):
     assert ask(client, login(client, CODER), "a" * 501).status_code == 422
+
+
+def stream_events(response):
+    assert response.headers["content-type"].startswith("text/event-stream")
+    return [
+        (lines[0].removeprefix("event: "), json.loads(lines[1].removeprefix("data: ")))
+        for frame in response.text.strip().split("\n\n")
+        if (lines := frame.splitlines())
+    ]
+
+
+def test_stream_delivers_the_authorized_answer_and_citation_once(client, db):
+    response = client.post(f"{URL}/stream", headers=login(client, CODER), json={"question": LATE_RECIPE})
+    assert response.status_code == 200
+    assert "no-store" in response.headers["cache-control"]
+    events = stream_events(response)
+    assert events[0] == ("phase", {"source_kind": "documents"})
+    assert events[-1][0] == "answer"
+    answer = events[-1][1]
+    assert answer["citations"][0]["source_key"] == "A1"
+    assert "".join(data["text"] for event, data in events[1:-1] if event == "delta") == answer["answer"]
+    [entry] = db.scalars(select(AuditEvent).where(AuditEvent.action == "assistant.ask"))
+    assert entry.meta["result"] == "answered" and LATE_RECIPE not in str(entry.meta)
+
+
+def test_stream_rejects_foreign_cohort_before_sending_events(client):
+    body = {"question": LATE_RECIPE, "cohort_id": "COH-DATA"}
+    assert client.post(f"{URL}/stream", json=body).status_code == 401
+    response = client.post(f"{URL}/stream", headers=login(client, CODER), json=body)
+    assert response.status_code == 403 and "text/event-stream" not in response.headers["content-type"]
+
+
+def test_stream_ends_with_generic_error_when_retrieval_fails(client, monkeypatch):
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("synthetic internal error")
+    monkeypatch.setattr(assistant_router, "retrieve", unavailable)
+
+    response = client.post(f"{URL}/stream", headers=login(client, CODER), json={"question": LATE_RECIPE})
+    assert stream_events(response) == [
+        ("phase", {"source_kind": "documents"}),
+        ("error", {"code": "assistant_unavailable"}),
+    ]
+    assert "synthetic internal error" not in response.text

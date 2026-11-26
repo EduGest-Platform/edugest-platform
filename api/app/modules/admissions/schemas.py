@@ -237,3 +237,15 @@ class ApplicationSelfView(BaseModel):
     stage: Stage
     created_at: datetime
     updated_at: datetime
+
+
+class RecruitmentInboxItem(BaseModel):
+    application_id: uuid.UUID
+    code: str
+    call_id: str
+    action: NextActionOut
+
+
+class RecruitmentInbox(BaseModel):
+    items: list[RecruitmentInboxItem]
+    total: int
