@@ -98,3 +98,30 @@ def test_public_lookup_is_opt_in_minimal_and_uses_no_credentials(client, enrollm
     payload.clear()
     assert client.post(endpoint + '/metadata', headers=owner).status_code == 429
     assert client.get(endpoint, headers=owner).json()['url'] == target
+
+
+def test_portfolio_write_and_lookup_reject_nonowners_and_inactive_enrollment(client, db, enrollment, monkeypatch):
+    endpoint = path(enrollment)
+    owner = login(client, CODER)
+    target = 'https://github.com/synthetic-org/original'
+    replacement = 'https://github.com/synthetic-org/replacement'
+    assert client.put(endpoint, headers=owner, json={'url': target, 'authorized': True}).status_code == 200
+    monkeypatch.setattr(settings, 'portfolio_github_lookup', True)
+
+    def unexpected_client(**kwargs):
+        pytest.fail('Unauthorized or inactive lookup must not contact GitHub')
+
+    monkeypatch.setattr(portfolio, 'GithubReadOnlyClient', unexpected_client)
+    for email in (ADMIN, ASPIRANTE):
+        headers = login(client, email)
+        assert client.put(endpoint, headers=headers, json={'url': replacement, 'authorized': True}).status_code == 404
+        assert client.post(endpoint + '/metadata', headers=headers).status_code == 404
+        assert client.delete(endpoint, headers=headers).status_code == 404
+    enrollment.estado = 'baja_voluntaria'
+    db.commit()
+    assert client.post(endpoint + '/metadata', headers=owner).status_code == 409
+    assert client.put(endpoint, headers=owner, json={'url': replacement, 'authorized': True}).status_code == 409
+    view = client.get(endpoint, headers=owner).json()
+    assert view['url'] == target and not view['can_lookup'] and not view['can_edit']
+    assert client.delete(endpoint, headers=owner).status_code == 204
+    assert client.get(endpoint, headers=owner).json()['url'] is None
