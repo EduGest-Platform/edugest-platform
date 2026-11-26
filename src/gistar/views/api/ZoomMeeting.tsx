@@ -45,7 +45,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       if (result.data) {
         setMessage("Reunión creada. Referencia Zoom: " + result.data.provider_id)
         setReview(false)
-        setBlocked(true)
+        setLookup({ id: sessionId, meeting: result.data, error: "" })
       } else {
         setError(errorMessage(result.error))
         if (result.response.status >= 500 || result.response.status === 409) setBlocked(true)
@@ -59,6 +59,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     }
   }
   const disabled = busy || review || blocked
+  const fieldsDisabled = disabled || !checked
   return <section className="grid gap-3">
     <h3 className="font-semibold">Crear reunión Zoom</h3>
     <p className="text-sm">Disponible únicamente si la institución ha habilitado Zoom. La hora corresponde a la zona local del dispositivo.</p>
@@ -66,7 +67,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     {message && <Notice live="polite">{message}</Notice>}
     {blocked && <Notice>Consulta con administración antes de repetir una solicitud no confirmada. Para otra sesión, vuelve a abrir la pantalla.</Notice>}
     <Field label="Sesión académica" htmlFor="zoom-session">
-      <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => setSessionId(e.target.value)}>
+      <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => { setSessionId(e.target.value); setLookup(null); setMessage(""); setError(""); setTopic(""); setStart(""); setDuration("60"); setMode("authenticated") }}>
         <option value="">Selecciona una sesión</option>
         {sessions.map(s => <option key={s.id} value={s.id}>{s.session_date} · {s.shift}</option>)}
       </select>
@@ -74,11 +75,11 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     {sessionId && lookup?.id !== sessionId && <Notice live="polite">Consultando reunión…</Notice>}
     {lookup?.id === sessionId && lookup.error && <Notice tone="warning">{lookup.error}</Notice>}
     {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min</Notice>}
-    <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={disabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
-    <Field label="Inicio (hora local)" htmlFor="zoom-start"><input id="zoom-start" type="datetime-local" className={inputCls} disabled={disabled} value={start} onChange={e => setStart(e.target.value)} /></Field>
-    <Field label="Duración en minutos" htmlFor="zoom-duration"><input id="zoom-duration" type="number" min={1} max={1440} className={inputCls} disabled={disabled} value={duration} onChange={e => setDuration(e.target.value)} /></Field>
+    <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={fieldsDisabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
+    <Field label="Inicio (hora local)" htmlFor="zoom-start"><input id="zoom-start" type="datetime-local" className={inputCls} disabled={fieldsDisabled} value={start} onChange={e => setStart(e.target.value)} /></Field>
+    <Field label="Duración en minutos" htmlFor="zoom-duration"><input id="zoom-duration" type="number" min={1} max={1440} className={inputCls} disabled={fieldsDisabled} value={duration} onChange={e => setDuration(e.target.value)} /></Field>
     <Field label="Acceso de participantes" htmlFor="zoom-mode">
-      <select id="zoom-mode" className={inputCls} disabled={disabled} value={mode} onChange={e => setMode(e.target.value as typeof mode)}>
+      <select id="zoom-mode" className={inputCls} disabled={fieldsDisabled} value={mode} onChange={e => setMode(e.target.value as typeof mode)}>
         <option value="authenticated">Cuenta Zoom autenticada</option>
         <option value="institutional">Perfil institucional</option>
         <option value="open">Sin cuenta Zoom</option>
