@@ -62,3 +62,31 @@ def approve_latest(db: Session, *, session_id: uuid.UUID,
         row.approved_at = utcnow()
         db.flush()
     return row
+
+
+def edit_latest(db: Session, *, session_id: uuid.UUID, actor_id: uuid.UUID,
+                draft: MeetingNotesDraft, expected_version: int) -> ZoomNotesVersion:
+    meeting = _lock_meeting(db, session_id)
+    if expected_version < 1 or _latest_version(db, session_id) != expected_version:
+        raise ValueError("Notes version conflict")
+    previous = db.execute(select(ZoomNotesVersion).where(
+        ZoomNotesVersion.session_id == session_id,
+        ZoomNotesVersion.version == expected_version
+    )).scalar_one()
+    original = MeetingNotesDraft.model_validate(previous.body)
+    allowed = {(span.start_seconds, span.end_seconds)
+               for item in (*original.summary, *original.key_topics,
+                            *original.reinforcement_topics, *original.action_items)
+               for span in item.evidence}
+    if draft.action_items and not SessionAISettings.model_validate(meeting.ai_settings).action_items:
+        raise ValueError("Action items disabled")
+    for item in (*draft.summary, *draft.key_topics, *draft.reinforcement_topics, *draft.action_items):
+        if any((span.start_seconds, span.end_seconds) not in allowed for span in item.evidence):
+            raise ValueError("Unknown evidence")
+    row = ZoomNotesVersion(session_id=session_id, version=expected_version + 1,
+                           body=draft.model_dump(mode="json"),
+                           transcript_sha256=previous.transcript_sha256,
+                           created_by=actor_id)
+    db.add(row)
+    db.flush()
+    return row
