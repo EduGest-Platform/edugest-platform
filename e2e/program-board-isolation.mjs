@@ -61,6 +61,14 @@ try {
     !(await data.text()).includes(iaSubject) && !(await data.text()).includes(iaComment))
   requireCheck('IA refresh retains only IA conversations', await ia.waitText(iaSubject) &&
     !(await ia.text()).includes(dataSubject) && !(await ia.text()).includes(dataComment))
+  const dataThreadId = await data.ev(`Array.from(document.querySelectorAll('main select option')).find(option => option.textContent.startsWith(${JSON.stringify(dataSubject)}))?.value`)
+  requireCheck('Both programs have distinct thread identifiers', Boolean(threadId && dataThreadId && threadId !== dataThreadId))
+  requireCheck('Data thread selector excludes IA thread identifier',
+    await data.ev(`!Array.from(document.querySelectorAll('main select option')).some(option => option.value === ${JSON.stringify(threadId)})`))
+  requireCheck('IA thread selector excludes Data thread identifier',
+    await ia.ev(`!Array.from(document.querySelectorAll('main select option')).some(option => option.value === ${JSON.stringify(dataThreadId)})`))
+  requireCheck('Same-program session excludes Data thread identifier',
+    await sameProgram.ev(`!Array.from(document.querySelectorAll('main select option')).some(option => option.value === ${JSON.stringify(dataThreadId)})`))
   requireCheck('No uncaught browser errors', errors.length === 0)
 } catch (error) {
   check('Program board isolation journey', false, error.message)
