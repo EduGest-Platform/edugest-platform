@@ -1,10 +1,11 @@
+import smtplib
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 from pydantic import SecretStr
 
-from app.modules.email.transport import DeliveryError, send_email
+from app.modules.email.transport import DeliveryError, TransientPreSendError, send_email
 
 
 def config(**overrides):
@@ -117,3 +118,30 @@ def test_invalid_html_never_connects(html):
         with pytest.raises(ValueError, match="Invalid HTML"):
             deliver(config(), html_body=html)
         factory.assert_not_called()
+
+
+@pytest.mark.parametrize("error", [TimeoutError("timeout"), ConnectionError("offline"),
+                                   smtplib.SMTPConnectError(421, b"temporary")])
+def test_transient_connection_failure(error):
+    with patch("app.modules.email.transport.smtplib.SMTP", side_effect=error):
+        with pytest.raises(TransientPreSendError):
+            deliver(config())
+
+
+def test_transient_authentication_failure():
+    with patch("app.modules.email.transport.smtplib.SMTP") as factory:
+        smtp = factory.return_value.__enter__.return_value
+        smtp.login.side_effect = smtplib.SMTPAuthenticationError(454, b"temporary")
+        with pytest.raises(TransientPreSendError):
+            deliver(config())
+        smtp.send_message.assert_not_called()
+
+
+@pytest.mark.parametrize("error", [TimeoutError("timeout"), smtplib.SMTPDataError(451, b"temporary")])
+def test_submission_failure_is_not_retryable(error):
+    with patch("app.modules.email.transport.smtplib.SMTP") as factory:
+        smtp = factory.return_value.__enter__.return_value
+        smtp.send_message.side_effect = error
+        with pytest.raises(DeliveryError) as exc:
+            deliver(config())
+        assert not isinstance(exc.value, TransientPreSendError)
