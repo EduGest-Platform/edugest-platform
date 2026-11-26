@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { MessageSquareText, Send, Sparkles, Square, X } from 'lucide-react'
-import { api, type Schemas } from '../../shared/api/client'
+import type { Schemas } from '../../shared/api/client'
 import { AssistantStreamError, streamAssistant } from '../../shared/api/assistantStream'
+import { listAssistantCohorts } from '../views/api/askAssistant'
 import { DocumentAnswer } from '../views/api/ApiAssistant'
 
 type Exchange = { question: string; result: Schemas['AskOut'] }
@@ -25,7 +26,7 @@ export function AssistantWidget() {
   useEffect(() => () => pending.current?.abort(), [])
   useEffect(() => {
     const controller = new AbortController()
-    void api.GET('/api/v1/cohorts', { signal: controller.signal }).then(({ data }) => {
+    void listAssistantCohorts(controller.signal).then(({ data }) => {
       if (controller.signal.aborted) return
       setCohorts(data ?? [])
       setCohortStatus(data ? 'ready' : 'error')
