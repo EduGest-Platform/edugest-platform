@@ -5,18 +5,14 @@ import { useGistar } from '../store'
 import type { EventType } from '../types'
 import { Button, Card, Field, PageTitle, inputCls } from '../ui'
 import { useVisibleItems } from './Calendar'
+import { filterEvents } from '../events'
 
 export function Events() {
   const { data, navigate } = useGistar()
   const [query, setQuery] = useState('')
   const [type, setType] = useState<EventType | ''>('')
   const [upcoming, setUpcoming] = useState(true)
-  const items = useVisibleItems()
-    .filter(item => item.tipo !== 'entrega' && item.estado !== 'cancelado')
-    .filter(item => !upcoming || item.fin >= nowOf(data))
-    .filter(item => !type || item.tipo === type)
-    .filter(item => item.titulo.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es')))
-    .sort((a, b) => a.inicio.localeCompare(b.inicio) || a.id.localeCompare(b.id))
+  const items = filterEvents(useVisibleItems(), nowOf(data), query, type, upcoming)
 
   return (
     <>

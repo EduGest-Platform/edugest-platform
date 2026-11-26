@@ -34,7 +34,7 @@ export const ROLES: Record<Role, string> = {
 
 export const MENUS: Record<Role, View[]> = {
   admin: ['dashboard', 'eventos', 'calendario', 'programas', 'competencias', 'rubricas', 'auditoria'],
-  docente: ['dashboard', 'cohortes', 'analitica', 'calendario', 'alumnado', 'competencias', 'rubricas', 'entregas', 'asistencia', 'alertas', 'candidaturas', 'asistente'],
+  docente: ['dashboard', 'cohortes', 'analitica', 'eventos', 'calendario', 'alumnado', 'competencias', 'rubricas', 'entregas', 'asistencia', 'alertas', 'candidaturas', 'asistente'],
   coder: ['dashboard', 'eventos', 'calendario', 'progreso', 'entregas', 'asistente'],
   aspirante: ['dashboard', 'eventos', 'calendario', 'inscripcion', 'candidatura'],
   fundacion: ['dashboard', 'eventos', 'calendario', 'candidaturas', 'alertas'],

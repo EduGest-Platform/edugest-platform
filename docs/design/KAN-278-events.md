@@ -16,4 +16,4 @@ Añadir una tarjeta Eventos a EduGest para descubrir próximos eventos académic
 - Datos sintéticos, pruebas unitarias y E2E; CI verde.
 - Validar ubicación, roles y alcance con PO antes de Ready.
 
-Estado: propuesta inicial; sin implementación ni pruebas ejecutadas.
+Estado: listado y navegación implementados con datos locales sintéticos. La autorización del servidor y la fuente API siguen pendientes. Pruebas unitarias de navegación y filtros añadidas; pendiente validar el nuevo CI.
