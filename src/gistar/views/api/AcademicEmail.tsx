@@ -82,6 +82,28 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
       setBusy(false)
     }
   }
+  async function cancel(messageId: string) {
+    if (lock.current || historyLoading || historyError || !history.some(item => item.message_id === messageId && item.status === 'pending')) return
+    if (!window.confirm('¿Cancelar esta notificación pendiente?')) return
+    lock.current = true
+    setBusy(true)
+    setError('')
+    setMessage('')
+    try {
+      const result = await api.POST('/api/v1/cohorts/{cohort_id}/email/notifications/{message_id}/cancel', {
+        params: { path: { cohort_id: cohortId, message_id: messageId } },
+      })
+      if (result.data) setMessage('Notificación cancelada.')
+      else setError(errorMessage(result.error))
+    } catch {
+      setError('Cancelación no confirmada. Consulta el historial antes de repetir.')
+    } finally {
+      setHistoryLoading(true)
+      setRevision(n => n + 1)
+      lock.current = false
+      setBusy(false)
+    }
+  }
   return <Card title="Notificación académica">
     <p className="text-sm text-muted">Solo matrículas del ámbito autorizado. El servidor verifica que estén activas y que tengas permiso de envío. No introduzcas datos sensibles.</p>
     {loading && <Notice live="polite">Cargando matrículas…</Notice>}
@@ -132,6 +154,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         {item.sent_at && <span>Aceptado por SMTP: {new Date(item.sent_at).toLocaleString('es-ES', { timeZoneName: 'short' })}</span>}
         {item.status === 'uncertain' && <p className="text-muted">Entrega no confirmada. No generes otra solicitud sin revisar el resultado.</p>}
         <span className="break-all text-xs">{item.message_id}</span>
+        {item.status === 'pending' && <Button variant="ghost" disabled={busy} onClick={() => void cancel(item.message_id)}>Cancelar notificación</Button>}
       </div>)}
     </section>
   </Card>
