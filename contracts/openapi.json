@@ -2453,7 +2453,7 @@
             "$ref": "#/components/schemas/MeetingNotesDraft"
           },
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -3772,8 +3772,8 @@
             "type": "string"
           },
           "duration_minutes": {
-            "maximum": 1440.0,
-            "minimum": 1.0,
+            "maximum": 1440,
+            "minimum": 1,
             "title": "Duration Minutes",
             "type": "integer"
           },
@@ -7348,7 +7348,7 @@
             "schema": {
               "default": 50,
               "maximum": 200,
-              "minimum": 1.0,
+              "minimum": 1,
               "title": "Limit",
               "type": "integer"
             }
