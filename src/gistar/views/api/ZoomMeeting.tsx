@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api, errorMessage, type Schemas } from "../../../shared/api/client"
 import { Button, Field, Notice, inputCls } from "../../ui"
 
@@ -14,7 +14,22 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const lock = useRef(false)
-  const valid = sessions.some(s => s.id === sessionId) && !!topic.trim() &&
+  const [lookup, setLookup] = useState<{ id: string; meeting: Schemas["MeetingOut"] | null; error: string } | null>(null)
+  useEffect(() => {
+    if (!sessionId) return
+    const controller = new AbortController()
+    setLookup(null)
+    void api.GET("/api/v1/attendance-sessions/{session_id}/zoom/meeting", {
+      params: { path: { session_id: sessionId } }, signal: controller.signal,
+    }).then(result => {
+      if (!controller.signal.aborted) setLookup({ id: sessionId, meeting: result.data ?? null, error: result.response.ok ? "" : errorMessage(result.error) })
+    }).catch(() => {
+      if (!controller.signal.aborted) setLookup({ id: sessionId, meeting: null, error: "No se pudo consultar la reunión." })
+    })
+    return () => controller.abort()
+  }, [sessionId])
+  const checked = lookup?.id === sessionId && !lookup.error && !lookup.meeting
+  const valid = checked && sessions.some(s => s.id === sessionId) && !!topic.trim() &&
     Number.isFinite(Date.parse(start)) && Date.parse(start) > Date.now() &&
     Number.isInteger(Number(duration)) && Number(duration) >= 1 && Number(duration) <= 1440
   async function create() {
@@ -56,6 +71,9 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
         {sessions.map(s => <option key={s.id} value={s.id}>{s.session_date} · {s.shift}</option>)}
       </select>
     </Field>
+    {sessionId && lookup?.id !== sessionId && <Notice live="polite">Consultando reunión…</Notice>}
+    {lookup?.id === sessionId && lookup.error && <Notice tone="warning">{lookup.error}</Notice>}
+    {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min</Notice>}
     <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={disabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
     <Field label="Inicio (hora local)" htmlFor="zoom-start"><input id="zoom-start" type="datetime-local" className={inputCls} disabled={disabled} value={start} onChange={e => setStart(e.target.value)} /></Field>
     <Field label="Duración en minutos" htmlFor="zoom-duration"><input id="zoom-duration" type="number" min={1} max={1440} className={inputCls} disabled={disabled} value={duration} onChange={e => setDuration(e.target.value)} /></Field>

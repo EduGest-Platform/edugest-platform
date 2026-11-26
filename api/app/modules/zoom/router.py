@@ -128,3 +128,20 @@ def create_meeting(session_id: uuid.UUID, body: MeetingCreateIn, p: CurrentPrinc
         db.rollback()
         raise UserFacingError(422, "zoom_invalid_meeting", "Configuración de reunión no válida.") from None
     return result
+
+
+@router.get("/attendance-sessions/{session_id}/zoom/meeting", response_model=MeetingOut | None)
+def get_meeting(session_id: uuid.UUID, p: CurrentPrincipal, db: DB):
+    if not settings.zoom_enabled:
+        raise UserFacingError(404, "zoom_disabled", "Integración no disponible.")
+    session = db.get(AttendanceSession, session_id)
+    if session is None:
+        raise UserFacingError(404, "session_not_found", "Sesión no encontrada.")
+    require_cohort(db, p, "attendance.record", session.cohort_id)
+    row = db.get(ZoomMeeting, session_id)
+    if row is None:
+        return None
+    return MeetingOut(
+        session_id=row.session_id, provider_id=row.provider_id, start_at=row.start_at,
+        duration_minutes=row.duration_minutes, authentication_mode=row.authentication_mode,
+    )

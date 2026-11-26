@@ -348,7 +348,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Meeting */
+        get: operations["get_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_get"];
         put?: never;
         /** Create Meeting */
         post: operations["create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post"];
@@ -5812,6 +5813,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

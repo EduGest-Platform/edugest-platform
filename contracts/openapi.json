@@ -8810,6 +8810,60 @@
       }
     },
     "/api/v1/attendance-sessions/{session_id}/zoom/meeting": {
+      "get": {
+        "operationId": "get_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MeetingOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Meeting Api V1 Attendance Sessions  Session Id  Zoom Meeting Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Meeting",
+        "tags": [
+          "zoom"
+        ]
+      },
       "post": {
         "operationId": "create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post",
         "parameters": [
