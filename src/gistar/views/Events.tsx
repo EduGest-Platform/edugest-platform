@@ -12,9 +12,13 @@ export function Events() {
   const [query, setQuery] = useState('')
   const [type, setType] = useState<EventType | ''>('')
   const [phase, setPhase] = useState<'active' | 'all' | ReturnType<typeof eventPhase>>('active')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const invalidRange = !!from && !!to && from > to
   const now = nowOf(data)
   const items = filterEvents(useVisibleItems(), now, query, type, phase === 'active')
     .filter(item => phase === 'active' || phase === 'all' || eventPhase(item, now) === phase)
+    .filter(item => !invalidRange && (!from || item.fin.slice(0, 10) >= from) && (!to || item.inicio.slice(0, 10) <= to))
 
   return (
     <>
@@ -39,7 +43,10 @@ export function Events() {
               <option value="ended">Finalizados</option>
             </select>
           </Field>
-          <Button variant="ghost" disabled={!query && !type && phase === 'active'} onClick={() => { setQuery(""); setType(""); setPhase('active') }}>Restablecer filtros</Button>
+          <Field label="Desde" htmlFor="events-from"><input id="events-from" type="date" className={inputCls} value={from} onChange={event => setFrom(event.target.value)} /></Field>
+          <Field label="Hasta" htmlFor="events-to"><input id="events-to" type="date" className={inputCls} value={to} onChange={event => setTo(event.target.value)} /></Field>
+          {invalidRange && <p role="alert" className="text-sm">La fecha final debe ser igual o posterior a la inicial.</p>}
+          <Button variant="ghost" disabled={!query && !type && !from && !to && phase === 'active'} onClick={() => { setQuery(""); setType(""); setPhase('active'); setFrom(""); setTo("") }}>Restablecer filtros</Button>
         </div>
       </Card>
       <div className="mt-5 grid gap-4">
