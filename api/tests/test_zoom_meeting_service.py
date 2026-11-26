@@ -79,3 +79,37 @@ def test_provider_failure_does_not_persist_or_retry():
     client.create_meeting.assert_called_once()
     db.add.assert_not_called()
     db.commit.assert_not_called()
+
+
+@pytest.mark.parametrize("mode", ["open", "authenticated", "institutional"])
+def test_institutional_service_uses_server_configuration(mode):
+    db, client, principal, args = setup()
+    client.config.zoom_provisioning_enabled = True
+    client.config.zoom_host_id = "configured-host"
+    client.config.zoom_institutional_profile_id = "configured-profile"
+    args.pop("host_id")
+    args["mode"] = mode
+    with patch.object(meeting_service, "require_cohort"):
+        row = meeting_service.provision_institutional_meeting(db, principal, client, **args)
+    profile = "configured-profile" if mode == "institutional" else None
+    client.create_meeting.assert_called_once_with(
+        args["topic"], args["start_at"].isoformat(), args["duration_minutes"],
+        mode, profile, host_id="configured-host",
+    )
+    assert row.host_id == "configured-host"
+    assert row.profile_id == profile
+
+
+@pytest.mark.parametrize("case", ["disabled", "missing_host", "missing_profile", "zoom_disabled"])
+def test_institutional_service_fails_closed(case):
+    db, client, principal, args = setup()
+    client.config.zoom_provisioning_enabled = case != "disabled"
+    client.config.zoom_enabled = case != "zoom_disabled"
+    client.config.zoom_host_id = None if case == "missing_host" else "configured-host"
+    client.config.zoom_institutional_profile_id = None if case == "missing_profile" else "configured-profile"
+    args.pop("host_id")
+    args["mode"] = "institutional"
+    with pytest.raises(UserFacingError):
+        meeting_service.provision_institutional_meeting(db, principal, client, **args)
+    client.create_meeting.assert_not_called()
+    db.add.assert_not_called()
