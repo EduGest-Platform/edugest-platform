@@ -33,6 +33,14 @@ services:
       GISTAR_CORS_ORIGINS: '["http://localhost:5173","http://localhost:8443"]'
       # La contraseña de las cuentas sintéticas no tiene valor por defecto: se define en infra/.env.
       GISTAR_DEMO_PASSWORD: ${GISTAR_DEMO_PASSWORD:?Set GISTAR_DEMO_PASSWORD in infra/.env}
+      GISTAR_EMAIL_ENABLED: ${GISTAR_EMAIL_ENABLED:-false}
+      GISTAR_EMAIL_SMTP_HOST: ${GISTAR_EMAIL_SMTP_HOST:-}
+      GISTAR_EMAIL_SMTP_PORT: ${GISTAR_EMAIL_SMTP_PORT:-587}
+      GISTAR_EMAIL_SMTP_SECURITY: ${GISTAR_EMAIL_SMTP_SECURITY:-starttls}
+      GISTAR_EMAIL_SMTP_USERNAME: ${GISTAR_EMAIL_SMTP_USERNAME:-}
+      GISTAR_EMAIL_SMTP_PASSWORD: ${GISTAR_EMAIL_SMTP_PASSWORD:-}
+      GISTAR_EMAIL_FROM_ADDRESS: ${GISTAR_EMAIL_FROM_ADDRESS:-}
+      GISTAR_EMAIL_TIMEOUT_SECONDS: ${GISTAR_EMAIL_TIMEOUT_SECONDS:-15}
       # Para el código de ML (Abdur): registrar experimentos en el servicio mlflow.
       MLFLOW_TRACKING_URI: http://mlflow:5000
     ports: ["127.0.0.1:8000:8000"]
