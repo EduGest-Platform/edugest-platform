@@ -38,6 +38,8 @@ from app.modules.submissions.router import router as submissions_router
 from app.modules.staff.router import router as staff_router
 from app.modules.staff.application_router import router as access_application_router
 
+from app.modules.zoom.router import router as zoom_router
+
 app = FastAPI(
     title="EduGest API",
     version="0.1.0",
@@ -71,6 +73,7 @@ for r in (
     selection_router,
     automation_router,
     attendance_router,
+    zoom_router,
     competencies_router,
     submissions_router,
     feedback_router,
