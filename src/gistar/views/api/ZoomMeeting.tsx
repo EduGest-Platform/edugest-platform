@@ -49,7 +49,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
         setLookup({ id: sessionId, meeting: result.data, error: "" })
       } else {
         setError(errorMessage(result.error))
-        if (result.response.status >= 500 || result.response.status === 409) setBlocked(true)
+        if (result.response.status >= 500 || result.response.status === 409 || result.response.status === 408) setBlocked(true)
       }
     } catch {
       setError("Resultado no confirmado. Solicita revisión antes de repetir la creación.")
@@ -81,6 +81,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       <Notice tone="warning">{lookup.error}</Notice>
       <Button variant="ghost" disabled={disabled} onClick={() => { setLookup(null); setLookupAttempt(n => n + 1) }}>Volver a consultar reunión</Button>
     </>}
+    {blocked && lookup?.id === sessionId && !lookup.error && !lookup.meeting && <Notice tone="warning">No hay una reunión registrada localmente. Esto no descarta que Zoom haya aceptado la solicitud. No repitas la creación sin revisión.</Notice>}
     {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min. No es necesario crear otra reunión para esta sesión.</Notice>}
     <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={fieldsDisabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
     <Field label="Inicio (hora local)" htmlFor="zoom-start"><input id="zoom-start" type="datetime-local" className={inputCls} disabled={fieldsDisabled} value={start} onChange={e => setStart(e.target.value)} /></Field>
