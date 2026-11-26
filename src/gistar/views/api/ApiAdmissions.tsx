@@ -5,6 +5,7 @@ import { describeApiError, problemText } from '../../../shared/api/errors'
 import { useApiSession } from '../../../shared/api/session'
 import { humanize } from '../../config'
 import { useGistar } from '../../store'
+import { ApplicantSelectionOutcome } from './ApplicantSelectionOutcome'
 import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerDiscussions } from './ServerDiscussions'
@@ -255,19 +256,22 @@ export function ApiMyApplications() {
         ) : (
           <ul className="grid gap-3">
             {result.items.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
+              <li key={a.id} className="grid gap-3 rounded-xl border border-line px-4 py-3">
                 <div>
                   <p className="font-medium">{a.call_nombre}</p>
                   <p className="text-xs text-muted">
                     <span className="font-mono">{a.codigo}</span> · enviada {fmt(a.created_at)} · actualizada {fmt(a.updated_at)}
                   </p>
                 </div>
-                <Status s={a.stage} />
+                {!['admitida', 'lista_espera', 'no_admitida'].includes(a.stage) && (
+                  <div><Status s={a.stage} /></div>
+                )}
+                <ApplicantSelectionOutcome id={a.id} code={a.codigo} />
               </li>
             ))}
           </ul>
         )}
-        <Notice>No se muestran notas internas del equipo: solo el estado de tu solicitud.</Notice>
+        <Notice>Aquí puedes consultar el estado de tu solicitud y las decisiones ya aplicadas.</Notice>
       </Card>
     </>
   )

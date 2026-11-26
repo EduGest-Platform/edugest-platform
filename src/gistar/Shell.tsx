@@ -2,7 +2,7 @@ import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, type ReactElement } from 'react'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
-import { MENUS, ROLES, VIEWS } from './config'
+import { menuFor, ROLES, VIEWS } from './config'
 import { useGistar } from './store'
 import type { Role, View } from './types'
 import { Button, inputCls } from './ui'
@@ -79,7 +79,7 @@ export function Shell() {
         </div>
         <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">Menú · {ROLES[role]}</p>
         <nav aria-label="Navegación principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
-          {MENUS[role].map((v) => {
+          {menuFor(role, API_MODE).map((v) => {
             const { label, icon: Icon } = VIEWS[v]
             const active = v === view
             return (
