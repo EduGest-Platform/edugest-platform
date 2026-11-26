@@ -2,8 +2,9 @@
 import uuid
 from datetime import datetime
 
+import httpx
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
 from app.core.config import settings
@@ -12,6 +13,8 @@ from app.core.errors import UserFacingError
 from app.modules.attendance.models import AttendanceSession
 from app.modules.learning.access import require_cohort
 from app.modules.zoom.ai_schemas import MeetingNotesDraft, SessionAISettings
+from app.modules.zoom.client import AuthenticationMode, ZoomClient, ZoomError
+from app.modules.zoom.meeting_service import provision_institutional_meeting
 from app.modules.zoom.models import ZoomMeeting, ZoomNotesVersion
 from app.modules.zoom.notes_repository import approve_latest, edit_latest
 
@@ -85,4 +88,43 @@ def edit_notes(session_id: uuid.UUID, body: EditNotesIn, p: CurrentPrincipal, db
         raise UserFacingError(409, "notes_conflict", "Las notas han cambiado o la edición no es válida.") from None
     result = _out(row)
     db.commit()
+    return result
+
+
+class MeetingCreateIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    topic: str = Field(min_length=1, max_length=200)
+    start_at: AwareDatetime
+    duration_minutes: int = Field(ge=1, le=1440)
+    authentication_mode: AuthenticationMode = "authenticated"
+
+
+class MeetingOut(BaseModel):
+    session_id: uuid.UUID
+    provider_id: str
+    start_at: datetime
+    duration_minutes: int
+    authentication_mode: AuthenticationMode
+
+
+@router.post("/attendance-sessions/{session_id}/zoom/meeting", response_model=MeetingOut, status_code=201)
+def create_meeting(session_id: uuid.UUID, body: MeetingCreateIn, p: CurrentPrincipal, db: DB):
+    try:
+        with httpx.Client() as transport:
+            row = provision_institutional_meeting(
+                db, p, ZoomClient(settings, transport), session_id=session_id,
+                topic=body.topic, start_at=body.start_at, duration_minutes=body.duration_minutes,
+                mode=body.authentication_mode,
+            )
+        result = MeetingOut(
+            session_id=row.session_id, provider_id=row.provider_id, start_at=row.start_at,
+            duration_minutes=row.duration_minutes, authentication_mode=row.authentication_mode,
+        )
+        db.commit()
+    except ZoomError:
+        db.rollback()
+        raise UserFacingError(502, "zoom_provider_error", "No se pudo confirmar la reunión. Requiere revisión antes de reintentar.") from None
+    except ValueError:
+        db.rollback()
+        raise UserFacingError(422, "zoom_invalid_meeting", "Configuración de reunión no válida.") from None
     return result
