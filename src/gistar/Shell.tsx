@@ -158,7 +158,7 @@ export function Shell() {
       </div>
 
       {API_MODE && session.me && allowedRoles?.includes(role) && canOpen(role, 'asistente') && (
-        <AssistantWidget key={role} />
+        <AssistantWidget key={JSON.stringify([session.me.id, role, session.me.roles.map(r => JSON.stringify([r.role, r.scope_id])).sort(), session.me.enrollments.map(e => JSON.stringify(e)).sort()])} />
       )}
 
       <div
