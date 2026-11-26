@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { API_MODE } from '../../shared/api/config'
 import { EVENT_TYPES, nowOf } from '../domain'
 import { fmtShort, timeOf } from '../dates'
 import { useGistar } from '../store'
@@ -19,6 +20,11 @@ export function Events() {
   const items = filterEvents(useVisibleItems(), now, query, type, phase === 'active')
     .filter(item => phase === 'active' || phase === 'all' || eventPhase(item, now) === phase)
     .filter(item => overlapsEventDates(item, from, to))
+
+  if (API_MODE) return <>
+    <PageTitle title="Eventos" sub="Consulta de eventos académicos" />
+    <Card title="Fuente de eventos no disponible"><p className="text-sm text-muted">El listado de eventos del servidor todavía no está disponible. No se muestran datos locales de demostración en esta sesión autenticada.</p></Card>
+  </>
 
   return (
     <>
