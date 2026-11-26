@@ -16,7 +16,7 @@ describe('assistant SSE reader', () => {
     await vi.waitFor(() => expect(onDelta).toHaveBeenCalledWith('sí'))
     expect(onPhase).toHaveBeenCalledWith('documents')
 
-    writer.enqueue(encoder.encode('event: answer\ndata: {"answer":"sí","status":"answered"}\n\n'))
+    writer.enqueue(encoder.encode('event: answer\ndata: {"answer":"sí","status":"answered","source_kind":"documents","mode":"extractive","retrieval":"keyword","as_of":"2026-11-26","citations":[],"scope_cohorts":[]}\n\n'))
     await expect(answer).resolves.toMatchObject({ answer: 'sí', status: 'answered' })
   })
 
@@ -28,4 +28,16 @@ describe('assistant SSE reader', () => {
     await expect(readAssistantStream(stream, { onPhase: vi.fn(), onDelta: vi.fn() }))
       .rejects.toThrow('respuesta completa')
   })
+})
+
+
+it.each(['not-json', 'null', '{}', '{"answer":"sí","status":"answered"}', '{"answer":"sí","status":"unknown"}'])('rejects invalid terminal payload %s and releases the reader', async payload => {
+  const cancel = vi.fn()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) { controller.enqueue(encoder.encode('event: answer\ndata: ' + payload + '\n\n')) },
+    cancel,
+  })
+  await expect(readAssistantStream(stream, { onPhase: vi.fn(), onDelta: vi.fn() })).rejects.toThrow('no es válida')
+  expect(cancel).toHaveBeenCalled()
+  expect(stream.locked).toBe(false)
 })
