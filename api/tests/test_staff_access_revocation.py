@@ -90,3 +90,21 @@ def test_old_revocation_cannot_remove_a_new_grant(client, db):
     assert current['assignment_id'] == new_confirmation['assignment_id']
     assert client.get('/api/v1/cohorts/COH-IA/teaching-team', headers=owner).status_code == 200
     assert len(list(db.scalars(select(AuditEvent).where(AuditEvent.action == 'staff.access_revoked')))) == 1
+
+
+def test_revocation_preserves_other_cohort_grant(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    admin = login(client, ADMIN)
+    other_cohort = make_cohort(db)
+    target, confirmation = grant(client, owner, admin)
+    other_target, other_confirmation = grant(client, owner, admin, other_cohort.id)
+    other_team = f'/api/v1/cohorts/{other_cohort.id}/teaching-team'
+    assert client.get(other_team, headers=owner).status_code == 200
+    assert client.post(f'{target}/revoke-access', headers=admin, json=confirmation).status_code == 200
+    assert client.get('/api/v1/cohorts/COH-IA/teaching-team', headers=owner).status_code == 403
+    assert client.get(other_team, headers=owner).status_code == 200
+    current = client.get(f'{other_target}/application', headers=owner).json()
+    assert current['request_state'] == 'applied'
+    assert current['assignment_active'] is True
+    assert current['assignment_id'] == other_confirmation['assignment_id']
+    assert db.get(RoleAssignment, uuid.UUID(other_confirmation['assignment_id'])).revoked_at is None
