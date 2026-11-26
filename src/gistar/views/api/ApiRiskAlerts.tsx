@@ -23,6 +23,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
   const [kind, setKind] = useState<Intervention>('contact')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
+  const [uncertain, setUncertain] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const pending = useRef<AbortController | null>(null)
@@ -34,7 +35,10 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
       params: { path: { cohort_id: cohortId, alert_id: id } }, signal: controller.signal,
     }).then(result => {
       if (controller.signal.aborted) return
-      if (result.data) setDetails(result.data)
+      if (result.data) {
+        setDetails(result.data)
+        setUncertain(false)
+      }
       else setError(errorMessage(result.error, 'No se pudo leer esta alerta.'))
     }).catch(() => {
       if (!controller.signal.aborted) setError('No se pudo conectar con el servidor.')
@@ -50,7 +54,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
 
   async function record(event: FormEvent) {
     event.preventDefault()
-    if (!details || details.alert.review_state === 'closed' || !note.trim() || pending.current) return
+    if (!details || details.alert.review_state === 'closed' || !note.trim() || uncertain || pending.current) return
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -67,9 +71,15 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
         setNote('')
         reload()
         onSaved()
-      } else setError(errorMessage(result.error, 'No se pudo registrar la intervención.'))
+      } else {
+        if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) setUncertain(true)
+        setError(errorMessage(result.error, 'No se pudo registrar la intervención.'))
+      }
     } catch {
-      if (!controller.signal.aborted) setError('No se pudo confirmar el registro. Actualiza la alerta antes de reintentar.')
+      if (!controller.signal.aborted) {
+        setUncertain(true)
+        setError('No se pudo confirmar el registro. Actualiza la alerta y comprueba el historial antes de reintentar.')
+      }
     } finally {
       pending.current = null
       if (!controller.signal.aborted) setBusy(false)
@@ -84,6 +94,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
         <Notice>Datos sintéticos para revisión humana. El modelo carece de validación para decisiones sobre personas.</Notice>
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
         {notice && <Notice live="polite">{notice}</Notice>}
+        {uncertain && <Notice tone="warning">Actualiza la alerta y comprueba si la intervención ya aparece en el historial. Tu nota se conserva.</Notice>}
         <Button variant="ghost" className="justify-self-start" onClick={reload} disabled={busy}>Actualizar alerta</Button>
         {!details && !error && <p role="status">Cargando alerta…</p>}
         {alert && details && <>
@@ -119,7 +130,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
                 <textarea id="risk-note" className={inputCls} readOnly={busy} required maxLength={500}
                   value={note} onChange={event => setNote(event.target.value)} />
               </Field>
-              <Button type="submit" className="justify-self-start" disabled={busy || !note.trim()}>
+              <Button type="submit" className="justify-self-start" disabled={busy || uncertain || !note.trim()}>
                 {kind === 'closure' ? 'Cerrar alerta' : 'Registrar intervención'}
               </Button>
             </form>
