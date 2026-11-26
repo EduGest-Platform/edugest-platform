@@ -7,6 +7,8 @@ import { LearnerReadProblem, requireLearnerResponse, useLearnerRead } from './Ow
 const dateTime = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
 type Action = 'save' | 'remove' | 'metadata'
 
+const validRepository = (value: string) => /^https:\/\/github\.com\/[A-Za-z0-9-]+\/[A-Za-z0-9_.-]+\/?$/.test(value.trim()) && !value.trim().split('/').filter(Boolean).at(-1)?.includes('..')
+
 export function LearnerPortfolio({ enrollmentId }: { enrollmentId: string }) {
   const load = useCallback(async (signal: AbortSignal) => requireLearnerResponse(
     await api.GET('/api/v1/me/enrollments/{enrollment_id}/portfolio', {
@@ -24,7 +26,7 @@ export function LearnerPortfolio({ enrollmentId }: { enrollmentId: string }) {
   useEffect(() => () => pending.current?.abort(), [])
 
   async function perform(action: Action) {
-    if (pending.current) return
+    if (pending.current || (action === 'save' && (!authorized || !validRepository(url)))) return
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -89,17 +91,19 @@ export function LearnerPortfolio({ enrollmentId }: { enrollmentId: string }) {
           </dl>}
           {portfolio.can_edit && <form className="grid max-w-lg gap-3" onSubmit={(event: FormEvent) => {
             event.preventDefault()
-            if (url.trim() && authorized) void perform('save')
+            if (validRepository(url) && authorized) void perform('save')
           }}>
             <Field label={portfolio.url ? 'Nuevo repositorio de GitHub' : 'Repositorio de GitHub'} htmlFor="portfolio-repository">
               <input id="portfolio-repository" className={inputCls} value={url} type="url" required maxLength={320}
+                aria-invalid={Boolean(url.trim() && !validRepository(url))} aria-describedby="portfolio-url-hint"
                 placeholder="https://github.com/organizacion/repositorio" disabled={busy} onChange={event => setUrl(event.target.value)} />
             </Field>
+            <p id="portfolio-url-hint" className="text-xs text-muted">Introduce un enlace HTTPS directo al repositorio, sin parámetros ni subrutas.</p>
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" required disabled={busy} checked={authorized} onChange={event => setAuthorized(event.target.checked)} />
               Tengo permiso para enlazar este repositorio público.
             </label>
-            <Button type="submit" className="justify-self-start" disabled={busy || !url.trim() || !authorized}>
+            <Button type="submit" className="justify-self-start" disabled={busy || !validRepository(url) || !authorized}>
               {portfolio.url ? 'Cambiar enlace' : 'Guardar enlace'}
             </Button>
           </form>}
