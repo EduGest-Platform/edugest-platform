@@ -1,0 +1,3 @@
+# Integración de correo electrónico
+
+Propuesta: notificaciones académicas, invitaciones a reuniones Zoom (KAN-276), recordatorios, comunicaciones por cohorte y plantillas revisables. Proveedor SMTP o API institucional pendiente de selección. Envío asíncrono con outbox, idempotencia, reintentos acotados y auditoría sin contenido sensible. Permisos por cohorte, destinatarios verificados, secretos server-side, preferencias y bajas cuando proceda. Desactivado por defecto; pruebas con transporte simulado y datos sintéticos. No enviar correos reales hasta aprobación. IA opcional para borradores sujetos a revisión humana. Pendientes implementación, proveedor, políticas de retención y pruebas.
