@@ -45,6 +45,29 @@ services:
       retries: 30
       start_period: 10s
 
+  email-worker:
+    profiles: ["email"]
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    command: ["python", "-m", "app.modules.email.scheduler"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      GISTAR_ENVIRONMENT: local
+      GISTAR_DATABASE_URL: postgresql+psycopg://gistar:${GISTAR_DB_PASSWORD:?Set GISTAR_DB_PASSWORD in infra/.env}@db:5432/gistar
+      GISTAR_DEMO_PASSWORD: ${GISTAR_DEMO_PASSWORD:?Set GISTAR_DEMO_PASSWORD in infra/.env}
+      GISTAR_EMAIL_ENABLED: ${GISTAR_EMAIL_ENABLED:-false}
+      GISTAR_EMAIL_SMTP_HOST: ${GISTAR_EMAIL_SMTP_HOST:-}
+      GISTAR_EMAIL_SMTP_PORT: ${GISTAR_EMAIL_SMTP_PORT:-587}
+      GISTAR_EMAIL_SMTP_SECURITY: ${GISTAR_EMAIL_SMTP_SECURITY:-starttls}
+      GISTAR_EMAIL_SMTP_USERNAME: ${GISTAR_EMAIL_SMTP_USERNAME:-}
+      GISTAR_EMAIL_SMTP_PASSWORD: ${GISTAR_EMAIL_SMTP_PASSWORD:-}
+      GISTAR_EMAIL_FROM_ADDRESS: ${GISTAR_EMAIL_FROM_ADDRESS:-}
+      GISTAR_EMAIL_TIMEOUT_SECONDS: ${GISTAR_EMAIL_TIMEOUT_SECONDS:-15}
+    stop_grace_period: 5m
+
   mlflow:
     build:
       context: .
