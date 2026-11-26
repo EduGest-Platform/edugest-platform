@@ -15,6 +15,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
   const [error, setError] = useState("")
   const lock = useRef(false)
   const [lookup, setLookup] = useState<{ id: string; meeting: Schemas["MeetingOut"] | null; error: string } | null>(null)
+  const [lookupAttempt, setLookupAttempt] = useState(0)
   useEffect(() => {
     if (!sessionId) return
     const controller = new AbortController()
@@ -27,7 +28,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       if (!controller.signal.aborted) setLookup({ id: sessionId, meeting: null, error: "No se pudo consultar la reunión." })
     })
     return () => controller.abort()
-  }, [sessionId])
+  }, [sessionId, lookupAttempt])
   const checked = lookup?.id === sessionId && !lookup.error && !lookup.meeting
   const valid = checked && sessions.some(s => s.id === sessionId) && !!topic.trim() &&
     Number.isFinite(Date.parse(start)) && Date.parse(start) > Date.now() &&
@@ -61,7 +62,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
   const disabled = busy || review || blocked
   const fieldsDisabled = disabled || !checked
   return <section className="grid gap-3">
-    <h3 className="font-semibold">Crear reunión Zoom</h3>
+    <h3 className="font-semibold">Gestionar reunión Zoom</h3>
     <p className="text-sm">Disponible únicamente si la institución ha habilitado Zoom. La hora corresponde a la zona local del dispositivo.</p>
     {error && <Notice tone="warning" live="assertive">{error}</Notice>}
     {message && <Notice live="polite">{message}</Notice>}
@@ -73,8 +74,11 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       </select>
     </Field>
     {sessionId && lookup?.id !== sessionId && <Notice live="polite">Consultando reunión…</Notice>}
-    {lookup?.id === sessionId && lookup.error && <Notice tone="warning">{lookup.error}</Notice>}
-    {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min</Notice>}
+    {lookup?.id === sessionId && lookup.error && <>
+      <Notice tone="warning">{lookup.error}</Notice>
+      <Button variant="ghost" disabled={disabled} onClick={() => { setLookup(null); setLookupAttempt(n => n + 1) }}>Volver a consultar reunión</Button>
+    </>}
+    {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min. No es necesario crear otra reunión para esta sesión.</Notice>}
     <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={fieldsDisabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
     <Field label="Inicio (hora local)" htmlFor="zoom-start"><input id="zoom-start" type="datetime-local" className={inputCls} disabled={fieldsDisabled} value={start} onChange={e => setStart(e.target.value)} /></Field>
     <Field label="Duración en minutos" htmlFor="zoom-duration"><input id="zoom-duration" type="number" min={1} max={1440} className={inputCls} disabled={fieldsDisabled} value={duration} onChange={e => setDuration(e.target.value)} /></Field>
