@@ -25,6 +25,10 @@ describe('Eventos', () => {
     expect(filterEvents(items, now, '', '', true).map(x => x.id)).toEqual(['ongoing'])
     expect(filterEvents(items, now, '', '', false)).toHaveLength(2)
   })
+  it('matches accented titles without requiring accents', () => {
+    const items = [event('a', { titulo: 'Orientación académica' }), event('b', { titulo: 'Taller' })]
+    expect(filterEvents(items, now, 'ORIENTACION ACADEMICA', '', true).map(x => x.id)).toEqual(['a'])
+  })
   it('combines title and type filters and sorts without mutating input', () => {
     const items = [event('b'), event('a'), event('other', { titulo: 'Otra actividad' })]
     expect(filterEvents(items, now, '  TALLER ', 'taller', true).map(x => x.id)).toEqual(['a', 'b'])

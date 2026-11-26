@@ -29,12 +29,13 @@ export function Events() {
             </select>
           </Field>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={upcoming} onChange={event => setUpcoming(event.target.checked)} /> Solo próximos eventos
+            <input type="checkbox" checked={upcoming} onChange={event => setUpcoming(event.target.checked)} /> Solo próximos eventos y en curso
           </label>
+          <Button variant="ghost" disabled={!query && !type && upcoming} onClick={() => { setQuery(""); setType(""); setUpcoming(true) }}>Restablecer filtros</Button>
         </div>
       </Card>
       <div className="mt-5 grid gap-4">
-        <p role="status" className="text-sm text-muted">{items.length} eventos</p>
+        <p role="status" className="text-sm text-muted">{items.length} {items.length === 1 ? "evento" : "eventos"}</p>
         {!items.length && <Card title="Sin eventos"><p className="text-sm text-muted">No hay eventos con los filtros seleccionados.</p></Card>}
         {items.map(item => (
           <Card key={item.id} title={item.titulo}>

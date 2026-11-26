@@ -1,11 +1,13 @@
 import type { CalItem, EventType } from './types'
 
+const normalizeSearch = (value: string) => value.toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '')
+
 export function filterEvents(items: CalItem[], now: string, query: string, type: EventType | '', upcoming: boolean): CalItem[] {
-  const needle = query.trim().toLocaleLowerCase('es')
+  const needle = normalizeSearch(query.trim())
   return items
     .filter(item => item.tipo !== 'entrega' && item.estado !== 'cancelado')
     .filter(item => !upcoming || item.fin >= now)
     .filter(item => !type || item.tipo === type)
-    .filter(item => item.titulo.toLocaleLowerCase('es').includes(needle))
+    .filter(item => normalizeSearch(item.titulo).includes(needle))
     .sort((a, b) => a.inicio.localeCompare(b.inicio) || a.id.localeCompare(b.id))
 }
