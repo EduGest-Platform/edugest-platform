@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import seedJson from './seed.json'
+import { API_MODE } from '../shared/api/config'
 import { canOpen } from './config'
 import { migrate } from './migrate'
 import { nominalCohorts } from './domain'
@@ -79,7 +80,7 @@ export function GistarProvider({ children }: { children: ReactNode }) {
 
   const navigate = useCallback(
     (v: View) => {
-      if (!canOpen(role, v)) return toast('Acceso no permitido para este rol')
+      if (!canOpen(role, v, API_MODE)) return toast('Acceso no permitido para este rol')
       setView(v)
       window.scrollTo({ top: 0 })
     },
