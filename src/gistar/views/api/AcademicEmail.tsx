@@ -11,6 +11,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
   const [sendAt, setSendAt] = useState('')
   const [draft, setDraft] = useState<{ enrollment_id: string; topic: string; available_at: string; idempotency_key: string } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [uncertain, setUncertain] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const lock = useRef(false)
@@ -64,12 +65,17 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         setMessage('Solicitud aceptada en la cola. No confirma la entrega. Referencia: ' + result.data.message_id)
         setRevision(n => n + 1)
         setDraft(null)
+        setUncertain(false)
         setTopic('')
         setRecipient('')
         setScheduled(false)
         setSendAt('')
-      } else setError(errorMessage(result.error))
+      } else {
+        if (result.response.status >= 500 || result.response.status === 409 || result.response.status === 408) setUncertain(true)
+        setError(errorMessage(result.error))
+      }
     } catch {
+      setUncertain(true)
       setError('No se pudo confirmar la solicitud. Reintenta con la misma referencia para evitar duplicados.')
     } finally {
       lock.current = false
@@ -109,8 +115,9 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         <p>Destinatario: {draft.enrollment_id}</p>
         <p>Disponible para envío: {new Date(draft.available_at).toLocaleString('es-ES', { timeZoneName: 'short' })}</p>
       </div>
-      <Button disabled={busy} onClick={() => void submit()}>Confirmar solicitud de envío</Button>
-      <Button variant="ghost" disabled={busy} onClick={() => { setDraft(null); setError('') }}>Descartar revisión</Button>
+      {uncertain && <Notice tone="warning">Resultado no confirmado. Conserva esta referencia y consulta el historial. Si reintentas, se utilizará la misma clave para evitar duplicados.</Notice>}
+      <Button disabled={busy} onClick={() => void submit()}>{uncertain ? 'Reintentar con la misma referencia' : 'Confirmar solicitud de envío'}</Button>
+      <Button variant="ghost" disabled={busy || uncertain} onClick={() => { setDraft(null); setError('') }}>Descartar revisión</Button>
     </>}
     <section className="mt-6 grid gap-3">
       <h3 className="font-semibold">Mis comunicaciones recientes</h3>
