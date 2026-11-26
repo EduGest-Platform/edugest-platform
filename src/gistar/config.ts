@@ -43,7 +43,11 @@ export const MENUS: Record<Role, View[]> = {
 
 /** Views reachable by drill-down but not listed in the menu. */
 export const EXTRA_VIEWS: Partial<Record<Role, View[]>> = { docente: ['ficha'] }
-export const canOpen = (role: Role, v: View) => MENUS[role].includes(v) || !!EXTRA_VIEWS[role]?.includes(v)
+export const menuFor = (role: Role, apiMode: boolean): View[] =>
+  apiMode && role === 'coder' ? [...MENUS.coder, 'candidatura'] : MENUS[role]
+
+export const canOpen = (role: Role, v: View, apiMode = false) =>
+  menuFor(role, apiMode).includes(v) || !!EXTRA_VIEWS[role]?.includes(v)
 
 export const VIEWS: Record<View, { label: string; icon: LucideIcon }> = {
   dashboard: { label: 'Inicio', icon: Home },
