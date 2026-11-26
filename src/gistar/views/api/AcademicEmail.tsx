@@ -129,6 +129,8 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         <b>{{ pending: 'Pendiente', sending: 'En proceso', sent: 'Aceptado por SMTP', failed: 'Fallido', uncertain: 'Resultado incierto', cancelled: 'Cancelado' }[item.status as 'pending'] ?? item.status}</b>
         <span>Intentos: {item.attempts} · {new Date(item.created_at).toLocaleString('es-ES')}</span>
         <span>Disponible desde: {new Date(item.available_at).toLocaleString('es-ES')}</span>
+        {item.sent_at && <span>Aceptado por SMTP: {new Date(item.sent_at).toLocaleString('es-ES', { timeZoneName: 'short' })}</span>}
+        {item.status === 'uncertain' && <p className="text-muted">Entrega no confirmada. No generes otra solicitud sin revisar el resultado.</p>}
         <span className="break-all text-xs">{item.message_id}</span>
       </div>)}
     </section>
