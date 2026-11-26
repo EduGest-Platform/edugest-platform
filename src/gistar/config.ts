@@ -43,8 +43,12 @@ export const MENUS: Record<Role, View[]> = {
 
 /** Views reachable by drill-down but not listed in the menu. */
 export const EXTRA_VIEWS: Partial<Record<Role, View[]>> = { docente: ['ficha'] }
-export const menuFor = (role: Role, apiMode: boolean): View[] =>
-  apiMode && role === 'coder' ? [...MENUS.coder, 'candidatura'] : MENUS[role]
+export const menuFor = (role: Role, apiMode: boolean): View[] => {
+  if (!apiMode) return MENUS[role]
+  if (role === 'coder') return [...MENUS.coder, 'candidatura']
+  if (role === 'admin' || role === 'fundacion' || role === 'seleccion') return [...MENUS[role], 'tablero']
+  return MENUS[role]
+}
 
 export const canOpen = (role: Role, v: View, apiMode = false) =>
   menuFor(role, apiMode).includes(v) || !!EXTRA_VIEWS[role]?.includes(v)
@@ -67,6 +71,7 @@ export const VIEWS: Record<View, { label: string; icon: LucideIcon }> = {
   inscripcion: { label: 'Inscripción', icon: PenLine },
   candidatura: { label: 'Mi candidatura', icon: UserRoundCheck },
   candidaturas: { label: 'Candidaturas', icon: GraduationCap },
+  tablero: { label: 'Tablero de programas', icon: ClipboardList },
   cohortes: { label: 'Cohortes', icon: BookOpen },
 }
 

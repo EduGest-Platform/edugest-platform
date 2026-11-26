@@ -39,6 +39,12 @@ class ThreadOut(ThreadScope):
     version: int
 
 
+class DiscussionProgram(BaseModel):
+    id: str
+    name: str
+    can_write: bool
+
+
 class ThreadList(BaseModel):
     items: list[ThreadOut]
     total: int

@@ -24,13 +24,15 @@ def create_thread(db, actor, body):
     return thread_out(thread)
 
 
-def list_threads(db, actor, scope, limit, offset):
+def list_threads(db, actor, scope, limit, offset, resolved=None):
     require_scope(db, actor, scope)
     query = select(DiscussionThread).where(DiscussionThread.scope_type == scope.scope_type)
     if scope.scope_type == 'application':
         query = query.where(DiscussionThread.application_id == scope.application_id)
     else:
         query = query.where(DiscussionThread.program_id == scope.program_id)
+    if resolved is not None:
+        query = query.where(DiscussionThread.resolved_at.is_not(None) if resolved else DiscussionThread.resolved_at.is_(None))
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     rows = list(db.scalars(query.order_by(DiscussionThread.created_at, DiscussionThread.id).limit(limit).offset(offset)))
     audit.record(db, actor, 'discussion.threads_viewed', 'discussion_scope', str(scope.application_id or scope.program_id), scope_type=scope.scope_type)

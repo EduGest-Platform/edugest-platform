@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 
 import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
 import { useApiSession } from '../../../shared/api/session'
-import { Button, Empty, Field, Notice, inputCls } from '../../ui'
+import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
 
 type Thread = Schemas['ThreadOut']
 type Comment = Schemas['CommentOut']
@@ -113,7 +113,7 @@ function CommentContent({ comment, userId }: { comment: Comment; userId?: string
   )
 }
 
-function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dirty: boolean) => void }) {
+function ThreadComments({ threadId, canWrite, onDirty }: { threadId: string; canWrite: boolean; onDirty: (dirty: boolean) => void }) {
   const { me } = useApiSession()
   const [offset, setOffset] = useState(0)
   const [body, setBody] = useState('')
@@ -163,7 +163,7 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!body.trim() || !state || 'error' in state || state.data.thread.resolved_at || conflict || differentRevision) return
+    if (!canWrite || !body.trim() || !state || 'error' in state || state.data.thread.resolved_at || conflict || differentRevision) return
     setNotice('')
     const text = body.trim()
     const saved = await save(() => editing
@@ -207,7 +207,7 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
         <p className="text-xs text-muted">{thread.resolved_at ? 'Hilo resuelto' : 'Hilo abierto'}</p>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="ghost" disabled={busy} onClick={refreshThread}>Actualizar hilo</Button>
-          {thread.created_by === me?.id && (
+          {canWrite && thread.created_by === me?.id && (
             <Button size="sm" variant="ghost" disabled={busy || conflict || (drafting && !thread.resolved_at)}
               onClick={() => void changeResolution(thread)}>
               {thread.resolved_at ? 'Reabrir hilo' : 'Resolver hilo'}
@@ -220,7 +220,7 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
           {items.map(comment => (
             <li key={comment.id} className={`rounded-lg border border-line p-3 ${comment.parent_id ? 'ml-3 border-l-2' : ''}`}>
               <CommentContent comment={comment} userId={me?.id} />
-              {!thread.resolved_at && comment.body !== null && (
+              {canWrite && !thread.resolved_at && comment.body !== null && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   <Button size="sm" variant="subtle" disabled={busy || drafting} onClick={() => {
                     clearError()
@@ -257,7 +257,7 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
         </div>
       )}
       {differentRevision && latest?.body === null && <Notice tone="warning" live="polite">El comentario se eliminó. Puedes copiar tu borrador.</Notice>}
-      {(!thread.resolved_at || drafting) && (
+      {canWrite && (!thread.resolved_at || drafting) && (
         <form className="grid justify-items-start gap-2" onSubmit={submit}>
           {parent && (
             <div className="w-full rounded-lg border-l-2 border-line bg-mist p-2">
@@ -287,12 +287,19 @@ function ThreadComments({ threadId, onDirty }: { threadId: string; onDirty: (dir
   )
 }
 
-function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: string; onDirty: (dirty: boolean) => void }) {
+function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
+  scopeType: 'application' | 'program'; scopeId: string; canWrite?: boolean; onDirty: (dirty: boolean) => void
+}) {
   const [offset, setOffset] = useState(0)
   const [selection, setSelection] = useState('')
   const [subject, setSubject] = useState('')
   const [newThread, setNewThread] = useState<Thread | null>(null)
   const [commentDirty, setCommentDirty] = useState(false)
+  const [resolution, setResolution] = useState('all')
+  const [updates, setUpdates] = useState<Set<string>>(new Set())
+  const seen = useRef(new Map<string, number>())
+  const watching = useRef(false)
+  const resolutionId = useId()
   const threadSelectId = useId()
   const subjectId = useId()
   const { save, busy, error } = useDiscussionWrite()
@@ -300,21 +307,44 @@ function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: str
     onDirty(Boolean(subject.trim()) || commentDirty || busy)
   }, [subject, commentDirty, busy, onDirty])
   const read = useCallback((signal: AbortSignal) => api.GET('/api/v1/discussion-threads', {
-    params: { query: { scope_type: 'application', application_id: applicationId, limit: PAGE_SIZE, offset } },
+    params: { query: {
+      scope_type: scopeType,
+      application_id: scopeType === 'application' ? scopeId : undefined,
+      program_id: scopeType === 'program' ? scopeId : undefined,
+      resolved: resolution === 'all' ? undefined : resolution === 'closed',
+      limit: PAGE_SIZE, offset,
+    } },
     signal,
-  }), [applicationId, offset])
+  }), [scopeId, scopeType, resolution, offset])
   const { state, refresh } = useDiscussionRead(read)
+  useEffect(() => {
+    if (scopeType !== 'program' || !state || 'error' in state) return
+    const changed = new Set<string>()
+    for (const item of state.data.items) {
+      const prior = seen.current.get(item.id)
+      if (watching.current && prior !== item.version) changed.add(item.id)
+      seen.current.set(item.id, item.version)
+    }
+    setUpdates(changed)
+    watching.current = false
+  }, [scopeType, state])
+
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!subject.trim() || commentDirty) return
+    if (!canWrite || !subject.trim() || commentDirty) return
     const thread = await save(() => api.POST('/api/v1/discussion-threads', {
-      body: { scope_type: 'application', application_id: applicationId, subject: subject.trim() },
+      body: scopeType === 'application'
+        ? { scope_type: scopeType, application_id: scopeId, subject: subject.trim() }
+        : { scope_type: scopeType, program_id: scopeId, subject: subject.trim() },
     }))
     if (!thread) return
     setSubject('')
     setSelection(thread.id)
     setNewThread(thread)
-    if (state && 'data' in state) setOffset(Math.floor(state.data.total / PAGE_SIZE) * PAGE_SIZE)
+    if (resolution === 'closed') {
+      setResolution('open')
+      setOffset(0)
+    } else if (state && 'data' in state) setOffset(Math.floor(state.data.total / PAGE_SIZE) * PAGE_SIZE)
     refresh()
   }
 
@@ -325,7 +355,20 @@ function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: str
   const thread = options.find(item => item.id === selection) ?? options[0]
   return (
     <div className="space-y-3">
-      <form className="grid justify-items-start gap-2" onSubmit={create}>
+      {scopeType === 'program' && (
+        <Field label="Estado de los hilos" htmlFor={resolutionId}>
+          <select id={resolutionId} className={inputCls} value={resolution} disabled={commentDirty || busy}
+            onChange={event => {
+              setResolution(event.target.value)
+              setOffset(0); setSelection(''); setNewThread(null)
+            }}>
+            <option value="all">Todos los hilos</option>
+            <option value="open">Abiertos</option>
+            <option value="closed">Resueltos</option>
+          </select>
+        </Field>
+      )}
+      {canWrite && <form className="grid justify-items-start gap-2" onSubmit={create}>
         <div className="w-full">
           <Field label="Asunto del nuevo hilo" htmlFor={subjectId}>
             <input id={subjectId} className={inputCls} maxLength={160} value={subject} disabled={busy}
@@ -334,14 +377,19 @@ function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: str
         </div>
         {error && <Notice tone="warning" live="polite">{error.message}</Notice>}
         <Button size="sm" type="submit" disabled={busy || commentDirty || !subject.trim()}>Crear hilo</Button>
-        <Button size="sm" variant="ghost" disabled={busy || commentDirty} onClick={refresh}>Actualizar hilos</Button>
-      </form>
+      </form>}
+      <Button size="sm" variant="ghost" disabled={busy || commentDirty} onClick={() => {
+        watching.current = true
+        if (scopeType === 'program') setNewThread(null)
+        refresh()
+      }}>Actualizar hilos</Button>
+      {updates.size > 0 && <p role="status" className="text-sm">{updates.size} hilos con novedades en esta página.</p>}
       {thread ? (
         <>
           <Field label="Hilo" htmlFor={threadSelectId}>
             <select id={threadSelectId} value={thread.id} className={inputCls} disabled={commentDirty || busy}
               onChange={event => setSelection(event.target.value)}>
-              {options.map(item => <option key={item.id} value={item.id}>{item.subject}</option>)}
+              {options.map(item => <option key={item.id} value={item.id}>{item.subject}{updates.has(item.id) ? ' · Novedades' : ''}</option>)}
             </select>
           </Field>
           {!commentDirty && !busy && <PageControls label="Páginas de hilos" offset={offset} total={total} onPage={next => {
@@ -349,9 +397,9 @@ function ApplicationDiscussions({ applicationId, onDirty }: { applicationId: str
             setNewThread(null)
             setSelection('')
           }} />}
-          <ThreadComments key={thread.id} threadId={thread.id} onDirty={setCommentDirty} />
+          <ThreadComments key={thread.id} threadId={thread.id} canWrite={canWrite} onDirty={setCommentDirty} />
         </>
-      ) : <Empty>Este expediente todavía no tiene hilos.</Empty>}
+      ) : <Empty>{scopeType === 'program' ? 'No hay hilos con este filtro.' : 'Este expediente todavía no tiene hilos.'}</Empty>}
     </div>
   )
 }
@@ -363,7 +411,38 @@ export function ServerDiscussions({ applicationId, onDirty }: { applicationId: s
       if (event.currentTarget.open) setOpened(true)
     }}>
       <summary className="cursor-pointer font-semibold">Comentarios internos</summary>
-      {opened && <div className="mt-3"><ApplicationDiscussions applicationId={applicationId} onDirty={onDirty} /></div>}
+      {opened && <div className="mt-3"><ScopedDiscussions scopeType="application" scopeId={applicationId} onDirty={onDirty} /></div>}
     </details>
+  )
+}
+
+
+export function ApiProgramDiscussionBoard() {
+  const [selected, setSelected] = useState('')
+  const [dirty, setDirty] = useState(false)
+  const load = useCallback((signal: AbortSignal) => api.GET('/api/v1/discussion-programs', { signal }), [])
+  const { state, refresh } = useDiscussionRead(load)
+  const programs = state && 'data' in state ? state.data : []
+  const program = programs.find(item => item.id === selected) ?? programs[0]
+  return (
+    <>
+      <PageTitle title="Tablero de programas" sub="Conversaciones internas de equipo por programa." />
+      <Card title="Conversaciones generales">
+        {!state && <p role="status">Cargando programas…</p>}
+        {state && 'error' in state && <DiscussionReadError message={state.error} retry={refresh} />}
+        {state && 'data' in state && !program && (
+          <Empty>Tu cuenta no tiene acceso a conversaciones generales de un programa.</Empty>
+        )}
+        {program && <div className="grid gap-4">
+          <Field label="Programa del tablero" htmlFor="discussion-program">
+            <select id="discussion-program" className={inputCls} value={program.id} disabled={dirty}
+              onChange={event => setSelected(event.target.value)}>
+              {programs.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </Field>
+          <ScopedDiscussions key={program.id} scopeType="program" scopeId={program.id} canWrite={program.can_write} onDirty={setDirty} />
+        </div>}
+      </Card>
+    </>
   )
 }

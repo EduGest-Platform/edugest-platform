@@ -22,7 +22,7 @@ import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
 import { LoginScreen } from './components/LoginScreen'
 
-const SCREENS: Record<View, () => ReactElement> = {
+const SCREENS: Partial<Record<View, () => ReactElement>> = {
   dashboard: Dashboard,
   analitica: GroupAnalytics,
   calendario: Calendar,

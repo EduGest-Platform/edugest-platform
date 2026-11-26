@@ -2231,6 +2231,29 @@
         "title": "CurrentLevel",
         "type": "object"
       },
+      "DiscussionProgram": {
+        "properties": {
+          "can_write": {
+            "title": "Can Write",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "can_write"
+        ],
+        "title": "DiscussionProgram",
+        "type": "object"
+      },
       "DocumentationHistory": {
         "properties": {
           "enrollment_id": {
@@ -10198,6 +10221,42 @@
         ]
       }
     },
+    "/api/v1/discussion-programs": {
+      "get": {
+        "operationId": "discussion_programs_api_v1_discussion_programs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscussionProgram"
+                  },
+                  "title": "Response Discussion Programs Api V1 Discussion Programs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso en el ámbito"
+          },
+          "404": {
+            "description": "Hilo o ámbito no encontrado"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Programas en los que la cuenta puede leer conversaciones generales",
+        "tags": [
+          "discussions"
+        ]
+      }
+    },
     "/api/v1/discussion-threads": {
       "get": {
         "operationId": "list_threads_api_v1_discussion_threads_get",
@@ -10271,6 +10330,22 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolved",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resolved"
             }
           }
         ],
