@@ -752,7 +752,7 @@
         "properties": {
           "expected_revision": {
             "description": "Revisión de la entrega que el docente ha visto",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Revision",
             "type": "integer"
           }
@@ -1526,7 +1526,7 @@
           "expected_version": {
             "default": 0,
             "description": "0 para un código nuevo; versión anterior al publicar su sucesora",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -1625,13 +1625,13 @@
         "description": "Pre-computed automated checks. The platform never runs submitted code.",
         "properties": {
           "passed": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Passed",
             "type": "integer"
           },
           "total": {
-            "exclusiveMinimum": 0,
-            "maximum": 10000,
+            "exclusiveMinimum": 0.0,
+            "maximum": 10000.0,
             "title": "Total",
             "type": "integer"
           }
@@ -1909,7 +1909,7 @@
             "type": "string"
           },
           "expected_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -2325,7 +2325,7 @@
             "type": "string"
           },
           "version": {
-            "minimum": 2,
+            "minimum": 2.0,
             "title": "Version",
             "type": "integer"
           }
@@ -2383,7 +2383,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -2406,7 +2406,7 @@
           },
           "expected_version": {
             "description": "Versión que el docente estaba editando (evita pisar cambios ajenos)",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -3306,8 +3306,8 @@
         "properties": {
           "expires_hours": {
             "default": 24,
-            "maximum": 168,
-            "minimum": 1,
+            "maximum": 168.0,
+            "minimum": 1.0,
             "title": "Expires Hours",
             "type": "integer"
           },
@@ -3404,8 +3404,8 @@
         "properties": {
           "expires_hours": {
             "default": 24,
-            "maximum": 168,
-            "minimum": 1,
+            "maximum": 168.0,
+            "minimum": 1.0,
             "title": "Expires Hours",
             "type": "integer"
           }
@@ -4412,22 +4412,22 @@
         "properties": {
           "silence_days": {
             "description": "Días sin respuesta tras el último intento antes de la alerta de acción",
-            "maximum": 365,
-            "minimum": 1,
+            "maximum": 365.0,
+            "minimum": 1.0,
             "title": "Silence Days",
             "type": "integer"
           },
           "silence_max_contacts": {
             "description": "Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)",
-            "maximum": 20,
-            "minimum": 1,
+            "maximum": 20.0,
+            "minimum": 1.0,
             "title": "Silence Max Contacts",
             "type": "integer"
           },
           "silence_warning_contacts": {
             "description": "Intentos sin respuesta para la alerta leve; salta sin esperar días",
-            "maximum": 20,
-            "minimum": 1,
+            "maximum": 20.0,
+            "minimum": 1.0,
             "title": "Silence Warning Contacts",
             "type": "integer"
           }
@@ -4568,7 +4568,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -5096,7 +5096,7 @@
           "expected_version": {
             "anyOf": [
               {
-                "minimum": 1,
+                "minimum": 1.0,
                 "type": "integer"
               },
               {
@@ -5195,7 +5195,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -5216,7 +5216,7 @@
         "properties": {
           "expected_revision": {
             "description": "Versión de la entrega que ha revisado el docente",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Revision",
             "type": "integer"
           }
@@ -5755,8 +5755,8 @@
         "properties": {
           "selection_quorum": {
             "description": "Personas distintas que deben coincidir en la decisión de selección (por defecto 2)",
-            "maximum": 5,
-            "minimum": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
             "title": "Selection Quorum",
             "type": "integer"
           }
@@ -6972,7 +6972,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -7001,7 +7001,7 @@
           },
           "position": {
             "description": "Lugar en la lista según el criterio provisional (orden de entrada en la lista)",
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Position",
             "type": "integer"
           },
