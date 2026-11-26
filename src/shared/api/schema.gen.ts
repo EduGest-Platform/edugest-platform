@@ -341,6 +341,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notes */
+        get: operations["list_notes_api_v1_attendance_sessions__session_id__zoom_notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Notes */
+        post: operations["approve_notes_api_v1_attendance_sessions__session_id__zoom_notes_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -1595,6 +1629,17 @@ export interface components {
             /** Approved */
             approved: boolean;
         };
+        /** ActionItem */
+        ActionItem: {
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceSpan"][];
+            /** Proposed Due Date */
+            proposed_due_date?: string | null;
+            /** Proposed Owner */
+            proposed_owner?: string | null;
+            /** Text */
+            text: string;
+        };
         /**
          * ApplicationCreate
          * @description Public inscription form. Only the minimum data needed for pre-selection (data minimisation).
@@ -1752,6 +1797,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** ApprovalIn */
+        ApprovalIn: {
+            /** Expected Version */
+            expected_version: number;
         };
         /** ApproveIn */
         ApproveIn: {
@@ -2648,6 +2698,13 @@ export interface components {
             /** Tipo */
             tipo: string;
         };
+        /** EvidenceSpan */
+        EvidenceSpan: {
+            /** End Seconds */
+            end_seconds: number;
+            /** Start Seconds */
+            start_seconds: number;
+        };
         /** FeedbackDraftList */
         FeedbackDraftList: {
             /**
@@ -3028,6 +3085,17 @@ export interface components {
             /** Roles */
             roles: components["schemas"]["RoleAssignmentOut"][];
         };
+        /** MeetingNotesDraft */
+        MeetingNotesDraft: {
+            /** Action Items */
+            action_items?: components["schemas"]["ActionItem"][];
+            /** Key Topics */
+            key_topics?: components["schemas"]["NoteItem"][];
+            /** Reinforcement Topics */
+            reinforcement_topics?: components["schemas"]["NoteItem"][];
+            /** Summary */
+            summary: components["schemas"]["NoteItem"][];
+        };
         /**
          * NextActionCreate
          * @description What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone.
@@ -3067,6 +3135,26 @@ export interface components {
              * Format: uuid
              */
             owner_user_id: string;
+        };
+        /** NoteItem */
+        NoteItem: {
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceSpan"][];
+            /** Text */
+            text: string;
+        };
+        /** NotesOut */
+        NotesOut: {
+            /** Approved At */
+            approved_at: string | null;
+            body: components["schemas"]["MeetingNotesDraft"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Version */
+            version: number;
         };
         /** OverviewAttendance */
         OverviewAttendance: {
@@ -5644,6 +5732,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_notes_api_v1_attendance_sessions__session_id__zoom_notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_notes_api_v1_attendance_sessions__session_id__zoom_notes_approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
