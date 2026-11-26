@@ -1067,6 +1067,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/recruitment/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Última próxima acción de cada candidatura en preselección del ámbito CRM */
+        get: operations["recruitment_inbox_api_v1_recruitment_inbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/access-requests": {
         parameters: {
             query?: never;
@@ -3302,6 +3319,26 @@ export interface components {
              * @enum {string}
              */
             status: "presente" | "retraso" | "ausente";
+        };
+        /** RecruitmentInbox */
+        RecruitmentInbox: {
+            /** Items */
+            items: components["schemas"]["RecruitmentInboxItem"][];
+            /** Total */
+            total: number;
+        };
+        /** RecruitmentInboxItem */
+        RecruitmentInboxItem: {
+            action: components["schemas"]["NextActionOut"];
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Code */
+            code: string;
         };
         /** ReminderSimulationRequest */
         ReminderSimulationRequest: {
@@ -7792,6 +7829,47 @@ export interface operations {
             };
             /** @description Published offer not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recruitment_inbox_api_v1_recruitment_inbox_get: {
+        parameters: {
+            query?: {
+                mine?: boolean;
+                due_through?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentInbox"];
+                };
+            };
+            /** @description Sin permiso CRM sobre el ámbito */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

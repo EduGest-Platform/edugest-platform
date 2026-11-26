@@ -4554,6 +4554,55 @@
         "title": "RecordWrite",
         "type": "object"
       },
+      "RecruitmentInbox": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecruitmentInboxItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "RecruitmentInbox",
+        "type": "object"
+      },
+      "RecruitmentInboxItem": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/NextActionOut"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "code",
+          "call_id",
+          "action"
+        ],
+        "title": "RecruitmentInboxItem",
+        "type": "object"
+      },
       "ReminderSimulationRequest": {
         "additionalProperties": false,
         "properties": {
@@ -11565,6 +11614,97 @@
         "summary": "One published offer; drafts and unknown IDs are not found",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/recruitment/inbox": {
+      "get": {
+        "operationId": "recruitment_inbox_api_v1_recruitment_inbox_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Mine",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "due_through",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Due Through"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecruitmentInbox"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso CRM sobre el ámbito"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Última próxima acción de cada candidatura en preselección del ámbito CRM",
+        "tags": [
+          "admissions"
         ]
       }
     },
