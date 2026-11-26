@@ -223,7 +223,7 @@ def test_the_migration_recovers_known_authors_from_the_creation_event(client, db
     db.close()
     config = Config(os.path.join(API_DIR, "alembic.ini"))
     config.set_main_option("script_location", os.path.join(API_DIR, "alembic"))
-    command.downgrade(config, "0021")
+    command.downgrade(config, "0022")
     command.upgrade(config, "head")
     assert stored(db, signed).created_by == author
     assert stored(db, anonymous).created_by is None
@@ -299,9 +299,11 @@ def test_parallel_manual_and_public_intakes_get_different_codes(client, db):
     [("telefono", False, "ck_application_manual_author"), ("fax", True, "ck_application_origin_channel")],
 )
 def test_the_database_requires_a_known_channel_and_an_author_for_manual_ones(client, db, channel, with_author, constraint):
-    application = stored(db, client.post("/api/v1/applications", json=new_application()).json())
-    application.origin_channel = channel
-    application.created_by = user_id(db, ADMIN) if with_author else None
+    receipt = client.post("/api/v1/applications", json=new_application()).json()
+    # Read the author first: a later query would flush the half-changed row.
+    author = user_id(db, ADMIN) if with_author else None
+    application = stored(db, receipt)
+    application.origin_channel, application.created_by = channel, author
     with pytest.raises(IntegrityError) as refused:
         db.commit()
     assert refused.value.orig.diag.constraint_name == constraint
