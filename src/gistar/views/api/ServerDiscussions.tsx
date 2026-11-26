@@ -163,7 +163,7 @@ function ThreadComments({ threadId, canWrite, onDirty }: { threadId: string; can
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!canWrite || !body.trim() || !state || 'error' in state || state.data.thread.resolved_at || conflict || differentRevision) return
+    if (!canWrite || body.length > 2000 || !body.trim() || !state || 'error' in state || state.data.thread.resolved_at || conflict || differentRevision) return
     setNotice('')
     const text = body.trim()
     const saved = await save(() => editing
@@ -271,8 +271,9 @@ function ThreadComments({ threadId, canWrite, onDirty }: { threadId: string; can
           )}
           <div className="w-full">
             <Field label={editing ? 'Editar tu comentario' : parent ? 'Tu respuesta' : 'Nuevo comentario'} htmlFor={commentId}>
-              <textarea id={commentId} ref={textarea} rows={3} maxLength={2000} value={body} disabled={busy}
+              <textarea id={commentId} ref={textarea} rows={3} maxLength={2000} aria-describedby={`${commentId}-count`} value={body} disabled={busy}
                 onChange={event => setBody(event.target.value)} className={inputCls} />
+              <p id={`${commentId}-count`} className="text-xs text-muted text-right">{body.length} / 2000 caracteres</p>
             </Field>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -331,7 +332,7 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!canWrite || !subject.trim() || commentDirty) return
+    if (!canWrite || subject.length > 160 || !subject.trim() || commentDirty) return
     const thread = await save(() => api.POST('/api/v1/discussion-threads', {
       body: scopeType === 'application'
         ? { scope_type: scopeType, application_id: scopeId, subject: subject.trim() }
@@ -371,8 +372,9 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
       {canWrite && <form className="grid justify-items-start gap-2" onSubmit={create}>
         <div className="w-full">
           <Field label="Asunto del nuevo hilo" htmlFor={subjectId}>
-            <input id={subjectId} className={inputCls} maxLength={160} value={subject} disabled={busy}
+            <input id={subjectId} className={inputCls} maxLength={160} aria-describedby={`${subjectId}-count`} value={subject} disabled={busy}
               onChange={event => setSubject(event.target.value)} />
+            <p id={`${subjectId}-count`} className="text-xs text-muted text-right">{subject.length} / 160 caracteres</p>
           </Field>
         </div>
         {error && <Notice tone="warning" live="polite">{error.message}</Notice>}
