@@ -139,11 +139,11 @@ def create_access_request(db, actor, body):
     return request_out(row, actor.user.display_name)
 
 
-def list_access_requests(db, actor, limit, offset, pending_only=False):
+def list_access_requests(db, actor, limit, offset, state=None):
     is_admin = actor.can('staff.manage', Scope())
     query = select(AccessChangeRequest, User.display_name).join(User, User.id == AccessChangeRequest.requested_by)
-    if pending_only:
-        query = query.where(AccessChangeRequest.state == 'requested')
+    if state is not None:
+        query = query.where(AccessChangeRequest.state == state)
     profile = None
     if not is_admin:
         profile = active_own_profile(db, actor)

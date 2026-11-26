@@ -8,6 +8,9 @@ import { Button, Field, Notice, inputCls } from '../../ui'
 type Profile = Schemas['StaffProfileOut']
 type AccessRequest = Schemas['AccessRequestOut']
 type RequestInput = Schemas['AccessRequestCreate']
+type Preview = Schemas['AccessApplicationPreview']
+type Application = Schemas['AccessApplicationOut']
+type QueueFilter = 'requested' | 'approved' | 'all'
 type Result<T> = { data?: T; error?: unknown; response: Response }
 
 const PAGE_SIZE = 20
@@ -16,6 +19,16 @@ const scopes = { global: 'Global', program: 'Programa', call: 'Convocatoria', co
 const states: Record<string, string> = {
   requested: 'Pendiente de revisión', approved: 'Aprobada, pendiente de aplicación', rejected: 'Rechazada',
   applied: 'Aplicada', revoked: 'Revocada',
+}
+const blockers: Record<string, string> = {
+  request_not_approved: 'La solicitud ya no está pendiente de aplicación.',
+  staff_account_required: 'La cuenta interna debe estar activa.',
+  active_staff_profile_required: 'La ficha interna debe estar activa.',
+  invalid_request_owner: 'La solicitud no coincide con la persona titular de la ficha.',
+  invalid_review: 'Falta una revisión válida de otra persona administradora.',
+  self_application: 'Otra persona administradora debe aplicar esta solicitud.',
+  scope_not_found: 'El ámbito solicitado ya no existe.',
+  active_assignment_exists: 'Ya hay una asignación activa con ese rol y ámbito.',
 }
 const dateTime = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Madrid' })
 
@@ -31,7 +44,10 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   const [queue, setQueue] = useState<Schemas['AccessRequestList']>()
   const [queueError, setQueueError] = useState('')
   const [offset, setOffset] = useState(0)
-  const [pendingOnly, setPendingOnly] = useState(true)
+  const [filter, setFilter] = useState<QueueFilter>('requested')
+  const [inspection, setInspection] = useState<AccessRequest | null>(null)
+  const [details, setDetails] = useState<{ preview: Preview } | { application: Application }>()
+  const [inspectionError, setInspectionError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [token, setToken] = useState('')
   const [role, setRole] = useState<RequestInput['requested_role']>('docente')
@@ -63,7 +79,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
     if (!canList) return
     const controller = new AbortController()
     void api.GET('/api/v1/staff/access-requests', {
-      params: { query: { limit: PAGE_SIZE, offset, pending_only: canReview && pendingOnly } }, signal: controller.signal,
+      params: { query: { limit: PAGE_SIZE, offset, state: canReview && filter !== 'all' ? filter : undefined } }, signal: controller.signal,
     }).then(result => {
       if (controller.signal.aborted) return
       if (result.data) {
@@ -75,7 +91,33 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
       if (!controller.signal.aborted) setQueueError('No se pudo cargar la cola de solicitudes.')
     })
     return () => controller.abort()
-  }, [canReview, canList, offset, attempt, pendingOnly])
+  }, [canReview, canList, offset, attempt, filter])
+
+  useEffect(() => {
+    setDetails(undefined)
+    setInspectionError('')
+    if (!inspection || !canList) return
+    const controller = new AbortController()
+    const params = { path: { request_id: inspection.id } }
+    void (async () => {
+      try {
+        if (canReview && inspection.state === 'approved') {
+          const result = await api.GET('/api/v1/staff/access-requests/{request_id}/application-preview', { params, signal: controller.signal })
+          if (controller.signal.aborted) return
+          if (result.data) setDetails({ preview: result.data })
+          else setInspectionError(requestProblem(result))
+        } else {
+          const result = await api.GET('/api/v1/staff/access-requests/{request_id}/application', { params, signal: controller.signal })
+          if (controller.signal.aborted) return
+          if (result.data) setDetails({ application: result.data })
+          else setInspectionError(requestProblem(result))
+        }
+      } catch {
+        if (!controller.signal.aborted) setInspectionError('No se pudo consultar la aplicación del acceso.')
+      }
+    })()
+    return () => controller.abort()
+  }, [inspection, canReview, canList, attempt])
 
   async function write(send: (signal: AbortSignal) => Promise<Result<unknown>>, onSuccess: () => void) {
     if (pending.current) return
@@ -93,6 +135,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
       } else {
         setError(requestProblem(result))
         if (result.response.status === 409) {
+          setInspection(null)
           setQueue(undefined)
           setAttempt(value => value + 1)
         }
@@ -134,6 +177,18 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
     void write(signal => api.POST('/api/v1/staff/access-requests/{request_id}/review', {
       params: { path: { request_id: request.id } }, body: { approved }, signal,
     }), () => setNotice(approved ? 'Solicitud aprobada. La aplicación del permiso sigue pendiente.' : 'Solicitud rechazada.'))
+  }
+
+  function apply(preview: Preview) {
+    if (!canReview || !preview.can_apply || preview.request_id !== inspection?.id || inspection.requested_by === me.id) return
+    void write(signal => api.POST('/api/v1/staff/access-requests/{request_id}/apply', {
+      params: { path: { request_id: preview.request_id } },
+      body: { ...preview.requested, confirm: true },
+      signal,
+    }), () => {
+      setInspection(null)
+      setNotice('Aplicación del permiso registrada. Consulta el estado en Todas las solicitudes.')
+    })
   }
 
   return (
@@ -191,13 +246,17 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
             <h3 className="font-semibold">{canReview ? 'Cola de aprobaciones' : 'Mis solicitudes de acceso'}</h3>
             {canReview && <>
               <p className="text-sm text-muted">Aprobar una solicitud deja constancia de la revisión. El permiso se aplica en un paso administrativo separado.</p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={pendingOnly} disabled={busy} onChange={event => {
+              <Field label="Estado de solicitudes" htmlFor="staff-queue-state">
+                <select id="staff-queue-state" className={inputCls} value={filter} disabled={busy} onChange={event => {
+                  setInspection(null)
                   setOffset(0)
-                  setPendingOnly(event.target.checked)
-                }} />
-                Solo pendientes de revisión
-              </label>
+                  setFilter(event.target.value as QueueFilter)
+                }}>
+                  <option value="requested">Pendientes de revisión</option>
+                  <option value="approved">Aprobadas pendientes de aplicación</option>
+                  <option value="all">Todas las solicitudes</option>
+                </select>
+              </Field>
             </>}
             {queueError && <Notice tone="warning" live="assertive">{queueError}</Notice>}
             {!queue && !queueError && <p role="status">Cargando solicitudes…</p>}
@@ -220,13 +279,45 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
                         <Button size="sm" variant="ghost" disabled={busy} onClick={() => review(item, false)}>Rechazar solicitud</Button>
                       </div>
                     )}
+                    {item.state !== 'requested' && <Button size="sm" variant="ghost" className="justify-self-start"
+                      aria-expanded={inspection?.id === item.id} disabled={busy}
+                      onClick={() => {
+                        setDetails(undefined)
+                        setInspectionError('')
+                        setInspection(inspection?.id === item.id ? null : item)
+                      }}>
+                      {inspection?.id === item.id ? 'Ocultar detalles' : canReview && item.state === 'approved' ? 'Previsualizar aplicación' : 'Consultar aplicación'}
+                    </Button>}
+                    {inspection?.id === item.id && (
+                      <div className="grid gap-2 rounded-lg bg-mist p-3 text-sm">
+                        {inspectionError && <Notice tone="warning" live="assertive">{inspectionError}</Notice>}
+                        {!inspectionError && !details && <p role="status">Consultando aplicación…</p>}
+                        {details && 'application' in details && <>
+                          <p>{states[details.application.request_state] ?? details.application.request_state}</p>
+                          {details.application.assignment_active !== null && <p>
+                            {details.application.assignment_active ? 'Asignación registrada sin revocación.' : 'La asignación está revocada.'}
+                          </p>}
+                          {details.application.request_state === 'applied' && details.application.assignment_active === null &&
+                            <p>No se pudo verificar la asignación vinculada.</p>}
+                        </>}
+                        {details && 'preview' in details && <>
+                          <p className="font-medium">Aplicación para {item.requested_by_name ?? 'Cuenta interna'}</p>
+                          <p>{roles[details.preview.requested.requested_role]} · {scopes[details.preview.requested.scope_type]}
+                            {details.preview.requested.scope_id && ` · ${details.preview.requested.scope_id}`}</p>
+                          {details.preview.can_apply ? <Button size="sm" className="justify-self-start" disabled={busy}
+                            onClick={() => apply(details.preview)}>Confirmar y aplicar permiso</Button> :
+                            <ul className="list-disc pl-4">{details.preview.blockers.map(code =>
+                              <li key={code}>{blockers[code] ?? 'La revisión del servidor impide aplicar esta solicitud.'}</li>)}</ul>}
+                        </>}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
               {(offset > 0 || offset + PAGE_SIZE < queue.total) && (
                 <nav aria-label="Páginas de solicitudes" className="flex gap-2">
-                  <Button size="sm" variant="ghost" disabled={busy || offset === 0} onClick={() => setOffset(offset - PAGE_SIZE)}>Anterior</Button>
-                  <Button size="sm" variant="ghost" disabled={busy || offset + PAGE_SIZE >= queue.total} onClick={() => setOffset(offset + PAGE_SIZE)}>Siguiente</Button>
+                  <Button size="sm" variant="ghost" disabled={busy || offset === 0} onClick={() => { setInspection(null); setOffset(offset - PAGE_SIZE) }}>Anterior</Button>
+                  <Button size="sm" variant="ghost" disabled={busy || offset + PAGE_SIZE >= queue.total} onClick={() => { setInspection(null); setOffset(offset + PAGE_SIZE) }}>Siguiente</Button>
                 </nav>
               )}
             </>}
