@@ -132,3 +132,34 @@ def test_rejected_request_cannot_be_applied_or_reviewed_again(client, db):
     assert listed.status_code == 200
     assert [item['id'] for item in listed.json()['items']] == [row['id']]
     assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
+
+
+def test_approved_application_requires_admin_and_exact_scope(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    other = active_profile(client, db, CAPT_IA)
+    admin = login(client, ADMIN)
+    row = request(client, owner)
+    target = '/api/v1/staff/access-requests/' + row['id']
+    assert client.post(f'{target}/review', headers=admin, json={'approved': True}).status_code == 200
+    preview = client.get(f'{target}/application-preview', headers=admin).json()
+    assert preview['can_apply'] is True
+    confirmation = {**preview['requested'], 'confirm': True}
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    for actor in (owner, other):
+        assert client.post(f'{target}/apply', headers=actor, json=confirmation).status_code == 403
+    mismatch = client.post(f'{target}/apply', headers=admin, json={**confirmation, 'scope_id': 'COH-DATA'})
+    assert mismatch.status_code == 409
+    assert mismatch.json()['code'] == 'access_confirmation_mismatch'
+    current = client.get(f'{target}/application', headers=owner).json()
+    assert current['request_state'] == 'approved'
+    assert current['assignment_id'] is None
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
+
+    applied = client.post(f'{target}/apply', headers=admin, json=confirmation)
+    assert applied.status_code == 200
+    assert applied.json()['assignment_active'] is True
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before + 1
+    repeated = client.post(f'{target}/apply', headers=admin, json=confirmation)
+    assert repeated.status_code == 200
+    assert repeated.json() == applied.json()
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before + 1
