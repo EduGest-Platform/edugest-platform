@@ -101,3 +101,25 @@ def test_rescheduling_and_scope_checks(client, db):
     db.commit()
     assert client.get(path(target), headers=selector).json()["can_edit"] is False
     assert schedule(client, target, selector).status_code == 409
+
+
+def test_outcome_cannot_cross_dossiers_or_programs(client, db):
+    target = make_application(db, stage="convocada")
+    sibling = make_application(db, stage="convocada")
+    foreign = make_application(db, call_id=DATA_CALL, stage="convocada")
+    selector, admin = login(client, SEL_IA), login(client, ADMIN)
+    created = schedule(client, target, selector)
+    assert created.status_code == 201, created.text
+    appointment_id = created.json()["id"]
+    move_into_past(db, appointment_id)
+    body = {"result": "attended", "assessment": "Synthetic assessment"}
+    for app, headers, status in ((sibling, selector, 404), (foreign, selector, 403), (foreign, admin, 404)):
+        response = client.post(f"{path(app)}/{appointment_id}/outcome", headers=headers, json=body)
+        assert response.status_code == status, response.text
+    db.expire_all()
+    appointment = db.get(SelectionAppointment, uuid.UUID(appointment_id))
+    assert appointment.state == "scheduled"
+    assert appointment.recorded_at is None and appointment.assessment is None
+    response = client.post(f"{path(target)}/{appointment_id}/outcome", headers=selector, json=body)
+    assert response.status_code == 200, response.text
+    assert response.json()["state"] == "attended"
