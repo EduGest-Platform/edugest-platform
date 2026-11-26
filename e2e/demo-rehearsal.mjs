@@ -47,8 +47,9 @@ for (const stage of stages) {
     },
     stdio: 'inherit',
     timeout: remaining,
+    killSignal: 'SIGKILL',
   })
-  const failed = Boolean(result.error || result.status !== 0)
+  const failed = Boolean(result.error || result.status !== 0 || performance.now() - start > durationMs)
   completed.push({ label: stage.label, seconds: (performance.now() - stageStart) / 1000, status: failed ? 'FAILED' : 'PASSED' })
   if (failed) {
     console.error(result.error?.code === 'ETIMEDOUT'
