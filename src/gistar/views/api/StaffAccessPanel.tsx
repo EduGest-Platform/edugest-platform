@@ -26,6 +26,7 @@ function requestProblem(result: Result<unknown>) {
 export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void }) {
   const canReview = me.roles.some(role => role.role === 'admin' && role.scope_type === 'global')
   const [profile, setProfile] = useState<Profile | null>()
+  const canList = canReview || profile?.state === 'active'
   const [profileError, setProfileError] = useState('')
   const [queue, setQueue] = useState<Schemas['AccessRequestList']>()
   const [queueError, setQueueError] = useState('')
@@ -44,7 +45,6 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   useEffect(() => () => pending.current?.abort(), [])
   useEffect(() => {
     const controller = new AbortController()
-    setProfile(undefined)
     setProfileError('')
     void api.GET('/api/v1/staff/me', { signal: controller.signal }).then(result => {
       if (controller.signal.aborted) return
@@ -60,19 +60,22 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   useEffect(() => {
     setQueue(undefined)
     setQueueError('')
-    if (!canReview && profile?.state !== 'active') return
+    if (!canList) return
     const controller = new AbortController()
     void api.GET('/api/v1/staff/access-requests', {
       params: { query: { limit: PAGE_SIZE, offset, pending_only: canReview && pendingOnly } }, signal: controller.signal,
     }).then(result => {
       if (controller.signal.aborted) return
-      if (result.data) setQueue(result.data)
+      if (result.data) {
+        if (offset > 0 && offset >= result.data.total) setOffset(Math.max(0, Math.floor((result.data.total - 1) / PAGE_SIZE) * PAGE_SIZE))
+        else setQueue(result.data)
+      }
       else setQueueError(requestProblem(result))
     }).catch(() => {
       if (!controller.signal.aborted) setQueueError('No se pudo cargar la cola de solicitudes.')
     })
     return () => controller.abort()
-  }, [canReview, profile?.state, offset, attempt, pendingOnly])
+  }, [canReview, canList, offset, attempt, pendingOnly])
 
   async function write(send: (signal: AbortSignal) => Promise<Result<unknown>>, onSuccess: () => void) {
     if (pending.current) return
@@ -87,7 +90,13 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
       if (result.data) {
         onSuccess()
         setAttempt(value => value + 1)
-      } else setError(requestProblem(result))
+      } else {
+        setError(requestProblem(result))
+        if (result.response.status === 409) {
+          setQueue(undefined)
+          setAttempt(value => value + 1)
+        }
+      }
     } catch {
       if (!controller.signal.aborted) setError('No se pudo confirmar el cambio. Actualiza antes de volver a intentarlo.')
     } finally {
@@ -111,20 +120,25 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
       body: { requested_role: role, scope_type: scope, scope_id: scope === 'global' ? null : scopeId.trim() }, signal,
     }), () => {
       setScopeId('')
+      setOffset(0)
       setNotice('Solicitud registrada y pendiente de revisión.')
     })
   }
 
   function review(request: AccessRequest, approved: boolean) {
     if (!canReview || request.requested_by === me.id || request.state !== 'requested') return
+    const requester = `${request.requested_by_name ?? 'Sin nombre'} · Ficha: ${request.staff_profile_id}`
+    const requestedRole = roles[request.requested_role as keyof typeof roles] ?? request.requested_role
+    const requestedScope = scopes[request.scope_type as keyof typeof scopes] ?? request.scope_type
+    if (!window.confirm(`${approved ? '¿Aprobar' : '¿Rechazar'} la solicitud?\n${requester}\nRol: ${requestedRole}\nÁmbito: ${requestedScope}${request.scope_id ? ` · ${request.scope_id}` : ''}`)) return
     void write(signal => api.POST('/api/v1/staff/access-requests/{request_id}/review', {
       params: { path: { request_id: request.id } }, body: { approved }, signal,
     }), () => setNotice(approved ? 'Solicitud aprobada. La aplicación del permiso sigue pendiente.' : 'Solicitud rechazada.'))
   }
 
   return (
-    <Modal open onClose={onClose} placement="end" size="md" title="Personal y accesos"
-      dirty={Boolean(token || scopeId || busy)}
+    <Modal open onClose={() => { if (!pending.current) onClose() }} placement="end" size="md" title="Personal y accesos"
+      dirty={!busy && Boolean(token || scopeId)}
       subtitle="Ficha interna y solicitudes de cambio de acceso.">
       <div className="grid gap-5">
         {notice && <Notice live="polite">{notice}</Notice>}
@@ -132,7 +146,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
         <section className="grid gap-3" aria-label="Ficha interna">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">Mi ficha interna</h3>
-            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setAttempt(value => value + 1)}>Actualizar personal</Button>
+            <Button size="sm" variant="ghost" disabled={busy} onClick={() => { setError(''); setAttempt(value => value + 1) }}>Actualizar personal</Button>
           </div>
           {profileError && <Notice tone="warning" live="assertive">{profileError}</Notice>}
           {profile === undefined && !profileError && <p role="status">Cargando ficha…</p>}
@@ -196,7 +210,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
                       {' · '}{scopes[item.scope_type as keyof typeof scopes] ?? item.scope_type}{item.scope_id && ` · ${item.scope_id}`}</p>
                     <p className="text-sm">{states[item.state] ?? item.state} · {dateTime.format(new Date(item.requested_at))}</p>
                     {canReview && <p className="break-all text-xs text-muted">
-                      {item.requested_by_name ?? `Ficha: ${item.staff_profile_id}`}
+                      {item.requested_by_name ?? 'Sin nombre'} · Ficha: {item.staff_profile_id}
                     </p>}
                     {canReview && item.state === 'requested' && item.requested_by === me.id &&
                       <p className="text-sm">Esta solicitud requiere la revisión de otra persona administradora.</p>}
