@@ -1,3 +1,4 @@
+import { PublishedDeliveryFeedback } from './PublishedDeliveryFeedback'
 import { useCallback, useState } from 'react'
 import { api } from '../../../shared/api/client'
 import { Button, Card, Empty, Field, PageTitle, Status, inputCls } from '../../ui'
@@ -76,6 +77,7 @@ function OwnDeliveries({ enrollmentId }: { enrollmentId: string }) {
             ) : 'Aún no hay un envío registrado.'}
           </p>
           {item.submission?.portfolio_url && <PortfolioReference value={item.submission.portfolio_url} title={item.title} />}
+          {item.submission && <PublishedDeliveryFeedback key={item.submission.id} submissionId={item.submission.id} />}
           {draft?.assignmentId === item.assignment_id ? (item.reviewed ? (
             <LearnerSubmissionDraft link={draft.link} message="La entrega ya está revisada."
               onClose={() => setDraft(null)} />

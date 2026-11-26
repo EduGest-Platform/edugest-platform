@@ -15,9 +15,9 @@ describe('dataSourceFor (KAN-89)', () => {
     expect(apiViews.sort()).toEqual([...API_VIEWS].sort())
   })
 
-  it('opens server deliveries for coders while preserving the teacher demo view', () => {
+  it('uses server deliveries for learners and teachers', () => {
     expect(dataSourceFor('entregas', true, 'coder')).toBe('api')
-    expect(dataSourceFor('entregas', true, 'docente')).toBe('local')
+    expect(dataSourceFor('entregas', true, 'docente')).toBe('api')
     expect(dataSourceFor('entregas', false, 'coder')).toBe('local')
     expect(dataSourceFor('entregas', true)).toBe('local')
   })

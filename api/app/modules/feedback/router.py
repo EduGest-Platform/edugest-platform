@@ -2,13 +2,16 @@
 
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from sqlalchemy import func, select
 
 from app.core.deps import DB, CurrentPrincipal
-from app.modules.feedback.schemas import ApproveIn, DraftEdit, FeedbackDraftList, FeedbackDraftOut, PublishedFeedback
+from app.modules.feedback.schemas import ApproveIn, DraftEdit, FeedbackDraftList, FeedbackDraftOut, FeedbackQueue, FeedbackQueueItem, PublishedFeedback
 from app.modules.feedback.service import approve, draft_out, edit, generate, load_draft, published, published_out, versions
+from app.modules.identity.models import Person
 from app.modules.learning.access import require_cohort
 from app.modules.learning.models import Enrollment
+from app.modules.submissions.models import Assignment, Submission
 from app.modules.submissions.router import _is_own_active_enrollment
 from app.modules.submissions.service import load_assignment, load_submission, lock_submission
 
@@ -17,6 +20,28 @@ router = APIRouter(tags=["feedback"])
 _ERRORS = {403: {"description": "Sin permiso sobre la cohorte"}, 404: {"description": "No encontrado"}}
 _CONFLICT = {409: {"description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"}}
 REVIEW = "submissions.review"
+
+
+@router.get("/cohorts/{cohort_id}/feedback-queue", response_model=FeedbackQueue, responses=_ERRORS,
+            summary="Entregas de una cohorte para revisión de feedback docente")
+def list_feedback_queue(p: CurrentPrincipal, db: DB, cohort_id: str, limit: int = Query(25, ge=1, le=100),
+                        offset: int = Query(0, ge=0)) -> FeedbackQueue:
+    require_cohort(db, p, REVIEW, cohort_id)
+    query = (
+        select(Submission, Assignment.title, Person.display_name)
+        .join(Assignment, Assignment.id == Submission.assignment_id)
+        .join(Enrollment, Enrollment.id == Submission.enrollment_id)
+        .join(Person, Person.id == Enrollment.person_id)
+        .where(Assignment.cohort_id == cohort_id, Enrollment.cohort_id == cohort_id, Assignment.status == "published")
+    )
+    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    rows = db.execute(query.order_by(Submission.submitted_at.desc(), Submission.id).offset(offset).limit(limit))
+    return FeedbackQueue(total=total, items=[
+        FeedbackQueueItem(submission_id=submission.id, assignment_title=title, learner_name=name,
+                          revision=submission.revision, submitted_at=submission.submitted_at,
+                          has_check_results=bool((submission.check_results or {}).get("total")))
+        for submission, title, name in rows
+    ])
 
 
 @router.post("/submissions/{submission_id}/feedback-drafts", response_model=FeedbackDraftOut, status_code=201,
