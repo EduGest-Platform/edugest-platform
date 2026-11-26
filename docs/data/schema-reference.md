@@ -29,6 +29,7 @@ erDiagram
         UUID id PK
         UUID person_id FK
         VARCHAR call_id FK
+        UUID created_by FK
     }
     application_event {
         UUID id PK
@@ -221,6 +222,7 @@ erDiagram
     staff_profile ||--o{ access_change_request : staff_profile_id
     person |o--o| app_user : person_id
     call ||--o{ application : call_id
+    app_user |o--o{ application : created_by
     person ||--o{ application : person_id
     app_user |o--o{ application_event : actor_user_id
     application ||--o{ application_event : application_id
@@ -316,6 +318,7 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | access_change_request | requested_role | ck_access_request_role | `["admin", "captacion", "seleccion", "docente", "coordinacion"]` |
 | access_change_request | scope_type | ck_access_request_scope | `["global", "program", "call", "cohort"]` |
 | access_change_request | state | ck_access_request_state | `["requested", "approved", "rejected", "applied", "revoked"]` |
+| application | origin_channel | ck_application_origin_channel | `["formulario", "correo", "telefono", "derivacion", "registro_manual", "redes"]` |
 | application | stage | ck_application_stage | `["enviada", "requisitos_en_revision", "convocada", "evaluacion_en_curso", "pendiente_decision_humana", "admitida", "lista_espera", "no_admitida", "retirada"]` |
 | application_event | tipo | ck_application_event_tipo | `["creada", "contacto", "nota", "recordatorio", "cambio_etapa"]` |
 | assignment | status | ck_assignment_status | `["draft", "published"]` |
@@ -418,12 +421,20 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | motivacion | TEXT | no | — | — |
 | disponibilidad | VARCHAR(20) | no | — | — |
 | acepta_datos_sinteticos | BOOLEAN | no | — | — |
+| origin_channel | VARCHAR(20) | no | — | server: formulario; application (not evaluated / sin evaluar) |
+| created_by | UUID | sí / yes | app_user.id | — |
 | created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
 | updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_application_manual_author`: `origin_channel = 'formulario' OR created_by IS NOT NULL`
+
+- CHECK `ck_application_origin_channel`: `origin_channel IN ('formulario', 'correo', 'telefono', 'derivacion', 'registro_manual', 'redes')`
 
 - CHECK `ck_application_stage`: `stage IN ('enviada', 'requisitos_en_revision', 'convocada', 'evaluacion_en_curso', 'pendiente_decision_humana', 'admitida', 'lista_espera', 'no_admitida', 'retirada')`
 
 - FK `unnamed`: `(call_id) -> (call.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
 
 - FK `unnamed`: `(person_id) -> (person.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
 

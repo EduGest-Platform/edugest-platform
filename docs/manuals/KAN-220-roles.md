@@ -39,7 +39,7 @@ Referencia de esta separación: [configuración de origen](../../src/shared/api/
 5. Para alertas de silencio, seleccionar una convocatoria y actualizar. La lista abarca toda esa convocatoria, no los filtros de texto/estado del listado. **Abrir expediente** lleva a su historial. El aviso no retira ni admite automáticamente a nadie.
 6. El formulario CRM no implementa una decisión de selección, quórum ni matrícula. Los endpoints de decisión existentes son un flujo backend distinto; no sustituirlos por una nota que diga «admitida».
 
-Coordinación y docencia pueden tener capacidades de API específicas, pero no heredan automáticamente `applications.read` ni el menú de captación. Si falta una pantalla o devuelve 403, solicitar revisión de rol/ámbito; no usar otra identidad prestada.
+Selección (en **Candidaturas**) y Coordinación (en su **Inicio**) pueden registrar candidaturas a mano (KAN-275); eso no da acceso a los expedientes. Administración solo puede hacerlo por la API: su menú no tiene esa pantalla. Coordinación y docencia pueden tener capacidades de API específicas, pero no heredan automáticamente `applications.read` ni el menú de captación. Si falta una pantalla o devuelve 403, solicitar revisión de rol/ámbito; no usar otra identidad prestada.
 
 ## ES — Docencia
 
@@ -86,6 +86,8 @@ The admin menu exposes **Auditoría**, a read-only recent server-action view, no
 Open **Candidaturas** using an assigned UI role that includes it; recruitment maps to **Personal fundación**. Confirm the synthetic dossier and call before writing. Use the integrated search/call/stage controls; actor filtering in pending #115 is not documented as integrated.
 
 Choose a CRM Contact/Note/Reminder and channel, enter minimal operational text, then **Registrar en el historial** and confirm the returned server event. A CRM reminder is not an email receipt. Requirement consultation requires explicit version selection; **Actualizar requisitos** refreshes evidence but does not activate policy or decide admission. Silence alerts require a selected call and manual refresh; their list covers the whole call independently of application text/stage filters. **Abrir expediente** opens the dossier; warnings do not automatically withdraw or admit anyone.
+
+Selection (under **Candidaturas**) and coordination (on its **Home** screen) can register applications that arrive outside the public form (KAN-275), choosing the origin channel; this grants no dossier access. Administration can only do it through the API: its menu has no such screen.
 
 CRM is not the backend selection/quorum/enrollment workflow: a note saying “admitted” is not an admission decision. Coordinator/teacher API capabilities do not automatically include general application reads or recruitment UI access. Request proper scope instead of borrowing identities.
 

@@ -7,7 +7,7 @@ from app.core import audit
 from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal, OptionalPrincipal
 from app.core.text import LIKE_ESCAPE, escape_like
-from app.modules.admissions import identity_reviews
+from app.modules.admissions import identity_reviews, manual_intake
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.admissions.next_actions import eligible_owners, next_action_out, owner_names, rejection_reason
 from app.modules.admissions.schemas import (
@@ -22,6 +22,8 @@ from app.modules.admissions.schemas import (
     EventOut,
     IdentityDecisionCreate,
     IdentityReviewOut,
+    ManualApplicationCreate,
+    ManualIntakeCallOut,
     PersonOut,
     Stage,
 )
@@ -35,6 +37,7 @@ router = APIRouter(tags=["admissions"])
 def _summary(a: Application, person: Person, call: Call) -> ApplicationSummary:
     return ApplicationSummary(
         id=a.id, codigo=a.codigo, legacy_ref=a.legacy_ref, call_id=a.call_id, program_id=call.program_id, stage=a.stage,
+        origin_channel=a.origin_channel,
         person=PersonOut(id=person.id, display_name=person.display_name, email=person.email), created_at=a.created_at, updated_at=a.updated_at,
     )
 
@@ -80,6 +83,19 @@ def post_application(body: ApplicationCreate, db: DB, p: OptionalPrincipal) -> A
     return ApplicationReceipt(id=a.id, codigo=a.codigo, call_id=a.call_id, stage=a.stage, created_at=a.created_at)
 
 
+@router.get("/manual-intake/calls", response_model=list[ManualIntakeCallOut], summary="Convocatorias donde puedes registrar candidaturas a mano")
+def list_manual_intake_calls(p: CurrentPrincipal, db: DB) -> list[ManualIntakeCallOut]:
+    return [ManualIntakeCallOut(id=c.id, nombre=c.nombre) for c in manual_intake.registrable_calls(db, p)]
+
+
+@router.post("/manual-intake/applications", response_model=ApplicationReceipt, status_code=201,
+             responses={404: {"description": "Published offer not found"}},
+             summary="Registrar a mano una candidatura llegada fuera del formulario, con su canal de origen")
+def post_manual_application(body: ManualApplicationCreate, db: DB, p: CurrentPrincipal) -> ApplicationReceipt:
+    a = manual_intake.register_application(db, p, body)
+    return ApplicationReceipt(id=a.id, codigo=a.codigo, call_id=a.call_id, stage=a.stage, created_at=a.created_at)
+
+
 @router.get("/applications", response_model=ApplicationList, summary="Expedientes dentro del ámbito del usuario (captación / selección / administración)")
 def list_applications(
     p: CurrentPrincipal,
@@ -121,6 +137,7 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
         select(ApplicationEvent, User.display_name).outerjoin(User, User.id == ApplicationEvent.actor_user_id).where(ApplicationEvent.application_id == a.id).order_by(ApplicationEvent.occurred_at)
     ).all()
     names = owner_names(db, [e for e, _ in events])
+    registrar = db.get(User, a.created_by) if a.created_by else None
     outs = [
         EventOut(id=e.id, tipo=e.tipo, canal=e.canal, resultado=e.resultado, resumen=e.resumen, actor=name, occurred_at=e.occurred_at,
                  next_action=next_action_out(e, names))
@@ -130,6 +147,7 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
     db.commit()
     return ApplicationDetail(
         **_summary(a, person, call).model_dump(),
+        registered_by=registrar.display_name if registrar else None,
         motivacion=a.motivacion,
         disponibilidad=a.disponibilidad,
         events=outs,

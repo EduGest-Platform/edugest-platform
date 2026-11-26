@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { humanize } from '../../config'
 import { Button, Card, Empty, Field, Kpi, Notice, PageTitle, inputCls } from '../../ui'
+import { ServerManualIntake } from './ServerManualIntake'
 
 type Call = Schemas['CallOut']
 type CallSummary = Schemas['CallSummaryOut']
@@ -93,6 +94,7 @@ export function ApiCoordinationDashboard() {
   return (
     <div className="space-y-5">
       <PageTitle title="Seguimiento de convocatorias" sub="Plazas e indicadores agregados de admisión del servidor." />
+      <ServerManualIntake />
       {calls.status === 'loading' && <p role="status">Cargando convocatorias…</p>}
       {calls.status === 'error' && (
         <div>

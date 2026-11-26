@@ -359,7 +359,7 @@
         "type": "object"
       },
       "ApplicationCreate": {
-        "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
+        "description": "Public inscription form.",
         "properties": {
           "acepta_datos_sinteticos": {
             "const": true,
@@ -468,12 +468,36 @@
             ],
             "description": "Próxima acción vigente: la del contacto más reciente que registró una."
           },
+          "origin_channel": {
+            "enum": [
+              "formulario",
+              "correo",
+              "telefono",
+              "derivacion",
+              "registro_manual",
+              "redes"
+            ],
+            "title": "Origin Channel",
+            "type": "string"
+          },
           "person": {
             "$ref": "#/components/schemas/PersonOut"
           },
           "program_id": {
             "title": "Program Id",
             "type": "string"
+          },
+          "registered_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuenta que envió o registró la candidatura. Vacío si llegó por el formulario sin sesión.",
+            "title": "Registered By"
           },
           "stage": {
             "enum": [
@@ -503,9 +527,11 @@
           "call_id",
           "program_id",
           "stage",
+          "origin_channel",
           "person",
           "created_at",
           "updated_at",
+          "registered_by",
           "motivacion",
           "disponibilidad",
           "events",
@@ -670,6 +696,18 @@
             ],
             "title": "Legacy Ref"
           },
+          "origin_channel": {
+            "enum": [
+              "formulario",
+              "correo",
+              "telefono",
+              "derivacion",
+              "registro_manual",
+              "redes"
+            ],
+            "title": "Origin Channel",
+            "type": "string"
+          },
           "person": {
             "$ref": "#/components/schemas/PersonOut"
           },
@@ -705,6 +743,7 @@
           "call_id",
           "program_id",
           "stage",
+          "origin_channel",
           "person",
           "created_at",
           "updated_at"
@@ -3424,6 +3463,89 @@
           "me"
         ],
         "title": "LoginOut",
+        "type": "object"
+      },
+      "ManualApplicationCreate": {
+        "description": "KAN-275: an application that reached the team outside the public form, registered by a member of staff.",
+        "properties": {
+          "call_id": {
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Call Id",
+            "type": "string"
+          },
+          "confirma_datos_sinteticos": {
+            "const": true,
+            "description": "Quien registra confirma que son datos sintéticos. No es el consentimiento de la persona ni vale para datos reales.",
+            "title": "Confirma Datos Sinteticos",
+            "type": "boolean"
+          },
+          "disponibilidad": {
+            "enum": [
+              "Mañana",
+              "Tarde",
+              "Flexible"
+            ],
+            "title": "Disponibilidad",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "motivacion": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Motivacion",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Nombre",
+            "type": "string"
+          },
+          "origin_channel": {
+            "enum": [
+              "correo",
+              "telefono",
+              "derivacion",
+              "registro_manual",
+              "redes"
+            ],
+            "title": "Origin Channel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "call_id",
+          "nombre",
+          "email",
+          "motivacion",
+          "disponibilidad",
+          "origin_channel",
+          "confirma_datos_sinteticos"
+        ],
+        "title": "ManualApplicationCreate",
+        "type": "object"
+      },
+      "ManualIntakeCallOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "title": "ManualIntakeCallOut",
         "type": "object"
       },
       "MeOut": {
@@ -11061,6 +11183,85 @@
         "summary": "Estado de cada actividad publicada para una matrícula (a tiempo, tarde, pendiente, vencida): el propio coder o el docente",
         "tags": [
           "submissions"
+        ]
+      }
+    },
+    "/api/v1/manual-intake/applications": {
+      "post": {
+        "operationId": "post_manual_application_api_v1_manual_intake_applications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualApplicationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Published offer not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar a mano una candidatura llegada fuera del formulario, con su canal de origen",
+        "tags": [
+          "admissions"
+        ]
+      }
+    },
+    "/api/v1/manual-intake/calls": {
+      "get": {
+        "operationId": "list_manual_intake_calls_api_v1_manual_intake_calls_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ManualIntakeCallOut"
+                  },
+                  "title": "Response List Manual Intake Calls Api V1 Manual Intake Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Convocatorias donde puedes registrar candidaturas a mano",
+        "tags": [
+          "admissions"
         ]
       }
     },

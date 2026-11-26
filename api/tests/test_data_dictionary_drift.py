@@ -8,13 +8,14 @@ accident: in the same change, update the dictionary, the privacy assessment and 
 
 import app.models  # noqa: F401  (registers every table in Base.metadata)
 from app.core.db import Base
-from app.modules.admissions.schemas import ApplicationCreate
+from app.modules.admissions.schemas import ApplicationCreate, ManualApplicationCreate
 
 # Personal data columns of a person, as listed in the dictionary: one display name, no phone/birth/gender yet.
 EXPECTED_PERSON_COLUMNS = {"id", "display_name", "email", "legacy_ref", "is_synthetic", "created_at"}
 EXPECTED_APPLICATION_COLUMNS = {
     "id", "codigo", "legacy_ref", "person_id", "call_id", "stage",
     "motivacion", "disponibilidad", "acepta_datos_sinteticos", "created_at", "updated_at",
+    "origin_channel", "created_by",  # KAN-275: how the application arrived and which account sent it
 }
 EXPECTED_CALL_COLUMNS = {
     "id", "program_id", "nombre", "codigo_prefix", "opens_on", "closes_on", "plazas", "estado", "next_seq",
@@ -23,6 +24,10 @@ EXPECTED_CALL_COLUMNS = {
     "publication_state", "publication_version",  # KAN-226: editorial visibility, not application form versioning
 }
 EXPECTED_APPLICATION_CREATE_FIELDS = {"call_id", "nombre", "email", "motivacion", "disponibilidad", "acepta_datos_sinteticos"}
+
+
+# KAN-275: the manual intake collects the same data, plus the channel and the staff confirmation.
+EXPECTED_MANUAL_CREATE_FIELDS = (EXPECTED_APPLICATION_CREATE_FIELDS - {"acepta_datos_sinteticos"}) | {"origin_channel", "confirma_datos_sinteticos"}
 
 
 def column_names(table_name: str) -> set[str]:
@@ -44,6 +49,7 @@ def test_call_has_no_form_configuration_yet():
 
 def test_public_inscription_form_fields_match_the_dictionary():
     assert set(ApplicationCreate.model_fields) == EXPECTED_APPLICATION_CREATE_FIELDS
+    assert set(ManualApplicationCreate.model_fields) == EXPECTED_MANUAL_CREATE_FIELDS
 
 
 def test_motivation_and_availability_are_still_required_as_the_dictionary_states():
@@ -57,5 +63,5 @@ def test_motivation_and_availability_are_still_required_as_the_dictionary_states
 
 def test_public_form_never_collects_special_category_or_origin_data_yet():
     forbidden = {"phone", "birth_year", "birth_country", "nationality", "gender", "current_situation", "disability_certificate_status"}
-    collected = set(ApplicationCreate.model_fields) | column_names("person") | column_names("application")
+    collected = set(ApplicationCreate.model_fields) | set(ManualApplicationCreate.model_fields) | column_names("person") | column_names("application")
     assert collected.isdisjoint(forbidden), "Protected fields appeared: add them to the dictionary groups G3/G6 and the privacy assessment first"

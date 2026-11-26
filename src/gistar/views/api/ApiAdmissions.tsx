@@ -9,6 +9,8 @@ import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerDiscussions } from './ServerDiscussions'
 import { ServerIdentityReview } from './ServerIdentityReview'
+import { ServerManualIntake } from './ServerManualIntake'
+import { ORIGIN_LABELS } from '../../manualIntake'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
@@ -328,7 +330,10 @@ export function ApiApplications() {
 
   return (
     <>
-      <PageTitle title="Candidaturas" sub="Expedientes únicos con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
+      <PageTitle title="Candidaturas" sub="Expedientes con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
+      <div className="mb-5 empty:hidden">
+        <ServerManualIntake onRegistered={load} />
+      </div>
       <Card
         title="Expedientes"
         action={
@@ -491,6 +496,10 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
             </div>
             <p>
               <span className="text-muted">Disponibilidad:</span> {d.disponibilidad}
+            </p>
+            <p>
+              <span className="text-muted">Canal de origen:</span> {ORIGIN_LABELS[d.origin_channel]}
+              {d.registered_by && ` · registrada por ${d.registered_by}`}
             </p>
             <ServerIdentityReview key={`identity:${d.id}`} applicationId={d.id} onDirty={setIdentityDirty} onResolved={() => { void load(); onChanged() }} />
             <ServerRequirementReview key={`${d.id}:${d.call_id}`} applicationId={d.id} callId={d.call_id} />
