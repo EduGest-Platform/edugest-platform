@@ -23,7 +23,11 @@ export function AssistantWidget() {
   const end = useRef<HTMLDivElement>(null)
   const pending = useRef<AbortController | null>(null)
 
-  useEffect(() => () => pending.current?.abort(), [])
+  useEffect(() => () => {
+    const controller = pending.current
+    pending.current = null
+    controller?.abort()
+  }, [])
   useEffect(() => {
     const controller = new AbortController()
     void listAssistantCohorts(controller.signal).then(({ data }) => {

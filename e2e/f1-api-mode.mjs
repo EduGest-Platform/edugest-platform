@@ -17,7 +17,7 @@ await B.initScript(`(() => {
   window.fetch = async (request, options) => {
     const url = new URL(typeof request === 'string' ? request : request.url, location.href)
     const method = options?.method ?? request.method ?? 'GET'
-    if (url.pathname !== '/api/v1/assistant/ask' || method.toUpperCase() !== 'POST') return original(request, options)
+    if (url.pathname !== '/api/v1/assistant/ask/stream' || method.toUpperCase() !== 'POST') return original(request, options)
     const status = window.assistantTestError ? 503 : 200
     const body = request instanceof Request ? await request.clone().json() : JSON.parse(options.body)
     await new Promise(release => window.assistantTestCalls.push({ question: body.question, status, release }))
@@ -25,7 +25,9 @@ await B.initScript(`(() => {
       status: 'no_source', mode: 'extractive', retrieval: 'keyword', answer: 'No consta',
       citations: [], as_of: '2026-11-26', scope_cohorts: ['COH-IA'], source_kind: 'documents', record: null,
     }
-    return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+    if (status !== 200) return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+    const frame = (event, payload) => 'event: ' + event + '\\n' + 'data: ' + JSON.stringify(payload) + '\\n\\n'
+    return new Response(frame('phase', { source_kind: 'documents' }) + frame('delta', { text: 'No consta' }) + frame('answer', data), { status, headers: { 'Content-Type': 'text/event-stream' } })
   }
 })()`)
 
@@ -136,6 +138,15 @@ await B.ev('document.querySelector("[aria-label=\\"Cerrar asistente\\"]").focus(
 check('Interceptor atendió tercera consulta', await releaseAssistantCall(2, 'Tercera pregunta sintética', 200))
 check('Tercera respuesta completada', await B.waitText('No consta en la documentación') && await B.ev(`new Promise(resolve => { const deadline = Date.now() + 6000; const poll = () => { if (!document.querySelector('${editor}').readOnly) resolve(true); else if (Date.now() > deadline) resolve(false); else setTimeout(poll, 50) }; poll() })`))
 check('Respuesta no roba foco al usuario', await B.ev('document.activeElement.getAttribute("aria-label") === "Cerrar asistente"'))
+await B.ev(`document.querySelector('${editor}').focus()`)
+await B.set(editor, 'Consulta que será detenida')
+await B.enter()
+check('Consulta en curso antes de detener', await B.ev(`document.querySelector('${editor}').readOnly`))
+await B.ev('document.querySelector("[aria-label=\\"Detener consulta\\"]").click()')
+check('Detener restaura pregunta y edición', await B.ev(`document.querySelector('${editor}').value === 'Consulta que será detenida' && !document.querySelector('${editor}').readOnly`))
+check('Interceptor libera consulta detenida', await releaseAssistantCall(3, 'Consulta que será detenida', 200))
+await sleep(200)
+check('Respuesta tardía no altera conversación', await B.ev(`!document.querySelector('dialog [role=log]').textContent.includes('Consulta que será detenida')`))
 await B.escape()
 await sleep(200)
 check('Escape cierra asistente y restaura foco', await B.ev(`!document.querySelector('dialog[open]') && document.activeElement.matches('${launch}')`))
