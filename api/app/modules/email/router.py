@@ -8,7 +8,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from app.core.config import settings
 from app.core.deps import CurrentPrincipal, DB
 from app.core.errors import UserFacingError
-from app.modules.email.access import enqueue_academic_notification, list_notification_history
+from app.modules.email.access import cancel_notification, enqueue_academic_notification, list_notification_history
 
 router = APIRouter(tags=["email"])
 
@@ -60,3 +60,11 @@ class NotificationHistoryOut(BaseModel):
             response_model=list[NotificationHistoryOut])
 def notification_history(cohort_id: str, p: CurrentPrincipal, db: DB):
     return list_notification_history(db, p, cohort_id=cohort_id)
+
+
+@router.post("/cohorts/{cohort_id}/email/notifications/{message_id}/cancel",
+             response_model=NotificationAcceptedOut)
+def cancel_academic_notification(cohort_id: str, message_id: UUID, p: CurrentPrincipal, db: DB):
+    cancel_notification(db, p, cohort_id=cohort_id, message_id=message_id)
+    db.commit()
+    return NotificationAcceptedOut(message_id=message_id)

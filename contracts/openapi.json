@@ -10200,6 +10200,63 @@
         ]
       }
     },
+    "/api/v1/cohorts/{cohort_id}/email/notifications/{message_id}/cancel": {
+      "post": {
+        "operationId": "cancel_academic_notification_api_v1_cohorts__cohort_id__email_notifications__message_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Academic Notification",
+        "tags": [
+          "email"
+        ]
+      }
+    },
     "/api/v1/cohorts/{cohort_id}/progress-overview": {
       "get": {
         "operationId": "get_progress_overview_api_v1_cohorts__cohort_id__progress_overview_get",

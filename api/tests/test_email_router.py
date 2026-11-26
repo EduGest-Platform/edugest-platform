@@ -114,3 +114,16 @@ def test_notification_history_forbidden(context):
     _, client, _, _, _ = context
     with patch.object(email, "list_notification_history", side_effect=HTTPException(403)):
         assert client.get(URL).status_code == 403
+
+
+def test_cancel_notification_even_when_delivery_disabled(context):
+    _, client, db, enqueue, _ = context
+    email.settings.email_enabled = False
+    message_id = uuid4()
+    with patch.object(email, "cancel_notification") as cancel:
+        response = client.post(f"{URL}/{message_id}/cancel")
+    assert response.status_code == 200
+    assert response.json() == {"message_id": str(message_id)}
+    assert cancel.call_args.kwargs == {"cohort_id": "synthetic-cohort", "message_id": message_id}
+    db.commit.assert_called_once()
+    enqueue.assert_not_called()
