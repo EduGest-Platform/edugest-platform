@@ -63,3 +63,25 @@ def recover_interrupted(db: Session, *, cutoff: datetime, limit: int = 100) -> i
         item.error_code = "claim_interrupted"
     db.flush()
     return len(items)
+
+
+def schedule_retry(db: Session, *, message_id: UUID, now: datetime) -> bool:
+    """Retry only explicitly classified transient failures, never ambiguous SMTP outcomes."""
+    from datetime import timedelta
+
+    if now.utcoffset() is None:
+        raise ValueError("Timezone-aware timestamp required")
+    item = db.scalars(
+        select(EmailOutbox).where(EmailOutbox.id == message_id).with_for_update()
+    ).one()
+    if (
+        item.status != "failed"
+        or item.error_code != "transient_pre_send"
+        or not 1 <= item.attempts < 3
+    ):
+        return False
+    item.available_at = now + timedelta(seconds=60 * 2 ** (item.attempts - 1))
+    item.status = "pending"
+    item.claimed_at = None
+    db.flush()
+    return True
