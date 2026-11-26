@@ -86,7 +86,7 @@ Solo se listan los campos que cambian respecto al Formulario A. **Pendiente:** U
 
 | Campo EduGest | Motivo para mantenerlo |
 |---|---|
-| Convocatoria (`call_id`) | Una persona puede aplicar a varias convocatorias con un único expediente |
+| Convocatoria (`call_id`) | Una persona puede aplicar a varias convocatorias; sus fichas solo se unen tras una revisión del equipo (KAN-274) |
 | Disponibilidad (Mañana / Tarde / Flexible) | Se mantiene, pero **opcional** en la inscripción inicial (decisión PO, 17/11) |
 
 ### 6.1 Configuración por convocatoria y registro de contacto (KAN-153) / Per-call configuration and contact log
@@ -105,6 +105,9 @@ No son campos del formulario de inscripción: los configura administración o lo
 | `next_action` | `application_event` | Texto de 1–200 caracteres o vacío; solo en eventos `contacto` / 1–200 characters or empty; only on `contacto` events | Próxima acción operativa (KAN-272, decisión PO 26/11/2026); opcional, y exige responsable y plazo. Sin datos sensibles / operational next action; optional, requires owner and due date. No sensitive data |
 | `next_action_owner_id` | `application_event` | Cuenta de personal / staff account | Responsable con permiso CRM en la convocatoria al registrarla / owner holding CRM permission on the call when recorded |
 | `next_action_due_on` | `application_event` | Fecha, no anterior a hoy al registrarla (Europe/Madrid) / date, not before today when recorded | Plazo; no dispara ningún envío / deadline; nothing is sent |
+| `decision` | `identity_review` | `misma_persona` · `persona_distinta` · vacío mientras está pendiente / empty while pending | Decisión humana sobre un posible duplicado por correo (KAN-274, decisión PO 26/11/2026); se registra una sola vez / human decision on a possible duplicate by email, recorded once |
+| `reason`, `decided_by`, `decided_at` | `identity_review` | Texto de 1–500 caracteres, cuenta de personal y fecha / 1–500 characters, staff account and timestamp | Motivo, autor y fecha. El motivo no se copia al historial CRM ni a la auditoría. Sin datos sensibles / reason, author and date; the reason is not copied to the CRM history or the audit log. No sensitive data |
+| `original_person_id`, `candidate_person_ids`, `linked_person_id` | `identity_review` | Referencias a `person` / references to `person` | Ficha creada en la inscripción, fichas que coincidían en ese momento y, si es la misma persona, ficha a la que se une / record created at intake, records that matched then and, if the same person, the record it is linked to |
 
 El silencio solo genera una alerta; la decisión la toma una persona y queda en `preselection_decision` (append-only). La prueba `api/tests/test_data_dictionary_drift.py` vigila las columnas de `call`. / Silence only raises an alert; a person decides and the decision is stored in `preselection_decision` (append-only). `api/tests/test_data_dictionary_drift.py` guards the `call` columns.
 
