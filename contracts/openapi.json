@@ -358,6 +358,56 @@
         "title": "AccessReview",
         "type": "object"
       },
+      "ActionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSpan"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "proposed_due_date": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Due Date"
+          },
+          "proposed_owner": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Owner"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence"
+        ],
+        "title": "ActionItem",
+        "type": "object"
+      },
       "ApplicationCreate": {
         "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
         "properties": {
@@ -710,6 +760,20 @@
           "updated_at"
         ],
         "title": "ApplicationSummary",
+        "type": "object"
+      },
+      "ApprovalIn": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "ApprovalIn",
         "type": "object"
       },
       "ApproveIn": {
@@ -2806,6 +2870,27 @@
         "title": "EventOut",
         "type": "object"
       },
+      "EvidenceSpan": {
+        "additionalProperties": false,
+        "properties": {
+          "end_seconds": {
+            "minimum": 0.0,
+            "title": "End Seconds",
+            "type": "integer"
+          },
+          "start_seconds": {
+            "minimum": 0.0,
+            "title": "Start Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_seconds",
+          "end_seconds"
+        ],
+        "title": "EvidenceSpan",
+        "type": "object"
+      },
       "FeedbackDraftList": {
         "properties": {
           "current_revision": {
@@ -3655,6 +3740,48 @@
         "title": "MeOut",
         "type": "object"
       },
+      "MeetingNotesDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "action_items": {
+            "items": {
+              "$ref": "#/components/schemas/ActionItem"
+            },
+            "maxItems": 50,
+            "title": "Action Items",
+            "type": "array"
+          },
+          "key_topics": {
+            "items": {
+              "$ref": "#/components/schemas/NoteItem"
+            },
+            "maxItems": 50,
+            "title": "Key Topics",
+            "type": "array"
+          },
+          "reinforcement_topics": {
+            "items": {
+              "$ref": "#/components/schemas/NoteItem"
+            },
+            "maxItems": 30,
+            "title": "Reinforcement Topics",
+            "type": "array"
+          },
+          "summary": {
+            "items": {
+              "$ref": "#/components/schemas/NoteItem"
+            },
+            "maxItems": 30,
+            "title": "Summary",
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "title": "MeetingNotesDraft",
+        "type": "object"
+      },
       "NextActionCreate": {
         "description": "What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone.",
         "properties": {
@@ -3714,6 +3841,68 @@
           "due_on"
         ],
         "title": "NextActionOut",
+        "type": "object"
+      },
+      "NoteItem": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSpan"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence"
+        ],
+        "title": "NoteItem",
+        "type": "object"
+      },
+      "NotesOut": {
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "body": {
+            "$ref": "#/components/schemas/MeetingNotesDraft"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "body",
+          "created_at",
+          "approved_at"
+        ],
+        "title": "NotesOut",
         "type": "object"
       },
       "OverviewAttendance": {
@@ -8520,6 +8709,116 @@
         "summary": "Registrar o corregir la asistencia de una persona en una sesión",
         "tags": [
           "attendance"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes": {
+      "get": {
+        "operationId": "list_notes_api_v1_attendance_sessions__session_id__zoom_notes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotesOut"
+                  },
+                  "title": "Response List Notes Api V1 Attendance Sessions  Session Id  Zoom Notes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Notes",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/approve": {
+      "post": {
+        "operationId": "approve_notes_api_v1_attendance_sessions__session_id__zoom_notes_approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve Notes",
+        "tags": [
+          "zoom"
         ]
       }
     },
