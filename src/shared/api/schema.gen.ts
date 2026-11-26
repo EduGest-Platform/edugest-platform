@@ -3113,24 +3113,27 @@ export interface components {
         };
         /** NotificationHistoryOut */
         NotificationHistoryOut: {
-            /** Message Id
-             * Format: uuid
-             */
-            message_id: string;
-            /** Status */
-            status: string;
             /** Attempts */
             attempts: number;
-            /** Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Available At
+            /**
+             * Available At
              * Format: date-time
              */
             available_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
             /** Sent At */
             sent_at: string | null;
+            /** Status */
+            status: string;
         };
         /** OverviewAttendance */
         OverviewAttendance: {
