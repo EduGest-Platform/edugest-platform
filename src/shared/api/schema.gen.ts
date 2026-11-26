@@ -670,6 +670,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/risk-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alertas sintéticas de una cohorte autorizada */
+        get: operations["list_risk_alerts_api_v1_cohorts__cohort_id__risk_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/risk-alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Evidencia e intervenciones de una alerta sintética */
+        get: operations["get_risk_alert_api_v1_cohorts__cohort_id__risk_alerts__alert_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/risk-alerts/{alert_id}/interventions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar intervención humana de apoyo o cerrar una alerta de revisión */
+        post: operations["record_intervention_api_v1_cohorts__cohort_id__risk_alerts__alert_id__interventions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/teaching-team": {
         parameters: {
             query?: never;
@@ -1577,6 +1628,12 @@ export interface components {
         AccessReview: {
             /** Approved */
             approved: boolean;
+        };
+        /** AlertReviewOut */
+        AlertReviewOut: {
+            alert: components["schemas"]["RiskAlertOut"];
+            /** Interventions */
+            interventions: components["schemas"]["InterventionOut"][];
         };
         /**
          * ApplicationCreate
@@ -2840,6 +2897,43 @@ export interface components {
              */
             submitted_name?: string | null;
         };
+        /** InterventionOut */
+        InterventionOut: {
+            /** Actor */
+            actor: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "contact" | "support" | "closure";
+            /** Note */
+            note: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+        };
+        /** InterventionWrite */
+        InterventionWrite: {
+            /**
+             * Expected State
+             * @enum {string}
+             */
+            expected_state: "pending" | "in_review" | "closed";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "contact" | "support" | "closure";
+            /** Note */
+            note: string;
+        };
         /** InvitationAccept */
         InvitationAccept: {
             /**
@@ -3718,6 +3812,60 @@ export interface components {
             status: "presente" | "retraso" | "ausente";
             /** Version */
             version: number;
+        };
+        /** RiskAlertList */
+        RiskAlertList: {
+            /** Items */
+            items: components["schemas"]["RiskAlertOut"][];
+            /** Total */
+            total: number;
+        };
+        /** RiskAlertOut */
+        RiskAlertOut: {
+            /** Abstention Reason */
+            abstention_reason: string | null;
+            /** Assigned To */
+            assigned_to: string | null;
+            /** Attendance Unknown Fraction */
+            attendance_unknown_fraction: number | null;
+            /**
+             * Cutoff
+             * Format: date
+             */
+            cutoff: string;
+            /** Experimental Support Signal */
+            experimental_support_signal: boolean | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Justified Absence Days */
+            justified_absence_days: number | null;
+            /** Learner Name */
+            learner_name: string;
+            /** Mean Competency Level */
+            mean_competency_level: number | null;
+            /** Model Version */
+            model_version: string;
+            /**
+             * Review State
+             * @enum {string}
+             */
+            review_state: "pending" | "in_review" | "closed";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scored" | "abstained";
+            /**
+             * Synthetic Only
+             * @default true
+             * @constant
+             */
+            synthetic_only: true;
+            /** Unjustified Absence Days */
+            unjustified_absence_days: number | null;
         };
         /** RoleAssignmentOut */
         RoleAssignmentOut: {
@@ -6678,6 +6826,158 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_risk_alerts_api_v1_cohorts__cohort_id__risk_alerts_get: {
+        parameters: {
+            query?: {
+                state?: ("pending" | "in_review" | "closed") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskAlertList"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cohorte o alerta no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_risk_alert_api_v1_cohorts__cohort_id__risk_alerts__alert_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertReviewOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cohorte o alerta no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_intervention_api_v1_cohorts__cohort_id__risk_alerts__alert_id__interventions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterventionWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskAlertOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cohorte o alerta no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Alerta cerrada o estado de revisión desfasado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -358,6 +358,26 @@
         "title": "AccessReview",
         "type": "object"
       },
+      "AlertReviewOut": {
+        "properties": {
+          "alert": {
+            "$ref": "#/components/schemas/RiskAlertOut"
+          },
+          "interventions": {
+            "items": {
+              "$ref": "#/components/schemas/InterventionOut"
+            },
+            "title": "Interventions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "alert",
+          "interventions"
+        ],
+        "title": "AlertReviewOut",
+        "type": "object"
+      },
       "ApplicationCreate": {
         "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
         "properties": {
@@ -3248,6 +3268,82 @@
         "title": "IdentityReviewOut",
         "type": "object"
       },
+      "InterventionOut": {
+        "properties": {
+          "actor": {
+            "title": "Actor",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "contact",
+              "support",
+              "closure"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "note",
+          "occurred_at",
+          "actor"
+        ],
+        "title": "InterventionOut",
+        "type": "object"
+      },
+      "InterventionWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_state": {
+            "enum": [
+              "pending",
+              "in_review",
+              "closed"
+            ],
+            "title": "Expected State",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "contact",
+              "support",
+              "closure"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "note": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "note",
+          "expected_state"
+        ],
+        "title": "InterventionWrite",
+        "type": "object"
+      },
       "InvitationAccept": {
         "additionalProperties": false,
         "properties": {
@@ -5283,6 +5379,166 @@
           "changed_at"
         ],
         "title": "RevisionOut",
+        "type": "object"
+      },
+      "RiskAlertList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RiskAlertOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "RiskAlertList",
+        "type": "object"
+      },
+      "RiskAlertOut": {
+        "properties": {
+          "abstention_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Reason"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "attendance_unknown_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Unknown Fraction"
+          },
+          "cutoff": {
+            "format": "date",
+            "title": "Cutoff",
+            "type": "string"
+          },
+          "experimental_support_signal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experimental Support Signal"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "justified_absence_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Justified Absence Days"
+          },
+          "learner_name": {
+            "title": "Learner Name",
+            "type": "string"
+          },
+          "mean_competency_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Competency Level"
+          },
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "review_state": {
+            "enum": [
+              "pending",
+              "in_review",
+              "closed"
+            ],
+            "title": "Review State",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "scored",
+              "abstained"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "synthetic_only": {
+            "const": true,
+            "default": true,
+            "title": "Synthetic Only",
+            "type": "boolean"
+          },
+          "unjustified_absence_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unjustified Absence Days"
+          }
+        },
+        "required": [
+          "id",
+          "learner_name",
+          "model_version",
+          "cutoff",
+          "status",
+          "experimental_support_signal",
+          "abstention_reason",
+          "unjustified_absence_days",
+          "justified_absence_days",
+          "attendance_unknown_fraction",
+          "mean_competency_level",
+          "review_state",
+          "assigned_to"
+        ],
+        "title": "RiskAlertOut",
         "type": "object"
       },
       "RoleAssignmentOut": {
@@ -10025,6 +10281,242 @@
         "summary": "Aggregate-only academic overview, never learner-level rows",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/risk-alerts": {
+      "get": {
+        "operationId": "list_risk_alerts_api_v1_cohorts__cohort_id__risk_alerts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "in_review",
+                    "closed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAlertList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "Cohorte o alerta no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Alertas sintéticas de una cohorte autorizada",
+        "tags": [
+          "risk"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/risk-alerts/{alert_id}": {
+      "get": {
+        "operationId": "get_risk_alert_api_v1_cohorts__cohort_id__risk_alerts__alert_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertReviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "Cohorte o alerta no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Evidencia e intervenciones de una alerta sintética",
+        "tags": [
+          "risk"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/risk-alerts/{alert_id}/interventions": {
+      "post": {
+        "operationId": "record_intervention_api_v1_cohorts__cohort_id__risk_alerts__alert_id__interventions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterventionWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAlertOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "Cohorte o alerta no encontrada"
+          },
+          "409": {
+            "description": "Alerta cerrada o estado de revisión desfasado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar intervención humana de apoyo o cerrar una alerta de revisión",
+        "tags": [
+          "risk"
         ]
       }
     },

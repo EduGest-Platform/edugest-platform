@@ -47,7 +47,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Records attendance, configures/assesses competencies and reviews submissions of its own cohorts (KAN-55, KAN-57, KAN-56).
     # Q15: also the cohort indicators of coordination and the teaching team of its cohorts. Never the admission decision.
     "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *ATTENDANCE_PERMISSIONS, *COMPETENCY_PERMISSIONS, *SUBMISSION_PERMISSIONS,
-                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION, KNOWLEDGE_READ_PERMISSION},
+                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION, KNOWLEDGE_READ_PERMISSION, "risk.read", "risk.review"},
 }
 
 
