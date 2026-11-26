@@ -59,3 +59,19 @@ def test_meeting_lookup_returns_only_safe_metadata(exists):
         assert result is None
     db.commit.assert_not_called()
     db.add.assert_not_called()
+
+
+def test_denied_lookup_does_not_read_meeting_or_contact_zoom():
+    db, principal = MagicMock(), MagicMock()
+    db.get.return_value = SimpleNamespace(cohort_id="foreign-cohort")
+    with (
+        patch.object(router, "settings", SimpleNamespace(zoom_enabled=True)),
+        patch.object(router, "require_cohort", side_effect=UserFacingError(403, "forbidden", "Forbidden")),
+        patch.object(router, "ZoomClient") as client,
+    ):
+        with pytest.raises(UserFacingError):
+            router.get_meeting(uuid4(), principal, db)
+        client.assert_not_called()
+    assert db.get.call_count == 1
+    db.commit.assert_not_called()
+    db.add.assert_not_called()
