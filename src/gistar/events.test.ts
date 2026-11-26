@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { canOpen, MENUS } from './config'
-import { eventPhase, filterEvents } from './events'
+import { eventPhase, filterEvents, overlapsEventDates } from './events'
 import type { CalItem, Role } from './types'
 
 const now = '2026-11-26T10:00'
@@ -48,4 +48,15 @@ it('orders by start before id and retains events ending exactly now', () => {
   const items = [event('a'), event('z', { inicio: '2026-11-26T09:00', fin: now }), event('expired', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:59' })]
   expect(filterEvents(items, now, '', '', true).map(x => x.id)).toEqual(['z', 'a'])
   expect(filterEvents(items, now, '', '', false).map(x => x.id)).toEqual(['expired', 'z', 'a'])
+})
+
+
+it('filters inclusive date overlaps and rejects inverted ranges', () => {
+  const item = event('multi', { inicio: '2026-11-26T11:00', fin: '2026-11-28T12:00' })
+  expect(overlapsEventDates(item, '2026-11-27', '2026-11-27')).toBe(true)
+  expect(overlapsEventDates(item, '2026-11-28', '')).toBe(true)
+  expect(overlapsEventDates(item, '', '2026-11-26')).toBe(true)
+  expect(overlapsEventDates(item, '2026-11-29', '')).toBe(false)
+  expect(overlapsEventDates(item, '', '2026-11-25')).toBe(false)
+  expect(overlapsEventDates(item, '2026-11-28', '2026-11-26')).toBe(false)
 })

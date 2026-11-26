@@ -5,7 +5,7 @@ import { useGistar } from '../store'
 import type { EventType } from '../types'
 import { Button, Card, Field, PageTitle, inputCls } from '../ui'
 import { useVisibleItems } from './Calendar'
-import { eventPhase, filterEvents } from '../events'
+import { eventPhase, filterEvents, overlapsEventDates } from '../events'
 
 export function Events() {
   const { data, navigate } = useGistar()
@@ -18,7 +18,7 @@ export function Events() {
   const now = nowOf(data)
   const items = filterEvents(useVisibleItems(), now, query, type, phase === 'active')
     .filter(item => phase === 'active' || phase === 'all' || eventPhase(item, now) === phase)
-    .filter(item => !invalidRange && (!from || item.fin.slice(0, 10) >= from) && (!to || item.inicio.slice(0, 10) <= to))
+    .filter(item => overlapsEventDates(item, from, to))
 
   return (
     <>

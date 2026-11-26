@@ -16,3 +16,7 @@ export function eventPhase(item: Pick<CalItem, 'inicio' | 'fin'>, now: string): 
   if (item.fin < now) return 'ended'
   return item.inicio > now ? 'upcoming' : 'ongoing'
 }
+
+export function overlapsEventDates(item: Pick<CalItem, 'inicio' | 'fin'>, from: string, to: string): boolean {
+  return !(from && to && from > to) && (!from || item.fin.slice(0, 10) >= from) && (!to || item.inicio.slice(0, 10) <= to)
+}
