@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { MessageSquareText, Send, Sparkles, X } from 'lucide-react'
+import { MessageSquareText, Send, Sparkles, Square, X } from 'lucide-react'
 import type { Schemas } from '../../shared/api/client'
 import { AssistantStreamError, streamAssistant } from '../../shared/api/assistantStream'
 import { DocumentAnswer } from '../views/api/ApiAssistant'
@@ -13,6 +13,7 @@ export function AssistantWidget() {
   const [waiting, setWaiting] = useState('')
   const [partial, setPartial] = useState('')
   const [error, setError] = useState('')
+  const [status, setStatus] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
   const launcher = useRef<HTMLButtonElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
@@ -27,9 +28,23 @@ export function AssistantWidget() {
     })
   }, [messages, waiting, partial, error])
 
+  function stop() {
+    const controller = pending.current
+    if (!controller) return
+    pending.current = null
+    controller.abort()
+    setQuestion(waiting)
+    setWaiting('')
+    setPartial('')
+    setError('')
+    setStatus('Consulta detenida.')
+    input.current?.focus()
+  }
+
   function clear() {
     pending.current?.abort()
     pending.current = null
+    setStatus('')
     setMessages([])
     setWaiting('')
     setPartial('')
@@ -44,6 +59,7 @@ export function AssistantWidget() {
     const controller = new AbortController()
     pending.current = controller
     input.current?.focus()
+    setStatus('')
     setWaiting(text)
     setPartial('')
     setQuestion('')
@@ -121,6 +137,7 @@ export function AssistantWidget() {
             {error && <p role="alert" className="rounded-lg border border-line bg-white p-3 text-sm">{error}</p>}
             <div ref={end} />
           </div>
+          <p role="status" className="sr-only">{status}</p>
           <form onSubmit={event => void ask(event)} className="shrink-0 border-t border-line p-3">
             <div className="flex items-end gap-2 rounded-xl border border-line p-2 focus-within:border-blue">
               <textarea ref={input} aria-label="Pregunta al asistente" placeholder="Escribe tu pregunta…" rows={2} maxLength={500} value={question}
@@ -128,9 +145,15 @@ export function AssistantWidget() {
                 onChange={event => setQuestion(event.target.value)}
                 onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!pending.current) event.currentTarget.form?.requestSubmit() } }}
                 className="min-w-0 flex-1 resize-none bg-transparent p-1 text-sm" />
-              <button type="submit" aria-label="Enviar pregunta" disabled={!!waiting || question.trim().length < 3} className="rounded-xl bg-blue p-3 text-white disabled:opacity-40">
-                <Send className="size-4" aria-hidden />
-              </button>
+              {waiting ? (
+                <button type="button" aria-label="Detener consulta" onClick={stop} className="rounded-xl bg-navy p-3 text-white">
+                  <Square className="size-4" aria-hidden />
+                </button>
+              ) : (
+                <button type="submit" aria-label="Enviar pregunta" disabled={question.trim().length < 3} className="rounded-xl bg-blue p-3 text-white disabled:opacity-40">
+                  <Send className="size-4" aria-hidden />
+                </button>
+              )}
             </div>
             <p className="mt-2 text-xs text-muted">No envíes datos sensibles. Cada consulta es independiente; el historial no se guarda.</p>
           </form>
