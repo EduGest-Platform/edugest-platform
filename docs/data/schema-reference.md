@@ -127,6 +127,18 @@ erDiagram
         UUID application_id FK
         UUID documentation_accredited_by FK
     }
+    feedback_draft {
+        UUID id PK
+        UUID submission_id FK
+        UUID created_by FK
+        UUID approved_by FK
+    }
+    identity_review {
+        UUID application_id PK,FK
+        UUID original_person_id FK
+        UUID linked_person_id FK
+        UUID decided_by FK
+    }
     intervention {
         UUID id PK
         UUID alert_id FK
@@ -260,6 +272,13 @@ erDiagram
     cohort ||--o{ enrollment : cohort_id
     app_user |o--o{ enrollment : documentation_accredited_by
     person ||--o{ enrollment : person_id
+    app_user |o--o{ feedback_draft : approved_by
+    app_user ||--o{ feedback_draft : created_by
+    submission ||--o{ feedback_draft : submission_id
+    application ||--o| identity_review : application_id
+    app_user |o--o{ identity_review : decided_by
+    person |o--o{ identity_review : linked_person_id
+    person ||--o{ identity_review : original_person_id
     app_user ||--o{ intervention : actor_user_id
     risk_alert ||--o{ intervention : alert_id
     knowledge_document ||--o{ knowledge_chunk : document_id
@@ -319,6 +338,8 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | competency_framework | estado | ck_competency_framework_estado | `["borrador", "publicada", "archivada"]` |
 | enrollment | documentation_state | ck_enrollment_documentation_state | `["pending", "accredited"]` |
 | enrollment | estado | ck_enrollment_estado | `["activa", "finalizada", "baja_voluntaria"]` |
+| feedback_draft | source | ck_feedback_draft_source | `["template", "teacher"]` |
+| feedback_draft | status | ck_feedback_draft_status | `["draft", "approved"]` |
 | intervention | kind | ck_intervention_kind | `["contact", "support", "closure"]` |
 | knowledge_document | scope_type | ck_knowledge_document_scope_type | `["program", "call", "cohort"]` |
 | knowledge_document | status | ck_knowledge_document_status | `["vigente", "obsoleto"]` |
@@ -928,6 +949,76 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - INDEX `ix_enrollment_person_id`: `enrollment.person_id`
 
+### feedback_draft
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| id | UUID | no | — | application (not evaluated / sin evaluar) |
+| submission_id | UUID | no | submission.id | — |
+| submission_revision | INTEGER | no | — | — |
+| version | INTEGER | no | — | — |
+| source | VARCHAR(10) | no | — | — |
+| status | VARCHAR(10) | no | — | application (not evaluated / sin evaluar) |
+| body | TEXT | no | — | — |
+| rubric | JSON | no | — | — |
+| check_results | JSON | no | — | — |
+| created_by | UUID | no | app_user.id | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+| approved_by | UUID | sí / yes | app_user.id | — |
+| approved_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+
+- CHECK `ck_feedback_draft_approval`: `(status = 'approved' AND num_nonnulls(approved_by, approved_at) = 2) OR (status = 'draft' AND num_nonnulls(approved_by, approved_at) = 0)`
+
+- CHECK `ck_feedback_draft_body`: `length(btrim(body)) > 0`
+
+- CHECK `ck_feedback_draft_numbers`: `version >= 1 AND submission_revision >= 1`
+
+- CHECK `ck_feedback_draft_source`: `source IN ('template', 'teacher')`
+
+- CHECK `ck_feedback_draft_status`: `status IN ('draft', 'approved')`
+
+- FK `unnamed`: `(approved_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(submission_id) -> (submission.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
+- UNIQUE `uq_feedback_draft_version`: `submission_id, version`
+
+- INDEX `ix_feedback_draft_submission_id`: `feedback_draft.submission_id`
+
+### identity_review
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| application_id | UUID | no | application.id | — |
+| original_person_id | UUID | no | person.id | — |
+| candidate_person_ids | UUID[] | no | — | — |
+| decision | VARCHAR(20) | sí / yes | — | — |
+| linked_person_id | UUID | sí / yes | person.id | — |
+| reason | VARCHAR(500) | sí / yes | — | — |
+| decided_by | UUID | sí / yes | app_user.id | — |
+| decided_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_identity_review_candidates`: `cardinality(candidate_person_ids) > 0`
+
+- CHECK `ck_identity_review_complete`: `num_nonnulls(decision, reason, decided_by, decided_at) IN (0, 4)`
+
+- CHECK `ck_identity_review_decision`: `decision IS NULL OR decision IN ('misma_persona', 'persona_distinta')`
+
+- CHECK `ck_identity_review_link`: `(linked_person_id IS NOT NULL) = (decision IS NOT DISTINCT FROM 'misma_persona')`
+
+- CHECK `ck_identity_review_reason`: `reason IS NULL OR length(btrim(reason)) > 0`
+
+- FK `unnamed`: `(application_id) -> (application.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(decided_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(linked_person_id) -> (person.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(original_person_id) -> (person.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
 ### intervention
 
 | Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
@@ -1014,7 +1105,7 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - UNIQUE `unnamed`: `legacy_ref`
 
-- UNIQUE INDEX `ix_person_email`: `person.email`
+- INDEX `ix_person_email`: `person.email`
 
 ### preselection_decision
 

@@ -14,7 +14,7 @@ export interface paths {
         /** Expedientes dentro del ámbito del usuario (captación / selección / administración) */
         get: operations["list_applications_api_v1_applications_get"];
         put?: never;
-        /** Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona */
+        /** Inscripción pública en oferta publicada: crea una ficha de persona sin unirla a otras */
         post: operations["post_application_api_v1_applications_post"];
         delete?: never;
         options?: never;
@@ -104,6 +104,24 @@ export interface paths {
         put?: never;
         /** Registrar contacto, nota o recordatorio en el CRM */
         post: operations["post_event_api_v1_applications__application_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/identity-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aviso de posible duplicado de una candidatura */
+        get: operations["get_identity_review_api_v1_applications__application_id__identity_review_get"];
+        put?: never;
+        /** Decidir si un posible duplicado es la misma persona (queda registrado quién, cuándo y por qué) */
+        post: operations["post_identity_review_api_v1_applications__application_id__identity_review_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -266,6 +284,23 @@ export interface paths {
         put?: never;
         /** Preguntar a la documentación del curso: respuesta citada o «no consta» */
         post: operations["ask_api_v1_assistant_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/ask/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Consultar el asistente con progreso y respuesta mediante eventos SSE */
+        post: operations["ask_stream_api_v1_assistant_ask_stream_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -912,6 +947,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/feedback-drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Editar un borrador: crea una versión nueva y conserva la anterior */
+        put: operations["put_feedback_draft_api_v1_feedback_drafts__draft_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback-drafts/{draft_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aprobar y publicar un borrador (solo el equipo docente de la cohorte) */
+        post: operations["post_feedback_approval_api_v1_feedback_drafts__draft_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/applications": {
         parameters: {
             query?: never;
@@ -1041,6 +1110,23 @@ export interface paths {
         };
         /** One published offer; drafts and unknown IDs are not found */
         get: operations["get_course_api_v1_public_courses__course_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recruitment/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Última próxima acción de cada candidatura en preselección del ámbito CRM */
+        get: operations["recruitment_inbox_api_v1_recruitment_inbox_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1214,6 +1300,41 @@ export interface paths {
         get: operations["own_profile_api_v1_staff_me_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submission_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Feedback publicado de una entrega: el propio coder o el equipo docente. Nunca borradores */
+        get: operations["get_published_feedback_api_v1_submissions__submission_id__feedback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submission_id}/feedback-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Todas las versiones del feedback de una entrega (equipo docente) */
+        get: operations["list_feedback_drafts_api_v1_submissions__submission_id__feedback_drafts_get"];
+        put?: never;
+        /** Generar un borrador de feedback con la rúbrica y los tests (sin publicar) */
+        post: operations["post_feedback_draft_api_v1_submissions__submission_id__feedback_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1631,6 +1752,14 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** ApproveIn */
+        ApproveIn: {
+            /**
+             * Expected Revision
+             * @description Revisión de la entrega que el docente ha visto
+             */
+            expected_revision: number;
         };
         /** AskIn */
         AskIn: {
@@ -2322,6 +2451,19 @@ export interface components {
             /** Expected Version */
             expected_version: number;
         };
+        /** DraftEdit */
+        DraftEdit: {
+            /**
+             * Body
+             * @description Texto revisado por el docente
+             */
+            body: string;
+            /**
+             * Expected Version
+             * @description Versión que el docente estaba editando (evita pisar cambios ajenos)
+             */
+            expected_version: number;
+        };
         /** EnrollmentAssessments */
         EnrollmentAssessments: {
             /** Current */
@@ -2506,6 +2648,85 @@ export interface components {
             /** Tipo */
             tipo: string;
         };
+        /** FeedbackDraftList */
+        FeedbackDraftList: {
+            /**
+             * Current Revision
+             * @description Revisión actual de la entrega
+             */
+            current_revision: number;
+            /**
+             * Items
+             * @description Todas las versiones, de la más antigua a la más reciente
+             */
+            items: components["schemas"]["FeedbackDraftOut"][];
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+        };
+        /**
+         * FeedbackDraftOut
+         * @description One version as the teaching team sees it. No user ids: who wrote and approved it stays in the database and audit.
+         */
+        FeedbackDraftOut: {
+            /** Approved At */
+            approved_at: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Check Results
+             * @description Copia de los resultados de tests usados (procedencia)
+             */
+            check_results: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Label
+             * @description Texto que la interfaz debe mostrar junto al borrador
+             */
+            label: string;
+            /**
+             * Rubric
+             * @description Copia de la rúbrica usada (procedencia)
+             */
+            rubric: string[];
+            /**
+             * Source
+             * @description template = generado automáticamente con la rúbrica y los tests (sin LLM); teacher = editado por el docente
+             * @enum {string}
+             */
+            source: "template" | "teacher";
+            /**
+             * Status
+             * @description draft = no visible para el coder; approved = publicado
+             * @enum {string}
+             */
+            status: "draft" | "approved";
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Submission Revision
+             * @description Revisión de la entrega a la que corresponde este borrador
+             */
+            submission_revision: number;
+            /** Version */
+            version: number;
+        };
         /** FrameworkList */
         FrameworkList: {
             /** Items */
@@ -2551,6 +2772,90 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IdentityDecisionCreate */
+        IdentityDecisionCreate: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "misma_persona" | "persona_distinta";
+            /**
+             * Linked Person Id
+             * @description Registro con el que se une. Solo con «misma_persona».
+             */
+            linked_person_id?: string | null;
+            /**
+             * Reason
+             * @description Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.
+             */
+            reason: string;
+        };
+        /**
+         * IdentityMatch
+         * @description An earlier record with the same email, shown only to staff in scope for all its calls.
+         */
+        IdentityMatch: {
+            /** Applications */
+            applications: components["schemas"]["IdentityMatchApplication"][];
+            /** Display Name */
+            display_name: string;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+        };
+        /** IdentityMatchApplication */
+        IdentityMatchApplication: {
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Codigo */
+            codigo: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "enviada" | "requisitos_en_revision" | "convocada" | "evaluacion_en_curso" | "pendiente_decision_humana" | "admitida" | "lista_espera" | "no_admitida" | "retirada";
+        };
+        /**
+         * IdentityReviewOut
+         * @description Possible duplicate of an application (KAN-274).
+         */
+        IdentityReviewOut: {
+            /**
+             * Blocker
+             * @description Si tiene valor, esta persona usuaria no puede resolver el aviso todavía.
+             */
+            blocker?: ("fuera_de_ambito" | "revision_anterior_pendiente") | null;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decided By */
+            decided_by?: string | null;
+            /**
+             * Has Hidden Matches
+             * @default false
+             */
+            has_hidden_matches: boolean;
+            /** Matches */
+            matches?: components["schemas"]["IdentityMatch"][];
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "sin_coincidencias" | "pendiente" | "misma_persona" | "persona_distinta";
+            /**
+             * Submitted Name
+             * @description Nombre escrito en esta inscripción.
+             */
+            submitted_name?: string | null;
         };
         /** InvitationAccept */
         InvitationAccept: {
@@ -3115,6 +3420,33 @@ export interface components {
              */
             state: "draft" | "published";
         };
+        /**
+         * PublishedFeedback
+         * @description What the coder sees: only approved feedback, never drafts.
+         */
+        PublishedFeedback: {
+            /** @description Nulo si todavía no hay feedback aprobado */
+            feedback: components["schemas"]["PublishedFeedbackOut"] | null;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+        };
+        /** PublishedFeedbackOut */
+        PublishedFeedbackOut: {
+            /**
+             * Approved At
+             * Format: date-time
+             */
+            approved_at: string;
+            /** Body */
+            body: string;
+            /** Label */
+            label: string;
+            /** Version */
+            version: number;
+        };
         /** RecordOut */
         RecordOut: {
             /**
@@ -3200,6 +3532,26 @@ export interface components {
              * @enum {string}
              */
             status: "presente" | "retraso" | "ausente";
+        };
+        /** RecruitmentInbox */
+        RecruitmentInbox: {
+            /** Items */
+            items: components["schemas"]["RecruitmentInboxItem"][];
+            /** Total */
+            total: number;
+        };
+        /** RecruitmentInboxItem */
+        RecruitmentInboxItem: {
+            action: components["schemas"]["NextActionOut"];
+            /**
+             * Application Id
+             * Format: uuid
+             */
+            application_id: string;
+            /** Call Id */
+            call_id: string;
+            /** Code */
+            code: string;
         };
         /** ReminderSimulationRequest */
         ReminderSimulationRequest: {
@@ -4458,6 +4810,72 @@ export interface operations {
             };
         };
     };
+    get_identity_review_api_v1_applications__application_id__identity_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_identity_review_api_v1_applications__application_id__identity_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityDecisionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_preselection_decisions_api_v1_applications__application_id__preselection_decisions_get: {
         parameters: {
             query?: never;
@@ -5063,6 +5481,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AskOut"];
                 };
+            };
+            /** @description Sin documentos en tu ámbito o cohorte ajena */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_stream_api_v1_assistant_ask_stream_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Sesión no válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Sin documentos en tu ámbito o cohorte ajena */
             403: {
@@ -7303,6 +7768,118 @@ export interface operations {
             };
         };
     };
+    put_feedback_draft_api_v1_feedback_drafts__draft_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_feedback_approval_api_v1_feedback_drafts__draft_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_applications_api_v1_me_applications_get: {
         parameters: {
             query?: never;
@@ -7624,6 +8201,47 @@ export interface operations {
             };
             /** @description Published offer not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recruitment_inbox_api_v1_recruitment_inbox_get: {
+        parameters: {
+            query?: {
+                mine?: boolean;
+                due_through?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecruitmentInbox"];
+                };
+            };
+            /** @description Sin permiso CRM sobre el ámbito */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8194,6 +8812,148 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_published_feedback_api_v1_submissions__submission_id__feedback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedFeedback"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_feedback_drafts_api_v1_submissions__submission_id__feedback_drafts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftList"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_feedback_draft_api_v1_submissions__submission_id__feedback_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -16,15 +16,12 @@ def main() -> None:
     if settings.environment != "local" or os.environ.get("GISTAR_E2E_FIXTURE") != "disposable-synthetic":
         raise RuntimeError("Disposable local synthetic fixture marker required")
     with SessionLocal() as db:
-        person = db.scalar(select(Person).where(Person.email == EMAIL))
-        if person is None:
+        # The account is the unique side: several person records may share its email (KAN-274).
+        user = db.scalar(select(User).where(User.email == EMAIL))
+        if user is None:
             person = Person(email=EMAIL, display_name=NAME, is_synthetic=True)
             db.add(person)
             db.flush()
-        elif not person.is_synthetic:
-            raise RuntimeError("Expected a synthetic waitlist identity")
-        user = db.scalar(select(User).where(User.email == EMAIL))
-        if user is None:
             db.add(User(
                 email=EMAIL, display_name=NAME, person_id=person.id,
                 password_hash=hash_password(settings.demo_password),
@@ -33,7 +30,8 @@ def main() -> None:
             has_assignment = db.scalar(select(RoleAssignment.id).where(
                 RoleAssignment.user_id == user.id, RoleAssignment.revoked_at.is_(None),
             ).limit(1)) is not None
-            if user.person_id != person.id or not user.is_active or has_assignment:
+            person = db.get(Person, user.person_id) if user.person_id else None
+            if person is None or not person.is_synthetic or not user.is_active or has_assignment:
                 raise RuntimeError("The waitlist fixture requires an active role-free applicant")
         db.commit()
     print("Synthetic waitlist applicant ready")

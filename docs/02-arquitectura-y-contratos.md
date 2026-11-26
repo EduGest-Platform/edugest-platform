@@ -38,7 +38,7 @@ erDiagram
 
 Reglas (implementadas en F1 salvo indicación):
 
-1. `person.email` normalizado y único → deduplicación; `application` única por (`person_id`, `call_id`).
+1. `person.email` normalizado y **no único** (KAN-274): un correo repetido crea otra ficha y un `identity_review` que resuelve una persona del equipo. Una sola candidatura por correo y convocatoria; `application` única además por (`person_id`, `call_id`).
 2. Aspirante y coder son **estados** de `Person` (candidaturas / matrículas), no roles.
 3. `role_assignment` = rol ∈ {admin, captacion, seleccion, docente, coordinacion} + ámbito ∈ {global, program, call, cohort}. Acumulable y revocable.
 4. `application.stage` usa el vocabulario del prototipo + `retirada`; los cambios de etapa solo llegarán por revisión/decisión humana (F2), nunca por CRM ni por reglas.

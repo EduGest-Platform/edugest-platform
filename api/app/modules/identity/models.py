@@ -11,13 +11,16 @@ SCOPE_TYPES = ("global", "program", "call", "cohort")
 
 
 class Person(Base):
-    """A single record per human being. Aspirant and coder are states of a Person, not roles."""
+    """A record of a human being. Aspirant and coder are states of a Person, not roles.
+
+    Two records may share an email until a member of staff decides they are the same person (KAN-274).
+    """
 
     __tablename__ = "person"
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     display_name: Mapped[str] = mapped_column(String(120))
-    # Normalised (trim + lower). Unique: de-duplicates expedientes.
-    email: Mapped[str] = mapped_column(String(254), unique=True, index=True)
+    # Normalised (trim + lower). Not unique: a matching email only raises a review (admissions.IdentityReview).
+    email: Mapped[str] = mapped_column(String(254), index=True)
     # Reference to the synthetic prototype dataset (A-001, E-001…).
     legacy_ref: Mapped[str | None] = mapped_column(String(20), unique=True)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=True)

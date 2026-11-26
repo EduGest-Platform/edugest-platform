@@ -72,7 +72,7 @@ Leyenda: ✅ **existe en el repositorio** (no ejecutada en esta revisión docume
 | 2 | | Bootcamp `gte` 18 y B `gte` 16 al inicio del curso (PO 19/11); año insuficiente → revisión humana. Validadores técnicos E.164/ISO siguen propuestas | 🆕 |
 | 3 | Versionado/conservación | Crear alta v1 → publicar v2 → leer alta: sigue `form_version=1` y mismas respuestas | 🆕 |
 | 3 | | `UPDATE` de una versión `approved` falla (trigger), como `test_audit_trail_is_append_only` para auditoría | ✅ patrón / 🆕 prueba |
-| 3 | | Persona reutilizada en dos convocatorias: Person no se sobrescribe; cada Application conserva sus `answers` (H8) | 🆕 (parcial: `test_same_person_reused_across_calls`) |
+| 3 | | Persona reutilizada en dos convocatorias: Person no se sobrescribe; cada Application conserva sus `answers` (H8) | 🆕 (parcial: `test_same_email_in_another_call_gets_its_own_record`, KAN-274) |
 | 4 | Config por convocatoria | Dos convocatorias con opciones distintas de `current_situation`; opción de la A en la B → 422 | 🆕 |
 | 5 | Autorización y horizontal | Captación del programa A no ve candidatura del programa B; selección limitada a su convocatoria | ✅ (`test_rbac.py::test_captacion_is_limited_to_its_program`, `test_seleccion_is_limited_to_its_call`, `test_docente_has_no_access_to_admissions`) |
 | 5 | | Sin permiso base, denegar; admin/selección acceden por defecto en ámbito; otros sin concesión no ven G3/G6; revocación, caducidad e IDOR | 🆕 |

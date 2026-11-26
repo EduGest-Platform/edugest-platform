@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import func, or_, select
@@ -7,6 +8,7 @@ from app.core import audit
 from app.core.authz import Scope
 from app.core.deps import DB, CurrentPrincipal, OptionalPrincipal
 from app.core.text import LIKE_ESCAPE, escape_like
+from app.modules.admissions import identity_reviews
 from app.modules.admissions.models import Application, ApplicationEvent
 from app.modules.admissions.next_actions import eligible_owners, next_action_out, owner_names, rejection_reason
 from app.modules.admissions.schemas import (
@@ -19,7 +21,11 @@ from app.modules.admissions.schemas import (
     CrmOwnerOut,
     EventCreate,
     EventOut,
+    IdentityDecisionCreate,
+    IdentityReviewOut,
     PersonOut,
+    RecruitmentInbox,
+    RecruitmentInboxItem,
     Stage,
 )
 from app.modules.admissions.service import create_application
@@ -71,7 +77,7 @@ def _load_in_scope(db: DB, p: CurrentPrincipal, perm: str, application_id: uuid.
 
 @router.post("/applications", response_model=ApplicationReceipt, status_code=201,
              responses={404: {"description": "Published offer not found"}},
-             summary="Inscripción pública en oferta publicada: crea o reutiliza la ficha de persona")
+             summary="Inscripción pública en oferta publicada: crea una ficha de persona sin unirla a otras")
 def post_application(body: ApplicationCreate, db: DB, p: OptionalPrincipal) -> ApplicationReceipt:
     a = create_application(db, body, p)
     return ApplicationReceipt(id=a.id, codigo=a.codigo, call_id=a.call_id, stage=a.stage, created_at=a.created_at)
@@ -111,6 +117,38 @@ def list_applications(
     return ApplicationList(items=[_summary(*r) for r in rows], total=total)
 
 
+@router.get("/recruitment/inbox", response_model=RecruitmentInbox,
+            responses={403: {"description": "Sin permiso CRM sobre el ámbito"}},
+            summary="Última próxima acción de cada candidatura en preselección del ámbito CRM")
+def recruitment_inbox(p: CurrentPrincipal, db: DB, mine: bool = False,
+                      due_through: date | None = None, limit: int = Query(50, ge=1, le=100),
+                      offset: int = Query(0, ge=0)) -> RecruitmentInbox:
+    is_global, programs, calls = p.scopes_for("applications.crm")
+    if not (is_global or programs or calls):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes permiso para consultar tareas de captación")
+    event = ApplicationEvent
+    latest = (select(event.id).where(event.application_id == Application.id, event.next_action.is_not(None))
+              .order_by(event.occurred_at.desc(), event.id.desc()).limit(1).correlate(Application).scalar_subquery())
+    rows = (select(Application, event).join(Call, Call.id == Application.call_id).join(event, event.id == latest)
+            .where(Application.stage.in_(("enviada", "requisitos_en_revision"))))
+    if not is_global:
+        rows = rows.where(or_(Call.program_id.in_(programs), Call.id.in_(calls)))
+    if mine:
+        rows = rows.where(event.next_action_owner_id == p.user.id)
+    if due_through is not None:
+        rows = rows.where(event.next_action_due_on <= due_through)
+    total = db.scalar(select(func.count()).select_from(rows.subquery())) or 0
+    matches = db.execute(rows.order_by(event.next_action_due_on, Application.id).limit(limit).offset(offset)).all()
+    names = owner_names(db, [entry for _, entry in matches])
+    items = []
+    for application, entry in matches:
+        action = next_action_out(entry, names)
+        if action is not None:
+            items.append(RecruitmentInboxItem(application_id=application.id, code=application.codigo,
+                                              call_id=application.call_id, action=action))
+    return RecruitmentInbox(items=items, total=total)
+
+
 @router.get("/applications/{application_id}", response_model=ApplicationDetail, summary="Ficha del expediente con historial CRM")
 def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> ApplicationDetail:
     a, person, call = _load_in_scope(db, p, "applications.read", application_id)
@@ -138,6 +176,23 @@ def get_application(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> A
 def list_crm_owners(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> list[CrmOwnerOut]:
     _, _, call = _load_in_scope(db, p, "applications.crm", application_id)
     return [CrmOwnerOut(user_id=u.id, display_name=u.display_name) for u in eligible_owners(db, call)]
+
+
+@router.get("/applications/{application_id}/identity-review", response_model=IdentityReviewOut, summary="Aviso de posible duplicado de una candidatura")
+def get_identity_review(application_id: uuid.UUID, p: CurrentPrincipal, db: DB) -> IdentityReviewOut:
+    a, _, _ = _load_in_scope(db, p, identity_reviews.REVIEW_PERMISSION, application_id)
+    out = identity_reviews.review_out(db, p, a)
+    if out.status != "sin_coincidencias":
+        audit.record(db, p, "application.identity_review_viewed", "application", str(a.id), codigo=a.codigo, matches_shown=len(out.matches))
+        db.commit()
+    return out
+
+
+@router.post("/applications/{application_id}/identity-review", response_model=IdentityReviewOut, status_code=201,
+             summary="Decidir si un posible duplicado es la misma persona (queda registrado quién, cuándo y por qué)")
+def post_identity_review(application_id: uuid.UUID, body: IdentityDecisionCreate, p: CurrentPrincipal, db: DB) -> IdentityReviewOut:
+    a, _, _ = _load_in_scope(db, p, identity_reviews.REVIEW_PERMISSION, application_id)
+    return identity_reviews.decide(db, p, a, body)
 
 
 @router.post("/applications/{application_id}/events", response_model=EventOut, status_code=201, summary="Registrar contacto, nota o recordatorio en el CRM")

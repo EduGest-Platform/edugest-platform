@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.core.text import normalize_email
 
@@ -142,6 +142,56 @@ class ApplicationDetail(ApplicationSummary):
     next_action: NextActionOut | None = Field(description="Próxima acción vigente: la del contacto más reciente que registró una.")
 
 
+IdentityDecision = Literal["misma_persona", "persona_distinta"]
+IdentityReviewStatus = Literal["sin_coincidencias", "pendiente", "misma_persona", "persona_distinta"]
+IdentityReviewBlocker = Literal["fuera_de_ambito", "revision_anterior_pendiente"]
+
+
+class IdentityMatchApplication(BaseModel):
+    application_id: uuid.UUID
+    codigo: str
+    call_id: str
+    stage: Stage
+
+
+class IdentityMatch(BaseModel):
+    """An earlier record with the same email, shown only to staff in scope for all its calls."""
+
+    person_id: uuid.UUID
+    display_name: str
+    applications: list[IdentityMatchApplication]
+
+
+class IdentityReviewOut(BaseModel):
+    """Possible duplicate of an application (KAN-274)."""
+
+    status: IdentityReviewStatus
+    submitted_name: str | None = Field(None, description="Nombre escrito en esta inscripción.")
+    matches: list[IdentityMatch] = Field(default_factory=list)
+    has_hidden_matches: bool = False
+    blocker: IdentityReviewBlocker | None = Field(None, description="Si tiene valor, esta persona usuaria no puede resolver el aviso todavía.")
+    decided_by: str | None = None
+    decided_at: datetime | None = None
+    reason: str | None = None
+
+
+class IdentityDecisionCreate(BaseModel):
+    decision: IdentityDecision
+    linked_person_id: uuid.UUID | None = Field(None, description="Registro con el que se une. Solo con «misma_persona».")
+    reason: str = Field(min_length=1, max_length=500, description="Motivo operativo. No incluir datos de salud, situación personal ni otros datos sensibles.")
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def _trim_reason(cls, v: object) -> object:
+        return _strip_if_str(v)
+
+    @model_validator(mode="after")
+    def _link_only_for_same_person(self) -> "IdentityDecisionCreate":
+        if (self.linked_person_id is not None) != (self.decision == "misma_persona"):
+            raise ValueError("Indica el registro solo cuando sea la misma persona.")
+        return self
+
+
 class ApplicationSelfView(BaseModel):
     """What an aspirant sees about their own application: no internal notes or CRM history."""
 
@@ -152,3 +202,15 @@ class ApplicationSelfView(BaseModel):
     stage: Stage
     created_at: datetime
     updated_at: datetime
+
+
+class RecruitmentInboxItem(BaseModel):
+    application_id: uuid.UUID
+    code: str
+    call_id: str
+    action: NextActionOut
+
+
+class RecruitmentInbox(BaseModel):
+    items: list[RecruitmentInboxItem]
+    total: int
