@@ -18,3 +18,11 @@ Status: proposed, not implemented. Target: staging first, synthetic data only.
 - [ ] Validate staging with synthetic participants and real provider sandbox/account; document rollback.
 
 No runtime integration is enabled by this document. Do not merge as a completed feature until implementation and verification are complete.
+
+## Per-session participant authentication (KAN-276)
+- Authorized session teachers and administrators can select open access (no Zoom account required), authenticated Zoom account access, or institutional access restricted to approved domains where supported by the Zoom account and authentication profile.
+- Persist the selection per session and apply it when creating or updating the meeting. Display the access requirement before joining. Never silently downgrade to open access on provider rejection; surface unsupported settings and preserve the last confirmed configuration.
+- Open Zoom access does not bypass EduGest authorization or permit attendance attribution to unverified identities. This setting is independent of server-to-server OAuth.
+- Test all modes, updates, unsupported profiles, provider errors and cross-session authorization. Default mode requires PO confirmation.
+
+Jira: https://anasfady87-1789923749606.atlassian.net/browse/KAN-276
