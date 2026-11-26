@@ -11,6 +11,10 @@ class DeliveryError(RuntimeError):
     """Delivery failed or its outcome is unknown; do not blindly retry."""
 
 
+class TransientPreSendError(DeliveryError):
+    """Temporary failure before message submission; safe to retry."""
+
+
 def _address(value: str) -> Address:
     if any(c in value for c in "\r\n"):
         raise ValueError("Invalid email address")
@@ -42,6 +46,7 @@ def send_email(config: Settings, *, recipient: str, subject: str, body: str, htm
     context = ssl.create_default_context()
     options = {"host": config.email_smtp_host, "port": config.email_smtp_port,
                "timeout": config.email_timeout_seconds}
+    submission_started = False
     try:
         if config.email_smtp_security == "tls":
             connection = smtplib.SMTP_SSL(**options, context=context)
@@ -54,8 +59,14 @@ def send_email(config: Settings, *, recipient: str, subject: str, body: str, htm
                 smtp.ehlo()
             smtp.login(config.email_smtp_username.get_secret_value(),
                        config.email_smtp_password.get_secret_value())
+            submission_started = True
             refused = smtp.send_message(message)
             if refused:
                 raise DeliveryError("Recipient rejected")
-    except (OSError, smtplib.SMTPException):
+    except (OSError, smtplib.SMTPException) as exc:
+        if not submission_started and (
+            isinstance(exc, (TimeoutError, ConnectionError))
+            or isinstance(exc, smtplib.SMTPResponseException) and 400 <= exc.smtp_code < 500
+        ):
+            raise TransientPreSendError("Temporary SMTP connection failure") from None
         raise DeliveryError("SMTP delivery failed; outcome may be unknown") from None
