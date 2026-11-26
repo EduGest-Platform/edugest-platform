@@ -41,3 +41,19 @@ it.each(['not-json', 'null', '{}', '{"answer":"sí","status":"answered"}', '{"an
   expect(cancel).toHaveBeenCalled()
   expect(stream.locked).toBe(false)
 })
+
+
+it('ignores unknown events and rejects server errors without leaking their payload', async () => {
+  const cancel = vi.fn()
+  const onDelta = vi.fn()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode('event: extension\ndata: not-json\n\nevent: delta\ndata: {"text":"partial"}\n\nevent: error\ndata: {"detail":"private-provider-detail"}\n\n'))
+    },
+    cancel,
+  })
+  await expect(readAssistantStream(stream, { onPhase: vi.fn(), onDelta })).rejects.not.toThrow('private-provider-detail')
+  expect(onDelta).toHaveBeenCalledWith('partial')
+  expect(cancel).toHaveBeenCalled()
+  expect(stream.locked).toBe(false)
+})
