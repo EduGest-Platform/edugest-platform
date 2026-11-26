@@ -194,3 +194,13 @@ def test_assessment_roster_only_shows_the_assigned_cohort(client, db):
     assert client.get(f"/api/v1/cohorts/{OTHER_COHORT}/competency-roster", headers=teacher).status_code == 403
     assert client.get(path, headers=login(client, COORD)).status_code == 403
     assert client.get(path).status_code == 401
+    missing = client.get("/api/v1/cohorts/COH-MISSING/competency-roster", headers=teacher)
+    assert missing.status_code == 404 and missing.json()["code"] == "cohort_not_found"
+
+    included = enrollment_of(db)
+    enrollment = db.scalar(select(Enrollment).where(Enrollment.id == included))
+    enrollment.estado = "baja_voluntaria"
+    db.commit()
+    roster = client.get(path, headers=teacher)
+    assert roster.status_code == 200
+    assert included not in {item["enrollment_id"] for item in roster.json()["items"]}
