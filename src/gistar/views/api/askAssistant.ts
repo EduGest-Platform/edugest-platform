@@ -6,3 +6,7 @@ export function askAssistant(question: string, signal: AbortSignal, cohortId?: s
     signal,
   })
 }
+
+export function listAssistantCohorts(signal: AbortSignal) {
+  return api.GET('/api/v1/cohorts', { signal })
+}
