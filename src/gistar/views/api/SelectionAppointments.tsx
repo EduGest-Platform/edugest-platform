@@ -56,6 +56,13 @@ export function SelectionAppointments({ applicationId, onDirty }: { applicationI
   const timeZone = formatDate.resolvedOptions().timeZone
   const byId = new Map(items.map(item => [item.id, item]))
 
+  const staleDraft = Boolean(draft && data && (draft.mode === 'outcome'
+    ? byId.get(draft.appointment.id)?.state !== 'scheduled'
+    : draft.previous
+      ? byId.get(draft.previous.id)?.state !== draft.previous.state
+        || (draft.previous.state === 'no_show' && (replacedIds.has(draft.previous.id) || pendingKinds.has(draft.kind)))
+      : pendingKinds.has(draft.kind)))
+
   function schedule(kind: Kind, previous?: Appointment) {
     setError('')
     setNotice('')
@@ -64,7 +71,7 @@ export function SelectionAppointments({ applicationId, onDirty }: { applicationI
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    if (!data?.can_edit || !draft || write.current) return
+    if (!data?.can_edit || !draft || staleDraft || write.current) return
     const controller = new AbortController()
     const path = { application_id: applicationId }
     write.current = controller
@@ -107,6 +114,10 @@ export function SelectionAppointments({ applicationId, onDirty }: { applicationI
         setAttempt(previous => previous + 1)
       } else {
         setError(problemText(describeApiError(result.response.status, result.error)))
+        if (result.response.status === 409) {
+          setData(undefined)
+          setAttempt(value => value + 1)
+        }
       }
     } catch {
       if (!controller.signal.aborted) setError('No se pudo confirmar el cambio. Actualiza las citas antes de volver a intentarlo.')
@@ -153,6 +164,7 @@ export function SelectionAppointments({ applicationId, onDirty }: { applicationI
       {data?.can_edit && !draft && availableKinds.length > 0 &&
         <Button className="justify-self-start" size="sm" onClick={() => schedule(availableKinds[0])}>Agendar cita</Button>}
       {draft && <form className="grid gap-3 rounded-lg border border-line p-3" onSubmit={submit}>
+        {staleDraft && <Notice tone="warning" live="assertive">La cita ha cambiado desde que abriste el formulario. Revisa el historial y copia tus notas antes de cancelar el borrador.</Notice>}
         <fieldset className="grid min-w-0 gap-3" disabled={busy || !data?.can_edit}>
           {draft.mode === 'schedule' ? <>
             <legend className="mb-3 font-medium">{draft.previous ? 'Nueva fecha para la cita' : 'Nueva cita'}</legend>
@@ -193,7 +205,7 @@ export function SelectionAppointments({ applicationId, onDirty }: { applicationI
           </>}
         </fieldset>
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" size="sm" disabled={busy || !data?.can_edit}>{draft.mode === 'schedule' ? 'Guardar cita' : 'Guardar resultado'}</Button>
+          <Button type="submit" size="sm" disabled={busy || !data?.can_edit || staleDraft}>{draft.mode === 'schedule' ? 'Guardar cita' : 'Guardar resultado'}</Button>
           <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => { setDraft(undefined); setError('') }}>Cancelar</Button>
         </div>
       </form>}
