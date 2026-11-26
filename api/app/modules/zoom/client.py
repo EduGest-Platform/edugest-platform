@@ -1,5 +1,6 @@
 """Server-side Zoom transport; no credentials or provider response bodies in errors."""
 from typing import Literal
+from urllib.parse import quote, urlsplit
 
 import httpx
 
@@ -58,15 +59,22 @@ class ZoomClient:
                              headers={"Authorization": "Bearer " + self._token()}, **kwargs)
 
     def create_meeting(self, topic: str, start_time: str, duration: int,
-                       mode: AuthenticationMode, profile_id: str | None = None) -> dict:
-        response = self._api("POST", "/users/me/meetings", json={
+                       mode: AuthenticationMode, profile_id: str | None = None, *, host_id: str) -> dict:
+        if not host_id.strip() or host_id.strip().lower() == "me":
+            raise ValueError("Explicit Zoom host required")
+        response = self._api("POST", "/users/" + quote(host_id, safe="") + "/meetings", json={
             "topic": topic, "type": 2, "start_time": start_time, "duration": duration,
-            "settings": {**meeting_settings(mode, profile_id), "join_before_host": False},
+            "settings": {**meeting_settings(mode, profile_id), "join_before_host": False, "waiting_room": True},
         })
         try:
             data = response.json()
-            return {"id": str(data["id"]), "join_url": data["join_url"]}
-        except (ValueError, KeyError, TypeError):
+            meeting_id = str(data["id"])
+            join_url = data["join_url"]
+            parsed = urlsplit(join_url)
+            if not meeting_id.isascii() or not meeting_id.isdecimal() or parsed.scheme != "https" or not parsed.hostname or not (parsed.hostname == "zoom.us" or parsed.hostname.endswith(".zoom.us")) or parsed.username or parsed.password:
+                raise ValueError()
+            return {"id": meeting_id, "join_url": join_url}
+        except (ValueError, KeyError, TypeError, AttributeError):
             raise ZoomError("Invalid meeting response; reconcile before retrying") from None
 
     def update_authentication(self, meeting_id: str, mode: AuthenticationMode,
@@ -75,3 +83,34 @@ class ZoomClient:
             raise ValueError("Invalid meeting ID")
         self._api("PATCH", "/meetings/" + meeting_id,
                   json={"settings": meeting_settings(mode, profile_id)})
+
+    def delete_meeting(self, meeting_id: str) -> None:
+        if not meeting_id.isascii() or not meeting_id.isdecimal():
+            raise ValueError("Invalid meeting ID")
+        self._api("DELETE", "/meetings/" + meeting_id)
+
+    def participant_report(self, meeting_id: str, *, page_limit: int = 100) -> list[dict]:
+        # Non-recurring meetings only; occurrence UUID support is a separate concern.
+        if not meeting_id.isascii() or not meeting_id.isdecimal():
+            raise ValueError("Invalid meeting ID")
+        participants = []
+        cursor = ""
+        seen = set()
+        for _ in range(page_limit):
+            response = self._api("GET", "/report/meetings/" + meeting_id + "/participants",
+                                 params={"page_size": 300, "next_page_token": cursor})
+            try:
+                data = response.json()
+                rows = data["participants"]
+                cursor = data.get("next_page_token", "")
+                if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows) or not isinstance(cursor, str):
+                    raise ValueError()
+            except (KeyError, ValueError, TypeError, AttributeError):
+                raise ZoomError("Invalid participant report") from None
+            participants.extend(rows)
+            if not cursor:
+                return participants
+            if cursor in seen:
+                break
+            seen.add(cursor)
+        raise ZoomError("Incomplete participant report")
