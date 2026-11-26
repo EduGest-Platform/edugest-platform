@@ -15,6 +15,7 @@ export function useAppearance() {
     return saved === 'dark' || saved === 'light' ? saved : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
   useEffect(() => {
+    document.documentElement.dataset.theme = theme
     try {
       localStorage.setItem('edugest.language', language)
       localStorage.setItem('edugest.theme', theme)

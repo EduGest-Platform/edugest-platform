@@ -64,7 +64,6 @@ export function Shell() {
   const session = useApiSession()
   const appearance = useAppearance()
   const en = appearance.language === 'en'
-  const dark = appearance.theme === 'dark'
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
   const source = dataSourceFor(view, API_MODE, role)
   const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
@@ -112,10 +111,10 @@ export function Shell() {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8" style={dark ? { background: "#142b46", color: "#ffffff", colorScheme: "dark" } : undefined}>
+        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[15px] font-semibold" style={{ color: dark ? "#ffffff" : undefined }}>{en ? "Supporting every learning journey" : "Acompañamos cada trayectoria de aprendizaje"}</span>
-            <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">DEMO · Datos sintéticos</span>
+            <span className="text-[15px] font-semibold">{en ? "Supporting every learning journey" : "Acompañamos cada trayectoria de aprendizaje"}</span>
+            <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">{en ? "DEMO · Synthetic data" : "DEMO · Datos sintéticos"}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AppearanceControls {...appearance} />
@@ -136,14 +135,14 @@ export function Shell() {
               ))}
             </select>
             {allowedRoles && (
-              <Button variant="ghost" onClick={session.logout} aria-label="Cerrar sesión">
+              <Button variant="ghost" onClick={session.logout} aria-label={en ? "Sign out" : "Cerrar sesión"}>
                 <LogOut className="size-4" aria-hidden />
-                <span className="hidden sm:inline">Salir</span>
+                <span className="hidden sm:inline">{en ? "Sign out" : "Salir"}</span>
               </Button>
             )}
-            <Button variant="ghost" onClick={reset} aria-label="Restablecer demo">
+            <Button variant="ghost" onClick={reset} aria-label={en ? "Reset demo" : "Restablecer demo"}>
               <RotateCcw className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Restablecer</span>
+              <span className="hidden sm:inline">{en ? "Reset" : "Restablecer"}</span>
             </Button>
           </div>
         </header>
