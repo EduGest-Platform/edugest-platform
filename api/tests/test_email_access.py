@@ -80,3 +80,13 @@ def test_cancel_notification_state_boundary(status):
         assert record.call_count == (1 if status == "pending" else 0)
         assert db.flush.call_count == (1 if status == "pending" else 0)
     db.commit.assert_not_called()
+
+
+def test_denied_cancellation_never_reads_outbox():
+    db, principal, enrollment, _, _ = setup()
+    with patch.object(access, "require_cohort", side_effect=UserFacingError(403, "forbidden", "Forbidden")), patch.object(access.audit, "record") as record:
+        with pytest.raises(UserFacingError):
+            access.cancel_notification(db, principal, cohort_id=enrollment.cohort_id, message_id=uuid4())
+        db.scalars.assert_not_called()
+        db.flush.assert_not_called()
+        record.assert_not_called()
