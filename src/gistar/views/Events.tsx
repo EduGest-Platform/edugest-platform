@@ -11,9 +11,10 @@ export function Events() {
   const { data, navigate } = useGistar()
   const [query, setQuery] = useState('')
   const [type, setType] = useState<EventType | ''>('')
-  const [upcoming, setUpcoming] = useState(true)
+  const [phase, setPhase] = useState<'active' | 'all' | ReturnType<typeof eventPhase>>('active')
   const now = nowOf(data)
-  const items = filterEvents(useVisibleItems(), now, query, type, upcoming)
+  const items = filterEvents(useVisibleItems(), now, query, type, phase === 'active')
+    .filter(item => phase === 'active' || phase === 'all' || eventPhase(item, now) === phase)
 
   return (
     <>
@@ -29,10 +30,16 @@ export function Events() {
               {(Object.keys(EVENT_TYPES) as EventType[]).filter(key => key !== 'entrega').map(key => <option key={key} value={key}>{EVENT_TYPES[key].label}</option>)}
             </select>
           </Field>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={upcoming} onChange={event => setUpcoming(event.target.checked)} /> Solo próximos eventos y en curso
-          </label>
-          <Button variant="ghost" disabled={!query && !type && upcoming} onClick={() => { setQuery(""); setType(""); setUpcoming(true) }}>Restablecer filtros</Button>
+          <Field label="Estado del evento" htmlFor="events-phase">
+            <select id="events-phase" className={inputCls} value={phase} onChange={event => setPhase(event.target.value as typeof phase)}>
+              <option value="active">Próximos y en curso</option>
+              <option value="all">Todos los estados</option>
+              <option value="upcoming">Próximos</option>
+              <option value="ongoing">En curso</option>
+              <option value="ended">Finalizados</option>
+            </select>
+          </Field>
+          <Button variant="ghost" disabled={!query && !type && phase === 'active'} onClick={() => { setQuery(""); setType(""); setPhase('active') }}>Restablecer filtros</Button>
         </div>
       </Card>
       <div className="mt-5 grid gap-4">
