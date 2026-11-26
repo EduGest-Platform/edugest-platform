@@ -30,7 +30,7 @@ function EventsCard() {
   return (
     <Card title="Eventos" action={<CalendarDays className="size-5 text-blue" aria-hidden />}>
       <p className="mb-3 text-sm text-muted">Consulta los próximos encuentros y actividades de tu ámbito.</p>
-      <Button variant="ghost" onClick={() => navigate('calendario')}>
+      <Button variant="ghost" onClick={() => navigate('eventos')}>
         Ver eventos <ArrowRight className="size-4" aria-hidden />
       </Button>
     </Card>

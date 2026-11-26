@@ -4,6 +4,7 @@ export type View =
   | 'dashboard'
   | 'analitica'
   | 'calendario'
+  | 'eventos'
   | 'programas'
   | 'competencias'
   | 'rubricas'

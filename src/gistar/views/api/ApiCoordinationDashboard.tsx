@@ -98,7 +98,7 @@ export function ApiCoordinationDashboard() {
       <PageTitle title="Seguimiento de convocatorias" sub="Plazas e indicadores agregados de admisión del servidor." />
       <Card title="Eventos" action={<CalendarDays className="size-5 text-blue" aria-hidden />}>
         <p className="mb-3 text-sm text-muted">Consulta la agenda de demostración. Los eventos del servidor estarán disponibles en un próximo incremento.</p>
-        <Button variant="ghost" onClick={() => navigate('calendario')}>
+        <Button variant="ghost" onClick={() => navigate('eventos')}>
           Ver eventos <ArrowRight className="size-4" aria-hidden />
         </Button>
       </Card>

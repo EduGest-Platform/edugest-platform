@@ -16,6 +16,7 @@ import { CoderProfile } from './views/Profile'
 import { CompetencyCatalog } from './views/Catalog'
 import { Rubrics } from './views/Rubrics'
 import { Calendar } from './views/Calendar'
+import { Events } from './views/Events'
 import { GroupAnalytics } from './views/GroupAnalytics'
 import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
@@ -26,6 +27,7 @@ const SCREENS: Record<View, () => ReactElement> = {
   dashboard: Dashboard,
   analitica: GroupAnalytics,
   calendario: Calendar,
+  eventos: Events,
   rubricas: Rubrics,
   ficha: CoderProfile,
   programas: Programs,

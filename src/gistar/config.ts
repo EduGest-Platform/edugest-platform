@@ -2,6 +2,7 @@ import {
   BarChart3,
   BookOpen,
   CalendarDays,
+  CalendarRange,
   ClipboardList,
   IdCard,
   ClipboardCheck,
@@ -32,13 +33,13 @@ export const ROLES: Record<Role, string> = {
 }
 
 export const MENUS: Record<Role, View[]> = {
-  admin: ['dashboard', 'calendario', 'programas', 'competencias', 'rubricas', 'auditoria'],
+  admin: ['dashboard', 'eventos', 'calendario', 'programas', 'competencias', 'rubricas', 'auditoria'],
   docente: ['dashboard', 'cohortes', 'analitica', 'calendario', 'alumnado', 'competencias', 'rubricas', 'entregas', 'asistencia', 'alertas', 'candidaturas', 'asistente'],
-  coder: ['dashboard', 'calendario', 'progreso', 'entregas', 'asistente'],
-  aspirante: ['dashboard', 'calendario', 'inscripcion', 'candidatura'],
-  fundacion: ['dashboard', 'calendario', 'candidaturas', 'alertas'],
-  seleccion: ['dashboard', 'calendario', 'candidaturas'],
-  coordinacion: ['dashboard', 'calendario', 'cohortes'],
+  coder: ['dashboard', 'eventos', 'calendario', 'progreso', 'entregas', 'asistente'],
+  aspirante: ['dashboard', 'eventos', 'calendario', 'inscripcion', 'candidatura'],
+  fundacion: ['dashboard', 'eventos', 'calendario', 'candidaturas', 'alertas'],
+  seleccion: ['dashboard', 'eventos', 'calendario', 'candidaturas'],
+  coordinacion: ['dashboard', 'eventos', 'calendario', 'cohortes'],
 }
 
 /** Views reachable by drill-down but not listed in the menu. */
@@ -53,6 +54,7 @@ export const VIEWS: Record<View, { label: string; icon: LucideIcon }> = {
   dashboard: { label: 'Inicio', icon: Home },
   analitica: { label: 'Analítica del grupo', icon: BarChart3 },
   calendario: { label: 'Calendario', icon: CalendarDays },
+  eventos: { label: 'Eventos', icon: CalendarRange },
   rubricas: { label: 'Rúbricas', icon: ClipboardList },
   ficha: { label: 'Ficha del coder', icon: IdCard },
   programas: { label: 'Programas', icon: LayoutGrid },
