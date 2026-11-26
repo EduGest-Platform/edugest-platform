@@ -120,6 +120,11 @@ erDiagram
         UUID created_by FK
         UUID resolved_by FK
     }
+    email_outbox {
+        UUID id PK
+        VARCHAR cohort_id FK
+        UUID created_by FK
+    }
     enrollment {
         UUID id PK
         UUID person_id FK
@@ -268,6 +273,8 @@ erDiagram
     app_user ||--o{ discussion_thread : created_by
     program |o--o{ discussion_thread : program_id
     app_user |o--o{ discussion_thread : resolved_by
+    cohort ||--o{ email_outbox : cohort_id
+    app_user ||--o{ email_outbox : created_by
     application |o--o{ enrollment : application_id
     cohort ||--o{ enrollment : cohort_id
     app_user |o--o{ enrollment : documentation_accredited_by
@@ -336,6 +343,7 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | call_requirement | kind | ck_call_requirement_kind | `["required", "recommended"]` |
 | cohort | timezone | ck_cohort_timezone | `["Europe/Madrid", "Atlantic/Canary", "Europe/Lisbon"]` |
 | competency_framework | estado | ck_competency_framework_estado | `["borrador", "publicada", "archivada"]` |
+| email_outbox | status | ck_email_outbox_status | `["pending", "sending", "sent", "failed", "uncertain", "cancelled"]` |
 | enrollment | documentation_state | ck_enrollment_documentation_state | `["pending", "accredited"]` |
 | enrollment | estado | ck_enrollment_estado | `["activa", "finalizada", "baja_voluntaria"]` |
 | feedback_draft | source | ck_feedback_draft_source | `["template", "teacher"]` |
@@ -911,6 +919,40 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - INDEX `ix_discussion_thread_application_id`: `discussion_thread.application_id`
 
 - INDEX `ix_discussion_thread_program_id`: `discussion_thread.program_id`
+
+### email_outbox
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| id | UUID | no | — | application (not evaluated / sin evaluar) |
+| idempotency_key | VARCHAR(128) | no | — | — |
+| cohort_id | VARCHAR(20) | no | cohort.id | — |
+| created_by | UUID | no | app_user.id | — |
+| recipient | VARCHAR(320) | no | — | — |
+| subject | VARCHAR(200) | no | — | — |
+| text_body | TEXT | no | — | — |
+| html_body | TEXT | sí / yes | — | — |
+| status | VARCHAR(16) | no | — | application (not evaluated / sin evaluar) |
+| attempts | INTEGER | no | — | application (not evaluated / sin evaluar) |
+| available_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+| claimed_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+| sent_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+| error_code | VARCHAR(64) | sí / yes | — | — |
+
+- CHECK `ck_email_outbox_attempts`: `attempts >= 0`
+
+- CHECK `ck_email_outbox_status`: `status IN ('pending', 'sending', 'sent', 'failed', 'uncertain', 'cancelled')`
+
+- FK `unnamed`: `(cohort_id) -> (cohort.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `unnamed`: `idempotency_key`
+
+- INDEX `ix_email_outbox_cohort_id`: `email_outbox.cohort_id`
+
+- INDEX `ix_email_outbox_status`: `email_outbox.status`
 
 ### enrollment
 
