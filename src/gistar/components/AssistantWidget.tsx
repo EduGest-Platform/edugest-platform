@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { MessageSquareText, Send, Sparkles, Square, X } from 'lucide-react'
-import type { Schemas } from '../../shared/api/client'
+import { api, type Schemas } from '../../shared/api/client'
 import { AssistantStreamError, streamAssistant } from '../../shared/api/assistantStream'
 import { DocumentAnswer } from '../views/api/ApiAssistant'
 
@@ -9,6 +9,8 @@ type Exchange = { question: string; result: Schemas['AskOut'] }
 export function AssistantWidget() {
   const [question, setQuestion] = useState('')
   const [cohort, setCohort] = useState('')
+  const [cohorts, setCohorts] = useState<Schemas['AcademicCohortOut'][]>([])
+  const [cohortStatus, setCohortStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [messages, setMessages] = useState<Exchange[]>([])
   const [waiting, setWaiting] = useState('')
   const [partial, setPartial] = useState('')
@@ -21,6 +23,17 @@ export function AssistantWidget() {
   const pending = useRef<AbortController | null>(null)
 
   useEffect(() => () => pending.current?.abort(), [])
+  useEffect(() => {
+    const controller = new AbortController()
+    void api.GET('/api/v1/cohorts', { signal: controller.signal }).then(({ data }) => {
+      if (controller.signal.aborted) return
+      setCohorts(data ?? [])
+      setCohortStatus(data ? 'ready' : 'error')
+    }).catch(() => {
+      if (!controller.signal.aborted) setCohortStatus('error')
+    })
+    return () => controller.abort()
+  }, [])
   useEffect(() => {
     if (dialog.current?.open) end.current?.scrollIntoView({
       block: 'nearest',
@@ -112,11 +125,15 @@ export function AssistantWidget() {
             <button type="button" onClick={clear} className="font-semibold text-blue hover:underline">Limpiar conversación</button>
           </div>
           <div className="shrink-0 border-b border-line px-4 py-2">
-            <label htmlFor="floating-assistant-cohort" className="block text-xs font-semibold text-muted">ID de cohorte (opcional)</label>
-            <input id="floating-assistant-cohort" value={cohort} maxLength={20} readOnly={!!waiting}
+            <label htmlFor="floating-assistant-cohort" className="block text-xs font-semibold text-muted">Cohorte (opcional)</label>
+            <select id="floating-assistant-cohort" value={cohort} disabled={!!waiting || cohortStatus !== 'ready'}
               onChange={event => { clear(); setCohort(event.target.value) }}
-              placeholder="Ámbito autorizado"
-              className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm" />
+              className="mt-1 w-full rounded-lg border border-line px-2 py-1.5 text-sm">
+              <option value="">Ámbito autorizado</option>
+              {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre} · {item.id}</option>)}
+            </select>
+            {cohortStatus === 'loading' && <p role="status" className="mt-1 text-xs text-muted">Cargando cohortes…</p>}
+            {cohortStatus === 'error' && <p role="status" className="mt-1 text-xs text-muted">No se pudo cargar la lista. Puedes consultar tu ámbito autorizado.</p>}
           </div>
           <div role="log" aria-label="Conversación del asistente" aria-live="polite" className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-canvas p-4">
             <p className="mr-6 rounded-2xl rounded-tl-sm border border-line bg-white p-3 text-sm">¡Hola! Pregúntame sobre la documentación de tu formación. Consultaré las fuentes autorizadas.</p>
