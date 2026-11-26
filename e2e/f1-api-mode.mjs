@@ -20,9 +20,12 @@ await B.initScript(`(() => {
     if (url.pathname !== '/api/v1/assistant/ask' || method.toUpperCase() !== 'POST') return original(request, options)
     const status = window.assistantTestError ? 503 : 200
     const body = request instanceof Request ? await request.clone().json() : JSON.parse(options.body)
-    window.assistantTestCalls.push({ question: body.question, status })
-    await new Promise(resolve => setTimeout(resolve, 800))
-    return new Response(JSON.stringify(status === 503 ? {detail:'Synthetic unavailable'} : {status:'no_source', answer:'', citations:[], scope_cohorts:[], source_kind:'documents'}), {status, headers:{'Content-Type':'application/json'}})
+    await new Promise(release => window.assistantTestCalls.push({ question: body.question, status, release }))
+    const data = status === 503 ? { detail: 'Synthetic unavailable' } : {
+      status: 'no_source', mode: 'extractive', retrieval: 'keyword', answer: 'No consta',
+      citations: [], as_of: '2026-11-26', scope_cohorts: ['COH-IA'], source_kind: 'documents', record: null,
+    }
+    return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
   }
 })()`)
 
@@ -40,7 +43,8 @@ check('Captación IA ve solo expedientes de su programa', before > 0 && callsA.e
 // 2 · B: inscripción pública (otro navegador, sin sesión)
 await B.goto(WEB)
 await B.click('Quiero inscribirme')
-await sleep(500)
+check('Convocatoria sintética IA disponible', await B.waitText('IA aplicada'))
+await B.set('#ins-call', 'CONV-IA-2027A')
 await B.set('#ins-name', 'Persona E2E Sintética')
 await B.set('#ins-email', unique)
 await B.set('#ins-mot', 'Motivación de prueba E2E con datos sintéticos.')
@@ -71,7 +75,8 @@ await A.ev(`[...document.querySelectorAll('main tbody tr')].find(r => r.innerTex
 await A.waitText('Historial CRM')
 await A.set('[aria-label="Resumen del evento"]', 'Llamada E2E: confirma asistencia a la jornada informativa')
 await A.click('Registrar en el historial', "document.querySelector('[role=dialog]')")
-check('Evento CRM registrado con autor', await A.waitText('Captación IA (demo)'))
+check('Evento CRM registrado con autor', await A.waitText('Llamada E2E: confirma asistencia a la jornada informativa')
+  && await A.ev(`[...document.querySelectorAll('[role=dialog] li')].some(item => item.textContent.includes('Llamada E2E:') && item.textContent.includes('Captación IA (demo)'))`))
 await A.click('Cerrar', "document.querySelector('[role=dialog] footer')")
 
 // 6 · B: captación Data no ve expedientes de IA
@@ -94,34 +99,49 @@ check('Vistas no migradas señalan datos locales', await B.waitText('datos local
 // KAN-268 · Floating assistant: deterministic browser responses, real keyboard events.
 const editor = '[aria-label="Pregunta al asistente"]'
 const launch = '[aria-label="Abrir asistente EduGest"]'
+
+async function releaseAssistantCall(index, question, status) {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const recorded = await B.ev(`(() => {
+      const calls = window.assistantTestCalls;
+      const call = calls[${index}];
+      if (calls.length !== ${index + 1} || call.question !== ${JSON.stringify(question)} || call.status !== ${status}) return false;
+      call.release();
+      return true;
+    })()`)
+    if (recorded) return true
+    await sleep(100)
+  }
+  return false
+}
 await B.ev(`document.querySelector('${launch}').click()`)
 await B.set(editor, 'Pregunta sintética de prueba')
 await B.enter()
 check('Asistente conserva foco durante consulta por Enter', await B.ev(`document.activeElement.matches('${editor}') && document.activeElement.readOnly`))
+check('Interceptor atendió primera consulta', await releaseAssistantCall(0, 'Pregunta sintética de prueba', 200))
 check('Asistente muestra respuesta', await B.waitText('No consta en la documentación'))
-check('Interceptor atendió primera consulta', await B.ev(`JSON.stringify(window.assistantTestCalls) === JSON.stringify([{question:'Pregunta sintética de prueba',status:200}])`))
 check('Editor conserva foco y vuelve a ser editable', await B.ev(`document.activeElement.matches('${editor}') && !document.activeElement.readOnly`))
 await B.set(editor, 'Segunda pregunta sintética')
 await B.ev('window.assistantTestError = true')
 await B.enter()
+check('Interceptor atendió segunda consulta', await releaseAssistantCall(1, 'Segunda pregunta sintética', 503))
 check('Asistente muestra error 503 esperado', await B.waitText('El servidor ha tenido un problema. Inténtalo de nuevo en unos minutos.'))
 check('Mensaje exacto del error', await B.ev(`document.querySelector('dialog [role=alert]')?.textContent === 'El servidor ha tenido un problema. Inténtalo de nuevo en unos minutos.'`))
-check('Interceptor atendió segunda consulta', await B.ev(`window.assistantTestCalls.length === 2 && window.assistantTestCalls[1].question === 'Segunda pregunta sintética' && window.assistantTestCalls[1].status === 503`))
 check('Editor editable y enfocado tras error', await B.ev(`document.activeElement.matches('${editor}') && !document.activeElement.readOnly`))
 await B.set(editor, 'Tercera pregunta sintética')
 await B.ev('window.assistantTestError = false')
 await B.ev('document.querySelector("[aria-label=\\"Enviar pregunta\\"]").focus(); document.activeElement.click()')
 check('Envío por botón devuelve foco al editor', await B.ev(`document.activeElement.matches('${editor}')`))
 await B.ev('document.querySelector("[aria-label=\\"Cerrar asistente\\"]").focus()')
+check('Interceptor atendió tercera consulta', await releaseAssistantCall(2, 'Tercera pregunta sintética', 200))
 check('Tercera respuesta completada', await B.waitText('No consta en la documentación') && await B.ev(`new Promise(resolve => { const deadline = Date.now() + 6000; const poll = () => { if (!document.querySelector('${editor}').readOnly) resolve(true); else if (Date.now() > deadline) resolve(false); else setTimeout(poll, 50) }; poll() })`))
-check('Interceptor atendió tercera consulta', await B.ev(`window.assistantTestCalls.length === 3 && window.assistantTestCalls[2].question === 'Tercera pregunta sintética' && window.assistantTestCalls[2].status === 200`))
 check('Respuesta no roba foco al usuario', await B.ev('document.activeElement.getAttribute("aria-label") === "Cerrar asistente"'))
 await B.escape()
 await sleep(200)
 check('Escape cierra asistente y restaura foco', await B.ev(`!document.querySelector('dialog[open]') && document.activeElement.matches('${launch}')`))
 
 await B.nav('Candidaturas')
-check('Docente recibe denegación de la API', await B.waitText('HTTP 403'))
+check('Docente recibe denegación de la API', await B.waitText('No tienes permiso para ver esta información.'))
 await B.click('Salir')
 await sleep(500)
 
