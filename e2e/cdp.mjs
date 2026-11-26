@@ -79,9 +79,9 @@ export async function newBrowser() {
   await send('Runtime.enable', {}, s)
   await send('Page.enable', {}, s)
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
-  const pressKey = async (name, virtualKeyCode) => {
+  const pressKey = async (name, virtualKeyCode, text) => {
     const key = { key: name, code: name, windowsVirtualKeyCode: virtualKeyCode }
-    await send('Input.dispatchKeyEvent', { ...key, type: 'rawKeyDown' }, s)
+    await send('Input.dispatchKeyEvent', { ...key, type: text ? 'keyDown' : 'rawKeyDown', text }, s)
     await send('Input.dispatchKeyEvent', { ...key, type: 'keyUp' }, s)
   }
   const page = {
@@ -92,7 +92,14 @@ export async function newBrowser() {
       const blocked = await send('Network.setBlockedURLs', { urls }, s)
       if (blocked.error) throw new Error(blocked.error.message)
     },
+    networkLatency: async (latency) => {
+      const result = await send('Network.emulateNetworkConditions', {
+        offline: false, latency, downloadThroughput: -1, uploadThroughput: -1,
+      }, s)
+      if (result.error) throw new Error(result.error.message)
+    },
     tab: () => pressKey('Tab', 9),
+    enter: () => pressKey('Enter', 13, '\r'),
     escape: () => pressKey('Escape', 27),
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
