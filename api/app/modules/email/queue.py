@@ -1,5 +1,5 @@
 """Queue state transitions. Callers own transactions and must commit claims before SMTP."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
@@ -31,7 +31,7 @@ def claim_next(db: Session, *, now: datetime) -> EmailOutbox | None:
 def finish_claim(
     db: Session, *, message_id: UUID, attempt: int, outcome: str, now: datetime
 ) -> None:
-    if outcome not in ("sent", "failed", "uncertain"):
+    if outcome not in ("sent", "failed", "uncertain", "transient_pre_send"):
         raise ValueError("Invalid delivery outcome")
     if now.utcoffset() is None:
         raise ValueError("Timezone-aware timestamp required")
@@ -40,9 +40,9 @@ def finish_claim(
     ).one()
     if item.status != "sending" or item.attempts != attempt:
         raise ValueError("Stale delivery claim")
-    item.status = outcome
+    item.status = "failed" if outcome == "transient_pre_send" else outcome
     item.sent_at = now if outcome == "sent" else None
-    item.error_code = {"sent": None, "failed": "delivery_failed", "uncertain": "delivery_unknown"}[outcome]
+    item.error_code = {"sent": None, "failed": "delivery_failed", "uncertain": "delivery_unknown", "transient_pre_send": "transient_pre_send"}[outcome]
     db.flush()
 
 
@@ -67,8 +67,6 @@ def recover_interrupted(db: Session, *, cutoff: datetime, limit: int = 100) -> i
 
 def schedule_retry(db: Session, *, message_id: UUID, now: datetime) -> bool:
     """Retry only explicitly classified transient failures, never ambiguous SMTP outcomes."""
-    from datetime import timedelta
-
     if now.utcoffset() is None:
         raise ValueError("Timezone-aware timestamp required")
     item = db.scalars(
