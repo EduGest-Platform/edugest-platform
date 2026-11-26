@@ -30,6 +30,7 @@ export function StaffInvitationConsole() {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [uncertain, setUncertain] = useState(false)
   const writing = useRef<AbortController | null>(null)
   const account = directory?.items.find(item => item.user_id === selection)
 
@@ -59,7 +60,7 @@ export function StaffInvitationConsole() {
   }
 
   async function change(action: Action) {
-    if (!account || writing.current || account.profile_state === 'active') return
+    if (!account || writing.current || uncertain || account.profile_state === 'active') return
     const expiresHours = Number(hours)
     if (action !== 'revoke' && (!Number.isInteger(expiresHours) || expiresHours < 1 || expiresHours > 168)) {
       setError('Indica entre 1 y 168 horas de vigencia.')
@@ -82,7 +83,10 @@ export function StaffInvitationConsole() {
         })
         if (signal.aborted) return
         if (result.data) setNotice('Invitación revocada.')
-        else setError(problemText(describeApiError(result.response.status, result.error)))
+        else {
+          if (result.response.status >= 500 || result.response.status === 408) setUncertain(true)
+          setError(problemText(describeApiError(result.response.status, result.error)))
+        }
       } else {
         const result = action === 'renew' && invitation
           ? await api.POST('/api/v1/staff/invitations/{invitation_id}/renew', {
@@ -95,12 +99,18 @@ export function StaffInvitationConsole() {
           displayName: account.display_name,
           expiresAt: result.data.invitation.expires_at,
         })
-        else setError(problemText(describeApiError(result.response.status, result.error)))
+        else {
+          if (result.response.status >= 500 || result.response.status === 408) setUncertain(true)
+          setError(problemText(describeApiError(result.response.status, result.error)))
+        }
       }
+      setDirectory(undefined)
       setAttempt(value => value + 1)
     } catch {
       if (!controller.signal.aborted) {
-        setError('No se pudo confirmar la operación. Actualiza la lista antes de volver a intentarlo.')
+        setUncertain(true)
+        setError('No se pudo confirmar la operación. Comprueba el estado actualizado antes de emitir otro código.')
+        setDirectory(undefined)
         setAttempt(value => value + 1)
       }
     } finally {
@@ -134,6 +144,8 @@ export function StaffInvitationConsole() {
         </form>
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
         {notice && <Notice live="polite">{notice}</Notice>}
+        {uncertain && <Notice tone="warning">El resultado anterior es incierto. Comprueba la cuenta y su última invitación antes de continuar.</Notice>}
+        {uncertain && directory && <Button size="sm" variant="ghost" disabled={busy} onClick={() => setUncertain(false)}>He revisado el estado de las invitaciones</Button>}
         {!directory && !error && <p role="status">Cargando cuentas internas…</p>}
         {directory && <>
           {directory.items.length === 0 ? <p>No hay cuentas en esta página.</p> : (
@@ -162,7 +174,7 @@ export function StaffInvitationConsole() {
                 onChange={event => setHours(event.target.value)} disabled={busy} />
             </Field>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={busy} onClick={() => void change(account.latest_invitation ? 'renew' : 'issue')}>
+              <Button size="sm" disabled={busy || uncertain} onClick={() => void change(account.latest_invitation ? 'renew' : 'issue')}>
                 {account.latest_invitation ? 'Renovar código' : 'Emitir código'}
               </Button>
               {account.latest_invitation && !account.latest_invitation.revoked_at && !account.latest_invitation.used_at &&
