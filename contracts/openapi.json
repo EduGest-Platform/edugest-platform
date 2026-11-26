@@ -7604,6 +7604,59 @@
         ]
       }
     },
+    "/api/v1/assistant/ask/stream": {
+      "post": {
+        "operationId": "ask_stream_api_v1_assistant_ask_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "description": "SSE: phase ({source_kind}), delta ({text}), answer (AskOut) o error ({code}). answer y error cierran el flujo.",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión no válida"
+          },
+          "403": {
+            "description": "Sin documentos en tu ámbito o cohorte ajena"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar el asistente con progreso y respuesta mediante eventos SSE",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
     "/api/v1/attendance-records/{record_id}/revisions": {
       "get": {
         "operationId": "list_revisions_api_v1_attendance_records__record_id__revisions_get",

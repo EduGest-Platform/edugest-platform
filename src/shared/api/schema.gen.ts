@@ -255,6 +255,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/ask/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Consultar el asistente con progreso y respuesta mediante eventos SSE */
+        post: operations["ask_stream_api_v1_assistant_ask_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance-records/{record_id}/revisions": {
         parameters: {
             query?: never;
@@ -4960,6 +4977,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AskOut"];
                 };
+            };
+            /** @description Sin documentos en tu ámbito o cohorte ajena */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_stream_api_v1_assistant_ask_stream_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Sesión no válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Sin documentos en tu ámbito o cohorte ajena */
             403: {
