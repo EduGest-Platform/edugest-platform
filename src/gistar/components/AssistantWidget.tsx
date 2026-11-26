@@ -61,7 +61,7 @@ export function AssistantWidget() {
     input.current?.focus()
   }
 
-  function clear() {
+  function clear(restoreFocus = false) {
     const controller = pending.current
     pending.current = null
     controller?.abort()
@@ -71,7 +71,7 @@ export function AssistantWidget() {
     setPartial('')
     setQuestion('')
     setError('')
-    input.current?.focus()
+    if (restoreFocus) input.current?.focus()
   }
 
   async function ask(event: FormEvent) {
@@ -131,7 +131,7 @@ export function AssistantWidget() {
           </header>
           <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs">
             <span>Tu ámbito autorizado</span>
-            <button type="button" onClick={clear} className="font-semibold text-blue hover:underline">Limpiar conversación</button>
+            <button type="button" onClick={() => clear(true)} className="font-semibold text-blue hover:underline">Limpiar conversación</button>
           </div>
           <div className="shrink-0 border-b border-line px-4 py-2">
             <label htmlFor="floating-assistant-cohort" className="block text-xs font-semibold text-muted">Cohorte (opcional)</label>
