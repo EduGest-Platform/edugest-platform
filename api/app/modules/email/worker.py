@@ -1,8 +1,8 @@
 """Process one queued email; scheduling and authorization are external responsibilities."""
 from app.core.config import Settings
 from app.core.db import SessionLocal, utcnow
-from app.modules.email.queue import claim_next, finish_claim
-from app.modules.email.transport import DeliveryError, send_email
+from app.modules.email.queue import claim_next, finish_claim, schedule_retry
+from app.modules.email.transport import DeliveryError, TransientPreSendError, send_email
 
 
 def process_one(config: Settings) -> bool:
@@ -25,6 +25,8 @@ def process_one(config: Settings) -> bool:
 
     try:
         send_email(config, **payload)
+    except TransientPreSendError:
+        outcome = "transient_pre_send"
     except ValueError:
         outcome = "failed"
     except DeliveryError:
@@ -34,5 +36,8 @@ def process_one(config: Settings) -> bool:
         outcome = "sent"
 
     with SessionLocal.begin() as db:
-        finish_claim(db, message_id=message_id, attempt=attempt, outcome=outcome, now=utcnow())
+        now = utcnow()
+        finish_claim(db, message_id=message_id, attempt=attempt, outcome=outcome, now=now)
+        if outcome == "transient_pre_send":
+            schedule_retry(db, message_id=message_id, now=now)
     return True
