@@ -44,3 +44,22 @@ def finish_claim(
     item.sent_at = now if outcome == "sent" else None
     item.error_code = {"sent": None, "failed": "delivery_failed", "uncertain": "delivery_unknown"}[outcome]
     db.flush()
+
+
+def recover_interrupted(db: Session, *, cutoff: datetime, limit: int = 100) -> int:
+    """Quarantine abandoned claims; never automatically resend an uncertain delivery."""
+    if cutoff.utcoffset() is None or not 1 <= limit <= 1000:
+        raise ValueError("Invalid recovery parameters")
+    statement = (
+        select(EmailOutbox)
+        .where(EmailOutbox.status == "sending", EmailOutbox.claimed_at <= cutoff)
+        .order_by(EmailOutbox.claimed_at, EmailOutbox.id)
+        .limit(limit)
+        .with_for_update(skip_locked=True)
+    )
+    items = list(db.scalars(statement))
+    for item in items:
+        item.status = "uncertain"
+        item.error_code = "claim_interrupted"
+    db.flush()
+    return len(items)
