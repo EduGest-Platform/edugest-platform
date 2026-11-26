@@ -24,8 +24,12 @@ export function CompetencyFrameworkEditor({ draft, busy, onSave, onClose }: {
     level_1: item.level_1, level_2: item.level_2, level_3: item.level_3,
   })) : [blank('C1')])
 
+  const codes = rows.map(row => row.codigo.trim())
+  const duplicateCodes = [...new Set(codes.filter((code, index) => code && codes.indexOf(code) !== index))]
+
   function submit(event: FormEvent) {
     event.preventDefault()
+    if (busy || duplicateCodes.length) return
     onSave({ competencies: rows })
   }
 
@@ -55,9 +59,10 @@ export function CompetencyFrameworkEditor({ draft, busy, onSave, onClose }: {
             </Button>}
           </fieldset>
         ))}
+        {duplicateCodes.length > 0 && <p role="alert" className="rounded-lg border border-line p-3 text-sm">Los códigos de competencia deben ser únicos. Revisa: {duplicateCodes.join(", ")}.</p>}
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" disabled={rows.length >= 30} onClick={() => setRows(previous => [...previous, blank('')])}>Añadir competencia</Button>
-          <Button type="submit">{busy ? 'Guardando…' : 'Guardar borrador'}</Button>
+          <Button type="submit" disabled={duplicateCodes.length > 0}>{busy ? 'Guardando…' : 'Guardar borrador'}</Button>
           <Button variant="ghost" onClick={onClose}>Cancelar edición</Button>
         </div>
       </fieldset>
