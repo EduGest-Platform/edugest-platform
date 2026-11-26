@@ -31,3 +31,9 @@ GISTAR_E2E_FIXTURE=disposable-synthetic WEB_URL=http://localhost:8443/ \
 **2026-11-26, `dev@8761001`.** Chromium, FastAPI and disposable PostgreSQL 16. El ensayo automatizado pasó en **23 segundos**, con **67** comprobaciones de registro, dos recorridos HTTP de matrícula y asistencia, y **10** comprobaciones del asistente. La verificación SQL posterior confirmó una sola matrícula y un solo registro de asistencia. Queda pendiente el ensayo humano de la presentación.
 
 The automated rehearsal passed in **23 seconds**, with **67** registration checks, two HTTP enrollment and attendance journeys, and **10** assistant checks. Follow-up database verification confirmed one enrollment and one attendance record. The live presenter rehearsal is pending.
+
+## Diagnóstico / Diagnostics
+
+El comando muestra la duración y el resultado de cada etapa ejecutada, junto con el presupuesto restante, incluso si una etapa falla. Los tiempos no incluyen la preparación de servicios ni sustituyen el ensayo humano.
+
+The command reports elapsed time and outcome for each attempted stage and the remaining budget, including on failure. Timings exclude service preparation and do not replace the live rehearsal.

@@ -25,13 +25,21 @@ const stages = [
 
 const start = performance.now()
 const durationMs = 15 * 60 * 1000
+const completed = []
+function report() {
+  console.log('\nStage timing (seconds):')
+  for (const item of completed) console.log(`${item.label}: ${item.seconds.toFixed(2)} s — ${item.status}`)
+  console.log(`Remaining budget: ${Math.max(0, (durationMs - (performance.now() - start)) / 1000).toFixed(2)} s`)
+}
 for (const stage of stages) {
   const remaining = Math.floor(durationMs - (performance.now() - start))
   if (remaining <= 0) {
     console.error('Demo slot expired before ' + stage.label)
+    report()
     process.exit(1)
   }
   console.log('\n' + stage.label)
+  const stageStart = performance.now()
   const result = spawnSync(process.execPath, [fileURLToPath(new URL(stage.script, import.meta.url))], {
     env: {
       ...process.env, WEB_URL: web.href, GISTAR_API: api.origin,
@@ -40,11 +48,15 @@ for (const stage of stages) {
     stdio: 'inherit',
     timeout: remaining,
   })
-  if (result.error || result.status !== 0) {
+  const failed = Boolean(result.error || result.status !== 0)
+  completed.push({ label: stage.label, seconds: (performance.now() - stageStart) / 1000, status: failed ? 'FAILED' : 'PASSED' })
+  if (failed) {
     console.error(result.error?.code === 'ETIMEDOUT'
       ? 'The demo slot expired during this step.'
       : 'Rehearsal stopped at this step. Read the failed check above.')
+    report()
     process.exit(1)
   }
 }
+report()
 console.log(`\nRehearsal passed in ${Math.ceil((performance.now() - start) / 1000)} seconds (900-second slot).`)
