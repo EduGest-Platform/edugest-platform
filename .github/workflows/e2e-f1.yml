@@ -55,6 +55,10 @@ jobs:
           WEB_URL: http://localhost:8443/
           GISTAR_API: http://localhost:8000
         run: node e2e/discussion-dossier.mjs
+      - name: Program board with independent sessions (KAN-246)
+        env:
+          WEB_URL: http://localhost:8443/
+        run: node e2e/program-board-isolation.mjs
       - name: Browser journey and repeat-run idempotency
         env:
           WEB_URL: http://localhost:8443/
