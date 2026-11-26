@@ -1221,6 +1221,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/access-requests/{request_id}/revoke-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revocar de forma explícita la asignación verificada de una solicitud aplicada */
+        post: operations["revoke_access_api_v1_staff_access_requests__request_id__revoke_access_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/invitations": {
         parameters: {
             query?: never;
@@ -1594,6 +1611,32 @@ export interface components {
         AccessReview: {
             /** Approved */
             approved: boolean;
+        };
+        /** AccessRevoke */
+        AccessRevoke: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             * @description Assignment observed before administrative confirmation.
+             */
+            assignment_id: string;
+            /**
+             * Confirm
+             * @description Explicit administrative confirmation of the echoed role and scope.
+             */
+            confirm: boolean;
+            /**
+             * Requested Role
+             * @enum {string}
+             */
+            requested_role: "admin" | "captacion" | "seleccion" | "docente" | "coordinacion";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Scope Type
+             * @enum {string}
+             */
+            scope_type: "global" | "program" | "call" | "cohort";
         };
         /**
          * ApplicationCreate
@@ -8569,6 +8612,62 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    revoke_access_api_v1_staff_access_requests__request_id__revoke_access_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessRevoke"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Confirmation mismatch or revocation blocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -358,6 +358,64 @@
         "title": "AccessReview",
         "type": "object"
       },
+      "AccessRevoke": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_id": {
+            "description": "Assignment observed before administrative confirmation.",
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "confirm": {
+            "description": "Explicit administrative confirmation of the echoed role and scope.",
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "requested_role": {
+            "enum": [
+              "admin",
+              "captacion",
+              "seleccion",
+              "docente",
+              "coordinacion"
+            ],
+            "title": "Requested Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "enum": [
+              "global",
+              "program",
+              "call",
+              "cohort"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested_role",
+          "scope_type",
+          "confirm",
+          "assignment_id"
+        ],
+        "title": "AccessRevoke",
+        "type": "object"
+      },
       "ApplicationCreate": {
         "description": "Public inscription form. Only the minimum data needed for pre-selection (data minimisation).",
         "properties": {
@@ -12474,6 +12532,73 @@
           }
         ],
         "summary": "Revisión administrativa distinta de quien solicita; aprobar no aplica roles",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests/{request_id}/revoke-access": {
+      "post": {
+        "operationId": "revoke_access_api_v1_staff_access_requests__request_id__revoke_access_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessRevoke"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessApplicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Global administration required"
+          },
+          "404": {
+            "description": "Request not found"
+          },
+          "409": {
+            "description": "Confirmation mismatch or revocation blocked"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revocar de forma explícita la asignación verificada de una solicitud aplicada",
         "tags": [
           "staff"
         ]
