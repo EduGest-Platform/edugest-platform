@@ -134,7 +134,15 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       {notes?.length === 0 && <Notice>No hay versiones de notas.</Notice>}
       {notes?.map(note => <details key={note.version} className="text-sm">
         <summary>Versión {note.version} · {note.approved_at ? "Aprobada" : "Borrador"}</summary>
-        {note.body.summary.map((item, index) => <div key={index} className="mt-2 break-words"><p>{item.text}</p><p className="text-xs text-muted">{item.evidence.map(span => `${span.start_seconds}–${span.end_seconds} s`).join(", ")}</p></div>)}
+        {([
+          ["Resumen", note.body.summary],
+          ["Temas principales", note.body.key_topics ?? []],
+          ["Refuerzo", note.body.reinforcement_topics ?? []],
+          ["Acciones propuestas", note.body.action_items ?? []],
+        ] as const).map(([label, items]) => items.length > 0 && <section key={label} className="mt-3">
+          <h5 className="font-semibold">{label}</h5>
+          {items.map((item, index) => <div key={index} className="mt-2 break-words"><p>{item.text}</p><p className="text-xs text-muted">{item.evidence.map(span => `${span.start_seconds}–${span.end_seconds} s`).join(", ")}</p></div>)}
+        </section>)}
       </details>)}
     </section>}
     <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={fieldsDisabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
