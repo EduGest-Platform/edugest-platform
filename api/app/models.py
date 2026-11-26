@@ -12,7 +12,7 @@ from app.modules.learning.models import Enrollment  # noqa: F401
 from app.modules.preselection.models import PreselectionDecision  # noqa: F401
 from app.modules.submissions.models import Assignment, Submission  # noqa: F401
 from app.modules.requirements.models import CallRequirement, RequirementReview, RequirementReviewRevision  # noqa: F401
-from app.modules.selection.models import SelectionApproval, SelectionDecision  # noqa: F401
+from app.modules.selection.models import SelectionAppointment, SelectionApproval, SelectionDecision  # noqa: F401
 from app.modules.risk.models import Intervention, RiskAlert  # noqa: F401
 from app.modules.staff.models import AccessChangeRequest, Invitation, StaffProfile  # noqa: F401
 from app.modules.discussions.models import DiscussionComment, DiscussionThread  # noqa: F401

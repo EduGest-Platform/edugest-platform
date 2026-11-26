@@ -33,6 +33,7 @@ from app.modules.learning.directory_router import router as academic_directory_r
 from app.modules.learning.documentation_router import router as enrollment_documentation_router
 from app.modules.learning.learner_router import router as learner_enrollments_router
 from app.modules.learning.overview_router import router as progress_overview_router
+from app.modules.selection.appointments import router as selection_appointments_router
 from app.modules.selection.router import router as selection_router
 from app.modules.submissions.router import router as submissions_router
 from app.modules.staff.router import router as staff_router
@@ -69,6 +70,7 @@ for r in (
     prefilter_router,
     preselection_router,
     selection_router,
+    selection_appointments_router,
     automation_router,
     attendance_router,
     competencies_router,

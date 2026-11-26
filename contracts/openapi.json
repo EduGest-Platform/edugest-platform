@@ -712,6 +712,226 @@
         "title": "ApplicationSummary",
         "type": "object"
       },
+      "AppointmentCreate": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "group_day",
+              "individual_interview"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 250,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "previous_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Id"
+          },
+          "scheduled_at": {
+            "format": "date-time",
+            "title": "Scheduled At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "scheduled_at"
+        ],
+        "title": "AppointmentCreate",
+        "type": "object"
+      },
+      "AppointmentList": {
+        "properties": {
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AppointmentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "can_edit",
+          "items"
+        ],
+        "title": "AppointmentList",
+        "type": "object"
+      },
+      "AppointmentOut": {
+        "properties": {
+          "assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment"
+          },
+          "conclusions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusions"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "group_day",
+              "individual_interview"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "previous_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Id"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "scheduled_at": {
+            "format": "date-time",
+            "title": "Scheduled At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "scheduled",
+              "attended",
+              "no_show",
+              "rescheduled"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "previous_id",
+          "kind",
+          "state",
+          "scheduled_at",
+          "location",
+          "created_at",
+          "recorded_at",
+          "conclusions",
+          "assessment"
+        ],
+        "title": "AppointmentOut",
+        "type": "object"
+      },
+      "AppointmentOutcome": {
+        "properties": {
+          "assessment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment"
+          },
+          "conclusions": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusions"
+          },
+          "result": {
+            "enum": [
+              "attended",
+              "no_show"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "AppointmentOutcome",
+        "type": "object"
+      },
       "ApproveIn": {
         "additionalProperties": false,
         "properties": {
@@ -7946,6 +8166,202 @@
         "summary": "Historial inmutable de una revisión: persona, resultado, fecha y motivo de cada versión",
         "tags": [
           "requirements"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/selection-appointments": {
+      "get": {
+        "operationId": "list_appointments_api_v1_applications__application_id__selection_appointments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar las citaciones de selección",
+        "tags": [
+          "selection"
+        ]
+      },
+      "post": {
+        "operationId": "create_appointment_api_v1_applications__application_id__selection_appointments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La candidatura o cita ya no permite el cambio solicitado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Agendar una jornada o entrevista, o enlazar una nueva fecha a una citación anterior",
+        "tags": [
+          "selection"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/selection-appointments/{appointment_id}/outcome": {
+      "post": {
+        "operationId": "record_appointment_outcome_api_v1_applications__application_id__selection_appointments__appointment_id__outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "appointment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Appointment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentOutcome"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La candidatura o cita ya no permite el cambio solicitado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar asistencia o ausencia y, cuando proceda, conclusiones y valoración",
+        "tags": [
+          "selection"
         ]
       }
     },
