@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { api, errorMessage, type Schemas } from "../../../shared/api/client"
 import { Button, Card, Field, Notice, PageTitle, inputCls } from "../../ui"
+import { useGistar } from "../../store"
+import { AcademicEmail } from "./AcademicEmail"
 
 export type AcademicCohort = Schemas["AcademicCohortOut"]
 
@@ -56,6 +58,7 @@ export function CohortDetails({ cohort }: { cohort: AcademicCohort }) {
 }
 
 export function ApiCohorts() {
+  const { role } = useGistar()
   const { cohorts, loading, error, retry } = useAcademicCohorts()
   const [selected, setSelected] = useState("")
   const cohort = cohorts.find((c) => c.id === selected) ?? cohorts[0]
@@ -107,6 +110,7 @@ export function ApiCohorts() {
           API.
         </p>
       </Card>
+      {cohort && (role === "admin" || role === "docente") && <AcademicEmail key={cohort.id} cohortId={cohort.id} />}
     </>
   )
 }
