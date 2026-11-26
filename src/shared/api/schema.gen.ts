@@ -341,6 +341,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attendance-sessions/{session_id}/zoom/meeting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Meeting */
+        post: operations["create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance-sessions/{session_id}/zoom/notes": {
         parameters: {
             query?: never;
@@ -2533,9 +2550,9 @@ export interface components {
         };
         /** EditNotesIn */
         EditNotesIn: {
+            draft: components["schemas"]["MeetingNotesDraft"];
             /** Expected Version */
             expected_version: number;
-            draft: components["schemas"]["MeetingNotesDraft"];
         };
         /** EnrollmentAssessments */
         EnrollmentAssessments: {
@@ -3108,6 +3125,24 @@ export interface components {
             /** Roles */
             roles: components["schemas"]["RoleAssignmentOut"][];
         };
+        /** MeetingCreateIn */
+        MeetingCreateIn: {
+            /**
+             * Authentication Mode
+             * @default authenticated
+             * @enum {string}
+             */
+            authentication_mode: "open" | "authenticated" | "institutional";
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /** Topic */
+            topic: string;
+        };
         /** MeetingNotesDraft */
         MeetingNotesDraft: {
             /** Action Items */
@@ -3118,6 +3153,28 @@ export interface components {
             reinforcement_topics?: components["schemas"]["NoteItem"][];
             /** Summary */
             summary: components["schemas"]["NoteItem"][];
+        };
+        /** MeetingOut */
+        MeetingOut: {
+            /**
+             * Authentication Mode
+             * @enum {string}
+             */
+            authentication_mode: "open" | "authenticated" | "institutional";
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Provider Id */
+            provider_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
         };
         /**
          * NextActionCreate
@@ -5755,6 +5812,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
