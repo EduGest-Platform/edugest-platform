@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 
-type Language = 'es' | 'en'
-type Theme = 'light' | 'dark'
+export type Language = 'es' | 'en'
+export type Theme = 'light' | 'dark'
 
 function preference(key: string): string | null {
   try { return localStorage.getItem(key) } catch { return null }
 }
 
-export function AppearanceControls() {
+export function useAppearance() {
   const [language, setLanguage] = useState<Language>(() => preference('edugest.language') === 'en' ? 'en' : 'es')
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = preference('edugest.theme')
@@ -20,10 +20,14 @@ export function AppearanceControls() {
       localStorage.setItem('edugest.theme', theme)
     } catch { /* Preferences remain usable without storage. */ }
   }, [language, theme])
+  return { language, setLanguage, theme, setTheme }
+}
+
+export function AppearanceControls({ language, setLanguage, theme, setTheme }: ReturnType<typeof useAppearance>) {
   const en = language === 'en'
   const dark = theme === 'dark'
-  return <section aria-label={en ? 'Appearance preview' : 'Vista previa de apariencia'} lang={language}
-    className="grid gap-3 rounded-xl border p-4"
+  return <section aria-label={en ? 'Appearance preferences' : 'Preferencias de apariencia'} lang={language}
+    className="flex items-center gap-2 rounded-lg border p-1"
     style={{ background: dark ? '#142b46' : '#ffffff', color: dark ? '#ffffff' : '#142b46', colorScheme: theme }}>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div role="group" aria-label={en ? 'Language' : 'Idioma'} className="flex gap-2">
@@ -35,7 +39,6 @@ export function AppearanceControls() {
         {en ? 'Night mode' : 'Modo noche'}
       </button>
     </div>
-    <h2 className="font-semibold">{en ? 'Welcome to EduGest' : 'Bienvenido a EduGest'}</h2>
-    <p className="text-sm">{en ? 'Preview only. Global translation and theme are pending.' : 'Vista previa. Traducción y tema globales pendientes.'}</p>
+
   </section>
 }

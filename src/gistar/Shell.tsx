@@ -20,7 +20,10 @@ import { GroupAnalytics } from './views/GroupAnalytics'
 import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
+import { AppearanceControls, useAppearance } from './components/AppearanceControls'
 import { LoginScreen } from './components/LoginScreen'
+
+const EN_MENU: Record<View, string> = { dashboard: 'Home', analitica: 'Analytics', calendario: 'Calendar', rubricas: 'Rubrics', ficha: 'Student profile', programas: 'Programs', competencias: 'Competencies', auditoria: 'Audit', alumnado: 'Students', asistencia: 'Attendance', entregas: 'Submissions', alertas: 'Alerts', asistente: 'Assistant', progreso: 'My progress', inscripcion: 'Registration', candidatura: 'My application', candidaturas: 'Applications', cohortes: 'Cohorts' }
 
 const SCREENS: Record<View, () => ReactElement> = {
   dashboard: Dashboard,
@@ -59,6 +62,9 @@ function Logo() {
 export function Shell() {
   const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
   const session = useApiSession()
+  const appearance = useAppearance()
+  const en = appearance.language === 'en'
+  const dark = appearance.theme === 'dark'
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
   const source = dataSourceFor(view, API_MODE, role)
   const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
@@ -77,8 +83,8 @@ export function Shell() {
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
         </div>
-        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">Menú · {ROLES[role]}</p>
-        <nav aria-label="Navegación principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
+        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">{en ? "Menu" : "Menú"} · {ROLES[role]}</p>
+        <nav aria-label={en ? "Main navigation" : "Navegación principal"} className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
           {menuFor(role, API_MODE).map((v) => {
             const { label, icon: Icon } = VIEWS[v]
             const active = v === view
@@ -93,7 +99,7 @@ export function Shell() {
                 }`}
               >
                 <Icon className={`size-4 ${active ? 'text-gold' : 'text-[#d2caff]'}`} aria-hidden />
-                {label}
+                {en ? EN_MENU[v] : label}
               </button>
             )
           })}
@@ -106,12 +112,13 @@ export function Shell() {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8">
+        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8" style={dark ? { background: "#142b46", color: "#ffffff", colorScheme: "dark" } : undefined}>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[15px] font-semibold text-ink">Acompañamos cada trayectoria de aprendizaje</span>
+            <span className="text-[15px] font-semibold" style={{ color: dark ? "#ffffff" : undefined }}>{en ? "Supporting every learning journey" : "Acompañamos cada trayectoria de aprendizaje"}</span>
             <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">DEMO · Datos sintéticos</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <AppearanceControls {...appearance} />
             {allowedRoles && session.me && (
               <span className="mr-1 hidden whitespace-nowrap border-r border-line pr-3 text-right text-xs leading-tight text-muted lg:block">
                 <b className="block text-sm font-semibold text-ink">{session.me.display_name}</b>
@@ -119,7 +126,7 @@ export function Shell() {
               </span>
             )}
             <label htmlFor="role" className="whitespace-nowrap text-sm text-muted">
-              {allowedRoles ? 'Actuar como' : 'Ver como'}
+              {en ? (allowedRoles ? 'Act as' : 'View as') : (allowedRoles ? 'Actuar como' : 'Ver como')}
             </label>
             <select id="role" className={`${inputCls} w-auto max-w-56 py-2`} value={role} disabled={!!allowedRoles && allowedRoles.length < 2} onChange={(e) => setRole(e.target.value as Role)}>
               {(allowedRoles ?? (Object.keys(ROLES) as Role[])).map((k) => (
