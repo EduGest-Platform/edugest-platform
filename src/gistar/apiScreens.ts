@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import type { View } from './types'
+import { ApiCoordinationDashboard } from './views/api/ApiCoordinationDashboard'
 import { ApiCohorts } from './views/api/ApiCohorts'
 import { ApiCohortOverview } from './views/api/ApiCohortOverview'
 import { ApiAttendance } from './views/api/ApiAttendance'
@@ -13,6 +14,7 @@ import { ApiApplications, ApiAudit, ApiInscription, ApiMyApplications } from './
  * Must list exactly the views in API_VIEWS (src/shared/api/config.ts); a test keeps both in sync.
  */
 export const API_SCREENS: Partial<Record<View, () => ReactElement>> = {
+  dashboard: ApiCoordinationDashboard,
   cohortes: ApiCohorts,
   analitica: ApiCohortOverview,
   asistencia: ApiAttendance,

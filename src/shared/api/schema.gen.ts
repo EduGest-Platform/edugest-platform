@@ -76,6 +76,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/crm-owners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Personal que puede ser responsable de una próxima acción */
+        get: operations["list_crm_owners_api_v1_applications__application_id__crm_owners_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/events": {
         parameters: {
             query?: never;
@@ -1523,6 +1540,8 @@ export interface components {
             legacy_ref: string | null;
             /** Motivacion */
             motivacion: string;
+            /** @description Próxima acción vigente: la del contacto más reciente que registró una. */
+            next_action: components["schemas"]["NextActionOut"] | null;
             person: components["schemas"]["PersonOut"];
             /** Program Id */
             program_id: string;
@@ -2242,6 +2261,16 @@ export interface components {
             /** Nombre */
             nombre: string;
         };
+        /** CrmOwnerOut */
+        CrmOwnerOut: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** CurrentLevel */
         CurrentLevel: {
             /** Assessed At */
@@ -2452,6 +2481,8 @@ export interface components {
         EventCreate: {
             /** Canal */
             canal?: ("email" | "telefono" | "presencial" | "videollamada") | null;
+            /** @description Solo para contactos. Opcional; si se envía, exige los tres campos. */
+            next_action?: components["schemas"]["NextActionCreate"] | null;
             /**
              * Resultado
              * @description Solo para contactos: «sin_respuesta» cuenta para la revisión de silencio.
@@ -2479,6 +2510,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            next_action: components["schemas"]["NextActionOut"] | null;
             /**
              * Occurred At
              * Format: date-time
@@ -2707,6 +2739,46 @@ export interface components {
             person_id: string | null;
             /** Roles */
             roles: components["schemas"]["RoleAssignmentOut"][];
+        };
+        /**
+         * NextActionCreate
+         * @description What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone.
+         */
+        NextActionCreate: {
+            /**
+             * Description
+             * @description Acción operativa. No incluir datos de salud, situación personal ni otros datos sensibles.
+             */
+            description: string;
+            /**
+             * Due On
+             * Format: date
+             * @description Plazo; no puede ser anterior a hoy (Europe/Madrid).
+             */
+            due_on: string;
+            /**
+             * Owner User Id
+             * Format: uuid
+             * @description Personal con permiso CRM en la convocatoria (ver crm-owners).
+             */
+            owner_user_id: string;
+        };
+        /** NextActionOut */
+        NextActionOut: {
+            /** Description */
+            description: string;
+            /**
+             * Due On
+             * Format: date
+             */
+            due_on: string;
+            /** Owner */
+            owner: string;
+            /**
+             * Owner User Id
+             * Format: uuid
+             */
+            owner_user_id: string;
         };
         /** OverviewAttendance */
         OverviewAttendance: {
@@ -4325,6 +4397,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_crm_owners_api_v1_applications__application_id__crm_owners_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrmOwnerOut"][];
+                };
             };
             /** @description Validation Error */
             422: {

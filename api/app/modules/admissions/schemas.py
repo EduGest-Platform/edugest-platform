@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -85,11 +85,38 @@ Channel = Literal["email", "telefono", "presencial", "videollamada"]
 ContactResult = Literal["respondida", "sin_respuesta"]
 
 
+class NextActionCreate(BaseModel):
+    """What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone."""
+
+    description: str = Field(min_length=1, max_length=200, description="Acción operativa. No incluir datos de salud, situación personal ni otros datos sensibles.")
+    owner_user_id: uuid.UUID = Field(description="Personal con permiso CRM en la convocatoria (ver crm-owners).")
+    due_on: date = Field(description="Plazo; no puede ser anterior a hoy (Europe/Madrid).")
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def _trim_description(cls, v: object) -> object:
+        return _strip_if_str(v)
+
+
+class NextActionOut(BaseModel):
+    description: str
+    owner_user_id: uuid.UUID
+    owner: str
+    due_on: date
+
+
+class CrmOwnerOut(BaseModel):
+    user_id: uuid.UUID
+    display_name: str
+
+
 class EventCreate(BaseModel):
     tipo: EventType
     resultado: ContactResult | None = Field(None, description="Solo para contactos: «sin_respuesta» cuenta para la revisión de silencio.")
     canal: Channel | None = None
     resumen: str = Field(min_length=1, max_length=500, description="Resumen operativo. No incluir datos de salud, situación personal ni otros datos sensibles.")
+
+    next_action: NextActionCreate | None = Field(None, description="Solo para contactos. Opcional; si se envía, exige los tres campos.")
 
     @field_validator("resumen", mode="before")
     @classmethod
@@ -105,12 +132,14 @@ class EventOut(BaseModel):
     resumen: str
     actor: str | None
     occurred_at: datetime
+    next_action: NextActionOut | None
 
 
 class ApplicationDetail(ApplicationSummary):
     motivacion: str
     disponibilidad: str
     events: list[EventOut]
+    next_action: NextActionOut | None = Field(description="Próxima acción vigente: la del contacto más reciente que registró una.")
 
 
 class ApplicationSelfView(BaseModel):

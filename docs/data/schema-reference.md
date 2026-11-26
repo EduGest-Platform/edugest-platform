@@ -33,6 +33,7 @@ erDiagram
     application_event {
         UUID id PK
         UUID application_id FK
+        UUID next_action_owner_id FK
         UUID actor_user_id FK
     }
     assignment {
@@ -217,6 +218,7 @@ erDiagram
     person ||--o{ application : person_id
     app_user |o--o{ application_event : actor_user_id
     application ||--o{ application_event : application_id
+    app_user |o--o{ application_event : next_action_owner_id
     cohort ||--o{ assignment : cohort_id
     app_user ||--o{ assignment : created_by
     enrollment ||--o{ attendance_record : enrollment_id
@@ -435,10 +437,15 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | canal | VARCHAR(20) | sí / yes | — | — |
 | resultado | VARCHAR(20) | sí / yes | — | — |
 | resumen | VARCHAR(500) | no | — | — |
+| next_action | VARCHAR(200) | sí / yes | — | — |
+| next_action_owner_id | UUID | sí / yes | app_user.id | — |
+| next_action_due_on | DATE | sí / yes | — | — |
 | actor_user_id | UUID | sí / yes | app_user.id | — |
 | occurred_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
 
 - CHECK `ck_application_event_canal`: `canal IS NULL OR canal IN ('email', 'telefono', 'presencial', 'videollamada')`
+
+- CHECK `ck_application_event_next_action`: `num_nonnulls(next_action, next_action_owner_id, next_action_due_on) = 0 OR (num_nonnulls(next_action, next_action_owner_id, next_action_due_on) = 3 AND tipo = 'contacto' AND length(btrim(next_action)) > 0)`
 
 - CHECK `ck_application_event_resultado`: `resultado IS NULL OR (tipo = 'contacto' AND resultado IN ('respondida', 'sin_respuesta'))`
 
@@ -447,6 +454,8 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - FK `unnamed`: `(actor_user_id) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
 
 - FK `unnamed`: `(application_id) -> (application.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(next_action_owner_id) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
 
 - INDEX `ix_application_event_application_id`: `application_event.application_id`
 
