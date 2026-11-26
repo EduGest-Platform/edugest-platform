@@ -46,6 +46,41 @@
         "title": "AcademicCohortOut",
         "type": "object"
       },
+      "AcademicNotificationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "available_at": {
+            "format": "date-time",
+            "title": "Available At",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "idempotency_key",
+          "topic",
+          "available_at"
+        ],
+        "title": "AcademicNotificationIn",
+        "type": "object"
+      },
       "AccessApplicationOut": {
         "properties": {
           "assignment_active": {
@@ -717,7 +752,7 @@
         "properties": {
           "expected_revision": {
             "description": "Revisión de la entrega que el docente ha visto",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Revision",
             "type": "integer"
           }
@@ -1491,7 +1526,7 @@
           "expected_version": {
             "default": 0,
             "description": "0 para un código nuevo; versión anterior al publicar su sucesora",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -1590,13 +1625,13 @@
         "description": "Pre-computed automated checks. The platform never runs submitted code.",
         "properties": {
           "passed": {
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Passed",
             "type": "integer"
           },
           "total": {
-            "exclusiveMinimum": 0.0,
-            "maximum": 10000.0,
+            "exclusiveMinimum": 0,
+            "maximum": 10000,
             "title": "Total",
             "type": "integer"
           }
@@ -1874,7 +1909,7 @@
             "type": "string"
           },
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -2290,7 +2325,7 @@
             "type": "string"
           },
           "version": {
-            "minimum": 2.0,
+            "minimum": 2,
             "title": "Version",
             "type": "integer"
           }
@@ -2348,7 +2383,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -2371,7 +2406,7 @@
           },
           "expected_version": {
             "description": "Versión que el docente estaba editando (evita pisar cambios ajenos)",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -3271,8 +3306,8 @@
         "properties": {
           "expires_hours": {
             "default": 24,
-            "maximum": 168.0,
-            "minimum": 1.0,
+            "maximum": 168,
+            "minimum": 1,
             "title": "Expires Hours",
             "type": "integer"
           },
@@ -3369,8 +3404,8 @@
         "properties": {
           "expires_hours": {
             "default": 24,
-            "maximum": 168.0,
-            "minimum": 1.0,
+            "maximum": 168,
+            "minimum": 1,
             "title": "Expires Hours",
             "type": "integer"
           }
@@ -3714,6 +3749,20 @@
           "due_on"
         ],
         "title": "NextActionOut",
+        "type": "object"
+      },
+      "NotificationAcceptedOut": {
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "title": "NotificationAcceptedOut",
         "type": "object"
       },
       "OverviewAttendance": {
@@ -4363,22 +4412,22 @@
         "properties": {
           "silence_days": {
             "description": "Días sin respuesta tras el último intento antes de la alerta de acción",
-            "maximum": 365.0,
-            "minimum": 1.0,
+            "maximum": 365,
+            "minimum": 1,
             "title": "Silence Days",
             "type": "integer"
           },
           "silence_max_contacts": {
             "description": "Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)",
-            "maximum": 20.0,
-            "minimum": 1.0,
+            "maximum": 20,
+            "minimum": 1,
             "title": "Silence Max Contacts",
             "type": "integer"
           },
           "silence_warning_contacts": {
             "description": "Intentos sin respuesta para la alerta leve; salta sin esperar días",
-            "maximum": 20.0,
-            "minimum": 1.0,
+            "maximum": 20,
+            "minimum": 1,
             "title": "Silence Warning Contacts",
             "type": "integer"
           }
@@ -4519,7 +4568,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -5047,7 +5096,7 @@
           "expected_version": {
             "anyOf": [
               {
-                "minimum": 1.0,
+                "minimum": 1,
                 "type": "integer"
               },
               {
@@ -5146,7 +5195,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -5167,7 +5216,7 @@
         "properties": {
           "expected_revision": {
             "description": "Versión de la entrega que ha revisado el docente",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Revision",
             "type": "integer"
           }
@@ -5706,8 +5755,8 @@
         "properties": {
           "selection_quorum": {
             "description": "Personas distintas que deben coincidir en la decisión de selección (por defecto 2)",
-            "maximum": 5.0,
-            "minimum": 1.0,
+            "maximum": 5,
+            "minimum": 1,
             "title": "Selection Quorum",
             "type": "integer"
           }
@@ -6923,7 +6972,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -6952,7 +7001,7 @@
           },
           "position": {
             "description": "Lugar en la lista según el criterio provisional (orden de entrada en la lista)",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Position",
             "type": "integer"
           },
@@ -9993,6 +10042,63 @@
         "summary": "Elegir la versión publicada del árbol que usa una cohorte",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/email/notifications": {
+      "post": {
+        "operationId": "request_academic_notification_api_v1_cohorts__cohort_id__email_notifications_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademicNotificationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Request Academic Notification",
+        "tags": [
+          "email"
         ]
       }
     },
