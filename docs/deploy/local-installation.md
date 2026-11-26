@@ -53,12 +53,17 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m alembic upgrade head
 .\.venv\Scripts\python.exe -m alembic check
 .\.venv\Scripts\python.exe -m app.seed
+.\.venv\Scripts\python.exe -m app.modules.knowledge.ingest
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --reload --no-access-log
 ```
 
 **ES:** Confirmar la URL de destino sin divulgarla antes de `upgrade`. Una sola cabeza y `alembic check` sin deriva son requisitos; editar modelos no actualiza una base existente. `app.seed` es idempotente y no rota cuentas ya cargadas. No usar `--reset`, `downgrade base` ni `down -v` en una base compartida. La API registra rutas parametrizadas; `--no-access-log` evita que uvicorn duplique rutas/query strings sin sanear.
 
 **EN:** Confirm the target without exposing its URL before upgrading. Require one head and no model drift; model edits alone do not migrate an existing DB. Seed is idempotent and does not rotate existing accounts. Never use reset, downgrade-to-base or volume deletion against shared data. Disable uvicorn access logging because the application already logs sanitized route templates.
+
+**RAG (KAN-130):** `app.modules.knowledge.ingest` carga los documentos sintéticos del curso (`evals/rag/corpus`). Es repetible: los documentos sin cambios se saltan. Sin este paso el asistente responde siempre «No consta». La búsqueda por significado es opcional: `GISTAR_RAG_EMBED=true` y `GEMINI_API_KEY` en `api/.env` (ver [knowledge-ingest-es.md](../rag/knowledge-ingest-es.md)). Después de actualizar la rama, reinstalar las dependencias con el mismo `pip install -e ".[dev]"`.
+
+**RAG (KAN-130):** `app.modules.knowledge.ingest` loads the synthetic course documents (`evals/rag/corpus`). It is repeatable: unchanged documents are skipped. Without it the assistant always answers "No consta". Semantic search is optional: `GISTAR_RAG_EMBED=true` and `GEMINI_API_KEY` in `api/.env` (see [knowledge-ingest-en.md](../rag/knowledge-ingest-en.md)). After updating the branch, reinstall dependencies with the same `pip install -e ".[dev]"`.
 
 POSIX: dentro de `api`, usar `python3.12 -m venv .venv` y sustituir `.\.venv\Scripts\python.exe` por `.venv/bin/python` en los mismos pasos. / On POSIX, use the same steps with the POSIX virtualenv executable. No activation is required.
 

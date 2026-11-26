@@ -66,7 +66,7 @@ If Gemini fails, the search continues with words only. Vectors are used only wit
 
 - **Synonyms in words-only mode.** "Fecha límite" does not find "Entrega": the words-only mode abstains more (7/14 answered). The hybrid mode covers it (12/14).
 - **Overfitting.** The thresholds were tuned on the same bank that measures them. KAN-188 should add new questions before moving them again.
-- **Staging.** Vectors are still off (`GISTAR_RAG_EMBED=false`): there the assistant runs in words-only mode. Turning them on is a later, controlled operation.
+- **Staging.** Vectors are on (`GISTAR_RAG_EMBED=true`) and need `GEMINI_API_KEY` in the Render dashboard. Without the key, or if Gemini fails, the assistant searches by keywords only.
 - **No generation.** The answer is the literal passage; the `generated` mode with citation checking arrives with T10.
 
 ## Audit

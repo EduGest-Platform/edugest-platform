@@ -53,7 +53,7 @@ La clave va solo en `api/.env` en local y en el panel de Render en despliegue. N
 
 El corpus viaja dentro de la imagen (`/data/corpus`, con `GISTAR_CORPUS_PATH`). En local, Docker Compose monta encima la carpeta `evals/rag/corpus`, así que se usa la versión que estás editando.
 
-En staging (`render.staging.yaml`), los vectores empiezan desactivados (`GISTAR_RAG_EMBED: "false"`). Para activarlos: añadir `GEMINI_API_KEY` en el panel de Render y, después, cambiar el valor a `"true"` en una PR revisada.
+En staging (`render.staging.yaml`), los vectores están activados (`GISTAR_RAG_EMBED: "true"`, desde el 26/11/2026). La clave `GEMINI_API_KEY` se configura solo en el panel de Render; sin ella, la ingesta guarda el texto sin vectores y la búsqueda sigue solo por palabras. Los documentos ya cargados reciben sus vectores en el siguiente arranque.
 
 ## Qué le pasa a cada documento
 
