@@ -29,3 +29,15 @@ describe('assistant SSE reader', () => {
       .rejects.toThrow('respuesta completa')
   })
 })
+
+
+it.each(['not-json', 'null', '{}'])('rejects invalid terminal payload %s and releases the reader', async payload => {
+  const cancel = vi.fn()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) { controller.enqueue(encoder.encode('event: answer\ndata: ' + payload + '\n\n')) },
+    cancel,
+  })
+  await expect(readAssistantStream(stream, { onPhase: vi.fn(), onDelta: vi.fn() })).rejects.toThrow('no es válida')
+  expect(cancel).toHaveBeenCalled()
+  expect(stream.locked).toBe(false)
+})
