@@ -80,3 +80,35 @@ def test_pending_filter_preserves_own_profile_boundary(client, db):
     assert response.status_code == 200
     assert response.json()['total'] == 2
     assert [item['id'] for item in response.json()['items']] == [pending['id'], approved['id']]
+
+
+def test_approved_queue_supports_explicit_application_and_owner_followup(client, db):
+    path = '/api/v1/staff/access-requests'
+    owner = active_profile(client, db, SEL_IA)
+    other = active_profile(client, db, CAPT_IA)
+    admin = login(client, ADMIN)
+    pending, approved = request(client, other), request(client, owner)
+    target = f"{path}/{approved['id']}"
+    reviewed = client.post(f'{target}/review', headers=admin, json={'approved': True})
+    assert reviewed.status_code == 200
+    assert reviewed.json()['applied_assignment_id'] is None
+
+    def filtered(who, **params):
+        response = client.get(path, params=params, headers=who)
+        assert response.status_code == 200
+        return response.json()['items']
+
+    assert [row['id'] for row in filtered(admin, state='approved', limit=1)] == [approved['id']]
+    assert [row['id'] for row in filtered(admin, pending_only=True, state='approved')] == [pending['id']]
+    assert filtered(other, state='approved') == []
+    assert client.get(f'{target}/application-preview', headers=owner).status_code == 403
+    assert client.get(f'{target}/application', headers=other).status_code == 404
+    assert client.get(f'{target}/application', headers=owner).json()['assignment_active'] is None
+
+    preview = client.get(f'{target}/application-preview', headers=admin).json()
+    assert preview['can_apply'] is True
+    applied = client.post(f'{target}/apply', headers=admin, json={**preview['requested'], 'confirm': True})
+    assert applied.status_code == 200
+    assert applied.json()['assignment_active'] is True
+    assert filtered(admin, state='approved') == []
+    assert client.get(f'{target}/application', headers=owner).json() == applied.json()

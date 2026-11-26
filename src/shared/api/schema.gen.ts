@@ -7816,6 +7816,7 @@ export interface operations {
                 limit?: number;
                 offset?: number;
                 pending_only?: boolean;
+                state?: ("requested" | "approved" | "rejected" | "applied" | "revoked") | null;
             };
             header?: never;
             path?: never;

@@ -11615,6 +11615,29 @@
               "title": "Pending Only",
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "requested",
+                    "approved",
+                    "rejected",
+                    "applied",
+                    "revoked"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
           }
         ],
         "responses": {
