@@ -48,3 +48,45 @@ def test_history_limit(limit):
         with pytest.raises(ValueError):
             access.list_notification_history(db, MagicMock(), cohort_id="cohort-a", limit=limit)
     db.execute.assert_not_called()
+
+
+@pytest.mark.parametrize("status", ["sending", "sent", "failed", "uncertain"])
+def test_cancel_rejects_non_pending(status):
+    db = MagicMock()
+    message = SimpleNamespace(status=status)
+    db.scalars.return_value.one_or_none.return_value = message
+    with patch.object(access, "require_cohort"), patch.object(access.audit, "record") as audit:
+        with pytest.raises(access.UserFacingError):
+            access.cancel_notification(db, MagicMock(), cohort_id="cohort-a", message_id=uuid4())
+    assert message.status == status
+    audit.assert_not_called()
+    db.flush.assert_not_called()
+
+
+def test_cancel_pending_is_scoped_locked_and_idempotent():
+    db = MagicMock()
+    principal = SimpleNamespace(user=SimpleNamespace(id=uuid4()))
+    message_id = uuid4()
+    message = SimpleNamespace(status="pending")
+    db.scalars.return_value.one_or_none.return_value = message
+    with patch.object(access, "require_cohort") as require, patch.object(access.audit, "record") as audit:
+        for _ in range(2):
+            access.cancel_notification(db, principal, cohort_id="cohort-a", message_id=message_id)
+        assert require.call_count == 2
+        audit.assert_called_once()
+    compiled = db.scalars.call_args.args[0].compile(dialect=postgresql.dialect())
+    assert "FOR UPDATE" in str(compiled)
+    assert "email_outbox.created_by =" in str(compiled)
+    assert "email_outbox.cohort_id =" in str(compiled)
+    assert principal.user.id in compiled.params.values()
+    assert message_id in compiled.params.values()
+    assert message.status == "cancelled"
+    db.flush.assert_called_once()
+
+
+def test_cancel_forbidden_never_queries():
+    db = MagicMock()
+    with patch.object(access, "require_cohort", side_effect=HTTPException(403)):
+        with pytest.raises(HTTPException):
+            access.cancel_notification(db, MagicMock(), cohort_id="other", message_id=uuid4())
+    db.scalars.assert_not_called()

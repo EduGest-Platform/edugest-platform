@@ -66,3 +66,21 @@ def list_notification_history(
         .limit(limit)
     )
     return [NotificationHistoryItem(*row) for row in db.execute(statement)]
+
+
+def cancel_notification(db: Session, principal: Principal, *, cohort_id: str, message_id: UUID) -> None:
+    """Cancel only the caller's pending notification, serialized against worker claims."""
+    require_cohort(db, principal, EMAIL_SEND_PERMISSION, cohort_id)
+    item = db.scalars(select(EmailOutbox).where(
+        EmailOutbox.id == message_id, EmailOutbox.cohort_id == cohort_id,
+        EmailOutbox.created_by == principal.user.id,
+    ).with_for_update()).one_or_none()
+    if item is None:
+        raise UserFacingError(404, "email_not_found", "No encontramos la notificación.")
+    if item.status == "cancelled":
+        return
+    if item.status != "pending":
+        raise UserFacingError(409, "email_not_pending", "La notificación ya no está pendiente.")
+    item.status = "cancelled"
+    audit.record(db, principal, "email.cancelled", "email_outbox", str(message_id), cohort_id=cohort_id)
+    db.flush()
