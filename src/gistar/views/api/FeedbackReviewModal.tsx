@@ -16,6 +16,7 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [uncertain, setUncertain] = useState(false)
   const pending = useRef<AbortController | null>(null)
 
   useEffect(() => () => pending.current?.abort(), [])
@@ -25,7 +26,10 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
       params: { path: { submission_id: item.submission_id } }, signal: controller.signal,
     }).then(result => {
       if (controller.signal.aborted) return
-      if (result.data) setVersions(result.data)
+      if (result.data) {
+        setVersions(result.data)
+        setUncertain(false)
+      }
       else setError(problemText(describeApiError(result.response.status, result.error)))
     }).catch(() => {
       if (!controller.signal.aborted) setError('No se pudieron cargar las versiones del feedback.')
@@ -41,7 +45,7 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
   }
 
   async function write(send: (signal: AbortSignal) => Promise<ResponseData>, message: string) {
-    if (pending.current) return
+    if (pending.current || uncertain || !versions) return
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -54,9 +58,19 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
         setEdit(null)
         setNotice(message)
         reload()
-      } else setError(problemText(describeApiError(result.response.status, result.error)))
+      } else {
+        if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) {
+          setUncertain(true)
+          setConfirmedVersion(null)
+        }
+        setError(problemText(describeApiError(result.response.status, result.error)))
+      }
     } catch {
-      if (!controller.signal.aborted) setError('No se pudo confirmar el cambio. Actualiza las versiones antes de reintentar.')
+      if (!controller.signal.aborted) {
+        setUncertain(true)
+        setConfirmedVersion(null)
+        setError('No se pudo confirmar el cambio. Actualiza las versiones antes de reintentar.')
+      }
     } finally {
       pending.current = null
       if (!controller.signal.aborted) setBusy(false)
@@ -81,12 +95,13 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
       <div className="grid gap-4">
         {notice && <Notice live="polite">{notice}</Notice>}
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
+        {uncertain && <Notice tone="warning">Comprueba las versiones actualizadas antes de realizar otra operación.</Notice>}
         <Button variant="ghost" className="justify-self-start" onClick={reload} disabled={busy}>Actualizar versiones</Button>
         {!versions && !error && <p role="status">Cargando versiones…</p>}
         {versions && <>
           <p className="text-sm text-muted">Revisión actual de la entrega: {versions.current_revision}.</p>
           <div className="flex flex-wrap gap-2">
-            <Button disabled={busy || Boolean(edit)} onClick={() => void write(signal =>
+            <Button disabled={busy || uncertain || Boolean(edit)} onClick={() => void write(signal =>
               api.POST('/api/v1/submissions/{submission_id}/feedback-drafts', {
                 params: { path: { submission_id: item.submission_id } }, signal,
               }), 'Borrador generado.')}>Generar borrador</Button>
@@ -106,11 +121,11 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
             </article>
             {publishable && <div className="grid gap-2 rounded-xl bg-mist p-3">
               <label className="flex items-start gap-2 text-sm">
-                <input type="checkbox" disabled={busy} checked={confirmedVersion === latest.id}
+                <input type="checkbox" disabled={busy || uncertain} checked={confirmedVersion === latest.id}
                   onChange={event => setConfirmedVersion(event.target.checked ? latest.id : null)} />
                 He revisado la versión {latest.version} y autorizo que el alumno vea este feedback.
               </label>
-              <Button className="justify-self-start" disabled={busy || confirmedVersion !== latest.id} onClick={() =>
+              <Button className="justify-self-start" disabled={busy || uncertain || confirmedVersion !== latest.id} onClick={() =>
                 void write(signal => api.POST('/api/v1/feedback-drafts/{draft_id}/approve', {
                   params: { path: { draft_id: latest.id } },
                   body: { expected_revision: versions.current_revision }, signal,
@@ -137,7 +152,7 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
             La versión disponible cambió. Puedes copiar tu texto; vuelve a abrir el borrador actual antes de editarlo.
           </Notice>}
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={busy || edit.id !== latest?.id || !current || !edit.body.trim()}>Guardar versión</Button>
+            <Button type="submit" disabled={busy || uncertain || edit.id !== latest?.id || !current || !edit.body.trim()}>Guardar versión</Button>
             <Button variant="ghost" disabled={busy} onClick={() => setEdit(null)}>Descartar edición</Button>
           </div>
         </form>}
