@@ -154,6 +154,9 @@ erDiagram
     person {
         UUID id PK
     }
+    portfolio_link {
+        UUID enrollment_id PK,FK
+    }
     preselection_decision {
         UUID id PK
         UUID application_id FK
@@ -282,6 +285,7 @@ erDiagram
     app_user ||--o{ intervention : actor_user_id
     risk_alert ||--o{ intervention : alert_id
     knowledge_document ||--o{ knowledge_chunk : document_id
+    enrollment ||--o| portfolio_link : enrollment_id
     app_user ||--o{ preselection_decision : actor_user_id
     application ||--o{ preselection_decision : application_id
     application ||--o{ requirement_review : application_id
@@ -1106,6 +1110,16 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - UNIQUE `unnamed`: `legacy_ref`
 
 - INDEX `ix_person_email`: `person.email`
+
+### portfolio_link
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| enrollment_id | UUID | no | enrollment.id | — |
+| url | VARCHAR(160) | no | — | — |
+| updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- FK `unnamed`: `(enrollment_id) -> (enrollment.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
 
 ### preselection_decision
 

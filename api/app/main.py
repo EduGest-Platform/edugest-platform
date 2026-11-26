@@ -25,6 +25,7 @@ from app.modules.catalog.publication_router import router as publication_router
 from app.modules.catalog.public_router import router as public_catalog_router
 from app.modules.competencies.router import router as competencies_router
 from app.modules.identity.router import router as identity_router
+from app.modules.learning.portfolio import router as portfolio_router
 from app.modules.preselection.router import router as preselection_router
 from app.modules.requirements.router import router as requirements_router
 from app.modules.requirements.prefilter import router as prefilter_router
@@ -68,6 +69,7 @@ for r in (
     requirements_router,
     prefilter_router,
     preselection_router,
+    portfolio_router,
     selection_router,
     automation_router,
     attendance_router,
