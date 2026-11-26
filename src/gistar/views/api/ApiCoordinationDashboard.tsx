@@ -1,3 +1,5 @@
+import { ArrowRight, CalendarDays } from 'lucide-react'
+import { useGistar } from '../../store'
 import { useEffect, useState } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { humanize } from '../../config'
@@ -68,6 +70,7 @@ function CoordinationSummary({ call }: { call: Call }) {
 }
 
 export function ApiCoordinationDashboard() {
+  const { navigate } = useGistar()
   const [calls, setCalls] = useState<LoadState<Call[]>>({ status: 'loading' })
   const [programId, setProgramId] = useState('')
   const [callId, setCallId] = useState('')
@@ -93,6 +96,12 @@ export function ApiCoordinationDashboard() {
   return (
     <div className="space-y-5">
       <PageTitle title="Seguimiento de convocatorias" sub="Plazas e indicadores agregados de admisión del servidor." />
+      <Card title="Eventos" action={<CalendarDays className="size-5 text-blue" aria-hidden />}>
+        <p className="mb-3 text-sm text-muted">Consulta la agenda de demostración. Los eventos del servidor estarán disponibles en un próximo incremento.</p>
+        <Button variant="ghost" onClick={() => navigate('calendario')}>
+          Ver eventos <ArrowRight className="size-4" aria-hidden />
+        </Button>
+      </Card>
       {calls.status === 'loading' && <p role="status">Cargando convocatorias…</p>}
       {calls.status === 'error' && (
         <div>
