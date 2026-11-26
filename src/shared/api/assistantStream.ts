@@ -48,7 +48,15 @@ export async function readAssistantStream(body: ReadableStream<Uint8Array>, prog
             break
           }
           case 'answer':
-            if (typeof payload.answer !== 'string' || typeof payload.status !== 'string') {
+            if (typeof payload.answer !== 'string'
+              || (payload.status !== 'answered' && payload.status !== 'no_source')
+              || (payload.source_kind !== 'documents' && payload.source_kind !== 'records')
+              || (payload.mode !== 'extractive' && payload.mode !== 'template')
+              || (payload.retrieval !== null && payload.retrieval !== 'hybrid' && payload.retrieval !== 'keyword')
+              || typeof payload.as_of !== 'string'
+              || !Array.isArray(payload.citations)
+              || !Array.isArray(payload.scope_cohorts)
+              || !payload.scope_cohorts.every(cohort => typeof cohort === 'string')) {
               throw new AssistantStreamError('La respuesta del asistente no es válida. Vuelve a intentarlo.')
             }
             return payload as Schemas['AskOut']
