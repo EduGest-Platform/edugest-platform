@@ -29,6 +29,26 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     })
     return () => controller.abort()
   }, [sessionId, lookupAttempt])
+  const [notes, setNotes] = useState<Schemas["NotesOut"][] | null>(null)
+  const [notesError, setNotesError] = useState("")
+  const [notesAttempt, setNotesAttempt] = useState(0)
+  const meetingId = lookup?.id === sessionId && lookup.meeting ? sessionId : ""
+  useEffect(() => {
+    setNotes(null)
+    setNotesError("")
+    if (!meetingId) return
+    const controller = new AbortController()
+    void api.GET("/api/v1/attendance-sessions/{session_id}/zoom/notes", {
+      params: { path: { session_id: meetingId } }, signal: controller.signal,
+    }).then(result => {
+      if (controller.signal.aborted) return
+      if (result.data) setNotes(result.data)
+      else setNotesError(result.response.status === 404 ? "Notas no disponibles para esta reunión." : errorMessage(result.error))
+    }).catch(() => {
+      if (!controller.signal.aborted) setNotesError("No se pudieron consultar las notas.")
+    })
+    return () => controller.abort()
+  }, [meetingId, notesAttempt])
   const checked = lookup?.id === sessionId && !lookup.error && !lookup.meeting
   const valid = checked && sessions.some(s => s.id === sessionId) && !!topic.trim() &&
     Number.isFinite(Date.parse(start)) && Date.parse(start) > Date.now() &&
@@ -71,7 +91,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       <Button variant="ghost" disabled={busy || lookup === null} onClick={() => { setLookup(null); setLookupAttempt(n => n + 1) }}>Comprobar registro de reunión</Button>
     </>}
     <Field label="Sesión académica" htmlFor="zoom-session">
-      <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => { setSessionId(e.target.value); setLookup(null); setMessage(""); setError(""); setTopic(""); setStart(""); setDuration("60"); setMode("authenticated") }}>
+      <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => { setSessionId(e.target.value); setNotes(null); setNotesError(""); setLookup(null); setMessage(""); setError(""); setTopic(""); setStart(""); setDuration("60"); setMode("authenticated") }}>
         <option value="">Selecciona una sesión</option>
         {sessions.map(s => <option key={s.id} value={s.id}>{s.session_date} · {s.shift}</option>)}
       </select>
@@ -83,6 +103,17 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     </>}
     {blocked && lookup?.id === sessionId && !lookup.error && !lookup.meeting && <Notice tone="warning">No hay una reunión registrada localmente. Esto no descarta que Zoom haya aceptado la solicitud. No repitas la creación sin revisión.</Notice>}
     {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min. No es necesario crear otra reunión para esta sesión.</Notice>}
+    {meetingId && <section key={meetingId} className="grid gap-2 border-t border-line pt-3">
+      <h4 className="font-semibold">Notas de reunión · revisión interna</h4>
+      <Button variant="ghost" disabled={notes === null && !notesError} onClick={() => { setNotes(null); setNotesError(""); setNotesAttempt(n => n + 1) }}>Actualizar notas</Button>
+      {notesError && <Notice>{notesError}</Notice>}
+      {notes === null && !notesError && <Notice live="polite">Consultando notas…</Notice>}
+      {notes?.length === 0 && <Notice>No hay versiones de notas.</Notice>}
+      {notes?.map(note => <details key={note.version} className="text-sm">
+        <summary>Versión {note.version} · {note.approved_at ? "Aprobada" : "Borrador"}</summary>
+        {note.body.summary.map((item, index) => <div key={index} className="mt-2 break-words"><p>{item.text}</p><p className="text-xs text-muted">{item.evidence.map(span => `${span.start_seconds}–${span.end_seconds} s`).join(", ")}</p></div>)}
+      </details>)}
+    </section>}
     <Field label="Tema" htmlFor="zoom-topic"><input id="zoom-topic" className={inputCls} maxLength={200} disabled={fieldsDisabled} value={topic} onChange={e => setTopic(e.target.value)} /></Field>
     <Field label="Inicio (hora local)" htmlFor="zoom-start"><input id="zoom-start" type="datetime-local" className={inputCls} disabled={fieldsDisabled} value={start} onChange={e => setStart(e.target.value)} /></Field>
     <Field label="Duración en minutos" htmlFor="zoom-duration"><input id="zoom-duration" type="number" min={1} max={1440} className={inputCls} disabled={fieldsDisabled} value={duration} onChange={e => setDuration(e.target.value)} /></Field>
