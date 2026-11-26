@@ -1238,6 +1238,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/invitation-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Buscar cuentas internas elegibles y consultar su última invitación sin revelar el código */
+        get: operations["invitation_accounts_api_v1_staff_invitation_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/invitations": {
         parameters: {
             query?: never;
@@ -1589,6 +1606,8 @@ export interface components {
              * Format: uuid
              */
             requested_by: string;
+            /** Requested By Name */
+            requested_by_name?: string | null;
             /** Requested Role */
             requested_role: string;
             /** Reviewed At */
@@ -2908,6 +2927,19 @@ export interface components {
              */
             token: string;
         };
+        /** InvitationAccount */
+        InvitationAccount: {
+            /** Display Name */
+            display_name: string;
+            latest_invitation: components["schemas"]["InvitationOut"] | null;
+            /** Profile State */
+            profile_state: ("pending" | "active") | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** InvitationCreate */
         InvitationCreate: {
             /**
@@ -2920,6 +2952,13 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** InvitationDirectory */
+        InvitationDirectory: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["InvitationAccount"][];
         };
         /** InvitationIssued */
         InvitationIssued: {
@@ -8306,6 +8345,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                pending_only?: boolean;
+                state?: ("requested" | "approved" | "rejected" | "applied" | "revoked") | null;
             };
             header?: never;
             path?: never;
@@ -8654,6 +8695,60 @@ export interface operations {
                 content?: never;
             };
             /** @description Confirmation mismatch or revocation blocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    invitation_accounts_api_v1_staff_invitation_accounts_get: {
+        parameters: {
+            query?: {
+                search?: string;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationDirectory"];
+                };
+            };
+            /** @description Administración global requerida */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invitación no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cuenta/ficha no elegible o invitación ya utilizada */
             409: {
                 headers: {
                     [name: string]: unknown;

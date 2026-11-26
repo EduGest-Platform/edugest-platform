@@ -275,6 +275,17 @@
             "title": "Requested By",
             "type": "string"
           },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
           "requested_role": {
             "title": "Requested Role",
             "type": "string"
@@ -3324,6 +3335,52 @@
         "title": "InvitationAccept",
         "type": "object"
       },
+      "InvitationAccount": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "latest_invitation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvitationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "active"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile State"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "profile_state",
+          "latest_invitation"
+        ],
+        "title": "InvitationAccount",
+        "type": "object"
+      },
       "InvitationCreate": {
         "additionalProperties": false,
         "properties": {
@@ -3344,6 +3401,27 @@
           "user_id"
         ],
         "title": "InvitationCreate",
+        "type": "object"
+      },
+      "InvitationDirectory": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationAccount"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "has_more"
+        ],
+        "title": "InvitationDirectory",
         "type": "object"
       },
       "InvitationIssued": {
@@ -12202,6 +12280,39 @@
               "title": "Offset",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "pending_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Pending Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "requested",
+                    "approved",
+                    "rejected",
+                    "applied",
+                    "revoked"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
           }
         ],
         "responses": {
@@ -12599,6 +12710,87 @@
           }
         ],
         "summary": "Revocar de forma explícita la asignación verificada de una solicitud aplicada",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/invitation-accounts": {
+      "get": {
+        "operationId": "invitation_accounts_api_v1_staff_invitation_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Search",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDirectory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Buscar cuentas internas elegibles y consultar su última invitación sin revelar el código",
         "tags": [
           "staff"
         ]

@@ -1,5 +1,5 @@
 import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
-import { useEffect, useMemo, type ReactElement } from 'react'
+import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
 import { menuFor, ROLES, VIEWS } from './config'
@@ -20,6 +20,7 @@ import { GroupAnalytics } from './views/GroupAnalytics'
 import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
+import { StaffAccessPanel } from './views/api/StaffAccessPanel'
 import { LoginScreen } from './components/LoginScreen'
 
 const SCREENS: Record<View, () => ReactElement> = {
@@ -59,6 +60,7 @@ function Logo() {
 export function Shell() {
   const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
   const session = useApiSession()
+  const [staffPanelUser, setStaffPanelUser] = useState<string | null>(null)
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
   const source = dataSourceFor(view, API_MODE, role)
   const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
@@ -67,6 +69,10 @@ export function Shell() {
   useEffect(() => {
     if (allowedRoles && !allowedRoles.includes(role)) setRole(allowedRoles[0])
   }, [allowedRoles, role, setRole])
+
+  useEffect(() => {
+    if (!session.me) setStaffPanelUser(null)
+  }, [session.me])
 
   if (API_MODE && session.loading) return <p className="p-10 text-sm text-muted">Conectando con la API…</p>
   if (API_MODE && !session.me) return <LoginScreen />
@@ -128,6 +134,9 @@ export function Shell() {
                 </option>
               ))}
             </select>
+            {API_MODE && session.me?.person_id === null && (
+              <Button variant="ghost" aria-haspopup="dialog" onClick={() => setStaffPanelUser(session.me?.id ?? null)}>Personal</Button>
+            )}
             {allowedRoles && (
               <Button variant="ghost" onClick={session.logout} aria-label="Cerrar sesión">
                 <LogOut className="size-4" aria-hidden />
@@ -156,6 +165,9 @@ export function Shell() {
         </main>
       </div>
 
+      {API_MODE && session.me?.person_id === null && staffPanelUser === session.me.id && (
+        <StaffAccessPanel key={session.me.id} me={session.me} onClose={() => setStaffPanelUser(null)} />
+      )}
       <div
         role="status"
         aria-live="polite"
