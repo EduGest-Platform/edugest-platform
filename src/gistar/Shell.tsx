@@ -58,7 +58,7 @@ function Logo() {
 }
 
 export function Shell() {
-  const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
+  const { role, view, setRole, navigate, canLeave, reset, toastMsg } = useGistar()
   const session = useApiSession()
   const [staffPanelUser, setStaffPanelUser] = useState<string | null>(null)
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
@@ -138,7 +138,7 @@ export function Shell() {
               <Button variant="ghost" aria-haspopup="dialog" onClick={() => setStaffPanelUser(session.me?.id ?? null)}>Personal</Button>
             )}
             {allowedRoles && (
-              <Button variant="ghost" onClick={session.logout} aria-label="Cerrar sesión">
+              <Button variant="ghost" onClick={() => { if (canLeave()) void session.logout() }} aria-label="Cerrar sesión">
                 <LogOut className="size-4" aria-hidden />
                 <span className="hidden sm:inline">Salir</span>
               </Button>

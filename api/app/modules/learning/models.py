@@ -31,3 +31,13 @@ class Enrollment(Base):
     documentation_version: Mapped[int] = mapped_column(Integer, default=1, server_default=text("1"))
     documentation_accredited_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     documentation_accredited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PortfolioLink(Base):
+    """An optional GitHub repository link published to the learner's private workspace."""
+
+    __tablename__ = "portfolio_link"
+
+    enrollment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("enrollment.id", ondelete="CASCADE"), primary_key=True)
+    url: Mapped[str] = mapped_column(String(160))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

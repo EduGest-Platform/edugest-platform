@@ -113,6 +113,11 @@ jobs:
         env:
           WEB_URL: http://localhost:8443/
         run: node e2e/staff-invitation-console.mjs
+      - name: Capture Docker diagnostics on failure
+        if: failure()
+        run: |
+          docker compose -f infra/compose.yaml ps -a || true
+          docker compose -f infra/compose.yaml logs --no-color --timestamps db api web || true
       - name: Remove disposable data
         if: always()
         run: docker compose -f infra/compose.yaml down -v

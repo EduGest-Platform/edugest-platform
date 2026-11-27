@@ -18,7 +18,7 @@ function invitationState(account: Account) {
   return Date.parse(invitation.expires_at) <= Date.now() ? 'Caducada' : 'Pendiente de aceptación'
 }
 
-export function StaffInvitationConsole() {
+export function StaffInvitationConsole({ onBlockedChange }: { onBlockedChange: (blocked: boolean) => void }) {
   const [opened, setOpened] = useState(false)
   const [directory, setDirectory] = useState<Directory>()
   const [search, setSearch] = useState({ term: '', offset: 0 })
@@ -34,7 +34,12 @@ export function StaffInvitationConsole() {
   const writing = useRef<AbortController | null>(null)
   const account = directory?.items.find(item => item.user_id === selection)
 
-  useEffect(() => () => writing.current?.abort(), [])
+  const blocked = busy || uncertain
+  useEffect(() => { onBlockedChange(blocked) }, [blocked, onBlockedChange])
+  useEffect(() => () => {
+    writing.current?.abort()
+    onBlockedChange(false)
+  }, [onBlockedChange])
   useEffect(() => {
     if (!opened) return
     const controller = new AbortController()
@@ -84,7 +89,7 @@ export function StaffInvitationConsole() {
         if (signal.aborted) return
         if (result.data) setNotice('Invitación revocada.')
         else {
-          if (result.response.status >= 500 || result.response.status === 408) setUncertain(true)
+          if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) setUncertain(true)
           setError(problemText(describeApiError(result.response.status, result.error)))
         }
       } else {
@@ -100,7 +105,7 @@ export function StaffInvitationConsole() {
           expiresAt: result.data.invitation.expires_at,
         })
         else {
-          if (result.response.status >= 500 || result.response.status === 408) setUncertain(true)
+          if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) setUncertain(true)
           setError(problemText(describeApiError(result.response.status, result.error)))
         }
       }
@@ -120,7 +125,7 @@ export function StaffInvitationConsole() {
   }
 
   function toggle() {
-    if (busy) return
+    if (blocked) return
     setReceipt(undefined)
     setError('')
     setNotice('')
@@ -130,27 +135,38 @@ export function StaffInvitationConsole() {
   return (
     <section className="grid gap-3 rounded-xl border border-line p-3" aria-label="Invitaciones de personal">
       <Button variant="ghost" className="justify-self-start" size="sm" onClick={toggle} aria-expanded={opened}
-        disabled={busy}>{opened ? 'Cerrar gestión de invitaciones' : 'Gestionar invitaciones'}</Button>
+        disabled={blocked}>{opened ? 'Cerrar gestión de invitaciones' : 'Gestionar invitaciones'}</Button>
       {opened && <>
         <form className="flex flex-wrap items-end gap-2" onSubmit={(event: FormEvent) => {
           event.preventDefault()
-          page(input.trim(), 0)
+          if (!blocked) page(input.trim(), 0)
         }}>
           <Field label="Buscar cuenta interna por nombre" htmlFor="staff-invitation-search">
             <input id="staff-invitation-search" className={inputCls} value={input} maxLength={100}
-              onChange={event => setInput(event.target.value)} disabled={busy} />
+              onChange={event => setInput(event.target.value)} disabled={blocked} />
           </Field>
-          <Button size="sm" type="submit" disabled={busy}>Buscar cuenta</Button>
+          <Button size="sm" type="submit" disabled={blocked}>Buscar cuenta</Button>
         </form>
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
         {notice && <Notice live="polite">{notice}</Notice>}
-        {uncertain && <Notice tone="warning">El resultado anterior es incierto. Comprueba la cuenta y su última invitación antes de continuar.</Notice>}
-        {uncertain && directory && <Button size="sm" variant="ghost" disabled={busy} onClick={() => setUncertain(false)}>He revisado el estado de las invitaciones</Button>}
+        {busy && <p role="status">Actualizando invitación…</p>}
+        {uncertain && <Notice tone="warning">
+          El servidor puede haber aplicado la operación. Comprueba el estado de esta cuenta.
+          Si se emitió un código que no recibiste, puedes recuperarte renovándolo. La renovación invalida el anterior.
+        </Notice>}
+        {uncertain && !directory && error && <Button size="sm" variant="ghost" onClick={() => {
+          setError('')
+          setAttempt(value => value + 1)
+        }}>Actualizar estado de la invitación</Button>}
+        {uncertain && directory && <Button size="sm" variant="ghost" disabled={busy} onClick={() => {
+          setUncertain(false)
+          setError('')
+        }}>He revisado el estado de las invitaciones</Button>}
         {!directory && !error && <p role="status">Cargando cuentas internas…</p>}
         {directory && <>
           {directory.items.length === 0 ? <p>No hay cuentas en esta página.</p> : (
             <Field label="Cuenta interna" htmlFor="staff-invitation-account">
-              <select id="staff-invitation-account" className={inputCls} value={selection} disabled={busy}
+              <select id="staff-invitation-account" className={inputCls} value={selection} disabled={blocked}
                 onChange={event => { setSelection(event.target.value); setReceipt(undefined); setError(''); setNotice('') }}>
                 <option value="">Elige una cuenta</option>
                 {directory.items.map(item => <option key={item.user_id} value={item.user_id}>
@@ -160,9 +176,9 @@ export function StaffInvitationConsole() {
             </Field>
           )}
           {(search.offset > 0 || directory.has_more) && <nav className="flex gap-2" aria-label="Páginas de cuentas internas">
-            <Button size="sm" variant="ghost" disabled={busy || search.offset === 0}
+            <Button size="sm" variant="ghost" disabled={blocked || search.offset === 0}
               onClick={() => page(search.term, search.offset - pageSize)}>Anterior</Button>
-            <Button size="sm" variant="ghost" disabled={busy || !directory.has_more}
+            <Button size="sm" variant="ghost" disabled={blocked || !directory.has_more}
               onClick={() => page(search.term, search.offset + pageSize)}>Siguiente</Button>
           </nav>}
         </>}
@@ -171,14 +187,14 @@ export function StaffInvitationConsole() {
           {account.profile_state !== 'active' && <>
             <Field label="Vigencia en horas" htmlFor="staff-invitation-hours">
               <input id="staff-invitation-hours" className={inputCls} type="number" min={1} max={168} value={hours}
-                onChange={event => setHours(event.target.value)} disabled={busy} />
+                onChange={event => setHours(event.target.value)} disabled={blocked} />
             </Field>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={busy || uncertain} onClick={() => void change(account.latest_invitation ? 'renew' : 'issue')}>
                 {account.latest_invitation ? 'Renovar código' : 'Emitir código'}
               </Button>
               {account.latest_invitation && !account.latest_invitation.revoked_at && !account.latest_invitation.used_at &&
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => void change('revoke')}>Revocar código</Button>}
+                <Button size="sm" variant="ghost" disabled={blocked} onClick={() => void change('revoke')}>Revocar código</Button>}
             </div>
           </>}
         </div>}

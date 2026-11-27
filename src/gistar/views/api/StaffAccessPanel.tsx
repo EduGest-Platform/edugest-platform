@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
 import type { Me } from '../../../shared/api/session'
+import { useLeaveGuard } from '../../useLeaveGuard'
 import { Modal } from '../../components/Modal'
 import { StaffInvitationConsole } from './StaffInvitationConsole'
 import { Button, Field, Notice, inputCls } from '../../ui'
@@ -59,6 +60,9 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   const [busy, setBusy] = useState(false)
   const [uncertain, setUncertain] = useState(false)
   const pending = useRef<AbortController | null>(null)
+  const [invitationBlocked, setInvitationBlocked] = useState(false)
+  const closeBlocked = busy || invitationBlocked
+  useLeaveGuard(closeBlocked)
 
   useEffect(() => () => pending.current?.abort(), [])
   useEffect(() => {
@@ -122,7 +126,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   }, [inspection, canReview, canList, attempt])
 
   async function write(send: (signal: AbortSignal) => Promise<Result<unknown>>, onSuccess: () => void) {
-    if (pending.current || uncertain) return
+    if (pending.current || uncertain || invitationBlocked) return
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -212,8 +216,8 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
   }
 
   return (
-    <Modal open onClose={() => { if (!pending.current) onClose() }} placement="end" size="md" title="Personal y accesos"
-      dirty={!busy && Boolean(token || scopeId)}
+    <Modal open onClose={() => { if (!pending.current && !closeBlocked) onClose() }} placement="end" size="md" title="Personal y accesos"
+      closeBlocked={closeBlocked} dirty={Boolean(token || scopeId)}
       subtitle="Ficha interna y solicitudes de cambio de acceso.">
       <div className="grid gap-5">
         {notice && <Notice live="polite">{notice}</Notice>}
@@ -238,7 +242,7 @@ export function StaffAccessPanel({ me, onClose }: { me: Me; onClose: () => void 
             </form>
           )}
         </section>
-        {canReview && <StaffInvitationConsole />}
+        {canReview && <StaffInvitationConsole onBlockedChange={setInvitationBlocked} />}
         {profile?.state === 'active' && (
           <form className="grid gap-3 rounded-xl border border-line p-3" onSubmit={requestAccess}>
             <h3 className="font-semibold">Solicitar acceso</h3>

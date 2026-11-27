@@ -95,6 +95,10 @@ export async function newBrowser() {
   }
   const page = {
     ev,
+    initScript: async (source) => {
+      const result = await send('Page.addScriptToEvaluateOnNewDocument', { source }, s)
+      if (result.error) throw new Error(result.error.message)
+    },
     blockUrls: async (urls) => {
       const enabled = await send('Network.enable', {}, s)
       if (enabled.error) throw new Error(enabled.error.message)
