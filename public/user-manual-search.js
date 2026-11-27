@@ -3,8 +3,10 @@
   const input = document.getElementById('manual-query')
   const results = document.getElementById('manual-results')
   const matches = document.getElementById('manual-matches')
+  const reset = document.getElementById('manual-reset')
+  if (!panel || !input || !results || !matches || !reset) return
   const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-  const sections = Array.from(document.querySelectorAll('main > section[id]')).map(section => ({
+  const sections = Array.from(document.querySelectorAll('main > section[id]')).filter(section => section.querySelector('h2')).map(section => ({
     id: section.id,
     title: section.querySelector('h2').textContent,
     text: normalize(section.textContent)
@@ -17,7 +19,7 @@
       return
     }
     const found = sections.filter(section => words.every(word => section.text.includes(word)))
-    results.textContent = found.length ? `${found.length} secciones encontradas.` : 'No hay coincidencias. Prueba con otras palabras.'
+    results.textContent = found.length ? found.length === 1 ? '1 sección encontrada.' : `${found.length} secciones encontradas.` : 'No hay coincidencias. Prueba con otras palabras.'
     for (const section of found) {
       const item = document.createElement('li')
       const link = document.createElement('a')
@@ -28,7 +30,7 @@
     }
   }
   input.addEventListener('input', search)
-  document.getElementById('manual-reset').addEventListener('click', () => {
+  reset.addEventListener('click', () => {
     input.value = ''
     search()
     input.focus()
