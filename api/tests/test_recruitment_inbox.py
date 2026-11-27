@@ -58,6 +58,16 @@ def test_inbox_pagination_preserves_scope_and_total(client, db):
                            json=contact(action(user_id(db, CAPT_DATA), "Foreign page", 0)))
     assert response.status_code == 201, response.text
 
+    other_owner = create_application(client, "CONV-IA-2027A", "page.other-owner@example.test")
+    response = client.post(f"/api/v1/applications/{other_owner}/events", headers=ia,
+                           json=contact(action(user_id(db, SEL_IA), "Other owner", 0)))
+    assert response.status_code == 201, response.text
+
+    unfiltered = client.get(URL, headers=ia, params={"limit": 10})
+    assert unfiltered.status_code == 200, unfiltered.text
+    assert unfiltered.json()["total"] == 4
+    assert {item["application_id"] for item in unfiltered.json()["items"]} == set(own + [other_owner])
+
     seen = []
     for offset in range(4):
         response = client.get(URL, headers=ia, params={"limit": 1, "offset": offset, "mine": True})
@@ -69,6 +79,7 @@ def test_inbox_pagination_preserves_scope_and_total(client, db):
     assert len(seen) == len(set(seen)) == 3
     assert set(seen) == set(own)
     assert foreign not in seen
+    assert other_owner not in seen
 
 
 def test_inbox_rejects_invalid_pagination(client):
