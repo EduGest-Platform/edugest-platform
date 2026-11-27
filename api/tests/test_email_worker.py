@@ -61,3 +61,43 @@ def test_empty_queue_never_sends():
     ):
         assert not worker.process_one(SimpleNamespace(email_enabled=True))
         send.assert_not_called()
+
+
+def test_claim_commit_failure_never_sends():
+    item = SimpleNamespace(
+        id=uuid4(), attempts=1, recipient="student@example.test",
+        subject="Test", text_body="Synthetic", html_body=None,
+    )
+    with (
+        patch.object(worker, "SessionLocal") as sessions,
+        patch.object(worker, "claim_next", return_value=item),
+        patch.object(worker, "send_email") as send,
+        patch.object(worker, "finish_claim") as finish,
+    ):
+        sessions.begin.return_value.__exit__.side_effect = RuntimeError("commit failed")
+        with pytest.raises(RuntimeError, match="commit failed"):
+            worker.process_one(SimpleNamespace(email_enabled=True))
+        send.assert_not_called()
+        finish.assert_not_called()
+        sessions.begin.assert_called_once_with()
+
+
+def test_result_commit_failure_does_not_resend():
+    item = SimpleNamespace(
+        id=uuid4(), attempts=1, recipient="student@example.test",
+        subject="Test", text_body="Synthetic", html_body=None,
+    )
+    with (
+        patch.object(worker, "SessionLocal") as sessions,
+        patch.object(worker, "claim_next", return_value=item),
+        patch.object(worker, "send_email") as send,
+        patch.object(worker, "finish_claim"),
+        patch.object(worker, "schedule_retry") as retry,
+    ):
+        claim_tx, result_tx = MagicMock(), MagicMock()
+        sessions.begin.side_effect = [claim_tx, result_tx]
+        result_tx.__exit__.side_effect = RuntimeError("result commit failed")
+        with pytest.raises(RuntimeError, match="result commit failed"):
+            worker.process_one(SimpleNamespace(email_enabled=True))
+        send.assert_called_once()
+        retry.assert_not_called()
