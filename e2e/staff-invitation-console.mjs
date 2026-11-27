@@ -7,6 +7,8 @@ if (web.protocol !== 'http:' || !['localhost', '127.0.0.1'].includes(web.hostnam
 if (!process.env.GISTAR_DEMO_PASSWORD) throw new Error('Set the synthetic demo password')
 
 const { newBrowser, check, errors, finish, sleep } = await import('./cdp.mjs')
+const apiOrigin = new URL(process.env.GISTAR_API ?? 'http://localhost:8000')
+const auditUrl = new URL('/api/v1/audit-events?action=staff.access_requests_viewed', apiOrigin)
 const accountName = 'Selección IA (demo)'
 const consoleScope = 'document.querySelector(\'section[aria-label="Invitaciones de personal"]\')'
 
@@ -39,6 +41,14 @@ async function openStaff(email, observe = false) {
   requireCheck('Personal action is available', await page.waitText('Personal'))
   requireCheck('Internal account opens Personal', await page.click('Personal'))
   return page
+}
+
+async function queueAuditCount(page) {
+  return page.ev(`(async () => {
+    const headers = { Authorization: 'Bearer ' + sessionStorage.getItem('gistar-api-token') }
+    const response = await window.staffDirectFetch(${JSON.stringify(auditUrl.href)}, { headers })
+    return response.ok ? (await response.json()).filter(event => event.meta.administrative === true).length : null
+  })()`)
 }
 
 async function holdAndRelease(page, index) {
@@ -108,6 +118,8 @@ try {
   requireCheck('Recipient activates the staff profile', thirdCode && await submitCode(recipient, thirdCode) &&
     await recipient.waitText('Invitación aceptada.'))
   requireCheck('Admin initially read the queue once', await admin.ev('window.staffQueueReads === 1'))
+  const initialAuditCount = await queueAuditCount(admin)
+  requireCheck('The initial queue request creates an audit event', initialAuditCount > 0)
   requireCheck('The staff member files a scoped teaching request',
     await recipient.set('#staff-scope-id', 'COH-IA') &&
     await recipient.click('Enviar solicitud de acceso') &&
@@ -118,6 +130,7 @@ try {
       item.textContent.includes(${JSON.stringify(accountName)}) &&
       /Ficha: [0-9a-f-]{36}/.test(item.textContent) && item.textContent.includes('COH-IA'))`))
   requireCheck('A refresh issues one queue read', await admin.ev('window.staffQueueReads === 2'))
+  requireCheck('A refresh creates one queue audit event', await queueAuditCount(admin) === initialAuditCount + 1)
   await admin.ev('window.confirm = text => { window.reviewConfirmation = text; return false }')
   await admin.click('Aprobar solicitud')
   requireCheck('The destructive decision requires confirmation naming requester, role and scope',
@@ -125,7 +138,7 @@ try {
       window.reviewConfirmation.includes('Ficha:') && window.reviewConfirmation.includes('COH-IA') &&
       document.body.innerText.includes('Aprobar solicitud') && window.staffQueueReads === 2`))
 
-  const api = new URL('/api/v1/staff/access-requests', process.env.GISTAR_API ?? 'http://localhost:8000')
+  const api = new URL('/api/v1/staff/access-requests', apiOrigin)
   requireCheck('A parallel administrative update makes the visible row stale', await admin.ev(`(async () => {
     const headers = { Authorization: 'Bearer ' + sessionStorage.getItem('gistar-api-token'), 'Content-Type': 'application/json' }
     const base = ${JSON.stringify(api.href)}

@@ -2,7 +2,7 @@ import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
-import { menuFor, ROLES, VIEWS } from './config'
+import { canOpen, menuFor, ROLES, VIEWS } from './config'
 import { useGistar } from './store'
 import type { Role, View } from './types'
 import { Button, inputCls } from './ui'
@@ -21,6 +21,8 @@ import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
 import { StaffAccessPanel } from './views/api/StaffAccessPanel'
+
+import { AssistantWidget } from './components/AssistantWidget'
 import { LoginScreen } from './components/LoginScreen'
 
 const SCREENS: Record<View, () => ReactElement> = {
@@ -168,10 +170,15 @@ export function Shell() {
       {API_MODE && session.me?.person_id === null && staffPanelUser === session.me.id && (
         <StaffAccessPanel key={session.me.id} me={session.me} onClose={() => setStaffPanelUser(null)} />
       )}
+
+      {API_MODE && session.me && allowedRoles?.includes(role) && canOpen(role, 'asistente') && (
+        <AssistantWidget key={JSON.stringify([session.me.id, role, session.me.roles.map(r => JSON.stringify([r.role, r.scope_id])).sort(), session.me.enrollments.map(e => JSON.stringify(e)).sort()])} />
+      )}
+
       <div
         role="status"
         aria-live="polite"
-        className={`fixed bottom-6 right-6 z-50 rounded-xl bg-navy px-5 py-3.5 text-sm text-white shadow-[0_12px_32px_rgba(24,45,66,0.3)] motion-safe:transition-[opacity,transform] motion-safe:duration-200 ${
+        className={`fixed bottom-24 right-6 z-50 rounded-xl bg-navy px-5 py-3.5 text-sm text-white shadow-[0_12px_32px_rgba(24,45,66,0.3)] motion-safe:transition-[opacity,transform] motion-safe:duration-200 ${
           toastMsg ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
         }`}
       >

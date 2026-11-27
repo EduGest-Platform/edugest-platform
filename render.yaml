@@ -36,6 +36,10 @@ services:
         sync: false # Lista JSON con la URL pública de la web, p. ej. ["https://edugest-web.onrender.com"]
       - key: GISTAR_GITHUB_TOKEN
         sync: false # Opcional (YO9): vacío o un token con lectura solo de repositorios públicos.
+      - key: GISTAR_RAG_EMBED
+        value: "true" # Vectores del RAG (KAN-130) activados. Necesitan GEMINI_API_KEY en el panel de Render; sin ella, la búsqueda sigue solo por palabras.
+      - key: GEMINI_API_KEY
+        sync: false # Clave de Google AI Studio para los embeddings. Solo en el panel de Render, nunca en el repositorio.
 
   - type: web
     name: edugest-web
