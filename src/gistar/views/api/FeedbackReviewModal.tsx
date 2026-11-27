@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
+import { useLeaveGuard } from '../../useLeaveGuard'
 import { Modal } from '../../components/Modal'
 import { Button, Field, Notice, inputCls } from '../../ui'
 
@@ -8,7 +9,9 @@ type QueueItem = Schemas['FeedbackQueueItem']
 type Draft = Schemas['FeedbackDraftOut']
 type ResponseData = { data?: Draft; error?: unknown; response: Response }
 
-export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClose: () => void }) {
+export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
+  item: QueueItem; onClose: () => void; onBlockedChange: (blocked: boolean) => void
+}) {
   const [versions, setVersions] = useState<Schemas['FeedbackDraftList']>()
   const [attempt, setAttempt] = useState(0)
   const [edit, setEdit] = useState<{ id: string; version: number; body: string } | null>(null)
@@ -19,7 +22,13 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
   const [uncertain, setUncertain] = useState(false)
   const pending = useRef<AbortController | null>(null)
 
-  useEffect(() => () => pending.current?.abort(), [])
+  const blocked = busy || uncertain
+  useLeaveGuard(blocked)
+  useEffect(() => { onBlockedChange(blocked) }, [blocked, onBlockedChange])
+  useEffect(() => () => {
+    pending.current?.abort()
+    onBlockedChange(false)
+  }, [onBlockedChange])
   useEffect(() => {
     const controller = new AbortController()
     void api.GET('/api/v1/submissions/{submission_id}/feedback-drafts', {
@@ -90,9 +99,11 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
   }
 
   return (
-    <Modal open onClose={onClose} dirty={Boolean(edit || confirmedVersion || busy)} title="Revisar feedback"
+    <Modal open onClose={() => { if (!pending.current && !uncertain) onClose() }}
+      closeBlocked={blocked} dirty={Boolean(edit || confirmedVersion)} title="Revisar feedback"
       subtitle={`${item.assignment_title} · ${item.learner_name}`} placement="end">
       <div className="grid gap-4">
+        {busy && <p role="status">Guardando el cambio…</p>}
         {notice && <Notice live="polite">{notice}</Notice>}
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
         {uncertain && <Notice tone="warning">Comprueba las versiones actualizadas antes de realizar otra operación.</Notice>}
@@ -106,7 +117,7 @@ export function FeedbackReviewModal({ item, onClose }: { item: QueueItem; onClos
                 params: { path: { submission_id: item.submission_id } }, signal,
               }), 'Borrador generado.')}>Generar borrador</Button>
             {latest?.status === 'draft' && current && !edit && (
-              <Button variant="ghost" disabled={busy} onClick={() => {
+              <Button variant="ghost" disabled={blocked} onClick={() => {
                 setConfirmedVersion(null)
                 setEdit({ id: latest.id, version: latest.version, body: latest.body })
               }}>Editar borrador</Button>

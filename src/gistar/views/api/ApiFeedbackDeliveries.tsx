@@ -8,7 +8,7 @@ import { FeedbackReviewModal } from './FeedbackReviewModal'
 
 const PAGE_SIZE = 25
 
-function FeedbackQueue({ cohortId }: { cohortId: string }) {
+function FeedbackQueue({ cohortId, onBlockedChange }: { cohortId: string; onBlockedChange: (blocked: boolean) => void }) {
   const [data, setData] = useState<Schemas['FeedbackQueue']>()
   const [offset, setOffset] = useState(0)
   const [attempt, setAttempt] = useState(0)
@@ -51,7 +51,7 @@ function FeedbackQueue({ cohortId }: { cohortId: string }) {
           <Button variant="ghost" disabled={offset + PAGE_SIZE >= data.total} onClick={() => setOffset(offset + PAGE_SIZE)}>Siguiente</Button>
         </nav>}
       </>}
-      {selected && <FeedbackReviewModal item={selected} onClose={() => setSelected(null)} />}
+      {selected && <FeedbackReviewModal item={selected} onClose={() => setSelected(null)} onBlockedChange={onBlockedChange} />}
     </Card>
   )
 }
@@ -59,6 +59,7 @@ function FeedbackQueue({ cohortId }: { cohortId: string }) {
 function TeacherDeliveryFeedback() {
   const { cohorts, loading, error, retry } = useAcademicCohorts()
   const [selected, setSelected] = useState('')
+  const [blocked, setBlocked] = useState(false)
   const cohort = cohorts.find(item => item.id === selected) ?? cohorts[0]
   return (
     <div className="grid gap-4">
@@ -69,12 +70,12 @@ function TeacherDeliveryFeedback() {
       {cohort && <>
         <Card>
           <Field label="Cohorte" htmlFor="feedback-cohort">
-            <select id="feedback-cohort" className={inputCls} value={cohort.id} onChange={event => setSelected(event.target.value)}>
+            <select id="feedback-cohort" className={inputCls} value={cohort.id} disabled={blocked} onChange={event => setSelected(event.target.value)}>
               {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
             </select>
           </Field>
         </Card>
-        <FeedbackQueue key={cohort.id} cohortId={cohort.id} />
+        <FeedbackQueue key={cohort.id} cohortId={cohort.id} onBlockedChange={setBlocked} />
       </>}
     </div>
   )
