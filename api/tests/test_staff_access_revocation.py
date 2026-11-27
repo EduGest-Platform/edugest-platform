@@ -108,3 +108,17 @@ def test_revocation_preserves_other_cohort_grant(client, db):
     assert current['assignment_active'] is True
     assert current['assignment_id'] == other_confirmation['assignment_id']
     assert db.get(RoleAssignment, uuid.UUID(other_confirmation['assignment_id'])).revoked_at is None
+
+
+def test_rejected_revocation_does_not_change_assignment_or_audit(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    admin = login(client, ADMIN)
+    target, confirmation = grant(client, owner, admin)
+    endpoint = f'{target}/revoke-access'
+    assert client.post(endpoint, headers=owner, json=confirmation).status_code == 403
+    assert client.post(endpoint, headers=admin, json={**confirmation, 'scope_id': 'COH-DATA'}).status_code == 409
+    current = client.get(f'{target}/application', headers=owner).json()
+    assert current['assignment_active'] is True
+    assert current['assignment_id'] == confirmation['assignment_id']
+    assert db.get(RoleAssignment, uuid.UUID(confirmation['assignment_id'])).revoked_at is None
+    assert not list(db.scalars(select(AuditEvent).where(AuditEvent.action == 'staff.access_revoked')))
