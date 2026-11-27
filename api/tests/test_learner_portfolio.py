@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from sqlalchemy import select
 
@@ -5,7 +7,7 @@ from app.core.config import settings
 from app.core.security import hash_password
 from app.modules.audit.models import AuditEvent
 from app.modules.identity.models import User
-from app.modules.integrations.github.client import GithubRateLimited
+from app.modules.integrations.github.client import GithubRateLimited, GithubReadOnlyClient, HttpResponse
 from app.modules.learning import portfolio
 from app.modules.learning.models import Enrollment
 from tests.conftest import ADMIN, ASPIRANTE, CODER, login
@@ -125,3 +127,54 @@ def test_portfolio_write_and_lookup_reject_nonowners_and_inactive_enrollment(cli
     assert view['url'] == target and not view['can_lookup'] and not view['can_edit']
     assert client.delete(endpoint, headers=owner).status_code == 204
     assert client.get(endpoint, headers=owner).json()['url'] is None
+
+
+@pytest.mark.parametrize(
+    'status,payload,expected',
+    [
+        (200, {'private': False, 'visibility': 'internal'}, 404),
+        (200, {'visibility': 'public'}, 404),
+        (200, {'private': True, 'visibility': 'private'}, 404),
+        (200, {'private': False, 'visibility': 'public', 'language': ['invalid']}, 502),
+        (200, {'private': False, 'visibility': 'public', 'pushed_at': 'invalid'}, 502),
+        (200, [], 502),
+        (302, {'message': 'Moved'}, 502),
+        (401, {'message': 'Rejected'}, 502),
+        (404, {'message': 'Not found'}, 404),
+        (429, {'message': 'Limited'}, 429),
+        (503, {'message': 'Unavailable'}, 502),
+    ],
+)
+def test_lookup_fails_closed_and_never_exposes_upstream_payload(
+    client, db, enrollment, monkeypatch, status, payload, expected,
+):
+    owner = login(client, CODER)
+    endpoint = path(enrollment)
+    target = 'https://github.com/synthetic-org/portfolio'
+    assert client.put(endpoint, headers=owner, json={'url': target, 'authorized': True}).status_code == 200
+    monkeypatch.setattr(settings, 'portfolio_github_lookup', True)
+    calls = []
+
+    def transport(request):
+        calls.append(request)
+        headers = {'location': 'https://example.test/never-follow'}
+        return HttpResponse(status, headers, json.dumps(payload).encode())
+
+    def public_client(*, timeout):
+        return GithubReadOnlyClient(timeout=timeout, transport=transport)
+
+    monkeypatch.setattr(portfolio, 'GithubReadOnlyClient', public_client)
+    response = client.post(endpoint + '/metadata', headers=owner)
+    assert response.status_code == expected
+    assert 'never-follow' not in response.text
+    assert 'synthetic-org/portfolio' not in response.text
+    assert len(calls) == 1
+    assert calls[0].method == 'GET'
+    assert calls[0].url == 'https://api.github.com/repos/synthetic-org/portfolio'
+    assert 'Authorization' not in calls[0].headers
+    assert client.get(endpoint, headers=owner).json()['url'] == target
+    events = db.scalars(select(AuditEvent).where(
+        AuditEvent.target_id == str(enrollment.id),
+        AuditEvent.action.startswith('portfolio.'),
+    )).all()
+    assert len(events) == 1 and events[0].meta == {}
