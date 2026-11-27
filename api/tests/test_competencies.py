@@ -4,7 +4,8 @@ import pytest
 from sqlalchemy import select, text
 from sqlalchemy.exc import DBAPIError
 
-from app.modules.competencies.models import CompetencyAssessment
+from app.modules.audit.models import AuditEvent
+from app.modules.competencies.models import CohortCompetencyFramework, CompetencyAssessment
 from app.modules.identity.models import RoleAssignment, User
 from app.modules.learning.models import Enrollment
 from tests.conftest import CAPT_IA, CODER, COORD, DOCENTE, login
@@ -204,3 +205,44 @@ def test_assessment_roster_only_shows_the_assigned_cohort(client, db):
     roster = client.get(path, headers=teacher)
     assert roster.status_code == 200
     assert included not in {item["enrollment_id"] for item in roster.json()["items"]}
+
+
+def test_cohort_activation_is_explicit_scoped_and_audited(client, db, teacher):
+    teacher_id = db.scalar(select(User.id).where(User.email == DOCENTE))
+    first = published_tree(client, teacher)
+    assert db.get(CohortCompetencyFramework, COHORT) is None
+    assert assign(client, teacher, first["id"]).status_code == 200
+    db.expire_all()
+    link = db.get(CohortCompetencyFramework, COHORT)
+    assert str(link.framework_id) == first["id"]
+    assert link.assigned_by == teacher_id and link.assigned_at is not None
+
+    second = published_tree(client, teacher, codes=("C1", "C4"))
+    db.expire_all()
+    assert str(db.get(CohortCompetencyFramework, COHORT).framework_id) == first["id"]
+    assert assign(client, teacher, second["id"]).status_code == 200
+    db.expire_all()
+    assert str(db.get(CohortCompetencyFramework, COHORT).framework_id) == second["id"]
+
+    events_query = select(AuditEvent).where(
+        AuditEvent.action == "competencies.cohort_framework_assigned",
+        AuditEvent.target_id == COHORT,
+    ).order_by(AuditEvent.id)
+    events = db.scalars(events_query).all()
+    assert len(events) == 2
+    assert all(event.actor_user_id == teacher_id and event.at is not None for event in events)
+    assert events[0].meta["previous"] is None
+    assert events[1].meta["previous"] == first["id"]
+    assert events[1].meta["framework_id"] == second["id"]
+
+    assert assign(client, login(client, CAPT_IA), second["id"]).status_code == 403
+    assert assign(client, {}, second["id"]).status_code == 401
+    db.query(RoleAssignment).filter(
+        RoleAssignment.user_id == teacher_id, RoleAssignment.scope_id == COHORT,
+    ).delete()
+    db.commit()
+    assert assign(client, login(client, DOCENTE), second["id"]).status_code == 403
+    assert assign(client, login(client, DOCENTE), first["id"]).status_code == 403
+    db.expire_all()
+    assert str(db.get(CohortCompetencyFramework, COHORT).framework_id) == second["id"]
+    assert len(db.scalars(events_query).all()) == 2
