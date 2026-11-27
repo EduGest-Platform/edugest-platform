@@ -1,17 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
+import { useLeaveGuard } from '../../useLeaveGuard'
 import { Button, Card, Field, Notice, inputCls } from '../../ui'
 
-export function AcademicEmail({ cohortId }: { cohortId: string }) {
+type Notification = Schemas['AcademicNotificationIn']
+
+export function pendingEmailKey(accountId: string, cohortId: string) {
+  return `edugest.pending-email:${accountId}:${cohortId}`
+}
+
+export function readPendingEmail(key: string): Notification | null {
+  try {
+    const payload = JSON.parse(sessionStorage.getItem(key) ?? 'null')
+    return payload && typeof payload.enrollment_id === 'string' && typeof payload.topic === 'string'
+      && typeof payload.available_at === 'string' && typeof payload.idempotency_key === 'string' ? payload : null
+  } catch {
+    return null
+  }
+}
+
+export function AcademicEmail({ cohortId, storageKey, onBusyChange }: {
+  cohortId: string; storageKey: string; onBusyChange: (busy: boolean) => void
+}) {
   const [recipients, setRecipients] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [recipient, setRecipient] = useState('')
   const [topic, setTopic] = useState('')
   const [scheduled, setScheduled] = useState(false)
   const [sendAt, setSendAt] = useState('')
-  const [draft, setDraft] = useState<{ enrollment_id: string; topic: string; available_at: string; idempotency_key: string } | null>(null)
+  const [draft, setDraft] = useState(() => readPendingEmail(storageKey))
   const [busy, setBusy] = useState(false)
-  const [uncertain, setUncertain] = useState(false)
+  const [uncertain, setUncertain] = useState(Boolean(draft))
+  useLeaveGuard(busy)
+  useEffect(() => () => onBusyChange(false), [onBusyChange])
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const lock = useRef(false)
@@ -54,7 +75,14 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
   const valid = (!scheduled || (Number.isFinite(Date.parse(sendAt)) && Date.parse(sendAt) > Date.now())) && recipients.includes(recipient) && topic.trim().length > 0 && topic.trim().length <= 120 && !Array.from(topic).some(c => c.charCodeAt(0) < 32)
   async function submit() {
     if (!draft || lock.current) return
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(draft))
+    } catch {
+      setError('No se pudo guardar la referencia para recuperar el aviso. La solicitud no se ha enviado.')
+      return
+    }
     lock.current = true
+    onBusyChange(true)
     setBusy(true)
     setError('')
     try {
@@ -62,6 +90,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         params: { path: { cohort_id: cohortId } }, body: draft,
       })
       if (result.data) {
+        sessionStorage.removeItem(storageKey)
         setMessage('Solicitud aceptada en la cola. No confirma la entrega. Referencia: ' + result.data.message_id)
         setRevision(n => n + 1)
         setDraft(null)
@@ -71,7 +100,11 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         setScheduled(false)
         setSendAt('')
       } else {
-        if (result.response.status >= 500 || result.response.status === 409 || result.response.status === 408) setUncertain(true)
+        if (result.response.status >= 500 || result.response.status === 409 || result.response.status === 408 || uncertain) {
+          setUncertain(true)
+        } else {
+          sessionStorage.removeItem(storageKey)
+        }
         setError(errorMessage(result.error))
       }
     } catch {
@@ -79,6 +112,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
       setError('No se pudo confirmar la solicitud. Reintenta con la misma referencia para evitar duplicados.')
     } finally {
       lock.current = false
+      onBusyChange(false)
       setBusy(false)
     }
   }
@@ -86,6 +120,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
     if (lock.current || historyLoading || historyError || !history.some(item => item.message_id === messageId && item.status === 'pending')) return
     if (!window.confirm('¿Cancelar esta notificación pendiente?')) return
     lock.current = true
+    onBusyChange(true)
     setBusy(true)
     setError('')
     setMessage('')
@@ -101,6 +136,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
       setHistoryLoading(true)
       setRevision(n => n + 1)
       lock.current = false
+      onBusyChange(false)
       setBusy(false)
     }
   }
@@ -135,6 +171,7 @@ export function AcademicEmail({ cohortId }: { cohortId: string }) {
         <p>Hay una actualización relacionada con {draft.topic}.</p>
         <p>Consulta EduGest para conocer los detalles.</p>
         <p>Destinatario: {draft.enrollment_id}</p>
+        <p>Referencia: {draft.idempotency_key}</p>
         <p>Disponible para envío: {new Date(draft.available_at).toLocaleString('es-ES', { timeZoneName: 'short' })}</p>
       </div>
       {uncertain && <Notice tone="warning">Resultado no confirmado. Conserva esta referencia y consulta el historial. Si reintentas, se utilizará la misma clave para evitar duplicados.</Notice>}

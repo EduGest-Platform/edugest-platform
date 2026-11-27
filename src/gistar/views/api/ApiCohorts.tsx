@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { api, errorMessage, type Schemas } from "../../../shared/api/client"
 import { Button, Card, Field, Notice, PageTitle, inputCls } from "../../ui"
 import { useGistar } from "../../store"
-import { AcademicEmail } from "./AcademicEmail"
+import { useApiSession } from "../../../shared/api/session"
+import { AcademicEmail, pendingEmailKey, readPendingEmail } from "./AcademicEmail"
 
 export type AcademicCohort = Schemas["AcademicCohortOut"]
 
@@ -59,6 +60,8 @@ export function CohortDetails({ cohort }: { cohort: AcademicCohort }) {
 
 export function ApiCohorts() {
   const { role } = useGistar()
+  const { me } = useApiSession()
+  const [emailBusy, setEmailBusy] = useState(false)
   const { cohorts, loading, error, retry } = useAcademicCohorts()
   const [selected, setSelected] = useState("")
   const cohort = cohorts.find((c) => c.id === selected) ?? cohorts[0]
@@ -71,7 +74,7 @@ export function ApiCohorts() {
       <Card
         title="Cursos y cohortes"
         action={
-          <Button variant="ghost" onClick={retry}>
+          <Button variant="ghost" onClick={retry} disabled={emailBusy}>
             Actualizar
           </Button>
         }
@@ -92,11 +95,12 @@ export function ApiCohorts() {
                 id="academic-cohort"
                 className={inputCls}
                 value={cohort.id}
+                disabled={emailBusy}
                 onChange={(e) => setSelected(e.target.value)}
               >
                 {cohorts.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.nombre}
+                    {c.nombre}{me && readPendingEmail(pendingEmailKey(me.id, c.id)) ? " · Aviso sin confirmar" : ""}
                   </option>
                 ))}
               </select>
@@ -110,7 +114,10 @@ export function ApiCohorts() {
           API.
         </p>
       </Card>
-      {cohort && (role === "admin" || role === "docente") && <AcademicEmail key={cohort.id} cohortId={cohort.id} />}
+      {me && cohort && (role === "admin" || role === "docente") && (
+        <AcademicEmail key={pendingEmailKey(me.id, cohort.id)} cohortId={cohort.id}
+          storageKey={pendingEmailKey(me.id, cohort.id)} onBusyChange={setEmailBusy} />
+      )}
     </>
   )
 }
