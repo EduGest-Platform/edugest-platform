@@ -102,14 +102,18 @@ try {
   const draft = 'Borrador que debe conservarse'
   requireCheck('First browser changes its draft', await setDiscussionField(first, 'Editar tu comentario', draft))
   requireCheck('Second browser edits the same comment', await second.click('Editar comentario', `(${scope})`))
-  requireCheck('Second browser saves a newer version', await setDiscussionField(second, 'Editar tu comentario', 'Revisión nueva de la otra pestaña') &&
+  const edited = 'Revisión nueva <img data-kan244-xss src="data:,invalid" onerror="window.kan244Marker=true">'
+  requireCheck('Second browser saves a newer version', await setDiscussionField(second, 'Editar tu comentario', edited) &&
     await second.click('Guardar edición', `(${scope})`))
-  requireCheck('New version persisted', await second.waitText('Revisión nueva de la otra pestaña'))
+  requireCheck('Edited version is literal text', await second.waitText(edited))
+  requireCheck('Edited markup is inert', await second.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true"))
 
   requireCheck('First browser sends its observed version', await first.click('Guardar edición', `(${scope})`))
   requireCheck('Conflict is announced and draft kept', await first.waitText('Hay una revisión nueva') && await draftIs(first, draft))
   requireCheck('Refresh fetches the current version', await first.click('Actualizar hilo', `(${scope})`) &&
     await first.waitText('Versión actual del comentario'))
+  requireCheck('Conflict preview renders the edited markup as text', await first.waitText(edited) &&
+    await first.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true"))
   requireCheck('Refresh keeps the draft and blocks blind overwrite', await draftIs(first, draft) &&
     await first.ev(`[...(${scope}).querySelectorAll('button')].find(item => item.textContent.trim() === 'Guardar edición')?.disabled === true`))
   requireCheck('Explicitly adopt the current revision', await first.click('Conservar mi borrador y usar esta versión', `(${scope})`))
