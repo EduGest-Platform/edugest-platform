@@ -1,5 +1,6 @@
-import { CloudOff, LogOut, Route, RotateCcw } from 'lucide-react'
+import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, type ReactElement } from 'react'
+import { UserJourneyLink } from './components/UserJourneyLink'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
 import { menuFor, ROLES, VIEWS } from './config'
@@ -98,6 +99,7 @@ export function Shell() {
             )
           })}
         </nav>
+        <div className="px-3 pb-3"><UserJourneyLink className="text-white hover:bg-white/10" /></div>
         <footer className="mt-auto hidden px-6 text-xs leading-relaxed text-[#8fb0c6] md:block">
           EduGest v1 · Datos ficticios
           <br />
@@ -111,11 +113,7 @@ export function Shell() {
             <span className="text-[15px] font-semibold text-ink">Acompañamos cada trayectoria de aprendizaje</span>
             <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">DEMO · Datos sintéticos</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a href={`${import.meta.env.BASE_URL}user-journey.html`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-slate-100 focus-visible:outline focus-visible:outline-2" aria-label="User Journey (abre en otra pestaña)">
-              <Route className="size-4" aria-hidden />
-              User Journey
-            </a>
+          <div className="flex items-center gap-2">
             {allowedRoles && session.me && (
               <span className="mr-1 hidden whitespace-nowrap border-r border-line pr-3 text-right text-xs leading-tight text-muted lg:block">
                 <b className="block text-sm font-semibold text-ink">{session.me.display_name}</b>
