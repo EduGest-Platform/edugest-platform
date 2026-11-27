@@ -57,3 +57,23 @@ it('ignores unknown events and rejects server errors without leaking their paylo
   expect(cancel).toHaveBeenCalled()
   expect(stream.locked).toBe(false)
 })
+
+
+it('ignores malformed progress fields and cancels after a valid terminal answer', async () => {
+  const cancel = vi.fn()
+  const onPhase = vi.fn()
+  const onDelta = vi.fn()
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode('event: phase\ndata: {"source_kind":"unknown"}\n\n'
+        + 'event: delta\ndata: {"text":42}\n\n'
+        + 'event: answer\ndata: {"answer":"Sin fuente","status":"no_source","source_kind":"documents","mode":"extractive","retrieval":null,"as_of":"2026-11-26","citations":[],"scope_cohorts":[]}\n\n'))
+    },
+    cancel,
+  })
+  await expect(readAssistantStream(stream, { onPhase, onDelta })).resolves.toMatchObject({ status: 'no_source' })
+  expect(onPhase).not.toHaveBeenCalled()
+  expect(onDelta).not.toHaveBeenCalled()
+  expect(cancel).toHaveBeenCalledOnce()
+  expect(stream.locked).toBe(false)
+})
