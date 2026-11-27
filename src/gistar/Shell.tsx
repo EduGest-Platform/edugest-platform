@@ -82,8 +82,8 @@ export function Shell() {
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
         </div>
-        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">{en ? "Menu" : "Menú"} · {ROLES[role]}</p>
-        <nav aria-label={en ? "Main navigation" : "Navegación principal"} className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
+        <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block"><span lang={appearance.language}>{en ? "Menu" : "Menú"}</span> · {ROLES[role]}</p>
+        <nav lang={appearance.language} aria-label={en ? "Main navigation" : "Navegación principal"} className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
           {menuFor(role, API_MODE).map((v) => {
             const { label, icon: Icon } = VIEWS[v]
             const active = v === view
@@ -114,7 +114,7 @@ export function Shell() {
         <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <span lang={en ? "en" : "es"} className="text-[15px] font-semibold">{en ? "Supporting every learning journey" : "Acompañamos cada trayectoria de aprendizaje"}</span>
-            <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">{en ? "DEMO · Synthetic data" : "DEMO · Datos sintéticos"}</span>
+            <span lang={appearance.language} className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">{en ? "DEMO · Synthetic data" : "DEMO · Datos sintéticos"}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AppearanceControls {...appearance} />
@@ -135,12 +135,12 @@ export function Shell() {
               ))}
             </select>
             {allowedRoles && (
-              <Button variant="ghost" onClick={session.logout} aria-label={en ? "Sign out" : "Cerrar sesión"}>
+              <Button variant="ghost" onClick={session.logout} lang={appearance.language} aria-label={en ? "Sign out" : "Cerrar sesión"}>
                 <LogOut className="size-4" aria-hidden />
                 <span className="hidden sm:inline">{en ? "Sign out" : "Salir"}</span>
               </Button>
             )}
-            <Button variant="ghost" onClick={reset} aria-label={en ? "Reset demo" : "Restablecer demo"}>
+            <Button variant="ghost" onClick={reset} lang={appearance.language} aria-label={en ? "Reset demo" : "Restablecer demo"}>
               <RotateCcw className="size-4" aria-hidden />
               <span className="hidden sm:inline">{en ? "Reset" : "Restablecer"}</span>
             </Button>

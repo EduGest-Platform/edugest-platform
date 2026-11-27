@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
+@custom-variant action-hover (&:hover);
 
 /*
  * Colours inspired by the Somos F5 palette (their violets and navys), as projectplan.md allows:
@@ -17,6 +18,14 @@
   --color-line: #d3dae4;
   --color-mist: #f4f2ff;
   --color-canvas: #f7f9fc;
+  --color-action-primary: #4f38e0;
+  --color-action-primary-hover: #6854e8;
+  --color-action-success: #08766d;
+  --color-action-success-hover: #075e58;
+  --color-action-solid-text: #ffffff;
+  --color-action-quiet: #f4f2ff;
+  --color-action-quiet-hover: #e9e5ff;
+  --color-action-quiet-text: #15295a;
 
   /* Somos F5 has no orange, so the "amber" warning colours use its violets. */
   --color-amber-50: #f4f2ff;
@@ -74,16 +83,13 @@ html[data-theme="dark"] {
   --color-muted: #b4c2d5;
   --color-line: #46566e;
   --color-mist: #252c48;
-  /* Preserve readable white labels on shared primary/success actions. */
-  --color-blue: #4f38e0;
-  --color-teal: #0f776f;
+  --color-blue: #b8acf6;
+  --color-teal: #64d8c8;
+  --color-action-quiet: #252c48;
+  --color-action-quiet-hover: #34415f;
+  --color-action-quiet-text: #edf2fa;
 }
 html[data-theme="dark"] .bg-white { background-color: #1c293d; }
 html[data-theme="dark"] .bg-white\/90 { background-color: rgb(28 41 61 / 90%); }
 html[data-theme="dark"] .bg-white.text-navy { color: #edf2fa; }
 html[data-theme="dark"] :focus-visible { outline-color: #b8acf6; }
-
-/* Ghost/subtle controls must remain legible against dark surfaces, including hover. */
-html[data-theme="dark"] button.bg-mist.text-navy { color: #edf2fa; }
-html[data-theme="dark"] button.bg-mist.text-navy:hover { background-color: #34415f; }
-html[data-theme="dark"] button.bg-transparent.text-muted:hover { color: #edf2fa; }

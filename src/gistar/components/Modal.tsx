@@ -102,7 +102,7 @@ export function Modal({
           </button>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">{children}</div>
-        {footer && <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-[#fafcfd] px-5 py-3.5 sm:px-6">{typeof footer === 'function' ? footer(requestClose) : footer}</footer>}
+        {footer && <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-canvas px-5 py-3.5 sm:px-6">{typeof footer === 'function' ? footer(requestClose) : footer}</footer>}
       </div>
     </div>,
     document.body,

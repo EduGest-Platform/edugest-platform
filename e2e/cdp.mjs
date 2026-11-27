@@ -78,6 +78,7 @@ export async function newBrowser() {
   const s = a.sessionId
   await send('Runtime.enable', {}, s)
   await send('Page.enable', {}, s)
+  await send('Page.bringToFront', {}, s)
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
   const pressKey = async (name, virtualKeyCode, text) => {
     const key = { key: name, code: name, windowsVirtualKeyCode: virtualKeyCode }
@@ -131,6 +132,16 @@ export async function newBrowser() {
     click: (text, scope = 'document') =>
       ev(`(() => { const b = [...${scope}.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(${JSON.stringify(text)}) && !b.disabled); if (!b) return false; b.click(); return true })()`),
     nav: (label) => ev(`(() => { const b = [...document.querySelectorAll('nav[aria-label="Navegación principal"] button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true })()`),
+    forceHover: async selector => {
+      await send('DOM.enable', {}, s)
+      await send('CSS.enable', {}, s)
+      const { result: { root } } = await send('DOM.getDocument', {}, s)
+      const { result: { nodeId } } = await send('DOM.querySelector', { nodeId: root.nodeId, selector }, s)
+      if (!nodeId) throw new Error(`Could not find ${selector}`)
+      const result = await send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: ['hover'] }, s)
+      if (result.error) throw new Error(result.error.message)
+      return async () => { await send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [] }, s) }
+    },
     rows: () => ev(`document.querySelectorAll('main tbody tr').length`),
     login: async (email) => {
       await page.set('#lg-email', email)
