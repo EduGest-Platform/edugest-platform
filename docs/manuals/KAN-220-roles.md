@@ -28,7 +28,7 @@ Referencia de esta separación: [configuración de origen](../../src/shared/api/
 - El menú admin actual incluye **Auditoría**. Abrirla y actualizar para consultar acciones/identificadores del servidor. No es un editor ni una exportación completa del historial.
 - Un ID o rol puede identificar indirectamente a una persona: no tratar auditoría como información anónima ni publicar su metadata libremente.
 - No se incluye una pantalla para asignar roles, crear cuentas, borrar auditoría o configurar permisos. Solicitar esos cambios al responsable del backend mediante el proceso del equipo.
-- El permiso global admin de API no añade por sí solo **Candidaturas** al menú admin. No prometer una ruta de UI que no existe en esa configuración; se necesita un rol de interfaz asignado que la exponga o una integración posterior.
+- En modo servidor el menú admin muestra también **Candidaturas** (KAN-275), con los expedientes y el alta manual; el menú de la demo local no la incluye.
 
 ## ES — Captación y selección
 
@@ -39,7 +39,7 @@ Referencia de esta separación: [configuración de origen](../../src/shared/api/
 5. Para alertas de silencio, seleccionar una convocatoria y actualizar. La lista abarca toda esa convocatoria, no los filtros de texto/estado del listado. **Abrir expediente** lleva a su historial. El aviso no retira ni admite automáticamente a nadie.
 6. El formulario CRM no implementa una decisión de selección, quórum ni matrícula. Los endpoints de decisión existentes son un flujo backend distinto; no sustituirlos por una nota que diga «admitida».
 
-Selección (en **Candidaturas**) y Coordinación (en su **Inicio**) pueden registrar candidaturas a mano (KAN-275); eso no da acceso a los expedientes. Administración solo puede hacerlo por la API: su menú no tiene esa pantalla. Coordinación y docencia pueden tener capacidades de API específicas, pero no heredan automáticamente `applications.read` ni el menú de captación. Si falta una pantalla o devuelve 403, solicitar revisión de rol/ámbito; no usar otra identidad prestada.
+Selección (en **Candidaturas**) y Coordinación (en su **Inicio**) pueden registrar candidaturas a mano (KAN-275); eso no da acceso a los expedientes. Administración las registra en **Candidaturas**, que su menú muestra solo en modo servidor. Coordinación y docencia pueden tener capacidades de API específicas, pero no heredan automáticamente `applications.read` ni el menú de captación. Si falta una pantalla o devuelve 403, solicitar revisión de rol/ámbito; no usar otra identidad prestada.
 
 ## ES — Docencia
 
@@ -79,7 +79,7 @@ Without a build-time API URL, every screen is local demo. In API mode only inscr
 
 ### Administration
 
-The admin menu exposes **Auditoría**, a read-only recent server-action view, not a complete export/editor. IDs/roles may identify people. No role-grant, account-creation, audit-deletion or permission-management screen is provided here. Global API admin permission does not itself add **Candidaturas** to the admin UI menu; do not promise an unavailable navigation path.
+The admin menu exposes **Auditoría**, a read-only recent server-action view, not a complete export/editor. IDs/roles may identify people. No role-grant, account-creation, audit-deletion or permission-management screen is provided here. In server mode the admin menu also shows **Candidaturas** (KAN-275); the local demo menu does not.
 
 ### Recruitment and selection
 
@@ -87,7 +87,7 @@ Open **Candidaturas** using an assigned UI role that includes it; recruitment ma
 
 Choose a CRM Contact/Note/Reminder and channel, enter minimal operational text, then **Registrar en el historial** and confirm the returned server event. A CRM reminder is not an email receipt. Requirement consultation requires explicit version selection; **Actualizar requisitos** refreshes evidence but does not activate policy or decide admission. Silence alerts require a selected call and manual refresh; their list covers the whole call independently of application text/stage filters. **Abrir expediente** opens the dossier; warnings do not automatically withdraw or admit anyone.
 
-Selection (under **Candidaturas**) and coordination (on its **Home** screen) can register applications that arrive outside the public form (KAN-275), choosing the origin channel; this grants no dossier access. Administration can only do it through the API: its menu has no such screen.
+Selection (under **Candidaturas**) and coordination (on its **Home** screen) can register applications that arrive outside the public form (KAN-275), choosing the origin channel; this grants no dossier access. Administration does it under **Candidaturas**, which its menu shows in server mode only.
 
 CRM is not the backend selection/quorum/enrollment workflow: a note saying “admitted” is not an admission decision. Coordinator/teacher API capabilities do not automatically include general application reads or recruitment UI access. Request proper scope instead of borrowing identities.
 

@@ -12,10 +12,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from app.core.authz import Principal
 from app.core.db import SessionLocal
 from app.main import app
+from app.modules.admissions.manual_intake import register_application
 from app.modules.admissions.models import MANUAL_ORIGINS, Application, ApplicationEvent, IdentityReview
-from app.modules.admissions.schemas import ApplicationCreate
+from app.modules.admissions.schemas import ApplicationCreate, ManualApplicationCreate
 from app.modules.admissions.service import create_application
 from app.modules.audit.models import AuditEvent
 from app.modules.catalog.models import Call
@@ -292,6 +294,51 @@ def test_parallel_manual_and_public_intakes_get_different_codes(client, db):
         responses = list(pool.map(submit, range(6)))
     assert [r.status_code for r in responses] == [201] * 6
     assert len({r.json()["codigo"] for r in responses}) == 6
+
+
+def test_downgrading_and_upgrading_keeps_the_channel_and_author(client, db):
+    first = client.post(URL, headers=login(client, SEL_IA), json=manual(origin_channel="derivacion"))
+    second = client.post("/api/v1/applications", json=new_application(email="publica.sintetica@example.test"))
+    assert first.status_code == second.status_code == 201
+    manual_receipt, public_receipt = first.json(), second.json()
+    registrar = user_id(db, SEL_IA)
+    db.close()
+    config = Config(os.path.join(API_DIR, "alembic.ini"))
+    config.set_main_option("script_location", os.path.join(API_DIR, "alembic"))
+    command.downgrade(config, "0022")
+    command.upgrade(config, "head")
+    restored = stored(db, manual_receipt)
+    assert restored.origin_channel == "derivacion" and restored.created_by == registrar
+    untouched = stored(db, public_receipt)
+    assert untouched.origin_channel == "formulario" and untouched.created_by is None
+
+
+def test_a_manual_channel_without_an_authorisation_check_writes_nothing(db):
+    before = applications(db)
+    with pytest.raises(ValueError):
+        create_application(db, ApplicationCreate(**new_application()), None, origin_channel="telefono")
+    assert applications(db) == before
+
+
+def test_a_call_that_changes_programme_is_authorised_on_the_locked_row(db):
+    """The session already holds the old programme; another request moves the call before this one locks it."""
+    user = db.scalar(select(User).where(User.email == SEL_IA))
+    assignment = db.scalar(select(RoleAssignment).where(RoleAssignment.user_id == user.id))
+    assignment.scope_type, assignment.scope_id = "program", "P-IA"
+    db.commit()
+    actor = Principal(user=user, assignments=[assignment])
+    held = db.get(Call, IA_CALL)  # kept referenced, so the session really holds the old programme
+    assert held.program_id == "P-IA"
+    with SessionLocal() as other:
+        other.get(Call, IA_CALL).program_id = "P-DATA"
+        other.commit()
+    before = db.scalar(select(func.count()).select_from(Application))
+    with pytest.raises(HTTPException) as refused:
+        register_application(db, actor, ManualApplicationCreate(**manual()))
+    assert refused.value.status_code == 403
+    assert applications(db) == before
+    denied = db.scalars(select(AuditEvent).where(AuditEvent.action == "application.manual_intake_denied")).all()
+    assert [row.target_id for row in denied] == [IA_CALL]
 
 
 @pytest.mark.parametrize(

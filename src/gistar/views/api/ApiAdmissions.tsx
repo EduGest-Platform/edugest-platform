@@ -290,6 +290,8 @@ export function ApiApplications() {
   const [denied, setDenied] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  // Grows after a manual registration; the list then reloads with whatever filters are on screen at that moment.
+  const [registrations, setRegistrations] = useState(0)
   const activeRequest = useRef<AbortController | null>(null)
 
   const load = useCallback(async () => {
@@ -316,7 +318,7 @@ export function ApiApplications() {
         setLoadError('No se pudo conectar con el servidor. Usa Actualizar para volver a intentar.')
       }
     }
-  }, [callId, stage, q])
+  }, [callId, stage, q, registrations])
 
   useEffect(() => {
     const timer = setTimeout(load, 250)
@@ -340,7 +342,7 @@ export function ApiApplications() {
     <>
       <PageTitle title="Candidaturas" sub="Expedientes con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
       <div className="mb-5 empty:hidden">
-        <ServerManualIntake onRegistered={load} />
+        <ServerManualIntake onRegistered={() => setRegistrations((value) => value + 1)} />
       </div>
       <Card
         title="Expedientes"

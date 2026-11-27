@@ -1,4 +1,5 @@
 import type { Schemas } from '../shared/api/client'
+import { describeApiError, problemText } from '../shared/api/errors'
 
 export type ManualOrigin = Schemas['ManualApplicationCreate']['origin_channel']
 export type OriginChannel = Schemas['ApplicationSummary']['origin_channel']
@@ -51,5 +52,27 @@ export function manualApplication(draft: ManualIntakeDraft, callId: string): Sch
     motivacion: draft.motivacion,
     disponibilidad: draft.disponibilidad,
     confirma_datos_sinteticos: true,
+  }
+}
+
+export type IntakeOutcome =
+  | { kind: 'registered'; code: string }
+  | { kind: 'rejected'; message: string }
+  | { kind: 'unconfirmed'; message: string }
+
+type IntakeResponse = { data?: { codigo: string }; error?: unknown; response: { status: number } }
+
+const UNCONFIRMED = 'No se pudo confirmar el registro. Puedes volver a intentarlo: si ya se guardó, aparecerá el aviso de que ya existe.'
+
+/** Sends the application and says what happened. «unconfirmed» means the server may or may not have saved it. */
+export async function sendManualApplication(send: () => Promise<IntakeResponse>): Promise<IntakeOutcome> {
+  try {
+    const { data, error, response } = await send()
+    if (data) return { kind: 'registered', code: data.codigo }
+    // A server or gateway error can arrive after the row was saved.
+    if (response.status >= 500) return { kind: 'unconfirmed', message: UNCONFIRMED }
+    return { kind: 'rejected', message: problemText(describeApiError(response.status, error)) }
+  } catch {
+    return { kind: 'unconfirmed', message: UNCONFIRMED }
   }
 }

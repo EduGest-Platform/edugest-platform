@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from fastapi import HTTPException, status
 from psycopg.errors import UniqueViolation
 from sqlalchemy import select
@@ -54,14 +56,22 @@ def _creation_summary(origin_channel: str) -> str:
     return f"Alta registrada por el equipo. Canal de origen: {ORIGIN_LABELS[origin_channel]}"
 
 
-def create_application(db: Session, body: IntakeFields, actor: Principal | None, origin_channel: str = PUBLIC_ORIGIN) -> Application:
+def create_application(
+    db: Session, body: IntakeFields, actor: Principal | None, origin_channel: str = PUBLIC_ORIGIN,
+    authorize_call: Callable[[Call], None] | None = None,
+) -> Application:
     """The single intake path: public and manual applications share its call checks and duplicate control.
 
-    The caller validates the synthetic data confirmation (the schema) and authorises a manual registration.
+    The caller validates the synthetic data confirmation (the schema). `authorize_call` runs on the locked call row and
+    raises when the actor may not write to it.
     """
+    if origin_channel != PUBLIC_ORIGIN and authorize_call is None:
+        raise ValueError("A manual intake needs its call authorisation")
     # Row lock on the call: serialises the per-call code counter.
     # A caller may have loaded this call already: re-read it, or the code and the status would be the ones from before the lock.
     call = db.scalar(select(Call).where(Call.id == body.call_id).with_for_update().execution_options(populate_existing=True))
+    if authorize_call is not None and call is not None:
+        authorize_call(call)
     # Share the call lock with publication changes; check before creating any person/application.
     require_published(call)
     if call.estado != "abierta":

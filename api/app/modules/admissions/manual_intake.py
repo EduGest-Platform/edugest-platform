@@ -36,14 +36,20 @@ def registrable_calls(db: Session, actor: Principal) -> list[Call]:
     return list(db.scalars(query.order_by(Call.nombre)))
 
 
+def _require_call_scope(db: Session, actor: Principal, call: Call) -> None:
+    if actor.can(APPLICATION_CREATE_PERMISSION, Scope(program_id=call.program_id, call_id=call.id)):
+        return
+    audit.record(db, actor, "application.manual_intake_denied", "call", call.id)
+    db.commit()
+    # An unpublished call stays invisible: outside the scope it answers like an unknown one.
+    require_published(call)
+    raise HTTPException(status.HTTP_403_FORBIDDEN, OUT_OF_SCOPE)
+
+
 def register_application(db: Session, actor: Principal, body: ManualApplicationCreate) -> Application:
     _scopes(actor)
-    call = db.get(Call, body.call_id)
-    if call is not None and not actor.can(APPLICATION_CREATE_PERMISSION, Scope(program_id=call.program_id, call_id=call.id)):
-        audit.record(db, actor, "application.manual_intake_denied", "call", call.id)
-        db.commit()
-        # An unpublished call stays invisible: outside the scope it answers like an unknown one.
-        require_published(call)
-        raise HTTPException(status.HTTP_403_FORBIDDEN, OUT_OF_SCOPE)
-    # An unknown call gets the same answer as on the public form.
-    return create_application(db, body, actor, origin_channel=body.origin_channel)
+    # The scope is checked on the locked row: a call that changes programme cannot slip between check and write.
+    return create_application(
+        db, body, actor, origin_channel=body.origin_channel,
+        authorize_call=lambda locked: _require_call_scope(db, actor, locked),
+    )
