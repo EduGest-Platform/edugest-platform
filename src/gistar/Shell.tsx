@@ -98,7 +98,7 @@ export function Shell() {
                 }`}
               >
                 <Icon className={`size-4 ${active ? 'text-gold' : 'text-[#d2caff]'}`} aria-hidden />
-                {en ? EN_MENU[v] : label}
+                <span lang={en ? 'en' : 'es'}>{en ? EN_MENU[v] : label}</span>
               </button>
             )
           })}
@@ -113,7 +113,7 @@ export function Shell() {
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white/90 px-5 py-3.5 backdrop-blur md:px-8">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[15px] font-semibold">{en ? "Supporting every learning journey" : "Acompañamos cada trayectoria de aprendizaje"}</span>
+            <span lang={en ? "en" : "es"} className="text-[15px] font-semibold">{en ? "Supporting every learning journey" : "Acompañamos cada trayectoria de aprendizaje"}</span>
             <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">{en ? "DEMO · Synthetic data" : "DEMO · Datos sintéticos"}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -124,7 +124,7 @@ export function Shell() {
                 {session.me.roles.map((r) => `${r.role}${r.scope_id ? ` · ${r.scope_id}` : ''}`).join(' | ') || 'Persona (sin rol interno)'}
               </span>
             )}
-            <label htmlFor="role" className="whitespace-nowrap text-sm text-muted">
+            <label htmlFor="role" lang={en ? "en" : "es"} className="whitespace-nowrap text-sm text-muted">
               {en ? (allowedRoles ? 'Act as' : 'View as') : (allowedRoles ? 'Actuar como' : 'Ver como')}
             </label>
             <select id="role" className={`${inputCls} w-auto max-w-56 py-2`} value={role} disabled={!!allowedRoles && allowedRoles.length < 2} onChange={(e) => setRole(e.target.value as Role)}>
