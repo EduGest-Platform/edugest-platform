@@ -44,7 +44,7 @@ try {
   const sameProgram = await openBoard('captacion.ia@gistar.example', 'P-IA')
 
   const iaSubject = `Hilo sintético IA ${runId}`
-  const iaComment = `Comentario interno IA ${runId}`
+  const iaComment = `Comentario interno IA ${runId} <img data-kan244-xss src="data:,invalid" onerror="window.kan244Marker=true">`
   const dataSubject = `Hilo sintético Data ${runId}`
   const dataComment = `Comentario interno Data ${runId}`
   await createThread(ia, iaSubject, iaComment)
@@ -55,6 +55,7 @@ try {
   const threadId = await sameProgram.ev(`Array.from(document.querySelectorAll('main select option')).find(option => option.textContent.startsWith(${JSON.stringify(iaSubject)}))?.value`)
   requireCheck('Same-program collaborator reads the shared comment', await setLabeled(sameProgram, 'Hilo', threadId) &&
     await sameProgram.waitText(iaComment))
+  requireCheck('Stored markup remains text in both authorized program sessions', await ia.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true") && await sameProgram.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true"))
   await data.click('Actualizar hilos', board)
   await ia.click('Actualizar hilos', board)
   requireCheck('Data refresh retains only Data conversations', await data.waitText(dataSubject) &&
