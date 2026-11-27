@@ -220,6 +220,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/applications/{application_id}/selection-appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar las citaciones de selección */
+        get: operations["list_appointments_api_v1_applications__application_id__selection_appointments_get"];
+        put?: never;
+        /** Agendar una jornada o entrevista, o enlazar una nueva fecha a una citación anterior */
+        post: operations["create_appointment_api_v1_applications__application_id__selection_appointments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/applications/{application_id}/selection-appointments/{appointment_id}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar asistencia o ausencia y, cuando proceda, conclusiones y valoración */
+        post: operations["record_appointment_outcome_api_v1_applications__application_id__selection_appointments__appointment_id__outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/applications/{application_id}/selection-decisions": {
         parameters: {
             query?: never;
@@ -404,6 +439,40 @@ export interface paths {
         put?: never;
         /** Edit Notes */
         post: operations["edit_notes_api_v1_attendance_sessions__session_id__zoom_notes_edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/provisioning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Provisioning */
+        get: operations["get_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/provisioning/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Provisioning */
+        post: operations["reconcile_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_reconcile_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -732,6 +801,23 @@ export interface paths {
         get?: never;
         /** Elegir la versión publicada del árbol que usa una cohorte */
         put: operations["put_cohort_framework_api_v1_cohorts__cohort_id__competency_framework_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente */
+        get: operations["get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1129,6 +1215,42 @@ export interface paths {
         get: operations["own_competencies_api_v1_me_enrollments__enrollment_id__competencies_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/enrollments/{enrollment_id}/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consultar el enlace de portfolio propio */
+        get: operations["read_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_get"];
+        /** Guardar un enlace autorizado a un repositorio */
+        put: operations["write_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_put"];
+        post?: never;
+        /** Eliminar el enlace propio, incluso al finalizar la matrícula */
+        delete: operations["delete_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/enrollments/{enrollment_id}/portfolio/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Consultar idioma y última actividad pública del repositorio guardado */
+        post: operations["lookup_metadata_api_v1_me_enrollments__enrollment_id__portfolio_metadata_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1833,6 +1955,80 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AppointmentCreate */
+        AppointmentCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "group_day" | "individual_interview";
+            /** Location */
+            location?: string | null;
+            /** Previous Id */
+            previous_id?: string | null;
+            /**
+             * Scheduled At
+             * Format: date-time
+             */
+            scheduled_at: string;
+        };
+        /** AppointmentList */
+        AppointmentList: {
+            /** Can Edit */
+            can_edit: boolean;
+            /** Items */
+            items: components["schemas"]["AppointmentOut"][];
+        };
+        /** AppointmentOut */
+        AppointmentOut: {
+            /** Assessment */
+            assessment: string | null;
+            /** Conclusions */
+            conclusions: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "group_day" | "individual_interview";
+            /** Location */
+            location: string | null;
+            /** Previous Id */
+            previous_id: string | null;
+            /** Recorded At */
+            recorded_at: string | null;
+            /**
+             * Scheduled At
+             * Format: date-time
+             */
+            scheduled_at: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "scheduled" | "attended" | "no_show" | "rescheduled";
+        };
+        /** AppointmentOutcome */
+        AppointmentOutcome: {
+            /** Assessment */
+            assessment?: string | null;
+            /** Conclusions */
+            conclusions?: string | null;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "attended" | "no_show";
+        };
         /** ApprovalIn */
         ApprovalIn: {
             /** Expected Version */
@@ -2396,6 +2592,16 @@ export interface components {
             /** Nombre */
             nombre: string;
         };
+        /** CompetencyLearner */
+        CompetencyLearner: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+        };
         /** CompetencyOut */
         CompetencyOut: {
             /** Codigo */
@@ -2433,6 +2639,11 @@ export interface components {
             min_group_size: number;
             /** Suppressed */
             suppressed: boolean;
+        };
+        /** CompetencyRoster */
+        CompetencyRoster: {
+            /** Items */
+            items: components["schemas"]["CompetencyLearner"][];
         };
         /** CompetencyWrite */
         CompetencyWrite: {
@@ -3377,6 +3588,27 @@ export interface components {
              */
             id: string;
         };
+        /** PortfolioOut */
+        PortfolioOut: {
+            /** Can Edit */
+            can_edit: boolean;
+            /** Can Lookup */
+            can_lookup: boolean;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** PortfolioWrite */
+        PortfolioWrite: {
+            /**
+             * Authorized
+             * @constant
+             */
+            authorized: true;
+            /** Url */
+            url: string;
+        };
         /** PrefilterItem */
         PrefilterItem: {
             /** Code */
@@ -3522,6 +3754,21 @@ export interface components {
              */
             silence_warning_contacts: number;
         };
+        /** ProvisioningOut */
+        ProvisioningOut: {
+            /** Can Reconcile */
+            can_reconcile: boolean;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "uncertain" | "confirmed";
+        };
         /** PublicCourseList */
         PublicCourseList: {
             /** Items */
@@ -3559,6 +3806,13 @@ export interface components {
             program_id: string;
             /** Program Name */
             program_name: string;
+        };
+        /** PublicRepository */
+        PublicRepository: {
+            /** Last Push At */
+            last_push_at?: string | null;
+            /** Primary Language */
+            primary_language?: string | null;
         };
         /** PublicationList */
         PublicationList: {
@@ -3615,6 +3869,16 @@ export interface components {
             label: string;
             /** Version */
             version: number;
+        };
+        /** ReconcileMeetingIn */
+        ReconcileMeetingIn: {
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /** Provider Id */
+            provider_id: string;
         };
         /** RecordOut */
         RecordOut: {
@@ -5352,6 +5616,164 @@ export interface operations {
             };
         };
     };
+    list_appointments_api_v1_applications__application_id__selection_appointments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentList"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_appointment_api_v1_applications__application_id__selection_appointments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppointmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La candidatura o cita ya no permite el cambio solicitado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_appointment_outcome_api_v1_applications__application_id__selection_appointments__appointment_id__outcome_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+                appointment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppointmentOutcome"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentOut"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description La candidatura o cita ya no permite el cambio solicitado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_selection_decisions_api_v1_applications__application_id__selection_decisions_get: {
         parameters: {
             query?: never;
@@ -5970,6 +6392,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisioningOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileMeetingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
                 };
             };
             /** @description Validation Error */
@@ -7017,6 +7505,51 @@ export interface operations {
             };
             /** @description La operación no es válida en el estado actual */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyRoster"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8377,6 +8910,188 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    read_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioOut"];
+                };
+            };
+            /** @description Matrícula propia no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortfolioWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioOut"];
+                };
+            };
+            /** @description Matrícula propia no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Se requiere matrícula activa */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Matrícula propia no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lookup_metadata_api_v1_me_enrollments__enrollment_id__portfolio_metadata_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRepository"];
+                };
+            };
+            /** @description Matrícula propia no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Consulta no habilitada o enlace no disponible */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Cuota de GitHub agotada */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description GitHub no disponible */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

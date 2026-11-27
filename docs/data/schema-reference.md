@@ -154,6 +154,9 @@ erDiagram
     person {
         UUID id PK
     }
+    portfolio_link {
+        UUID enrollment_id PK,FK
+    }
     preselection_decision {
         UUID id PK
         UUID application_id FK
@@ -183,6 +186,13 @@ erDiagram
         UUID id PK
         UUID user_id FK
         UUID granted_by FK
+    }
+    selection_appointment {
+        UUID id PK
+        UUID application_id FK
+        UUID previous_id FK
+        UUID created_by FK
+        UUID recorded_by FK
     }
     selection_approval {
         UUID id PK
@@ -230,6 +240,11 @@ erDiagram
         UUID session_id FK
         UUID created_by FK
         UUID approved_by FK
+    }
+    zoom_provisioning_intent {
+        UUID session_id PK,FK
+        UUID created_by FK
+        UUID updated_by FK
     }
     role_assignment |o--o{ access_change_request : applied_assignment_id
     app_user ||--o{ access_change_request : requested_by
@@ -292,6 +307,7 @@ erDiagram
     app_user ||--o{ intervention : actor_user_id
     risk_alert ||--o{ intervention : alert_id
     knowledge_document ||--o{ knowledge_chunk : document_id
+    enrollment ||--o| portfolio_link : enrollment_id
     app_user ||--o{ preselection_decision : actor_user_id
     application ||--o{ preselection_decision : application_id
     application ||--o{ requirement_review : application_id
@@ -304,6 +320,10 @@ erDiagram
     enrollment ||--o{ risk_alert : enrollment_id
     app_user |o--o{ role_assignment : granted_by
     app_user ||--o{ role_assignment : user_id
+    application ||--o{ selection_appointment : application_id
+    app_user ||--o{ selection_appointment : created_by
+    selection_appointment |o--o| selection_appointment : previous_id
+    app_user |o--o{ selection_appointment : recorded_by
     app_user ||--o{ selection_approval : actor_user_id
     application ||--o{ selection_approval : application_id
     cohort |o--o{ selection_approval : cohort_id
@@ -328,6 +348,9 @@ erDiagram
     app_user |o--o{ zoom_notes_version : approved_by
     app_user ||--o{ zoom_notes_version : created_by
     zoom_meeting ||--o{ zoom_notes_version : session_id
+    app_user ||--o{ zoom_provisioning_intent : created_by
+    attendance_session ||--o| zoom_provisioning_intent : session_id
+    app_user ||--o{ zoom_provisioning_intent : updated_by
 ```
 
 ## Dominios textuales declarados / Declared text domains
@@ -364,12 +387,15 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | risk_alert | review_state | ck_risk_alert_review_state | `["pending", "in_review", "closed"]` |
 | role_assignment | role | ck_role_assignment_role | `["admin", "captacion", "seleccion", "docente", "coordinacion"]` |
 | role_assignment | scope_type | ck_role_assignment_scope_type | `["global", "program", "call", "cohort"]` |
+| selection_appointment | kind | ck_selection_appointment_kind | `["group_day", "individual_interview"]` |
+| selection_appointment | state | ck_selection_appointment_state | `["scheduled", "attended", "no_show", "rescheduled"]` |
 | selection_approval | decision | ck_selection_approval_decision | `["admitida", "lista_espera", "no_admitida"]` |
 | selection_decision | decision | ck_selection_decision_decision | `["admitida", "lista_espera", "no_admitida"]` |
 | simulated_reminder | kind | ck_simulated_reminder_kind | `["documentation", "exercises"]` |
 | staff_profile | state | ck_staff_profile_state | `["pending", "active", "inactive"]` |
 | submission | status | ck_submission_status | `["submitted", "reviewed"]` |
 | zoom_meeting | authentication_mode | ck_zoom_auth_mode | `["open", "authenticated", "institutional"]` |
+| zoom_provisioning_intent | state | ck_zoom_intent_state | `["pending", "uncertain", "confirmed"]` |
 
 ## Campos y estados almacenados / Fields and stored states
 
@@ -1123,6 +1149,16 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - INDEX `ix_person_email`: `person.email`
 
+### portfolio_link
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| enrollment_id | UUID | no | enrollment.id | — |
+| url | VARCHAR(160) | no | — | — |
+| updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- FK `unnamed`: `(enrollment_id) -> (enrollment.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
 ### preselection_decision
 
 | Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
@@ -1289,6 +1325,46 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - UNIQUE `uq_role_assignment`: `user_id, role, scope_type, scope_id`
 
 - INDEX `ix_role_assignment_user_id`: `role_assignment.user_id`
+
+### selection_appointment
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| id | UUID | no | — | application (not evaluated / sin evaluar) |
+| application_id | UUID | no | application.id | — |
+| previous_id | UUID | sí / yes | selection_appointment.id | — |
+| kind | VARCHAR(24) | no | — | — |
+| state | VARCHAR(12) | no | — | application (not evaluated / sin evaluar) |
+| scheduled_at | TIMESTAMP WITH TIME ZONE | no | — | — |
+| location | VARCHAR(250) | sí / yes | — | — |
+| created_by | UUID | no | app_user.id | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+| recorded_by | UUID | sí / yes | app_user.id | — |
+| recorded_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+| conclusions | VARCHAR(1000) | sí / yes | — | — |
+| assessment | VARCHAR(500) | sí / yes | — | — |
+
+- CHECK `ck_selection_appointment_kind`: `kind IN ('group_day', 'individual_interview')`
+
+- CHECK `ck_selection_appointment_notes`: `state = 'attended' OR (conclusions IS NULL AND assessment IS NULL)`
+
+- CHECK `ck_selection_appointment_recorded`: `num_nonnulls(recorded_at, recorded_by) = CASE WHEN state IN ('attended', 'no_show') THEN 2 ELSE 0 END`
+
+- CHECK `ck_selection_appointment_state`: `state IN ('scheduled', 'attended', 'no_show', 'rescheduled')`
+
+- FK `unnamed`: `(application_id) -> (application.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(previous_id) -> (selection_appointment.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(recorded_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `unnamed`: `previous_id`
+
+- INDEX `ix_selection_appointment_application_id`: `selection_appointment.application_id`
+
+- UNIQUE INDEX `uq_selection_appointment_scheduled_kind`: `selection_appointment.application_id, selection_appointment.kind` WHERE `state = 'scheduled'`
 
 ### selection_approval
 
@@ -1526,6 +1602,32 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - UNIQUE `uq_zoom_notes_version`: `session_id, version`
 
 - INDEX `ix_zoom_notes_version_session_id`: `zoom_notes_version.session_id`
+
+### zoom_provisioning_intent
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| session_id | UUID | no | attendance_session.id | — |
+| operation_id | UUID | no | — | — |
+| state | VARCHAR(16) | no | — | — |
+| host_id | VARCHAR(255) | no | — | — |
+| start_at | TIMESTAMP WITH TIME ZONE | no | — | — |
+| duration_minutes | INTEGER | no | — | — |
+| authentication_mode | VARCHAR(20) | no | — | — |
+| profile_id | VARCHAR(255) | sí / yes | — | — |
+| created_by | UUID | no | app_user.id | — |
+| updated_by | UUID | no | app_user.id | — |
+| updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_zoom_intent_state`: `state IN ('pending', 'uncertain', 'confirmed')`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(session_id) -> (attendance_session.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(updated_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `unnamed`: `operation_id`
 
 ## Límites / Limits
 

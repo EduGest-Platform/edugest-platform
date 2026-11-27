@@ -11,21 +11,28 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
   const [review, setReview] = useState(false)
   const [busy, setBusy] = useState(false)
   const [blocked, setBlocked] = useState(false)
+  const [providerId, setProviderId] = useState("")
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const lock = useRef(false)
-  const [lookup, setLookup] = useState<{ id: string; meeting: Schemas["MeetingOut"] | null; error: string } | null>(null)
+  const [lookup, setLookup] = useState<{ id: string; meeting: Schemas["MeetingOut"] | null; intent: Schemas["ProvisioningOut"] | null; error: string } | null>(null)
   const [lookupAttempt, setLookupAttempt] = useState(0)
   useEffect(() => {
     if (!sessionId) return
     const controller = new AbortController()
     setLookup(null)
-    void api.GET("/api/v1/attendance-sessions/{session_id}/zoom/meeting", {
-      params: { path: { session_id: sessionId } }, signal: controller.signal,
-    }).then(result => {
-      if (!controller.signal.aborted) setLookup({ id: sessionId, meeting: result.data ?? null, error: result.response.ok ? "" : errorMessage(result.error) })
+    const options = { params: { path: { session_id: sessionId } }, signal: controller.signal }
+    void Promise.all([
+      api.GET("/api/v1/attendance-sessions/{session_id}/zoom/meeting", options),
+      api.GET("/api/v1/attendance-sessions/{session_id}/zoom/provisioning", options),
+    ]).then(([meeting, intent]) => {
+      const failure = !meeting.response.ok ? meeting : !intent.response.ok ? intent : null
+      if (!controller.signal.aborted) setLookup({
+        id: sessionId, meeting: meeting.data ?? null, intent: intent.data ?? null,
+        error: failure ? errorMessage(failure.error) : "",
+      })
     }).catch(() => {
-      if (!controller.signal.aborted) setLookup({ id: sessionId, meeting: null, error: "No se pudo consultar la reunión." })
+      if (!controller.signal.aborted) setLookup({ id: sessionId, meeting: null, intent: null, error: "No se pudo consultar la reunión." })
     })
     return () => controller.abort()
   }, [sessionId, lookupAttempt])
@@ -71,7 +78,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       setApproving(false)
     }
   }
-  const checked = lookup?.id === sessionId && !lookup.error && !lookup.meeting
+  const checked = lookup?.id === sessionId && !lookup.error && !lookup.meeting && !lookup.intent
   const valid = checked && sessions.some(s => s.id === sessionId) && !!topic.trim() &&
     Number.isFinite(Date.parse(start)) && Date.parse(start) > Date.now() &&
     Number.isInteger(Number(duration)) && Number(duration) >= 1 && Number(duration) <= 1440
@@ -88,7 +95,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       if (result.data) {
         setMessage("Reunión creada. Referencia Zoom: " + result.data.provider_id)
         setReview(false)
-        setLookup({ id: sessionId, meeting: result.data, error: "" })
+        setLookup({ id: sessionId, meeting: result.data, intent: null, error: "" })
       } else {
         setError(errorMessage(result.error))
         if (result.response.status >= 500 || result.response.status === 409 || result.response.status === 408) setBlocked(true)
@@ -96,6 +103,30 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     } catch {
       setError("Resultado no confirmado. Solicita revisión antes de repetir la creación.")
       setBlocked(true)
+    } finally {
+      lock.current = false
+      setBusy(false)
+    }
+  }
+  const unresolved = lookup?.id === sessionId && !lookup.meeting ? lookup.intent : null
+  async function reconcile() {
+    if (!unresolved?.can_reconcile || lock.current || !/^[0-9]{1,32}$/.test(providerId)) return
+    lock.current = true
+    setBusy(true)
+    setError("")
+    try {
+      const result = await api.POST("/api/v1/attendance-sessions/{session_id}/zoom/provisioning/reconcile", {
+        params: { path: { session_id: sessionId } },
+        body: { operation_id: unresolved.operation_id, provider_id: providerId },
+      })
+      if (result.data) {
+        setLookup({ id: sessionId, meeting: result.data, intent: null, error: "" })
+        setBlocked(false)
+        setReview(false)
+        setMessage("Reunión verificada y registrada.")
+      } else setError(errorMessage(result.error))
+    } catch {
+      setError("No se pudo confirmar la conciliación. Consulta el registro de la reunión.")
     } finally {
       lock.current = false
       setBusy(false)
@@ -113,17 +144,30 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
       <Button variant="ghost" disabled={busy || lookup === null} onClick={() => { setLookup(null); setLookupAttempt(n => n + 1) }}>Comprobar registro de reunión</Button>
     </>}
     <Field label="Sesión académica" htmlFor="zoom-session">
-      <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => { setSessionId(e.target.value); setNotes(null); setNotesError(""); setLookup(null); setMessage(""); setError(""); setTopic(""); setStart(""); setDuration("60"); setMode("authenticated") }}>
+      <select id="zoom-session" className={inputCls} disabled={disabled} value={sessionId} onChange={e => { setSessionId(e.target.value); setProviderId(""); setNotes(null); setNotesError(""); setLookup(null); setMessage(""); setError(""); setTopic(""); setStart(""); setDuration("60"); setMode("authenticated") }}>
         <option value="">Selecciona una sesión</option>
         {sessions.map(s => <option key={s.id} value={s.id}>{s.session_date} · {s.shift}</option>)}
       </select>
     </Field>
+    {unresolved && <>
+      <Notice tone="warning">Hay una solicitud de Zoom pendiente de conciliación. Referencia: {unresolved.operation_id}</Notice>
+      <Button variant="ghost" disabled={busy} onClick={() => setLookupAttempt(n => n + 1)}>Actualizar estado de la solicitud</Button>
+      {unresolved.can_reconcile && <div className="grid gap-2">
+        <Field label="ID de la reunión existente en Zoom" htmlFor="zoom-provider-id">
+          <input id="zoom-provider-id" className={inputCls} inputMode="numeric" maxLength={32}
+            value={providerId} disabled={busy} onChange={event => setProviderId(event.target.value)} />
+        </Field>
+        <Button disabled={busy || !/^[0-9]{1,32}$/.test(providerId)} onClick={() => void reconcile()}>
+          Verificar y registrar la reunión existente
+        </Button>
+      </div>}
+    </>}
     {sessionId && lookup?.id !== sessionId && <Notice live="polite">Consultando reunión…</Notice>}
     {lookup?.id === sessionId && lookup.error && <>
       <Notice tone="warning">{lookup.error}</Notice>
       <Button variant="ghost" disabled={disabled} onClick={() => { setLookup(null); setLookupAttempt(n => n + 1) }}>Volver a consultar reunión</Button>
     </>}
-    {blocked && lookup?.id === sessionId && !lookup.error && !lookup.meeting && <Notice tone="warning">No hay una reunión registrada localmente. Esto no descarta que Zoom haya aceptado la solicitud. No repitas la creación sin revisión.</Notice>}
+    {blocked && lookup?.id === sessionId && !lookup.error && !lookup.meeting && !lookup.intent && <Notice tone="warning">No hay una reunión registrada localmente. Esto no descarta que Zoom haya aceptado la solicitud. No repitas la creación sin revisión.</Notice>}
     {lookup?.id === sessionId && lookup.meeting && <Notice>Reunión existente: {lookup.meeting.provider_id} · {new Date(lookup.meeting.start_at).toLocaleString("es-ES")} · {lookup.meeting.duration_minutes} min. No es necesario crear otra reunión para esta sesión.</Notice>}
     {meetingId && <section key={meetingId} className="grid gap-2 border-t border-line pt-3">
       <h4 className="font-semibold">Notas de reunión · revisión interna</h4>

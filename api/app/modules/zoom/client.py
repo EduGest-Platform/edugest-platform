@@ -1,6 +1,8 @@
 """Server-side Zoom transport; no credentials or provider response bodies in errors."""
+from datetime import datetime
 from typing import Literal
 from urllib.parse import quote, urlsplit
+from uuid import UUID
 
 import httpx
 
@@ -11,6 +13,20 @@ AuthenticationMode = Literal["open", "authenticated", "institutional"]
 
 class ZoomError(RuntimeError):
     pass
+
+
+def meeting_reference(operation_id: UUID) -> str:
+    return f"EduGest operation {operation_id}"
+
+
+def verified_meeting_link(meeting_id: str, join_url: str) -> dict[str, str]:
+    parsed = urlsplit(join_url)
+    if (not meeting_id.isascii() or not meeting_id.isdecimal() or len(meeting_id) > 32
+        or len(join_url) > 2048 or parsed.scheme != "https" or not parsed.hostname
+        or not (parsed.hostname == "zoom.us" or parsed.hostname.endswith(".zoom.us"))
+        or parsed.username or parsed.password):
+        raise ValueError("Invalid Zoom meeting link")
+    return {"id": meeting_id, "join_url": join_url}
 
 
 def meeting_settings(mode: AuthenticationMode, profile_id: str | None = None) -> dict:
@@ -59,23 +75,37 @@ class ZoomClient:
                              headers={"Authorization": "Bearer " + self._token()}, **kwargs)
 
     def create_meeting(self, topic: str, start_time: str, duration: int,
-                       mode: AuthenticationMode, profile_id: str | None = None, *, host_id: str) -> dict:
+                       mode: AuthenticationMode, profile_id: str | None = None, *, host_id: str,
+                       operation_id: UUID | None = None) -> dict:
         if not host_id.strip() or host_id.strip().lower() == "me":
             raise ValueError("Explicit Zoom host required")
         response = self._api("POST", "/users/" + quote(host_id, safe="") + "/meetings", json={
             "topic": topic, "type": 2, "start_time": start_time, "duration": duration,
+            **({"agenda": meeting_reference(operation_id)} if operation_id else {}),
             "settings": {**meeting_settings(mode, profile_id), "join_before_host": False, "waiting_room": True},
         })
         try:
             data = response.json()
-            meeting_id = str(data["id"])
-            join_url = data["join_url"]
-            parsed = urlsplit(join_url)
-            if not meeting_id.isascii() or not meeting_id.isdecimal() or parsed.scheme != "https" or not parsed.hostname or not (parsed.hostname == "zoom.us" or parsed.hostname.endswith(".zoom.us")) or parsed.username or parsed.password:
-                raise ValueError()
-            return {"id": meeting_id, "join_url": join_url}
+            return verified_meeting_link(str(data["id"]), data["join_url"])
         except (ValueError, KeyError, TypeError, AttributeError):
             raise ZoomError("Invalid meeting response; reconcile before retrying") from None
+
+    def recover_meeting(
+        self, meeting_id: str, operation_id: UUID, host_id: str,
+        start_at: datetime, duration_minutes: int,
+    ) -> dict[str, str]:
+        if not meeting_id.isascii() or not meeting_id.isdecimal() or len(meeting_id) > 32:
+            raise ValueError("Invalid meeting ID")
+        response = self._api("GET", "/meetings/" + meeting_id)
+        try:
+            data = response.json()
+            if (str(data["id"]) != meeting_id or data["agenda"] != meeting_reference(operation_id)
+                or data["host_id"] != host_id or data["duration"] != duration_minutes
+                or datetime.fromisoformat(data["start_time"]) != start_at):
+                raise ValueError("Meeting does not match the original operation")
+            return verified_meeting_link(meeting_id, data["join_url"])
+        except (ValueError, KeyError, TypeError, AttributeError):
+            raise ZoomError("Zoom could not verify the original operation") from None
 
     def update_authentication(self, meeting_id: str, mode: AuthenticationMode,
                               profile_id: str | None = None) -> None:

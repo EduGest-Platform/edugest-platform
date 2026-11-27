@@ -55,9 +55,10 @@ async function loadEnrollments(signal: AbortSignal) {
   return requireLearnerResponse(await api.GET('/api/v1/me/enrollments', { signal })).items
 }
 
-export function OwnEnrollmentPicker({ fieldId, children }: {
+export function OwnEnrollmentPicker({ fieldId, children, inactive }: {
   fieldId: string
   children: (enrollment: Enrollment) => ReactNode
+  inactive?: (enrollment: Enrollment) => ReactNode
 }) {
   const { state, retry } = useLearnerRead(loadEnrollments)
   const [selectedId, setSelectedId] = useState('')
@@ -81,7 +82,10 @@ export function OwnEnrollmentPicker({ fieldId, children }: {
           ))}
         </select>
       </Field>
-      {selected.status === 'activa' ? children(selected) : <Empty>Esta matrícula no está activa.</Empty>}
+      {selected.status === 'activa' ? children(selected) : <>
+        <Empty>Esta matrícula no está activa.</Empty>
+        {inactive?.(selected)}
+      </>}
     </>
   )
 }

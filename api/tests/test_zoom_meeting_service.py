@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -8,15 +8,16 @@ import pytest
 from app.core.errors import UserFacingError
 from app.modules.zoom import meeting_service
 from app.modules.zoom.client import ZoomError
+from app.modules.zoom.models import ZoomMeeting, ZoomProvisioningIntent
 
 
 def setup():
     db, client = MagicMock(), MagicMock()
     session = SimpleNamespace(cohort_id="synthetic-cohort")
-    db.get.side_effect = [session, None]
+    db.get.side_effect = [session, None, None, None]
     client.config.zoom_enabled = True
     client.create_meeting.return_value = {"id": "123456789", "join_url": "https://zoom.us/j/123456789"}
-    principal = SimpleNamespace(user=SimpleNamespace(id=uuid4()))
+    principal = SimpleNamespace(user=SimpleNamespace(id=uuid4()), roles=["docente"])
     args = dict(session_id=uuid4(), topic="Synthetic class",
                 start_at=datetime(2027, 1, 1, tzinfo=timezone.utc),
                 duration_minutes=60, host_id="synthetic-host", mode="authenticated")
@@ -33,9 +34,9 @@ def test_provision_persists_link_without_enabling_ai():
     assert row.created_by == principal.user.id
     assert row.ai_settings["notes"] is False
     assert row.ai_settings["cloud_recording"] is False
-    db.add.assert_called_once_with(row)
-    db.flush.assert_called_once()
-    db.commit.assert_not_called()
+    assert isinstance(db.add.call_args_list[0].args[0], ZoomProvisioningIntent)
+    assert any(call.args[0] is row for call in db.add.call_args_list)
+    assert db.commit.call_count == 2
 
 
 @pytest.mark.parametrize("case", ["denied", "duplicate", "disabled", "missing"])
@@ -71,14 +72,17 @@ def test_invalid_parameters_never_call_zoom(changes):
     db.add.assert_not_called()
 
 
-def test_provider_failure_does_not_persist_or_retry():
+def test_provider_failure_keeps_the_committed_intent_uncertain():
     db, client, principal, args = setup()
     client.create_meeting.side_effect = ZoomError("Unknown outcome")
     with patch.object(meeting_service, "require_cohort"), pytest.raises(ZoomError):
         meeting_service.provision_meeting(db, principal, client, **args)
     client.create_meeting.assert_called_once()
-    db.add.assert_not_called()
-    db.commit.assert_not_called()
+    intent = db.add.call_args_list[0].args[0]
+    assert isinstance(intent, ZoomProvisioningIntent)
+    assert intent.state == "uncertain"
+    assert not any(isinstance(call.args[0], ZoomMeeting) for call in db.add.call_args_list)
+    assert db.commit.call_count == 2
 
 
 @pytest.mark.parametrize("mode", ["open", "authenticated", "institutional"])
@@ -94,7 +98,7 @@ def test_institutional_service_uses_server_configuration(mode):
     profile = "configured-profile" if mode == "institutional" else None
     client.create_meeting.assert_called_once_with(
         args["topic"], args["start_at"].isoformat(), args["duration_minutes"],
-        mode, profile, host_id="configured-host",
+        mode, profile, host_id="configured-host", operation_id=ANY,
     )
     assert row.host_id == "configured-host"
     assert row.profile_id == profile

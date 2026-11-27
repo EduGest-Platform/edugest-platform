@@ -28,6 +28,25 @@ class ZoomMeeting(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ZoomProvisioningIntent(Base):
+    __tablename__ = "zoom_provisioning_intent"
+    __table_args__ = (
+        CheckConstraint("state IN ('pending', 'uncertain', 'confirmed')", name="ck_zoom_intent_state"),
+    )
+
+    session_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("attendance_session.id"), primary_key=True)
+    operation_id: Mapped[uuid.UUID] = mapped_column(Uuid, unique=True)
+    state: Mapped[str] = mapped_column(String(16))
+    host_id: Mapped[str] = mapped_column(String(255))
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    duration_minutes: Mapped[int] = mapped_column(Integer)
+    authentication_mode: Mapped[str] = mapped_column(String(20))
+    profile_id: Mapped[str | None] = mapped_column(String(255))
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))
+    updated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class ZoomNotesVersion(Base):
     __tablename__ = "zoom_notes_version"
     __table_args__ = (

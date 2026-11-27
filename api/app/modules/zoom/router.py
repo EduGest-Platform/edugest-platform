@@ -1,12 +1,14 @@
 """Staff-only review API; no learner publication or external generation."""
 import uuid
 from datetime import datetime
+from typing import Literal
 
 import httpx
 from fastapi import APIRouter
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
+from app.core.authz import Scope
 from app.core.config import settings
 from app.core.deps import CurrentPrincipal, DB
 from app.core.errors import UserFacingError
@@ -14,8 +16,8 @@ from app.modules.attendance.models import AttendanceSession
 from app.modules.learning.access import require_cohort
 from app.modules.zoom.ai_schemas import MeetingNotesDraft, SessionAISettings
 from app.modules.zoom.client import AuthenticationMode, ZoomClient, ZoomError
-from app.modules.zoom.meeting_service import provision_institutional_meeting
-from app.modules.zoom.models import ZoomMeeting, ZoomNotesVersion
+from app.modules.zoom.meeting_service import provision_institutional_meeting, reconcile_meeting
+from app.modules.zoom.models import ZoomMeeting, ZoomNotesVersion, ZoomProvisioningIntent
 from app.modules.zoom.notes_repository import approve_latest, edit_latest
 
 router = APIRouter(tags=["zoom"])
@@ -107,27 +109,28 @@ class MeetingOut(BaseModel):
     authentication_mode: AuthenticationMode
 
 
+def meeting_out(row: ZoomMeeting) -> MeetingOut:
+    return MeetingOut(
+        session_id=row.session_id, provider_id=row.provider_id, start_at=row.start_at,
+        duration_minutes=row.duration_minutes, authentication_mode=row.authentication_mode,
+    )
+
+
 @router.post("/attendance-sessions/{session_id}/zoom/meeting", response_model=MeetingOut, status_code=201)
 def create_meeting(session_id: uuid.UUID, body: MeetingCreateIn, p: CurrentPrincipal, db: DB):
     try:
         with httpx.Client() as transport:
-            row = provision_institutional_meeting(
+            return meeting_out(provision_institutional_meeting(
                 db, p, ZoomClient(settings, transport), session_id=session_id,
                 topic=body.topic, start_at=body.start_at, duration_minutes=body.duration_minutes,
                 mode=body.authentication_mode,
-            )
-        result = MeetingOut(
-            session_id=row.session_id, provider_id=row.provider_id, start_at=row.start_at,
-            duration_minutes=row.duration_minutes, authentication_mode=row.authentication_mode,
-        )
-        db.commit()
+            ))
     except ZoomError:
         db.rollback()
         raise UserFacingError(502, "zoom_provider_error", "No se pudo confirmar la reunión. Requiere revisión antes de reintentar.") from None
     except ValueError:
         db.rollback()
         raise UserFacingError(422, "zoom_invalid_meeting", "Configuración de reunión no válida.") from None
-    return result
 
 
 @router.get("/attendance-sessions/{session_id}/zoom/meeting", response_model=MeetingOut | None)
@@ -141,7 +144,47 @@ def get_meeting(session_id: uuid.UUID, p: CurrentPrincipal, db: DB):
     row = db.get(ZoomMeeting, session_id)
     if row is None:
         return None
-    return MeetingOut(
-        session_id=row.session_id, provider_id=row.provider_id, start_at=row.start_at,
-        duration_minutes=row.duration_minutes, authentication_mode=row.authentication_mode,
-    )
+    return meeting_out(row)
+
+
+class ProvisioningOut(BaseModel):
+    operation_id: uuid.UUID
+    state: Literal["pending", "uncertain", "confirmed"]
+    can_reconcile: bool
+
+
+class ReconcileMeetingIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    operation_id: uuid.UUID
+    provider_id: str = Field(pattern=r"^[0-9]{1,32}$")
+
+
+@router.get("/attendance-sessions/{session_id}/zoom/provisioning", response_model=ProvisioningOut | None)
+def get_provisioning(session_id: uuid.UUID, p: CurrentPrincipal, db: DB):
+    if not settings.zoom_enabled:
+        raise UserFacingError(404, "zoom_disabled", "Integración no disponible.")
+    session = db.get(AttendanceSession, session_id)
+    if session is None:
+        raise UserFacingError(404, "session_not_found", "Sesión no encontrada.")
+    require_cohort(db, p, "attendance.record", session.cohort_id)
+    intent = db.get(ZoomProvisioningIntent, session_id)
+    if intent is None:
+        return None
+    return ProvisioningOut(operation_id=intent.operation_id, state=intent.state,
+                           can_reconcile=p.can("staff.manage", Scope()))
+
+
+@router.post("/attendance-sessions/{session_id}/zoom/provisioning/reconcile", response_model=MeetingOut)
+def reconcile_provisioning(session_id: uuid.UUID, body: ReconcileMeetingIn, p: CurrentPrincipal, db: DB):
+    if not settings.zoom_enabled:
+        raise UserFacingError(404, "zoom_disabled", "Integración no disponible.")
+    try:
+        with httpx.Client() as transport:
+            return meeting_out(reconcile_meeting(
+                db, p, ZoomClient(settings, transport), session_id=session_id,
+                operation_id=body.operation_id, provider_id=body.provider_id,
+            ))
+    except ZoomError:
+        db.rollback()
+        raise UserFacingError(409, "zoom_reconciliation_unverified",
+                              "Zoom no pudo verificar que la reunión pertenezca a esta solicitud.") from None
