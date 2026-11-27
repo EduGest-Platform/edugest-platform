@@ -1084,6 +1084,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manual-intake/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar a mano una candidatura llegada fuera del formulario, con su canal de origen */
+        post: operations["post_manual_application_api_v1_manual_intake_applications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manual-intake/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Convocatorias donde puedes registrar candidaturas a mano */
+        get: operations["list_manual_intake_calls_api_v1_manual_intake_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/applications": {
         parameters: {
             query?: never;
@@ -1742,7 +1776,7 @@ export interface components {
         };
         /**
          * ApplicationCreate
-         * @description Public inscription form. Only the minimum data needed for pre-selection (data minimisation).
+         * @description Public inscription form.
          */
         ApplicationCreate: {
             /**
@@ -1791,9 +1825,19 @@ export interface components {
             motivacion: string;
             /** @description Próxima acción vigente: la del contacto más reciente que registró una. */
             next_action: components["schemas"]["NextActionOut"] | null;
+            /**
+             * Origin Channel
+             * @enum {string}
+             */
+            origin_channel: "formulario" | "correo" | "telefono" | "derivacion" | "registro_manual" | "redes";
             person: components["schemas"]["PersonOut"];
             /** Program Id */
             program_id: string;
+            /**
+             * Registered By
+             * @description Cuenta que envió o registró la candidatura. Vacío si llegó por el formulario sin sesión.
+             */
+            registered_by: string | null;
             /**
              * Stage
              * @enum {string}
@@ -1884,6 +1928,11 @@ export interface components {
             id: string;
             /** Legacy Ref */
             legacy_ref: string | null;
+            /**
+             * Origin Channel
+             * @enum {string}
+             */
+            origin_channel: "formulario" | "correo" | "telefono" | "derivacion" | "registro_manual" | "redes";
             person: components["schemas"]["PersonOut"];
             /** Program Id */
             program_id: string;
@@ -3278,6 +3327,43 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /**
+         * ManualApplicationCreate
+         * @description KAN-275: an application that reached the team outside the public form, registered by a member of staff.
+         */
+        ManualApplicationCreate: {
+            /** Call Id */
+            call_id: string;
+            /**
+             * Confirma Datos Sinteticos
+             * @description Quien registra confirma que son datos sintéticos. No es el consentimiento de la persona ni vale para datos reales.
+             * @constant
+             */
+            confirma_datos_sinteticos: true;
+            /**
+             * Disponibilidad
+             * @enum {string}
+             */
+            disponibilidad: "Mañana" | "Tarde" | "Flexible";
+            /** Email */
+            email: string;
+            /** Motivacion */
+            motivacion: string;
+            /** Nombre */
+            nombre: string;
+            /**
+             * Origin Channel
+             * @enum {string}
+             */
+            origin_channel: "correo" | "telefono" | "derivacion" | "registro_manual" | "redes";
+        };
+        /** ManualIntakeCallOut */
+        ManualIntakeCallOut: {
+            /** Id */
+            id: string;
+            /** Nombre */
+            nombre: string;
         };
         /** MeOut */
         MeOut: {
@@ -8584,6 +8670,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_manual_application_api_v1_manual_intake_applications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualApplicationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationReceipt"];
+                };
+            };
+            /** @description Published offer not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_manual_intake_calls_api_v1_manual_intake_calls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualIntakeCallOut"][];
                 };
             };
         };

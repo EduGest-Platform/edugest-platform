@@ -10,6 +10,8 @@ import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerDiscussions } from './ServerDiscussions'
 import { ServerIdentityReview } from './ServerIdentityReview'
+import { ServerManualIntake } from './ServerManualIntake'
+import { ORIGIN_LABELS } from '../../manualIntake'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { RecruitmentInbox } from './RecruitmentInbox'
 import { RecruitmentReminders } from './RecruitmentReminders'
@@ -289,6 +291,8 @@ export function ApiApplications() {
   const [denied, setDenied] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  // Grows after a manual registration; the list then reloads with whatever filters are on screen at that moment.
+  const [registrations, setRegistrations] = useState(0)
   const activeRequest = useRef<AbortController | null>(null)
 
   const load = useCallback(async () => {
@@ -315,7 +319,7 @@ export function ApiApplications() {
         setLoadError('No se pudo conectar con el servidor. Usa Actualizar para volver a intentar.')
       }
     }
-  }, [callId, stage, q])
+  }, [callId, stage, q, registrations])
 
   useEffect(() => {
     const timer = setTimeout(load, 250)
@@ -337,7 +341,10 @@ export function ApiApplications() {
 
   return (
     <>
-      <PageTitle title="Candidaturas" sub="Expedientes únicos con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
+      <PageTitle title="Candidaturas" sub="Expedientes con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
+      <div className="mb-5 empty:hidden">
+        <ServerManualIntake onRegistered={() => setRegistrations((value) => value + 1)} />
+      </div>
       <Card
         title="Expedientes"
         action={
@@ -502,6 +509,10 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
             </div>
             <p>
               <span className="text-muted">Disponibilidad:</span> {d.disponibilidad}
+            </p>
+            <p>
+              <span className="text-muted">Canal de origen:</span> {ORIGIN_LABELS[d.origin_channel]}
+              {d.registered_by && ` · registrada por ${d.registered_by}`}
             </p>
             <ServerIdentityReview key={`identity:${d.id}`} applicationId={d.id} onDirty={setIdentityDirty} onResolved={() => { void load(); onChanged() }} />
             {role === 'fundacion' && <RecruitmentReminders key={id} applicationId={id}

@@ -26,21 +26,40 @@ export async function readAssistantStream(body: ReadableStream<Uint8Array>, prog
         const data = lines.filter(line => line.startsWith('data:')).map(line => line.slice(5).replace(/^ /, '')).join('\n')
         if (!data) continue
 
+        if (event === 'error') throw new AssistantStreamError(problemText(describeApiError(500)))
+        if (event !== 'phase' && event !== 'delta' && event !== 'answer') continue
+        let payload: Record<string, unknown>
+        try {
+          const parsed: unknown = JSON.parse(data)
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid payload')
+          payload = parsed as Record<string, unknown>
+        } catch {
+          throw new AssistantStreamError('La respuesta del asistente no es válida. Vuelve a intentarlo.')
+        }
         switch (event) {
           case 'phase': {
-            const source: unknown = JSON.parse(data).source_kind
+            const source: unknown = payload.source_kind
             if (source === 'documents' || source === 'records') progress.onPhase(source)
             break
           }
           case 'delta': {
-            const text: unknown = JSON.parse(data).text
+            const text: unknown = payload.text
             if (typeof text === 'string') progress.onDelta(text)
             break
           }
           case 'answer':
-            return JSON.parse(data) as Schemas['AskOut']
-          case 'error':
-            throw new AssistantStreamError(problemText(describeApiError(500)))
+            if (typeof payload.answer !== 'string'
+              || (payload.status !== 'answered' && payload.status !== 'no_source')
+              || (payload.source_kind !== 'documents' && payload.source_kind !== 'records')
+              || (payload.mode !== 'extractive' && payload.mode !== 'template')
+              || (payload.retrieval !== null && payload.retrieval !== 'hybrid' && payload.retrieval !== 'keyword')
+              || typeof payload.as_of !== 'string'
+              || !Array.isArray(payload.citations)
+              || !Array.isArray(payload.scope_cohorts)
+              || !payload.scope_cohorts.every(cohort => typeof cohort === 'string')) {
+              throw new AssistantStreamError('La respuesta del asistente no es válida. Vuelve a intentarlo.')
+            }
+            return payload as Schemas['AskOut']
         }
       }
       if (done) throw new AssistantStreamError('La conexión se cerró antes de recibir la respuesta completa. Vuelve a intentarlo.')
