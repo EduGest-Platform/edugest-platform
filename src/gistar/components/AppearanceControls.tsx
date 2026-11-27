@@ -12,10 +12,11 @@ export function useAppearance() {
   const [language, setLanguage] = useState<Language>(() => preference('edugest.language') === 'en' ? 'en' : 'es')
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = preference('edugest.theme')
-    return saved === 'dark' || saved === 'light' ? saved : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    return saved === 'dark' || saved === 'light' ? saved : typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
   useEffect(() => {
     document.documentElement.dataset.theme = theme
+    document.documentElement.lang = language
     try {
       localStorage.setItem('edugest.language', language)
       localStorage.setItem('edugest.theme', theme)
