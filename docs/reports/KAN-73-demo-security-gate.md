@@ -8,7 +8,7 @@
 |---|---|---|
 | Credenciales no predeterminadas | KAN-99/100/101, #37, Gitleaks, config.py exige contraseña no demo fuera de local | Operador confirma secretos distintos por entorno, rotación y no exposición; no copiar valores |
 | TLS y proxy | render.yaml, docs/deploy/README.md, #135, HSTS solo HTTPS no local | URL HTTPS válida, redirección segura y proxy hops efectivos |
-| Límites y cabeceras | #135, KAN-208; límites de sesión/intententos, no-store, nosniff | Verificar cabeceras API y configuración efectiva; rate limiting por proceso, no distribuido |
+| Límites y cabeceras | #135, KAN-208; límites de sesión/intentos, no-store, nosniff | Verificar cabeceras API y configuración efectiva; rate limiting por proceso, no distribuido |
 | RBAC | #38, #17, #140, #148 y KAN-214; controles de ámbito, actor, expiración | Smoke sintético por rol, acceso anónimo denegado, ámbitos ajenos y privilegio mínimo; sin probar con terceros |
 | Datos sintéticos | Semilla sintética y CI entorno desechable | Confirmar dataset y cuentas de demo; no datos reales, no exportación pública |
 | Retención | KAN-209 / #25 inventario, no política aplicada | Aprobar plan, registrar configuración efectiva de plataforma/Actions/BD y responsable de borrado |
@@ -32,3 +32,22 @@ CI observado: [#271 CI](https://github.com/EduGest-Platform/edugest-platform/act
 
 ## EN
 The table reconciles code-level controls with the missing environment checks. The proposed synthetic-demo retention targets (14 days for operational logs/CI artifacts and removal of the synthetic environment within 30 days after project closure) are recommendations, not approved policy or legal advice. Confirm provider limits, owners, backups and deletion mechanism; never purge or disable append-only without authorization. The checklist requires deployed SHA, TLS, headers, private DB, nondefault rotated secrets, scoped synthetic accounts and negative access checks, plus documented actual retention. No secrets, live traffic, real data, deployment or fresh local test execution were performed. The story stays open until mandatory evidence and Yohanna/PO acceptance are recorded.
+
+
+## Evidence record / Registro de evidencias (template — NOT_RUN)
+
+Complete one record per authorized environment and deployed SHA. / Completar un registro por entorno autorizado y SHA desplegado. No secrets, tokens, raw logs or personal data. / Sin secretos, tokens, logs brutos ni datos personales.
+
+| Control / Control | Expected result / Resultado esperado | Status | Redacted evidence / Evidencia redactada | Owner / Responsable |
+|---|---|---|---|---|
+| Deployment identity / Identidad | Deployed SHA matches reviewed CI; synthetic environment identified | NOT_RUN | — | Operator |
+| Secrets / Secretos | No defaults, rotation confirmed, no values exposed | NOT_RUN | — | Operator |
+| TLS / TLS | Valid HTTPS certificate, safe HTTP redirect or explicitly approved controlled environment | NOT_RUN | — | Operator |
+| Headers and limits / Cabeceras y límites | Expected API headers and effective rate limits confirmed; no shared-environment load test | NOT_RUN | — | Operator + QA |
+| Access / Acceso | Authorized request succeeds; anonymous 401, forbidden/out-of-scope 403 or 404; no disclosure | NOT_RUN | — | QA |
+| Synthetic data / Datos sintéticos | Synthetic fixtures only, least-privilege demo roles | NOT_RUN | — | Operator + QA |
+| Retention / Retención | Effective provider, CI, database and backup periods recorded; owner and removal date approved | NOT_RUN | — | PO + Operator |
+
+Record date/time, SHA, environment, reviewer, result and evidence URL. Mark exceptions separately with owner, mitigation and explicit approval; an exception does not turn NOT_RUN into PASS. / Registrar fecha/hora, SHA, entorno, revisión, resultado y enlace. Las excepciones requieren responsable, mitigación y aprobación expresa; no convierten NOT_RUN en PASS.
+
+**Gate decision / Decisión de gate:** BLOCKED until all mandatory controls have evidence and the PO and cross-reviewer record acceptance. / BLOCKED hasta acreditar todos los controles obligatorios y registrar la aceptación PO y revisión cruzada. This template is not a certification. / Esta plantilla no es una certificación.
