@@ -16,7 +16,8 @@ export function useAppearance() {
   })
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    document.documentElement.lang = language
+    // Most screens remain Spanish; mark translated controls/regions individually instead.
+    document.documentElement.lang = 'es'
     try {
       localStorage.setItem('edugest.language', language)
       localStorage.setItem('edugest.theme', theme)
