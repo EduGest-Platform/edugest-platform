@@ -40,11 +40,11 @@ for (const stage of stages) {
   }
   console.log('\n' + stage.label)
   const stageStart = performance.now()
+  const env = { ...process.env, WEB_URL: web.href, GISTAR_API: api.origin }
+  delete env.E2E_FIXTURE_ID
+  if (stage.fixture) env.E2E_FIXTURE_ID = stage.fixture
   const result = spawnSync(process.execPath, [fileURLToPath(new URL(stage.script, import.meta.url))], {
-    env: {
-      ...process.env, WEB_URL: web.href, GISTAR_API: api.origin,
-      ...(stage.fixture ? { E2E_FIXTURE_ID: stage.fixture } : {}),
-    },
+    env,
     stdio: 'inherit',
     timeout: remaining,
     killSignal: 'SIGKILL',
@@ -55,6 +55,9 @@ for (const stage of stages) {
     console.error(result.error?.code === 'ETIMEDOUT'
       ? 'The demo slot expired during this step.'
       : 'Rehearsal stopped at this step. Read the failed check above.')
+    if (result.error?.code) console.error('Process error: ' + result.error.code)
+    if (result.signal) console.error('Process signal: ' + result.signal)
+    if (result.status !== null) console.error('Process exit status: ' + result.status)
     report()
     process.exit(1)
   }
