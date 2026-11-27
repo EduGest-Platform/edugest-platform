@@ -18,6 +18,15 @@ Authorization is **role + scope** (`Principal.can`, `Principal.require`, `Princi
 | Aspirante / Applicant | No | No | No | No | No role; person-linked account |
 | Coder / Learner | No | No | No | No | No role; person-linked account |
 
+**KAN-275 (26/11/2026) — `applications.create`:** registrar candidaturas a mano; no permite leer expedientes. / Register applications manually; it grants no dossier access.
+
+| Profile / Perfil | `applications.create` | Scope in the seed / Ámbito en el seed |
+| --- | --- | --- |
+| Admin / Administración | Yes (`*`) | Global (screen: Candidaturas, server mode / modo servidor) |
+| Selección | Yes | One call (`CONV-IA-2027A`) |
+| Coordinación | Yes | Global |
+| Captación, docente, aspirante, coder | No | — |
+
 ## 2. Endpoint, action and scope / Ruta, acción y ámbito
 
 `✓` allowed · `scope` allowed only inside the assigned program or call (otherwise 403 with an explanatory message, see §4) · `401` no valid session · `403` no permission. / `✓` permitido · `scope` solo dentro del programa o la convocatoria asignados (si no, 403 con un mensaje explicativo, ver §4) · `401` sin sesión válida · `403` sin permiso.
@@ -35,6 +44,10 @@ Authorization is **role + scope** (`Principal.can`, `Principal.require`, `Princi
 | `POST /applications/{id}/events` | 401 | 403 | scope | scope | 403 | 403 | ✓ |
 | `GET /calls/{id}/summary` (aggregates, small groups suppressed) | 401 | 403 | scope | scope | ✓ | 403 | ✓ |
 | `GET /audit-events` | 401 | 403 | 403 | 403 | 403 | 403 | ✓ |
+| `GET /manual-intake/calls` (KAN-275) | 401 | 403 | 403 | scope (filtered) | ✓ (global) | 403 | ✓ |
+| `POST /manual-intake/applications` (KAN-275) | 401 | 403 | 403 | scope | ✓ (global) | 403 | ✓ |
+
+Las filas de KAN-275 son posteriores a la verificación citada en la cabecera y en 3.3: su evidencia es el CI de la PR 277. / The KAN-275 rows postdate the verification cited in the header and in 3.3: their evidence is the CI of PR 277.
 
 Server-side rules worth keeping / Reglas de servidor a conservar:
 
@@ -51,6 +64,7 @@ Legend / Leyenda: **M** = asserted by `api/tests/test_rbac_matrix.py` (new or ex
 | Endpoint | Status for all 7 profiles + anonymous / Estado HTTP | Content and scope / Contenido y ámbito | Where / Dónde |
 | --- | --- | --- | --- |
 | `GET /health`, `GET /calls` | **M** (200 without session) | **E** public routes ignore unusable credentials | `test_rbac_matrix.py::test_public_routes_need_no_session`; `test_public_routes_auth.py::test_public_routes_work_with_no_or_unusable_credentials` |
+| `GET /manual-intake/calls`, `POST /manual-intake/applications` | **M** new (KAN-275): status for all 7 profiles + anonymous, own and other call | **E** programme scope, revocation, unpublished calls and the locked-row check | `test_rbac_matrix.py` (`intake_*`); `test_manual_intake.py` |
 | `POST /auth/login` | **M** new: 200 with each profile's credentials; 401 for an unknown account | **E** generic answer, no user enumeration, one session per success, failed login audited without identifiers | `test_rbac_matrix.py` (`login`); `test_auth.py`; `test_public_routes_auth.py`; `test_crm_audit.py::test_failed_login_is_audited_without_identifiers` |
 | `POST /auth/logout` | **M** new: 204 for every profile, then `/auth/me` and a second logout give 401; anonymous 401 | **E** only the current session is revoked | `test_rbac_matrix.py::test_logout_ends_only_a_valid_session`; `test_auth.py::test_logout_revokes_only_current_session` |
 | `POST /applications` (bearer optional) | **M** new: 201 for anonymous and every profile | **E** anonymous author, no account or role created, revoked session treated as anonymous | `test_rbac_matrix.py` (`create_application`); `test_public_routes_auth.py` |
