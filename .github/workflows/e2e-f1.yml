@@ -50,6 +50,12 @@ jobs:
           echo "CHROME_BIN=$(command -v google-chrome)" >> "$GITHUB_ENV"
       - name: Start local database, API and web
         run: docker compose -f infra/compose.yaml up -d --build --wait db api web
+      # First journey on purpose: it needs the freshly seeded totals and adds one application.
+      - name: Coordination dashboard and manual intake refresh (KAN-275)
+        env:
+          WEB_URL: http://localhost:8443/
+          GISTAR_API: http://localhost:8000
+        run: node e2e/coordination-dashboard.mjs
       - name: Internal discussion keyboard and concurrent edit recovery (KAN-74)
         env:
           WEB_URL: http://localhost:8443/

@@ -19,6 +19,10 @@ STAGES = (
     "no_admitida",
     "retirada",
 )
+# KAN-275: how an application reached the team (KAN-45 list). «formulario» is the public form; the rest are registered by staff.
+PUBLIC_ORIGIN = "formulario"
+MANUAL_ORIGINS = ("correo", "telefono", "derivacion", "registro_manual", "redes")
+ORIGIN_CHANNELS = (PUBLIC_ORIGIN, *MANUAL_ORIGINS)
 EVENT_TYPES = ("creada", "contacto", "nota", "recordatorio", "cambio_etapa")
 CHANNELS = ("email", "telefono", "presencial", "videollamada")
 # Outcome of a contact attempt: only «sin_respuesta» attempts count towards a silence review.
@@ -36,6 +40,8 @@ class Application(Base):
     __table_args__ = (
         UniqueConstraint("person_id", "call_id", name="uq_application_person_call"),
         CheckConstraint(f"stage IN {STAGES}", name="ck_application_stage"),
+        CheckConstraint(f"origin_channel IN {ORIGIN_CHANNELS}", name="ck_application_origin_channel"),
+        CheckConstraint(f"origin_channel = '{PUBLIC_ORIGIN}' OR created_by IS NOT NULL", name="ck_application_manual_author"),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     codigo: Mapped[str] = mapped_column(String(20), unique=True)
@@ -45,7 +51,11 @@ class Application(Base):
     stage: Mapped[str] = mapped_column(String(40), default="enviada")
     motivacion: Mapped[str] = mapped_column(Text)
     disponibilidad: Mapped[str] = mapped_column(String(20))
+    # Ticked by the applicant on the public form; confirmed by `created_by` on a manual registration.
     acepta_datos_sinteticos: Mapped[bool] = mapped_column(Boolean)
+    origin_channel: Mapped[str] = mapped_column(String(20), default=PUBLIC_ORIGIN, server_default=PUBLIC_ORIGIN)
+    # The account that sent it. Empty when the public form was sent without a session.
+    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 

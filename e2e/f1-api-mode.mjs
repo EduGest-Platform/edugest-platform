@@ -93,6 +93,8 @@ await sleep(500)
 
 // 9 · B: administración ve la auditoría del servidor
 await B.login('admin@gistar.example')
+await sleep(500)
+check('Administración tiene Candidaturas en modo servidor (KAN-275)', (await B.ev(`[...document.querySelectorAll('nav[aria-label="Navegación principal"] button')].map(b => b.textContent).join('|')`)).includes('Candidaturas'))
 await B.nav('Auditoría')
 await B.waitText('application.created')
 const audit = await B.text()
