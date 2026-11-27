@@ -138,6 +138,10 @@ def test_portfolio_write_and_lookup_reject_nonowners_and_inactive_enrollment(cli
         (200, {'private': False, 'visibility': 'public', 'language': ['invalid']}, 502),
         (200, {'private': False, 'visibility': 'public', 'pushed_at': 'invalid'}, 502),
         (200, [], 502),
+        (200, b'not-json-private-upstream-marker', 502),
+        (200, {'private': False, 'visibility': 'public', 'pushed_at': '2026-11-20T09:00:00'}, 502),
+        (403, {'message': 'Forbidden'}, 502),
+        (403, {'message': 'Quota exhausted'}, 429),
         (302, {'message': 'Moved'}, 502),
         (401, {'message': 'Rejected'}, 502),
         (404, {'message': 'Not found'}, 404),
@@ -158,7 +162,10 @@ def test_lookup_fails_closed_and_never_exposes_upstream_payload(
     def transport(request):
         calls.append(request)
         headers = {'location': 'https://example.test/never-follow'}
-        return HttpResponse(status, headers, json.dumps(payload).encode())
+        if payload == {'message': 'Quota exhausted'}:
+            headers['x-ratelimit-remaining'] = '0'
+        body = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
+        return HttpResponse(status, headers, body)
 
     def public_client(*, timeout):
         return GithubReadOnlyClient(timeout=timeout, transport=transport)
@@ -167,14 +174,16 @@ def test_lookup_fails_closed_and_never_exposes_upstream_payload(
     response = client.post(endpoint + '/metadata', headers=owner)
     assert response.status_code == expected
     assert 'never-follow' not in response.text
+    assert 'not-json-private-upstream-marker' not in response.text
     assert 'synthetic-org/portfolio' not in response.text
     assert len(calls) == 1
     assert calls[0].method == 'GET'
     assert calls[0].url == 'https://api.github.com/repos/synthetic-org/portfolio'
-    assert 'Authorization' not in calls[0].headers
+    assert all(name.lower() != 'authorization' for name in calls[0].headers)
     assert client.get(endpoint, headers=owner).json()['url'] == target
     events = db.scalars(select(AuditEvent).where(
         AuditEvent.target_id == str(enrollment.id),
         AuditEvent.action.startswith('portfolio.'),
     )).all()
     assert len(events) == 1 and events[0].meta == {}
+    assert events[0].action == 'portfolio.link_saved'
