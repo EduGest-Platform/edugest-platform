@@ -69,6 +69,26 @@ try {
     await ia.ev(`!Array.from(document.querySelectorAll('main select option')).some(option => option.value === ${JSON.stringify(dataThreadId)})`))
   requireCheck('Same-program session excludes Data thread identifier',
     await sameProgram.ev(`!Array.from(document.querySelectorAll('main select option')).some(option => option.value === ${JSON.stringify(dataThreadId)})`))
+  const updateMarker = `Array.from(document.querySelectorAll('main select option')).some(option =>
+    option.value === ${JSON.stringify(threadId)} && option.textContent.endsWith(' · Novedades'))`
+  const refresh = "Array.from(document.querySelectorAll('main button')).find(button => button.textContent === 'Actualizar hilos')"
+  await ia.ev(`${refresh}.focus()`)
+  requireCheck('Refreshing keeps the board control focused', await ia.click('Actualizar hilos', board) &&
+    await ia.waitText(iaComment) && await ia.ev(`${refresh} === document.activeElement`))
+  requireCheck('Own comment is not marked unread', !await ia.ev(updateMarker))
+
+  const colleagueComment = `Comentario de otra sesión ${runId}`
+  requireCheck('A second session adds a comment', await setLabeled(sameProgram, 'Nuevo comentario', colleagueComment) &&
+    await sameProgram.click('Enviar comentario', board) && await sameProgram.waitText(colleagueComment))
+  const concurrentOwnComment = `Comentario propio posterior ${runId}`
+  requireCheck('The first session can add its own comment after the unseen write',
+    await setLabeled(ia, 'Nuevo comentario', concurrentOwnComment) &&
+    await ia.click('Enviar comentario', board) && await ia.waitText(concurrentOwnComment))
+  requireCheck('Own write does not hide an intervening update', await ia.click('Actualizar hilos', board) &&
+    await ia.waitText('hilos con novedades en esta página') && await ia.ev(updateMarker))
+  requireCheck('The reader can clear the marker after viewing the thread',
+    await ia.click('Marcar hilo como leído', board) && !await ia.ev(updateMarker))
+
   requireCheck('No uncaught browser errors', errors.length === 0)
 } catch (error) {
   check('Program board isolation journey', false, error.message)

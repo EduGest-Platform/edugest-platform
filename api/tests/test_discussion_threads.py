@@ -49,7 +49,7 @@ def test_thread_creation_rolls_back_if_audit_fails(client, db, monkeypatch):
 def test_board_directory_only_lists_authorized_programs(client):
     directory = '/api/v1/discussion-programs'
     assert client.get(directory).status_code == 401
-    for account, expected in ((CAPT_IA, {'P-IA'}), (CAPT_DATA, {'P-DATA'}), (SEL_IA, set())):
+    for account, expected in ((CAPT_IA, {'P-IA'}), (CAPT_DATA, {'P-DATA'}), (SEL_IA, set()), (ADMIN, {'P-IA', 'P-DATA'})):
         response = client.get(directory, headers=login(client, account))
         assert response.status_code == 200, response.text
         assert {row['id'] for row in response.json()} == expected

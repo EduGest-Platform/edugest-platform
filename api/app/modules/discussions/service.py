@@ -6,7 +6,7 @@ from app.core.db import utcnow
 from app.core.errors import UserFacingError
 from app.modules.discussions.access import require_any_scope, require_scope, require_thread
 from app.modules.discussions.models import DiscussionComment, DiscussionThread
-from app.modules.discussions.schemas import CommentOut, ThreadOut, ThreadScope
+from app.modules.discussions.schemas import CommentMutationOut, CommentOut, ThreadOut, ThreadScope
 
 
 def thread_out(thread):
@@ -71,8 +71,9 @@ def create_comment(db, actor, thread_id, body):
     thread.version += 1
     audit.record(db, actor, 'discussion.comment_created', 'discussion_comment', str(comment.id),
                  thread_id=str(thread.id), parent_id=str(comment.parent_id) if comment.parent_id else None, version=comment.version)
+    result = CommentMutationOut(**comment_out(comment).model_dump(), thread_version=thread.version)
     db.commit()
-    return comment_out(comment)
+    return result
 
 
 def list_comments(db, actor, thread_id, limit, offset):
@@ -123,8 +124,9 @@ def edit_comment(db, actor, comment_id, body):
     comment.version += 1
     thread.version += 1
     audit.record(db, actor, 'discussion.comment_edited', 'discussion_comment', str(comment.id), thread_id=str(thread.id), version=comment.version)
+    result = CommentMutationOut(**comment_out(comment).model_dump(), thread_version=thread.version)
     db.commit()
-    return comment_out(comment)
+    return result
 
 
 def delete_comment(db, actor, comment_id, body):
@@ -134,8 +136,9 @@ def delete_comment(db, actor, comment_id, body):
     comment.version += 1
     thread.version += 1
     audit.record(db, actor, 'discussion.comment_deleted', 'discussion_comment', str(comment.id), thread_id=str(thread.id), version=comment.version)
+    result = CommentMutationOut(**comment_out(comment).model_dump(), thread_version=thread.version)
     db.commit()
-    return comment_out(comment)
+    return result
 
 
 def resolve_thread(db, actor, thread_id, body):

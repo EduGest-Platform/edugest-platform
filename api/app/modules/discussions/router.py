@@ -13,7 +13,7 @@ from app.modules.catalog.models import Program
 from app.modules.discussions import service
 from app.modules.discussions.access import require_any_scope
 from app.modules.discussions.schemas import DiscussionProgram, ThreadCreate, ThreadList, ThreadOut, ThreadScope
-from app.modules.discussions.schemas import CommentCreate, CommentList, CommentOut
+from app.modules.discussions.schemas import CommentCreate, CommentList, CommentMutationOut
 from app.modules.discussions.schemas import CommentEdit, ResolutionWrite, VersionWrite
 
 router = APIRouter(tags=['discussions'])
@@ -59,7 +59,7 @@ def get_thread(thread_id: uuid.UUID, p: CurrentPrincipal, db: DB):
     return service.get_thread(db, p, thread_id)
 
 
-@router.post('/discussion-threads/{thread_id}/comments', response_model=CommentOut, status_code=201,
+@router.post('/discussion-threads/{thread_id}/comments', response_model=CommentMutationOut, status_code=201,
              responses={**ERRORS, 409: {'description': 'Hilo resuelto'}}, summary='Añadir comentario o respuesta dentro de un hilo autorizado')
 def post_comment(thread_id: uuid.UUID, body: CommentCreate, p: CurrentPrincipal, db: DB):
     return service.create_comment(db, p, thread_id, body)
@@ -72,14 +72,14 @@ def get_comments(thread_id: uuid.UUID, p: CurrentPrincipal, db: DB,
     return service.list_comments(db, p, thread_id, limit, offset)
 
 
-@router.patch('/discussion-comments/{comment_id}', response_model=CommentOut,
+@router.patch('/discussion-comments/{comment_id}', response_model=CommentMutationOut,
               responses={**ERRORS, 409: {'description': 'Revisión antigua, comentario borrado o hilo resuelto'}},
               summary='Editar el comentario propio o moderar como administración con versión observada')
 def patch_comment(comment_id: uuid.UUID, body: CommentEdit, p: CurrentPrincipal, db: DB):
     return service.edit_comment(db, p, comment_id, body)
 
 
-@router.delete('/discussion-comments/{comment_id}', response_model=CommentOut,
+@router.delete('/discussion-comments/{comment_id}', response_model=CommentMutationOut,
                responses={**ERRORS, 409: {'description': 'Revisión antigua, comentario borrado o hilo resuelto'}},
                summary='Borrado lógico con versión observada; conserva respuestas sin mostrar el texto borrado')
 def delete_comment(comment_id: uuid.UUID, body: VersionWrite, p: CurrentPrincipal, db: DB):

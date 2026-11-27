@@ -2445,6 +2445,44 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** CommentMutationOut */
+        CommentMutationOut: {
+            /**
+             * Actor User Id
+             * Format: uuid
+             */
+            actor_user_id: string;
+            /**
+             * Body
+             * @description Nulo tras borrado lógico; no se expone el texto retenido
+             */
+            body: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Edited At */
+            edited_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+            /** Thread Version */
+            thread_version: number;
+            /** Version */
+            version: number;
+        };
         /** CommentOut */
         CommentOut: {
             /**
@@ -7459,7 +7497,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommentOut"];
+                    "application/json": components["schemas"]["CommentMutationOut"];
                 };
             };
             /** @description Sin permiso en el ámbito */
@@ -7515,7 +7553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommentOut"];
+                    "application/json": components["schemas"]["CommentMutationOut"];
                 };
             };
             /** @description Sin permiso en el ámbito */
@@ -7795,7 +7833,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommentOut"];
+                    "application/json": components["schemas"]["CommentMutationOut"];
                 };
             };
             /** @description Sin permiso en el ámbito */

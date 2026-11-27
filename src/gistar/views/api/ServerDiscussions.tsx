@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 
 import { api, type Schemas } from '../../../shared/api/client'
 import { describeApiError, problemText } from '../../../shared/api/errors'
 import { useApiSession } from '../../../shared/api/session'
+import { useLeaveGuard } from '../../useLeaveGuard'
 import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
 
 type Thread = Schemas['ThreadOut']
@@ -113,7 +114,10 @@ function CommentContent({ comment, userId }: { comment: Comment; userId?: string
   )
 }
 
-function ThreadComments({ threadId, canWrite, onDirty }: { threadId: string; canWrite: boolean; onDirty: (dirty: boolean) => void }) {
+function ThreadComments({ threadId, canWrite, onDirty, onWrite }: {
+  threadId: string; canWrite: boolean; onDirty: (dirty: boolean) => void
+  onWrite: (id: string, version: number, resolutionChanged?: boolean) => void
+}) {
   const { me } = useApiSession()
   const [offset, setOffset] = useState(0)
   const [body, setBody] = useState('')
@@ -176,6 +180,7 @@ function ThreadComments({ threadId, canWrite, onDirty }: { threadId: string; can
         body: { body: text, parent_id: parent?.id },
       }))
     if (!saved) return
+    onWrite(threadId, saved.thread_version)
     setBody('')
     setParent(null)
     setEditing(null)
@@ -192,6 +197,7 @@ function ThreadComments({ threadId, canWrite, onDirty }: { threadId: string; can
       body: { resolved, expected_version: thread.version },
     }))
     if (saved) {
+      onWrite(threadId, saved.version, true)
       setNotice(resolved ? 'Hilo resuelto.' : 'Hilo reabierto.')
       refresh()
     }
@@ -299,6 +305,7 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
   const [resolution, setResolution] = useState('all')
   const [updates, setUpdates] = useState<Set<string>>(new Set())
   const seen = useRef(new Map<string, number>())
+  const ownVersions = useRef(new Map<string, Set<number>>())
   const watching = useRef(false)
   const resolutionId = useId()
   const threadSelectId = useId()
@@ -320,15 +327,45 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
   const { state, refresh } = useDiscussionRead(read)
   useEffect(() => {
     if (scopeType !== 'program' || !state || 'error' in state) return
-    const changed = new Set<string>()
+    const changed: string[] = []
     for (const item of state.data.items) {
       const prior = seen.current.get(item.id)
-      if (watching.current && prior !== item.version) changed.add(item.id)
+      const own = ownVersions.current.get(item.id)
+      if (prior === undefined) {
+        if (watching.current) changed.push(item.id)
+      } else if (item.version > prior) {
+        const ownCount = [...(own ?? [])].filter(version => version > prior && version <= item.version).length
+        if (item.version - prior > ownCount) changed.push(item.id)
+      }
       seen.current.set(item.id, item.version)
+      if (own) {
+        for (const version of own) if (version <= item.version) own.delete(version)
+        if (!own.size) ownVersions.current.delete(item.id)
+      }
     }
-    setUpdates(changed)
+    if (changed.length) setUpdates(previous => new Set([...previous, ...changed]))
     watching.current = false
   }, [scopeType, state])
+
+  function recordWrite(id: string, version: number, resolutionChanged = false) {
+    const own = ownVersions.current.get(id) ?? new Set<number>()
+    own.add(version)
+    ownVersions.current.set(id, own)
+    if (resolutionChanged && resolution !== 'all') {
+      setNewThread(null)
+      setOffset(0)
+      refresh()
+    }
+  }
+
+  function selectThread(id: string) {
+    setSelection(id)
+    setUpdates(previous => {
+      const next = new Set(previous)
+      next.delete(id)
+      return next
+    })
+  }
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -339,6 +376,7 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
         : { scope_type: scopeType, program_id: scopeId, subject: subject.trim() },
     }))
     if (!thread) return
+    seen.current.set(thread.id, thread.version)
     setSubject('')
     setSelection(thread.id)
     setNewThread(thread)
@@ -349,9 +387,8 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
     refresh()
   }
 
-  if (!state) return <p role="status" className="text-sm text-muted">Cargando hilos…</p>
-  if ('error' in state) return <DiscussionReadError message={state.error} retry={refresh} />
-  const { items, total } = state.data
+  const { items, total } = state && 'data' in state ? state.data : { items: [], total: 0 }
+  const updateCount = items.filter(item => updates.has(item.id)).length
   const options = newThread && !items.some(item => item.id === newThread.id) ? [...items, newThread] : items
   const thread = options.find(item => item.id === selection) ?? options[0]
   return (
@@ -385,12 +422,14 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
         if (scopeType === 'program') setNewThread(null)
         refresh()
       }}>Actualizar hilos</Button>
-      {updates.size > 0 && <p role="status" className="text-sm">{updates.size} hilos con novedades en esta página.</p>}
+      <p role="status" className="text-sm">{updateCount > 0 ? `${updateCount} hilos con novedades en esta página.` : ''}</p>
+      {!state && <p role="status" className="text-sm text-muted">Cargando hilos…</p>}
+      {state && 'error' in state && <DiscussionReadError message={state.error} retry={refresh} />}
       {thread ? (
         <>
           <Field label="Hilo" htmlFor={threadSelectId}>
             <select id={threadSelectId} value={thread.id} className={inputCls} disabled={commentDirty || busy}
-              onChange={event => setSelection(event.target.value)}>
+              onChange={event => selectThread(event.target.value)}>
               {options.map(item => <option key={item.id} value={item.id}>{item.subject}{updates.has(item.id) ? ' · Novedades' : ''}</option>)}
             </select>
           </Field>
@@ -399,9 +438,10 @@ function ScopedDiscussions({ scopeType, scopeId, canWrite = true, onDirty }: {
             setNewThread(null)
             setSelection('')
           }} />}
-          <ThreadComments key={thread.id} threadId={thread.id} canWrite={canWrite} onDirty={setCommentDirty} />
+          {updates.has(thread.id) && <Button size="sm" variant="ghost" onClick={() => selectThread(thread.id)}>Marcar hilo como leído</Button>}
+          <ThreadComments key={thread.id} threadId={thread.id} canWrite={canWrite} onDirty={setCommentDirty} onWrite={recordWrite} />
         </>
-      ) : <Empty>{scopeType === 'program' ? 'No hay hilos con este filtro.' : 'Este expediente todavía no tiene hilos.'}</Empty>}
+      ) : state && 'data' in state && <Empty>{scopeType === 'program' ? 'No hay hilos con este filtro.' : 'Este expediente todavía no tiene hilos.'}</Empty>}
     </div>
   )
 }
@@ -422,6 +462,7 @@ export function ServerDiscussions({ applicationId, onDirty }: { applicationId: s
 export function ApiProgramDiscussionBoard() {
   const [selected, setSelected] = useState('')
   const [dirty, setDirty] = useState(false)
+  useLeaveGuard(false, dirty ? 'Hay cambios sin guardar en el tablero. ¿Quieres descartarlos?' : undefined)
   const load = useCallback((signal: AbortSignal) => api.GET('/api/v1/discussion-programs', { signal }), [])
   const { state, refresh } = useDiscussionRead(load)
   const programs = state && 'data' in state ? state.data : []

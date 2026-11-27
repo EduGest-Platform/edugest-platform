@@ -22,7 +22,7 @@ import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
 import { LoginScreen } from './components/LoginScreen'
 
-const SCREENS: Partial<Record<View, () => ReactElement>> = {
+const SCREENS: Record<Exclude<View, 'tablero'>, () => ReactElement> = {
   dashboard: Dashboard,
   analitica: GroupAnalytics,
   calendario: Calendar,
@@ -57,11 +57,11 @@ function Logo() {
 }
 
 export function Shell() {
-  const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
+  const { role, view, setRole, navigate, canLeave, reset, toastMsg } = useGistar()
   const session = useApiSession()
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
   const source = dataSourceFor(view, API_MODE, role)
-  const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
+  const Screen = (source === 'api' ? API_SCREENS[view] : view === 'tablero' ? undefined : SCREENS[view]) ?? Dashboard
 
   // In API mode the role is never free: it comes from the server-side assignments of the session.
   useEffect(() => {
@@ -129,7 +129,7 @@ export function Shell() {
               ))}
             </select>
             {allowedRoles && (
-              <Button variant="ghost" onClick={session.logout} aria-label="Cerrar sesión">
+              <Button variant="ghost" onClick={() => { if (canLeave()) void session.logout() }} aria-label="Cerrar sesión">
                 <LogOut className="size-4" aria-hidden />
                 <span className="hidden sm:inline">Salir</span>
               </Button>

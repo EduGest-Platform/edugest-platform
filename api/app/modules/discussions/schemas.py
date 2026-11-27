@@ -93,6 +93,10 @@ class CommentOut(BaseModel):
     deleted_at: datetime | None
 
 
+class CommentMutationOut(CommentOut):
+    thread_version: int
+
+
 class CommentList(BaseModel):
     items: list[CommentOut]
     total: int

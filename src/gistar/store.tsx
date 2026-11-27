@@ -33,6 +33,8 @@ interface Store {
   view: View
   setRole: (r: Role) => void
   navigate: (v: View) => void
+  canLeave: () => boolean
+  registerLeaveGuard: (guard: () => boolean) => () => void
   /** Mutates a draft copy, records the action in the audit log, persists and notifies. */
   update: (mutate: (draft: GistarData) => void, action: string, entity: string, detail?: string, toastMsg?: string) => void
   reset: () => void
@@ -73,18 +75,27 @@ export function GistarProvider({ children }: { children: ReactNode }) {
     if (initial.migrated) toast('Datos locales migrados al esquema v2 sin pérdida')
   }, [initial.migrated, toast])
 
+  const leaveGuards = useRef(new Set<() => boolean>())
+  const registerLeaveGuard = useCallback((guard: () => boolean) => {
+    leaveGuards.current.add(guard)
+    return () => { leaveGuards.current.delete(guard) }
+  }, [])
+  const canLeave = useCallback(() => [...leaveGuards.current].every(guard => guard()), [])
+
   const setRole = useCallback((r: Role) => {
+    if (!canLeave()) return
     setRoleState(r)
     setView('dashboard')
-  }, [])
+  }, [canLeave])
 
   const navigate = useCallback(
     (v: View) => {
       if (!canOpen(role, v, API_MODE)) return toast('Acceso no permitido para este rol')
+      if (!canLeave()) return
       setView(v)
       window.scrollTo({ top: 0 })
     },
-    [role, toast],
+    [canLeave, role, toast],
   )
 
   const update = useCallback<Store['update']>(
@@ -119,8 +130,8 @@ export function GistarProvider({ children }: { children: ReactNode }) {
   }, [toast])
 
   const value = useMemo(
-    () => ({ data, role, view, setRole, navigate, update, reset, toast, toastMsg, focusStudent, setFocusStudent, focusComp, setFocusComp, teacherCohort, setTeacherCohort }),
-    [data, role, view, setRole, navigate, update, reset, toast, toastMsg, focusStudent, focusComp, teacherCohort],
+    () => ({ data, role, view, setRole, navigate, canLeave, registerLeaveGuard, update, reset, toast, toastMsg, focusStudent, setFocusStudent, focusComp, setFocusComp, teacherCohort, setTeacherCohort }),
+    [data, role, view, setRole, navigate, canLeave, registerLeaveGuard, update, reset, toast, toastMsg, focusStudent, focusComp, teacherCohort],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
