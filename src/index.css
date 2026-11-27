@@ -76,9 +76,14 @@ html[data-theme="dark"] {
   --color-mist: #252c48;
   /* Preserve readable white labels on shared primary/success actions. */
   --color-blue: #4f38e0;
-  --color-teal: #138c83;
+  --color-teal: #0f776f;
 }
 html[data-theme="dark"] .bg-white { background-color: #1c293d; }
 html[data-theme="dark"] .bg-white\/90 { background-color: rgb(28 41 61 / 90%); }
 html[data-theme="dark"] .bg-white.text-navy { color: #edf2fa; }
 html[data-theme="dark"] :focus-visible { outline-color: #b8acf6; }
+
+/* Ghost/subtle controls must remain legible against dark surfaces, including hover. */
+html[data-theme="dark"] button.bg-mist.text-navy { color: #edf2fa; }
+html[data-theme="dark"] button.bg-mist.text-navy:hover { background-color: #34415f; }
+html[data-theme="dark"] button.bg-transparent.text-muted:hover { color: #edf2fa; }
