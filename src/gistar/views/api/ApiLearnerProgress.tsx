@@ -1,3 +1,4 @@
+import { LearnerPortfolio } from './LearnerPortfolio'
 import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { useCallback } from 'react'
 import { api } from '../../../shared/api/client'
@@ -89,8 +90,12 @@ export function ApiLearnerProgress() {
   return (
     <div className="space-y-5">
       <PageTitle title="Mi progreso" sub="Consulta la asistencia, las competencias y las entregas de tu matrícula." />
-      <OwnEnrollmentPicker fieldId="learner-enrollment">
-        {enrollment => <LatestProgress key={enrollment.enrollment_id} enrollmentId={enrollment.enrollment_id} />}
+      <OwnEnrollmentPicker fieldId="learner-enrollment" inactive={enrollment =>
+        <LearnerPortfolio key={enrollment.enrollment_id} enrollmentId={enrollment.enrollment_id} />}>
+        {enrollment => <div key={enrollment.enrollment_id} className="grid gap-5">
+          <LatestProgress enrollmentId={enrollment.enrollment_id} />
+          <LearnerPortfolio enrollmentId={enrollment.enrollment_id} />
+        </div>}
       </OwnEnrollmentPicker>
     </div>
   )

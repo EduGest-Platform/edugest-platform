@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     corpus_path: str = str(REPO_ROOT / "evals" / "rag" / "corpus")
     # RAG embeddings (KAN-130 part B). Off by default, so tests and CI never call the network.
     rag_embed: bool = False
+    # Optional anonymous GitHub lookup. The learner must explicitly request it.
+    portfolio_github_lookup: bool = False
     # Read from GEMINI_API_KEY (no GISTAR_ prefix), the name used across the project. Never printed or logged.
     gemini_api_key: SecretStr | None = Field(default=None, validation_alias="GEMINI_API_KEY")
     # Institutional email is opt-in; SMTP is the initial transport.
