@@ -14,15 +14,18 @@ def _strip_if_str(value: object) -> object:
     return value.strip() if isinstance(value, str) else value
 
 
-class ApplicationCreate(BaseModel):
-    """Public inscription form. Only the minimum data needed for pre-selection (data minimisation)."""
+OriginChannel = Literal["formulario", "correo", "telefono", "derivacion", "registro_manual", "redes"]
+ManualOrigin = Literal["correo", "telefono", "derivacion", "registro_manual", "redes"]
+
+
+class IntakeFields(BaseModel):
+    """What every intake collects, with the same validations. Only the minimum for pre-selection (data minimisation)."""
 
     call_id: str = Field(min_length=1, max_length=30)
     nombre: str = Field(min_length=2, max_length=120)
     email: str = Field(max_length=254)
     motivacion: str = Field(min_length=10, max_length=2000)
     disponibilidad: Literal["Mañana", "Tarde", "Flexible"]
-    acepta_datos_sinteticos: Literal[True] = Field(description="Confirmación obligatoria: el entorno solo usa datos sintéticos")
 
     @field_validator("call_id")
     @classmethod
@@ -30,13 +33,6 @@ class ApplicationCreate(BaseModel):
         if not value.strip():
             raise ValueError("Selecciona una convocatoria.")
         return value
-
-    @field_validator("acepta_datos_sinteticos", mode="before")
-    @classmethod
-    def _explicit_synthetic_confirmation(cls, value: object) -> Literal[True]:
-        if value is not True:
-            raise ValueError("Confirma el uso de datos sintéticos.")
-        return True
 
     @field_validator("email")
     @classmethod
@@ -47,6 +43,43 @@ class ApplicationCreate(BaseModel):
     @classmethod
     def _trim_text(cls, v: object) -> object:
         return _strip_if_str(v)
+
+
+def _require_explicit_true(value: object) -> Literal[True]:
+    """A confirmation must be the JSON boolean: 1 or «true» as text do not count."""
+    if value is not True:
+        raise ValueError("Confirma el uso de datos sintéticos.")
+    return True
+
+
+class ApplicationCreate(IntakeFields):
+    """Public inscription form."""
+
+    acepta_datos_sinteticos: Literal[True] = Field(description="Confirmación obligatoria: el entorno solo usa datos sintéticos")
+
+    @field_validator("acepta_datos_sinteticos", mode="before")
+    @classmethod
+    def _explicit_synthetic_confirmation(cls, value: object) -> Literal[True]:
+        return _require_explicit_true(value)
+
+
+class ManualApplicationCreate(IntakeFields):
+    """KAN-275: an application that reached the team outside the public form, registered by a member of staff."""
+
+    origin_channel: ManualOrigin
+    confirma_datos_sinteticos: Literal[True] = Field(
+        description="Quien registra confirma que son datos sintéticos. No es el consentimiento de la persona ni vale para datos reales.",
+    )
+
+    @field_validator("confirma_datos_sinteticos", mode="before")
+    @classmethod
+    def _explicit_staff_confirmation(cls, value: object) -> Literal[True]:
+        return _require_explicit_true(value)
+
+
+class ManualIntakeCallOut(BaseModel):
+    id: str
+    nombre: str
 
 
 class ApplicationReceipt(BaseModel):
@@ -70,6 +103,7 @@ class ApplicationSummary(BaseModel):
     call_id: str
     program_id: str
     stage: Stage
+    origin_channel: OriginChannel
     person: PersonOut
     created_at: datetime
     updated_at: datetime
@@ -136,6 +170,7 @@ class EventOut(BaseModel):
 
 
 class ApplicationDetail(ApplicationSummary):
+    registered_by: str | None = Field(description="Cuenta que envió o registró la candidatura. Vacío si llegó por el formulario sin sesión.")
     motivacion: str
     disponibilidad: str
     events: list[EventOut]
