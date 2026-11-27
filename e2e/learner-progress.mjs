@@ -42,10 +42,10 @@ async function openLearnerProgress(page) {
     const main = document.querySelector('main')
     if (!main) return false
     const headings = [...main.querySelectorAll('h2')].map(heading => heading.textContent)
-    return headings.join('|') === 'Asistencia|Competencias|Entregas'
+    return headings.join('|') === 'Asistencia|Competencias|Entregas|Portfolio GitHub'
       && main.textContent.includes('Nivel ')
       && main.querySelectorAll('dl dd').length === 5
-      && !![...main.querySelectorAll('section')].at(-1)?.querySelector('li')
+      && !![...main.querySelectorAll('h2')].find(heading => heading.textContent === 'Entregas')?.closest('section')?.querySelector('li')
       && !main.textContent.includes('datos locales de demostración')
   })()`))
   return enrollmentId
@@ -60,9 +60,19 @@ try {
   requireCheck('Learner can navigate to own progress', await learner.nav('Mi progreso'))
   const enrollmentId = await openLearnerProgress(learner)
 
+  const repository = 'https://github.com/synthetic-edugest/sample'
+  requireCheck('Learner enters an authorized repository', await learner.waitText('Aún no has añadido un enlace') &&
+    await learner.set('#portfolio-repository', repository) && await learner.ev(`(() => {
+      const label = [...document.querySelectorAll('main label')].find(label => label.textContent.includes('Tengo permiso'))
+      label?.querySelector('input').click()
+      return !!label
+    })()`))
+  requireCheck('Learner saves the repository', await learner.click('Guardar enlace') && await learner.waitText(repository))
+
   await learner.goto(web.href)
   requireCheck('Session survives browser reload', await learner.nav('Mi progreso'))
   requireCheck('Same enrollment is shown after reload', await openLearnerProgress(learner) === enrollmentId)
+  requireCheck('Portfolio survives reload', await learner.waitText(repository))
 
   await applicant.goto(web.href)
   await applicant.login('aspirante-01@example.test')
@@ -70,12 +80,15 @@ try {
     const menu = document.querySelector('nav[aria-label="Navegación principal"]')
     return !!menu && menu.textContent.includes('Mi candidatura') && !menu.textContent.includes('Mi progreso')
   })()`))
-  for (const resource of ['attendance', 'competencies']) {
+  for (const resource of ['attendance', 'competencies', 'portfolio']) {
     requireCheck(`Aspirant cannot read the learner's ${resource}`,
       await apiStatus(applicant, `/me/enrollments/${encodeURIComponent(enrollmentId)}/${resource}`) === 404)
   }
   requireCheck('Learner and aspirant contexts stay independent',
     await apiStatus(learner, `/me/enrollments/${encodeURIComponent(enrollmentId)}/attendance`) === 200)
+  await learner.ev('window.confirm = () => true')
+  requireCheck('Learner removes the repository', await learner.click('Quitar enlace') &&
+    await learner.waitText('Aún no has añadido un enlace') && !(await learner.text()).includes(repository))
   requireCheck('No uncaught browser exceptions', errors.length === 0)
 } catch {
   check('Learner progress browser journey completed', false)

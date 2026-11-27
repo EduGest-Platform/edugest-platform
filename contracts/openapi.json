@@ -712,6 +712,22 @@
         "title": "ApplicationSummary",
         "type": "object"
       },
+      "ApproveIn": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "description": "Revisión de la entrega que el docente ha visto",
+            "minimum": 1,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "ApproveIn",
+        "type": "object"
+      },
       "AskIn": {
         "additionalProperties": false,
         "properties": {
@@ -2010,6 +2026,25 @@
         "title": "CompetencyDistribution",
         "type": "object"
       },
+      "CompetencyLearner": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "display_name"
+        ],
+        "title": "CompetencyLearner",
+        "type": "object"
+      },
       "CompetencyOut": {
         "properties": {
           "codigo": {
@@ -2104,6 +2139,22 @@
           "items"
         ],
         "title": "CompetencyProgress",
+        "type": "object"
+      },
+      "CompetencyRoster": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyLearner"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CompetencyRoster",
         "type": "object"
       },
       "CompetencyWrite": {
@@ -2341,6 +2392,30 @@
           "expected_version"
         ],
         "title": "DocumentationWrite",
+        "type": "object"
+      },
+      "DraftEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "description": "Texto revisado por el docente",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "expected_version": {
+            "description": "Versión que el docente estaba editando (evita pisar cambios ajenos)",
+            "minimum": 1,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "body",
+          "expected_version"
+        ],
+        "title": "DraftEdit",
         "type": "object"
       },
       "EnrollmentAssessments": {
@@ -2764,6 +2839,133 @@
           "next_action"
         ],
         "title": "EventOut",
+        "type": "object"
+      },
+      "FeedbackDraftList": {
+        "properties": {
+          "current_revision": {
+            "description": "Revisión actual de la entrega",
+            "title": "Current Revision",
+            "type": "integer"
+          },
+          "items": {
+            "description": "Todas las versiones, de la más antigua a la más reciente",
+            "items": {
+              "$ref": "#/components/schemas/FeedbackDraftOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submission_id",
+          "current_revision",
+          "items"
+        ],
+        "title": "FeedbackDraftList",
+        "type": "object"
+      },
+      "FeedbackDraftOut": {
+        "description": "One version as the teaching team sees it. No user ids: who wrote and approved it stays in the database and audit.",
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "check_results": {
+            "additionalProperties": true,
+            "description": "Copia de los resultados de tests usados (procedencia)",
+            "title": "Check Results",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "description": "Texto que la interfaz debe mostrar junto al borrador",
+            "title": "Label",
+            "type": "string"
+          },
+          "rubric": {
+            "description": "Copia de la rúbrica usada (procedencia)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Rubric",
+            "type": "array"
+          },
+          "source": {
+            "description": "template = generado automáticamente con la rúbrica y los tests (sin LLM); teacher = editado por el docente",
+            "enum": [
+              "template",
+              "teacher"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "description": "draft = no visible para el coder; approved = publicado",
+            "enum": [
+              "draft",
+              "approved"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          },
+          "submission_revision": {
+            "description": "Revisión de la entrega a la que corresponde este borrador",
+            "title": "Submission Revision",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "submission_id",
+          "submission_revision",
+          "version",
+          "source",
+          "status",
+          "label",
+          "body",
+          "rubric",
+          "check_results",
+          "created_at",
+          "approved_at"
+        ],
+        "title": "FeedbackDraftOut",
         "type": "object"
       },
       "FrameworkList": {
@@ -4370,6 +4572,62 @@
           "expected_version"
         ],
         "title": "PublicationUpdate",
+        "type": "object"
+      },
+      "PublishedFeedback": {
+        "description": "What the coder sees: only approved feedback, never drafts.",
+        "properties": {
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublishedFeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo si todavía no hay feedback aprobado"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submission_id",
+          "feedback"
+        ],
+        "title": "PublishedFeedback",
+        "type": "object"
+      },
+      "PublishedFeedbackOut": {
+        "properties": {
+          "approved_at": {
+            "format": "date-time",
+            "title": "Approved At",
+            "type": "string"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "label",
+          "body",
+          "approved_at"
+        ],
+        "title": "PublishedFeedbackOut",
         "type": "object"
       },
       "RecordOut": {
@@ -6773,134 +7031,98 @@
         "title": "DiscussionProgram",
         "type": "object"
       },
-      "ApproveIn": {
-        "additionalProperties": false,
+      "AppointmentCreate": {
         "properties": {
-          "expected_revision": {
-            "description": "Revisión de la entrega que el docente ha visto",
-            "minimum": 1,
-            "title": "Expected Revision",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "expected_revision"
-        ],
-        "title": "ApproveIn",
-        "type": "object"
-      },
-      "CompetencyLearner": {
-        "properties": {
-          "display_name": {
-            "title": "Display Name",
+          "kind": {
+            "enum": [
+              "group_day",
+              "individual_interview"
+            ],
+            "title": "Kind",
             "type": "string"
           },
-          "enrollment_id": {
-            "format": "uuid",
-            "title": "Enrollment Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "enrollment_id",
-          "display_name"
-        ],
-        "title": "CompetencyLearner",
-        "type": "object"
-      },
-      "CompetencyRoster": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/CompetencyLearner"
-            },
-            "title": "Items",
-            "type": "array"
-          }
-        },
-        "required": [
-          "items"
-        ],
-        "title": "CompetencyRoster",
-        "type": "object"
-      },
-      "DraftEdit": {
-        "additionalProperties": false,
-        "properties": {
-          "body": {
-            "description": "Texto revisado por el docente",
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Body",
-            "type": "string"
-          },
-          "expected_version": {
-            "description": "Versión que el docente estaba editando (evita pisar cambios ajenos)",
-            "minimum": 1,
-            "title": "Expected Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "body",
-          "expected_version"
-        ],
-        "title": "DraftEdit",
-        "type": "object"
-      },
-      "FeedbackDraftList": {
-        "properties": {
-          "current_revision": {
-            "description": "Revisión actual de la entrega",
-            "title": "Current Revision",
-            "type": "integer"
-          },
-          "items": {
-            "description": "Todas las versiones, de la más antigua a la más reciente",
-            "items": {
-              "$ref": "#/components/schemas/FeedbackDraftOut"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "submission_id": {
-            "format": "uuid",
-            "title": "Submission Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "submission_id",
-          "current_revision",
-          "items"
-        ],
-        "title": "FeedbackDraftList",
-        "type": "object"
-      },
-      "FeedbackDraftOut": {
-        "description": "One version as the teaching team sees it. No user ids: who wrote and approved it stays in the database and audit.",
-        "properties": {
-          "approved_at": {
+          "location": {
             "anyOf": [
               {
-                "format": "date-time",
+                "maxLength": 250,
+                "minLength": 1,
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Approved At"
+            "title": "Location"
           },
-          "body": {
-            "title": "Body",
+          "previous_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Id"
+          },
+          "scheduled_at": {
+            "format": "date-time",
+            "title": "Scheduled At",
             "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "scheduled_at"
+        ],
+        "title": "AppointmentCreate",
+        "type": "object"
+      },
+      "AppointmentList": {
+        "properties": {
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
           },
-          "check_results": {
-            "additionalProperties": true,
-            "description": "Copia de los resultados de tests usados (procedencia)",
-            "title": "Check Results",
-            "type": "object"
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AppointmentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "can_edit",
+          "items"
+        ],
+        "title": "AppointmentList",
+        "type": "object"
+      },
+      "AppointmentOut": {
+        "properties": {
+          "assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment"
+          },
+          "conclusions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusions"
           },
           "created_at": {
             "format": "date-time",
@@ -6912,123 +7134,214 @@
             "title": "Id",
             "type": "string"
           },
-          "label": {
-            "description": "Texto que la interfaz debe mostrar junto al borrador",
-            "title": "Label",
-            "type": "string"
-          },
-          "rubric": {
-            "description": "Copia de la rúbrica usada (procedencia)",
-            "items": {
-              "type": "string"
-            },
-            "title": "Rubric",
-            "type": "array"
-          },
-          "source": {
-            "description": "template = generado automáticamente con la rúbrica y los tests (sin LLM); teacher = editado por el docente",
+          "kind": {
             "enum": [
-              "template",
-              "teacher"
+              "group_day",
+              "individual_interview"
             ],
-            "title": "Source",
+            "title": "Kind",
             "type": "string"
           },
-          "status": {
-            "description": "draft = no visible para el coder; approved = publicado",
-            "enum": [
-              "draft",
-              "approved"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "submission_id": {
-            "format": "uuid",
-            "title": "Submission Id",
-            "type": "string"
-          },
-          "submission_revision": {
-            "description": "Revisión de la entrega a la que corresponde este borrador",
-            "title": "Submission Revision",
-            "type": "integer"
-          },
-          "version": {
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "submission_id",
-          "submission_revision",
-          "version",
-          "source",
-          "status",
-          "label",
-          "body",
-          "rubric",
-          "check_results",
-          "created_at",
-          "approved_at"
-        ],
-        "title": "FeedbackDraftOut",
-        "type": "object"
-      },
-      "PublishedFeedback": {
-        "description": "What the coder sees: only approved feedback, never drafts.",
-        "properties": {
-          "feedback": {
+          "location": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PublishedFeedbackOut"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "description": "Nulo si todavía no hay feedback aprobado"
+            "title": "Location"
           },
-          "submission_id": {
-            "format": "uuid",
-            "title": "Submission Id",
+          "previous_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Id"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "scheduled_at": {
+            "format": "date-time",
+            "title": "Scheduled At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "scheduled",
+              "attended",
+              "no_show",
+              "rescheduled"
+            ],
+            "title": "State",
             "type": "string"
           }
         },
         "required": [
-          "submission_id",
-          "feedback"
+          "id",
+          "previous_id",
+          "kind",
+          "state",
+          "scheduled_at",
+          "location",
+          "created_at",
+          "recorded_at",
+          "conclusions",
+          "assessment"
         ],
-        "title": "PublishedFeedback",
+        "title": "AppointmentOut",
         "type": "object"
       },
-      "PublishedFeedbackOut": {
+      "AppointmentOutcome": {
         "properties": {
-          "approved_at": {
-            "format": "date-time",
-            "title": "Approved At",
-            "type": "string"
+          "assessment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment"
           },
-          "body": {
-            "title": "Body",
-            "type": "string"
+          "conclusions": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusions"
           },
-          "label": {
-            "title": "Label",
+          "result": {
+            "enum": [
+              "attended",
+              "no_show"
+            ],
+            "title": "Result",
             "type": "string"
-          },
-          "version": {
-            "title": "Version",
-            "type": "integer"
           }
         },
         "required": [
-          "version",
-          "label",
-          "body",
-          "approved_at"
+          "result"
         ],
-        "title": "PublishedFeedbackOut",
+        "title": "AppointmentOutcome",
+        "type": "object"
+      },
+      "PortfolioOut": {
+        "properties": {
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "can_lookup": {
+            "title": "Can Lookup",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "can_edit",
+          "can_lookup"
+        ],
+        "title": "PortfolioOut",
+        "type": "object"
+      },
+      "PortfolioWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "authorized": {
+            "const": true,
+            "title": "Authorized",
+            "type": "boolean"
+          },
+          "url": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "authorized"
+        ],
+        "title": "PortfolioWrite",
+        "type": "object"
+      },
+      "PublicRepository": {
+        "properties": {
+          "last_push_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Push At"
+          },
+          "primary_language": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Language"
+          }
+        },
+        "title": "PublicRepository",
         "type": "object"
       }
     },
@@ -8399,6 +8712,59 @@
           }
         ],
         "summary": "Preguntar a la documentación del curso: respuesta citada o «no consta»",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
+    "/api/v1/assistant/ask/stream": {
+      "post": {
+        "operationId": "ask_stream_api_v1_assistant_ask_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "description": "SSE: phase ({source_kind}), delta ({text}), answer (AskOut) o error ({code}). answer y error cierran el flujo.",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión no válida"
+          },
+          "403": {
+            "description": "Sin documentos en tu ámbito o cohorte ajena"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar el asistente con progreso y respuesta mediante eventos SSE",
         "tags": [
           "assistant"
         ]
@@ -10001,6 +10367,60 @@
         ]
       }
     },
+    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+      "get": {
+        "operationId": "get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyRoster"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
     "/api/v1/cohorts/{cohort_id}/progress-overview": {
       "get": {
         "operationId": "get_progress_overview_api_v1_cohorts__cohort_id__progress_overview_get",
@@ -11410,6 +11830,140 @@
         ]
       }
     },
+    "/api/v1/feedback-drafts/{draft_id}": {
+      "put": {
+        "operationId": "put_feedback_draft_api_v1_feedback_drafts__draft_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftEdit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Editar un borrador: crea una versión nueva y conserva la anterior",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
+    "/api/v1/feedback-drafts/{draft_id}/approve": {
+      "post": {
+        "operationId": "post_feedback_approval_api_v1_feedback_drafts__draft_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Aprobar y publicar un borrador (solo el equipo docente de la cohorte)",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
     "/api/v1/me/applications": {
       "get": {
         "operationId": "my_applications_api_v1_me_applications_get",
@@ -12629,6 +13183,169 @@
         ]
       }
     },
+    "/api/v1/submissions/{submission_id}/feedback": {
+      "get": {
+        "operationId": "get_published_feedback_api_v1_submissions__submission_id__feedback_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Submission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedFeedback"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Feedback publicado de una entrega: el propio coder o el equipo docente. Nunca borradores",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
+    "/api/v1/submissions/{submission_id}/feedback-drafts": {
+      "get": {
+        "operationId": "list_feedback_drafts_api_v1_submissions__submission_id__feedback_drafts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Submission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackDraftList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Todas las versiones del feedback de una entrega (equipo docente)",
+        "tags": [
+          "feedback"
+        ]
+      },
+      "post": {
+        "operationId": "post_feedback_draft_api_v1_submissions__submission_id__feedback_drafts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Submission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackDraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generar un borrador de feedback con la rúbrica y los tests (sin publicar)",
+        "tags": [
+          "feedback"
+        ]
+      }
+    },
     "/api/v1/submissions/{submission_id}/review": {
       "post": {
         "operationId": "post_review_api_v1_submissions__submission_id__review_post",
@@ -13040,70 +13757,17 @@
         ]
       }
     },
-    "/api/v1/assistant/ask/stream": {
-      "post": {
-        "operationId": "ask_stream_api_v1_assistant_ask_stream_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AskIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "description": "SSE: phase ({source_kind}), delta ({text}), answer (AskOut) o error ({code}). answer y error cierran el flujo.",
-                  "type": "string"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "Sesión no válida"
-          },
-          "403": {
-            "description": "Sin documentos en tu ámbito o cohorte ajena"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Consultar el asistente con progreso y respuesta mediante eventos SSE",
-        "tags": [
-          "assistant"
-        ]
-      }
-    },
-    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+    "/api/v1/applications/{application_id}/selection-appointments": {
       "get": {
-        "operationId": "get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get",
+        "operationId": "list_appointments_api_v1_applications__application_id__selection_appointments_get",
         "parameters": [
           {
             "in": "path",
-            "name": "cohort_id",
+            "name": "application_id",
             "required": true,
             "schema": {
-              "maxLength": 20,
-              "title": "Cohort Id",
+              "format": "uuid",
+              "title": "Application Id",
               "type": "string"
             }
           }
@@ -13113,7 +13777,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CompetencyRoster"
+                  "$ref": "#/components/schemas/AppointmentList"
                 }
               }
             },
@@ -13141,286 +13805,54 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente",
+        "summary": "Consultar las citaciones de selección",
         "tags": [
-          "competencies"
-        ]
-      }
-    },
-    "/api/v1/feedback-drafts/{draft_id}": {
-      "put": {
-        "operationId": "put_feedback_draft_api_v1_feedback_drafts__draft_id__put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DraftEdit"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeedbackDraftOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "403": {
-            "description": "Sin permiso sobre la cohorte"
-          },
-          "404": {
-            "description": "No encontrado"
-          },
-          "409": {
-            "description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Editar un borrador: crea una versión nueva y conserva la anterior",
-        "tags": [
-          "feedback"
-        ]
-      }
-    },
-    "/api/v1/feedback-drafts/{draft_id}/approve": {
-      "post": {
-        "operationId": "post_feedback_approval_api_v1_feedback_drafts__draft_id__approve_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "draft_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Draft Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApproveIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeedbackDraftOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "403": {
-            "description": "Sin permiso sobre la cohorte"
-          },
-          "404": {
-            "description": "No encontrado"
-          },
-          "409": {
-            "description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Aprobar y publicar un borrador (solo el equipo docente de la cohorte)",
-        "tags": [
-          "feedback"
-        ]
-      }
-    },
-    "/api/v1/submissions/{submission_id}/feedback": {
-      "get": {
-        "operationId": "get_published_feedback_api_v1_submissions__submission_id__feedback_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "submission_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Submission Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublishedFeedback"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "403": {
-            "description": "Sin permiso sobre la cohorte"
-          },
-          "404": {
-            "description": "No encontrado"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Feedback publicado de una entrega: el propio coder o el equipo docente. Nunca borradores",
-        "tags": [
-          "feedback"
-        ]
-      }
-    },
-    "/api/v1/submissions/{submission_id}/feedback-drafts": {
-      "get": {
-        "operationId": "list_feedback_drafts_api_v1_submissions__submission_id__feedback_drafts_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "submission_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Submission Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeedbackDraftList"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "403": {
-            "description": "Sin permiso sobre la cohorte"
-          },
-          "404": {
-            "description": "No encontrado"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Todas las versiones del feedback de una entrega (equipo docente)",
-        "tags": [
-          "feedback"
+          "selection"
         ]
       },
       "post": {
-        "operationId": "post_feedback_draft_api_v1_submissions__submission_id__feedback_drafts_post",
+        "operationId": "create_appointment_api_v1_applications__application_id__selection_appointments_post",
         "parameters": [
           {
             "in": "path",
-            "name": "submission_id",
+            "name": "application_id",
             "required": true,
             "schema": {
               "format": "uuid",
-              "title": "Submission Id",
+              "title": "Application Id",
               "type": "string"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FeedbackDraftOut"
+                  "$ref": "#/components/schemas/AppointmentOut"
                 }
               }
             },
             "description": "Successful Response"
           },
           "403": {
-            "description": "Sin permiso sobre la cohorte"
+            "description": "Sin permiso sobre el ámbito"
           },
           "404": {
             "description": "No encontrado"
           },
           "409": {
-            "description": "Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado"
+            "description": "La candidatura o cita ya no permite el cambio solicitado"
           },
           "422": {
             "content": {
@@ -13438,9 +13870,301 @@
             "HTTPBearer": []
           }
         ],
-        "summary": "Generar un borrador de feedback con la rúbrica y los tests (sin publicar)",
+        "summary": "Agendar una jornada o entrevista, o enlazar una nueva fecha a una citación anterior",
         "tags": [
-          "feedback"
+          "selection"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/selection-appointments/{appointment_id}/outcome": {
+      "post": {
+        "operationId": "record_appointment_outcome_api_v1_applications__application_id__selection_appointments__appointment_id__outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "appointment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Appointment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentOutcome"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La candidatura o cita ya no permite el cambio solicitado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar asistencia o ausencia y, cuando proceda, conclusiones y valoración",
+        "tags": [
+          "selection"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/portfolio": {
+      "delete": {
+        "operationId": "delete_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Eliminar el enlace propio, incluso al finalizar la matrícula",
+        "tags": [
+          "portfolio"
+        ]
+      },
+      "get": {
+        "operationId": "read_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar el enlace de portfolio propio",
+        "tags": [
+          "portfolio"
+        ]
+      },
+      "put": {
+        "operationId": "write_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "409": {
+            "description": "Se requiere matrícula activa"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Guardar un enlace autorizado a un repositorio",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/portfolio/metadata": {
+      "post": {
+        "operationId": "lookup_metadata_api_v1_me_enrollments__enrollment_id__portfolio_metadata_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRepository"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "409": {
+            "description": "Consulta no habilitada o enlace no disponible"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Cuota de GitHub agotada"
+          },
+          "502": {
+            "description": "GitHub no disponible"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar idioma y última actividad pública del repositorio guardado",
+        "tags": [
+          "portfolio"
         ]
       }
     }
