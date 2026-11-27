@@ -43,12 +43,17 @@ export const MENUS: Record<Role, View[]> = {
 
 /** Views reachable by drill-down but not listed in the menu. */
 export const EXTRA_VIEWS: Partial<Record<Role, View[]>> = { docente: ['ficha'] }
-export const menuFor = (role: Role, apiMode: boolean): View[] => {
-  if (!apiMode) return MENUS[role]
-  if (role === 'coder') return [...MENUS.coder, 'candidatura']
-  if (role === 'admin' || role === 'fundacion' || role === 'seleccion') return [...MENUS[role], 'tablero']
-  return MENUS[role]
+/** Views a role only has with the server, because they show real server data and the local demo has none for it. */
+const API_ONLY_VIEWS: Partial<Record<Role, View[]>> = {
+  coder: ['candidatura'],
+  // KAN-275 (PO 27/11/2026): administration registers applications from the screen too.
+  admin: ['candidaturas', 'tablero'],
+  fundacion: ['tablero'],
+  seleccion: ['tablero'],
 }
+
+export const menuFor = (role: Role, apiMode: boolean): View[] =>
+  apiMode ? [...MENUS[role], ...(API_ONLY_VIEWS[role] ?? [])] : MENUS[role]
 
 export const canOpen = (role: Role, v: View, apiMode = false) =>
   menuFor(role, apiMode).includes(v) || !!EXTRA_VIEWS[role]?.includes(v)
