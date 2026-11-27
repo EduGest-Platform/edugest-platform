@@ -74,8 +74,9 @@ html[data-theme="dark"] {
   --color-muted: #b4c2d5;
   --color-line: #46566e;
   --color-mist: #252c48;
-  --color-blue: #b8acf6;
-  --color-teal: #64d8c8;
+  /* Preserve readable white labels on shared primary/success actions. */
+  --color-blue: #4f38e0;
+  --color-teal: #138c83;
 }
 html[data-theme="dark"] .bg-white { background-color: #1c293d; }
 html[data-theme="dark"] .bg-white\/90 { background-color: rgb(28 41 61 / 90%); }
