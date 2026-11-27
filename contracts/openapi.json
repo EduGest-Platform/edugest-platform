@@ -712,6 +712,226 @@
         "title": "ApplicationSummary",
         "type": "object"
       },
+      "AppointmentCreate": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "group_day",
+              "individual_interview"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 250,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "previous_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Id"
+          },
+          "scheduled_at": {
+            "format": "date-time",
+            "title": "Scheduled At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "scheduled_at"
+        ],
+        "title": "AppointmentCreate",
+        "type": "object"
+      },
+      "AppointmentList": {
+        "properties": {
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AppointmentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "can_edit",
+          "items"
+        ],
+        "title": "AppointmentList",
+        "type": "object"
+      },
+      "AppointmentOut": {
+        "properties": {
+          "assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment"
+          },
+          "conclusions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusions"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "group_day",
+              "individual_interview"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "previous_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Id"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          },
+          "scheduled_at": {
+            "format": "date-time",
+            "title": "Scheduled At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "scheduled",
+              "attended",
+              "no_show",
+              "rescheduled"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "previous_id",
+          "kind",
+          "state",
+          "scheduled_at",
+          "location",
+          "created_at",
+          "recorded_at",
+          "conclusions",
+          "assessment"
+        ],
+        "title": "AppointmentOut",
+        "type": "object"
+      },
+      "AppointmentOutcome": {
+        "properties": {
+          "assessment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment"
+          },
+          "conclusions": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusions"
+          },
+          "result": {
+            "enum": [
+              "attended",
+              "no_show"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "AppointmentOutcome",
+        "type": "object"
+      },
       "ApproveIn": {
         "additionalProperties": false,
         "properties": {
@@ -2026,6 +2246,25 @@
         "title": "CompetencyDistribution",
         "type": "object"
       },
+      "CompetencyLearner": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "display_name"
+        ],
+        "title": "CompetencyLearner",
+        "type": "object"
+      },
       "CompetencyOut": {
         "properties": {
           "codigo": {
@@ -2120,6 +2359,22 @@
           "items"
         ],
         "title": "CompetencyProgress",
+        "type": "object"
+      },
+      "CompetencyRoster": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyLearner"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CompetencyRoster",
         "type": "object"
       },
       "CompetencyWrite": {
@@ -4056,6 +4311,69 @@
         "title": "PersonOut",
         "type": "object"
       },
+      "PortfolioOut": {
+        "properties": {
+          "can_edit": {
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "can_lookup": {
+            "title": "Can Lookup",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "can_edit",
+          "can_lookup"
+        ],
+        "title": "PortfolioOut",
+        "type": "object"
+      },
+      "PortfolioWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "authorized": {
+            "const": true,
+            "title": "Authorized",
+            "type": "boolean"
+          },
+          "url": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "authorized"
+        ],
+        "title": "PortfolioWrite",
+        "type": "object"
+      },
       "PrefilterItem": {
         "properties": {
           "code": {
@@ -4465,6 +4783,36 @@
           "admission_state"
         ],
         "title": "PublicCourseOut",
+        "type": "object"
+      },
+      "PublicRepository": {
+        "properties": {
+          "last_push_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Push At"
+          },
+          "primary_language": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Language"
+          }
+        },
+        "title": "PublicRepository",
         "type": "object"
       },
       "PublicationList": {
@@ -7949,6 +8297,202 @@
         ]
       }
     },
+    "/api/v1/applications/{application_id}/selection-appointments": {
+      "get": {
+        "operationId": "list_appointments_api_v1_applications__application_id__selection_appointments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar las citaciones de selección",
+        "tags": [
+          "selection"
+        ]
+      },
+      "post": {
+        "operationId": "create_appointment_api_v1_applications__application_id__selection_appointments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La candidatura o cita ya no permite el cambio solicitado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Agendar una jornada o entrevista, o enlazar una nueva fecha a una citación anterior",
+        "tags": [
+          "selection"
+        ]
+      }
+    },
+    "/api/v1/applications/{application_id}/selection-appointments/{appointment_id}/outcome": {
+      "post": {
+        "operationId": "record_appointment_outcome_api_v1_applications__application_id__selection_appointments__appointment_id__outcome_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Application Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "appointment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Appointment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentOutcome"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "409": {
+            "description": "La candidatura o cita ya no permite el cambio solicitado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Registrar asistencia o ausencia y, cuando proceda, conclusiones y valoración",
+        "tags": [
+          "selection"
+        ]
+      }
+    },
     "/api/v1/applications/{application_id}/selection-decisions": {
       "get": {
         "operationId": "list_selection_decisions_api_v1_applications__application_id__selection_decisions_get",
@@ -9996,6 +10540,60 @@
         ]
       }
     },
+    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+      "get": {
+        "operationId": "get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyRoster"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
     "/api/v1/cohorts/{cohort_id}/progress-overview": {
       "get": {
         "operationId": "get_progress_overview_api_v1_cohorts__cohort_id__progress_overview_get",
@@ -11766,6 +12364,221 @@
         "summary": "Read current competency levels for the signed-in person's active enrollment",
         "tags": [
           "learning"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/portfolio": {
+      "delete": {
+        "operationId": "delete_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Eliminar el enlace propio, incluso al finalizar la matrícula",
+        "tags": [
+          "portfolio"
+        ]
+      },
+      "get": {
+        "operationId": "read_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar el enlace de portfolio propio",
+        "tags": [
+          "portfolio"
+        ]
+      },
+      "put": {
+        "operationId": "write_portfolio_api_v1_me_enrollments__enrollment_id__portfolio_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "409": {
+            "description": "Se requiere matrícula activa"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Guardar un enlace autorizado a un repositorio",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/me/enrollments/{enrollment_id}/portfolio/metadata": {
+      "post": {
+        "operationId": "lookup_metadata_api_v1_me_enrollments__enrollment_id__portfolio_metadata_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "enrollment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Enrollment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRepository"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Matrícula propia no encontrada"
+          },
+          "409": {
+            "description": "Consulta no habilitada o enlace no disponible"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Cuota de GitHub agotada"
+          },
+          "502": {
+            "description": "GitHub no disponible"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Consultar idioma y última actividad pública del repositorio guardado",
+        "tags": [
+          "portfolio"
         ]
       }
     },
