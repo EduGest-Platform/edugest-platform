@@ -118,3 +118,12 @@ class EnrollmentAssessments(BaseModel):
     framework_version: int | None
     current: list[CurrentLevel]
     history: list[AssessmentOut] = Field(description="Todas las evaluaciones, también de versiones anteriores del árbol")
+
+
+class CompetencyLearner(BaseModel):
+    enrollment_id: uuid.UUID
+    display_name: str
+
+
+class CompetencyRoster(BaseModel):
+    items: list[CompetencyLearner]
