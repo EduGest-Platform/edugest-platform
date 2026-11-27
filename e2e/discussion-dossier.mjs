@@ -77,21 +77,27 @@ try {
     const field = document.activeElement
     return field?.tagName === 'INPUT' && field.labels?.[0]?.textContent.trim() === 'Asunto del nuevo hilo'
   })()`))
-  requireCheck('Write a thread subject', await setDiscussionField(first, 'Asunto del nuevo hilo', 'Hilo sintético de seguimiento'))
+  const subject = 'Hilo sintético <img data-kan244-xss src="data:,invalid">'
+  requireCheck('Write a thread subject', await setDiscussionField(first, 'Asunto del nuevo hilo', subject))
   requireCheck('Create the thread', await first.click('Crear hilo', `(${scope})`))
   requireCheck('New thread is selected', await first.waitText('Nuevo comentario'))
-  const original = 'Texto literal <b>de prueba</b>'
+  requireCheck('Thread subject is literal text in the selector', await first.ev(`Array.from((${scope}).querySelectorAll('option')).some(option => option.textContent === ${JSON.stringify(subject)})`))
+  const original = 'Texto literal <img data-kan244-xss src="data:,invalid" onerror="window.kan244Marker=true">'
   requireCheck('Write the first comment', await setDiscussionField(first, 'Nuevo comentario', original))
   requireCheck('Save the first comment', await first.click('Enviar comentario', `(${scope})`))
   requireCheck('Comment is displayed as literal text', await first.waitText(original))
+  requireCheck('Stored markup does not create a DOM node or run an event handler', await first.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true"))
   requireCheck('Reply points to the visible parent', await first.click('Responder', `(${scope})`))
   requireCheck('Reply focuses its textarea', await first.ev(`document.activeElement?.matches('textarea') && !!(${scope})?.contains(document.activeElement)`))
-  requireCheck('Write and save a reply', await setDiscussionField(first, 'Tu respuesta', 'Respuesta sintética') &&
+  const reply = 'Respuesta sintética <img data-kan244-xss src="data:,invalid" onerror="window.kan244Marker=true">'
+  requireCheck('Write and save a reply', await setDiscussionField(first, 'Tu respuesta', reply) &&
     await first.click('Enviar respuesta', `(${scope})`))
-  requireCheck('Reply appears below its parent', await first.waitText('Respuesta sintética'))
+  requireCheck('Reply appears below its parent as text', await first.waitText(reply))
+  requireCheck('Reply markup cannot create nodes or execute', await first.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true"))
 
   await openDiscussion(second, receipt.codigo)
-  requireCheck('Second browser loads the same comment', await second.waitText(original))
+  requireCheck('Second browser loads the same comment and reply', await second.waitText(original) && await second.waitText(reply))
+  requireCheck('Persisted markup remains inert in a fresh browser session', await second.ev("!document.querySelector('[data-kan244-xss]') && window.kan244Marker !== true"))
   requireCheck('First browser starts an edit', await first.click('Editar comentario', `(${scope})`))
   const draft = 'Borrador que debe conservarse'
   requireCheck('First browser changes its draft', await setDiscussionField(first, 'Editar tu comentario', draft))
