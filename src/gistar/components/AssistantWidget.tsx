@@ -116,14 +116,19 @@ export function AssistantWidget() {
         className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-navy px-4 py-3 font-semibold text-white shadow-xl motion-safe:transition-transform motion-safe:hover:-translate-y-1">
         <MessageSquareText className="size-5 text-gold" aria-hidden /> Asistente
       </button>
-      <dialog ref={dialog} aria-labelledby="floating-assistant-title" onCancel={stop} onClose={() => { stop(); launcher.current?.focus() }}
+      <dialog ref={dialog} aria-labelledby="floating-assistant-title" onCancel={stop} onClose={() => {
+        // A close event can be delivered after the same dialog has reopened.
+        if (dialog.current?.open) return
+        stop()
+        launcher.current?.focus()
+      }}
         className="fixed inset-auto bottom-3 right-3 m-0 w-[calc(100%-1.5rem)] max-w-md overflow-hidden rounded-2xl border border-line bg-white text-ink shadow-2xl backdrop:bg-navy/25 sm:bottom-6 sm:right-6 motion-safe:open:animate-[assistant-enter_200ms_ease-out]">
         <div className="flex h-[min(680px,calc(100dvh-1.5rem))] flex-col">
           <header className="flex shrink-0 items-center gap-3 bg-navy p-4 text-white">
             <Sparkles className="size-6 text-gold" aria-hidden />
             <div className="min-w-0 flex-1">
-              <h2 id="floating-assistant-title" className="font-bold">EduGest IA</h2>
-              <p className="text-xs text-gold">Asistente documental</p>
+              <h2 id="floating-assistant-title" className="font-bold">Asistente EduGest</h2>
+              <p className="text-xs text-gold">Documentación y registros</p>
             </div>
             <button type="button" aria-label="Cerrar asistente" onClick={() => { stop(); dialog.current?.close() }} className="rounded-lg p-2 hover:bg-white/10 focus-visible:outline-gold">
               <X className="size-5" aria-hidden />

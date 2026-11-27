@@ -117,7 +117,6 @@ check('Reintento tras reapertura', await releaseAssistantCall(7, 'Consulta duran
 check('Respuesta nueva tras reapertura', await B.ev(`new Promise(resolve => { const deadline = Date.now() + 6000; const poll = () => { if (document.querySelectorAll('dialog [role=log] article').length === 2 && !document.querySelector('${editor}').readOnly) resolve(true); else if (Date.now() > deadline) resolve(false); else setTimeout(poll, 50) }; poll() })`))
 await B.escape()
 
-
 const cohortSelect = '#floating-assistant-cohort'
 await B.ev(`document.querySelector('${launch}').click()`)
 check('Teacher can select both authorized cohorts', await B.ev(`(() => {
@@ -130,7 +129,8 @@ await B.set(editor, 'Consulta de la cohorte IA')
 await B.ev(`document.querySelector('${editor}').focus()`)
 await B.enter()
 check('Request carries the selected cohort', await releaseAssistantCall(8, 'Consulta de la cohorte IA', 200, 'COH-IA'))
-check('Scoped answer is visible', await B.waitText('No consta en la documentación'))
+check('Scoped answer is visible', await B.waitText('No consta en la documentación') &&
+  await B.ev("document.querySelector('dialog [role=log] article')?.textContent.includes('Consulta de la cohorte IA')"))
 check('Switching cohorts clears the scoped answer', await B.set(cohortSelect, 'COH-DATA') &&
   await B.ev("!document.querySelector('dialog [role=log] article')"))
 await B.set(editor, 'Consulta de otra sesión')
