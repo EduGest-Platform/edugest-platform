@@ -235,8 +235,12 @@ def test_cohort_activation_is_explicit_scoped_and_audited(client, db, teacher):
     assert events[1].meta["previous"] == first["id"]
     assert events[1].meta["framework_id"] == second["id"]
 
-    assert assign(client, login(client, CAPT_IA), second["id"]).status_code == 403
+    for email in (CAPT_IA, CODER, COORD):
+        assert assign(client, login(client, email), second["id"]).status_code == 403
     assert assign(client, {}, second["id"]).status_code == 401
+    archived = assign(client, teacher, first["id"])
+    assert archived.status_code == 409
+    assert archived.json()["code"] == "framework_not_published"
     db.query(RoleAssignment).filter(
         RoleAssignment.user_id == teacher_id, RoleAssignment.scope_id == COHORT,
     ).delete()
