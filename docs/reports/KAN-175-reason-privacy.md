@@ -27,18 +27,18 @@ Quórum por defecto: dos personas / Default quorum: two people.
 
 **EN** — Disposable local PostgreSQL 16.15 with pgvector. Python 3.13.15 (CI uses 3.12). From `api/`:
 
-- `pytest` on every test file that mentions a selection endpoint or model, plus `test_applications.py`, `test_rbac_matrix.py` and `test_contract.py`: **370 passed**.
-- `tests/test_final_quorum_transaction.py` and `tests/test_waitlist_last_place.py` (part of the 370, also run by name): **3 passed**.
+- `pytest` sobre todos los archivos de prueba que mencionan un endpoint o modelo de selección, más `test_applications.py`, `test_rbac_matrix.py` y `test_contract.py` / on every test file that mentions a selection endpoint or model, plus those three: **370 passed**.
+- `tests/test_final_quorum_transaction.py` y/and `tests/test_waitlist_last_place.py` (incluidos en las 370 y ejecutados también por nombre / part of the 370, also run by name): **3 passed**.
 - `ruff check . --select E4,E7,E9,F`: passed. `alembic heads`: `0024_merge_heads`. `alembic check`: no new operations.
 
 **Comprobación de que la prueba detecta fugas / Proof that the test detects leaks.** Cada fuga se inyectó por separado y después se restauró el código; la prueba falló en las seis. / Each leak was injected on its own and then reverted; the test failed in all six:
 
-1. Reason as the CRM text of the final decision.
-2. Reason as the CRM text of a pending vote.
-3. Reason in the audit metadata.
-4. Reason written to an application log line.
-5. `selection.read` granted to recruitment.
-6. 422 response echoing the submitted input.
+1. Motivo como texto CRM de la decisión final / Reason as the CRM text of the final decision.
+2. Motivo como texto CRM de un voto pendiente / Reason as the CRM text of a pending vote.
+3. Motivo en los metadatos de auditoría / Reason in the audit metadata.
+4. Motivo escrito en una línea de log de la aplicación / Reason written to an application log line.
+5. `selection.read` concedido a captación / granted to recruitment.
+6. Respuesta 422 que devuelve la entrada enviada / 422 response echoing the submitted input.
 
 Las fugas 1–5 se repitieron con la versión final; la 6 se probó solo con ella. / Leaks 1–5 were repeated against the final version; leak 6 was only run against it.
 
