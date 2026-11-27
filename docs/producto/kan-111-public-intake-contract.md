@@ -17,6 +17,12 @@ The executable source is `ApplicationCreate` in `api/app/modules/admissions/sche
 | `disponibilidad` | `Mañana`, `Tarde`, `Flexible`. | Candidatura / Application |
 | `acepta_datos_sinteticos` | Confirmación obligatoria con el valor booleano JSON `true`. / Required acknowledgement with the JSON boolean value `true`. | Candidatura / Application |
 
+## Alta manual / Manual intake (KAN-275)
+
+ES — `POST /manual-intake/applications` aplica las mismas validaciones, el mismo requisito de convocatoria publicada y abierta y el mismo control de duplicados. Exige `applications.create` en la convocatoria (Selección, Coordinación y administración). Cambia dos campos: pide `origin_channel` (`correo`, `telefono`, `derivacion`, `registro_manual` o `redes`) y sustituye `acepta_datos_sinteticos` por `confirma_datos_sinteticos`, que marca quien registra. Esa confirmación **no es consentimiento legal** y no permite datos reales. Quedan cuenta, fecha y canal.
+
+EN — `POST /manual-intake/applications` applies the same validations, the same published-and-open call rule and the same duplicate control. It needs `applications.create` on the call (selection, coordination and administration). Two fields differ: it requires `origin_channel`, and replaces `acepta_datos_sinteticos` with `confirma_datos_sinteticos`, ticked by the member of staff. That confirmation is **not legal consent** and does not allow real data. Account, date and channel are stored.
+
 ## Campos pendientes de implementación / Fields awaiting implementation
 
 - Teléfono, año de nacimiento, provincia o localidad, nacionalidad, género, experiencia, acceso a ordenador o internet y situación actual se documentan por formulario en el [inventario canónico](diccionario-campos-candidatura.md). Sus decisiones y condiciones vigentes se consultan en el diccionario consolidado. / The [canonical inventory](diccionario-campos-candidatura.md) records phone, birth year, province or locality, nationality, gender, experience, computer or internet access and current situation by form. The consolidated dictionary holds the current decisions and conditions.

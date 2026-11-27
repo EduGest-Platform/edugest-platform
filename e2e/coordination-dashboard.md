@@ -4,6 +4,10 @@
 
 **EN** — Run the journey against a disposable local PostgreSQL database, migrated and populated with `python -m app.seed`. Serve the web in API mode using the [repository commands](../commands.md). Use the synthetic password configured for both services.
 
+**ES** — Al final registra una candidatura a mano y comprueba el bloqueo durante el envío, la actualización de los totales (de 50 a 51) y un rechazo por duplicado. Escribe datos: solo pasa una vez por cada base recién poblada. En el CI se ejecuta como primer recorrido.
+
+**EN** — At the end it registers an application manually and checks the lock while sending, the refreshed totals (50 to 51) and a duplicate refusal. It writes data, so it passes only once per freshly seeded database. CI runs it as the first journey.
+
 ```sh
 WEB_URL=http://127.0.0.1:8443/ GISTAR_API=http://127.0.0.1:8000 node e2e/coordination-dashboard.mjs
 ```
