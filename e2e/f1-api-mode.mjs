@@ -11,7 +11,6 @@ const WEB = process.env.WEB_URL ?? 'http://127.0.0.1:4173/'
 const unique = `e2e.${Date.now()}@example.test`
 const A = await newBrowser()
 const B = await newBrowser()
-
 // 1 · A: captación IA inicia sesión y ve solo su ámbito
 await A.goto(WEB)
 check('Pantalla de acceso en modo API', await A.waitText('Iniciar sesión'))
@@ -26,7 +25,8 @@ check('Captación IA ve solo expedientes de su programa', before > 0 && callsA.e
 // 2 · B: inscripción pública (otro navegador, sin sesión)
 await B.goto(WEB)
 await B.click('Quiero inscribirme')
-await sleep(500)
+check('Convocatoria sintética IA disponible', await B.waitText('IA aplicada'))
+await B.set('#ins-call', 'CONV-IA-2027A')
 await B.set('#ins-name', 'Persona E2E Sintética')
 await B.set('#ins-email', unique)
 await B.set('#ins-mot', 'Motivación de prueba E2E con datos sintéticos.')
@@ -57,7 +57,8 @@ await A.ev(`[...document.querySelectorAll('main tbody tr')].find(r => r.innerTex
 await A.waitText('Historial CRM')
 await A.set('[aria-label="Resumen del evento"]', 'Llamada E2E: confirma asistencia a la jornada informativa')
 await A.click('Registrar en el historial', "document.querySelector('[role=dialog]')")
-check('Evento CRM registrado con autor', await A.waitText('Captación IA (demo)'))
+check('Evento CRM registrado con autor', await A.waitText('Llamada E2E: confirma asistencia a la jornada informativa')
+  && await A.ev(`[...document.querySelectorAll('[role=dialog] li')].some(item => item.textContent.includes('Llamada E2E:') && item.textContent.includes('Captación IA (demo)'))`))
 await A.click('Cerrar', "document.querySelector('[role=dialog] footer')")
 
 // 6 · B: captación Data no ve expedientes de IA
@@ -78,7 +79,7 @@ await sleep(500)
 await B.login('docente@gistar.example')
 check('Vistas no migradas señalan datos locales', await B.waitText('datos locales de demostración'))
 await B.nav('Candidaturas')
-check('Docente recibe denegación de la API', await B.waitText('HTTP 403'))
+check('Docente recibe denegación de la API', await B.waitText('No tienes permiso para ver esta información.'))
 await B.click('Salir')
 await sleep(500)
 

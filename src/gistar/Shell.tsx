@@ -1,8 +1,8 @@
 import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
-import { useEffect, useMemo, type ReactElement } from 'react'
+import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
-import { menuFor, ROLES, VIEWS } from './config'
+import { canOpen, menuFor, ROLES, VIEWS } from './config'
 import { useGistar } from './store'
 import type { Role, View } from './types'
 import { Button, inputCls } from './ui'
@@ -20,9 +20,12 @@ import { GroupAnalytics } from './views/GroupAnalytics'
 import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
+import { StaffAccessPanel } from './views/api/StaffAccessPanel'
+
+import { AssistantWidget } from './components/AssistantWidget'
 import { LoginScreen } from './components/LoginScreen'
 
-const SCREENS: Record<View, () => ReactElement> = {
+const SCREENS: Record<Exclude<View, 'tablero'>, () => ReactElement> = {
   dashboard: Dashboard,
   analitica: GroupAnalytics,
   calendario: Calendar,
@@ -57,16 +60,21 @@ function Logo() {
 }
 
 export function Shell() {
-  const { role, view, setRole, navigate, reset, toastMsg } = useGistar()
+  const { role, view, setRole, navigate, canLeave, reset, toastMsg } = useGistar()
   const session = useApiSession()
+  const [staffPanelUser, setStaffPanelUser] = useState<string | null>(null)
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
   const source = dataSourceFor(view, API_MODE, role)
-  const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
+  const Screen = (source === 'api' ? API_SCREENS[view] : view === 'tablero' ? undefined : SCREENS[view]) ?? Dashboard
 
   // In API mode the role is never free: it comes from the server-side assignments of the session.
   useEffect(() => {
     if (allowedRoles && !allowedRoles.includes(role)) setRole(allowedRoles[0])
   }, [allowedRoles, role, setRole])
+
+  useEffect(() => {
+    if (!session.me) setStaffPanelUser(null)
+  }, [session.me])
 
   if (API_MODE && session.loading) return <p className="p-10 text-sm text-muted">Conectando con la API…</p>
   if (API_MODE && !session.me) return <LoginScreen />
@@ -128,8 +136,11 @@ export function Shell() {
                 </option>
               ))}
             </select>
+            {API_MODE && session.me?.person_id === null && (
+              <Button variant="ghost" aria-haspopup="dialog" onClick={() => setStaffPanelUser(session.me?.id ?? null)}>Personal</Button>
+            )}
             {allowedRoles && (
-              <Button variant="ghost" onClick={session.logout} aria-label="Cerrar sesión">
+              <Button variant="ghost" onClick={() => { if (canLeave()) void session.logout() }} aria-label="Cerrar sesión">
                 <LogOut className="size-4" aria-hidden />
                 <span className="hidden sm:inline">Salir</span>
               </Button>
@@ -156,10 +167,18 @@ export function Shell() {
         </main>
       </div>
 
+      {API_MODE && session.me?.person_id === null && staffPanelUser === session.me.id && (
+        <StaffAccessPanel key={session.me.id} me={session.me} onClose={() => setStaffPanelUser(null)} />
+      )}
+
+      {API_MODE && session.me && allowedRoles?.includes(role) && canOpen(role, 'asistente') && (
+        <AssistantWidget key={JSON.stringify([session.me.id, role, session.me.roles.map(r => JSON.stringify([r.role, r.scope_id])).sort(), session.me.enrollments.map(e => JSON.stringify(e)).sort()])} />
+      )}
+
       <div
         role="status"
         aria-live="polite"
-        className={`fixed bottom-6 right-6 z-50 rounded-xl bg-navy px-5 py-3.5 text-sm text-white shadow-[0_12px_32px_rgba(24,45,66,0.3)] motion-safe:transition-[opacity,transform] motion-safe:duration-200 ${
+        className={`fixed bottom-24 right-6 z-50 rounded-xl bg-navy px-5 py-3.5 text-sm text-white shadow-[0_12px_32px_rgba(24,45,66,0.3)] motion-safe:transition-[opacity,transform] motion-safe:duration-200 ${
           toastMsg ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
         }`}
       >

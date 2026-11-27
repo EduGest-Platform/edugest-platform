@@ -43,3 +43,123 @@ def test_staff_request_listing_is_own_profile_only(client, db):
     assert [r['id'] for r in client.get('/api/v1/staff/access-requests', headers=one).json()['items']] == [first['id']]
     assert [r['id'] for r in client.get('/api/v1/staff/access-requests', headers=two).json()['items']] == [second['id']]
     assert client.get('/api/v1/staff/access-requests', headers=login(client, ADMIN)).json()['total'] == 2
+
+
+def test_admin_queue_filters_pending_and_shows_requester_name(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    approved = request(client, owner)
+    pending = request(client, owner)
+    admin = login(client, ADMIN)
+    path = '/api/v1/staff/access-requests'
+    assert client.post(path + '/' + approved['id'] + '/review', headers=admin, json={'approved': True}).status_code == 200
+    response = client.get(path, headers=admin, params={'pending_only': True, 'limit': 1})
+    assert response.status_code == 200
+    [item] = response.json()['items']
+    assert response.json()['total'] == 1 and item['id'] == pending['id']
+    assert item['requested_by_name'] == client.get('/api/v1/auth/me', headers=owner).json()['display_name']
+
+
+def test_pending_filter_preserves_own_profile_boundary(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    other = active_profile(client, db, CAPT_IA)
+    approved = request(client, owner)
+    pending = request(client, owner)
+    request(client, other)
+    path = '/api/v1/staff/access-requests'
+    admin = login(client, ADMIN)
+    reviewed = client.post(path + '/' + approved['id'] + '/review', headers=admin, json={'approved': True})
+    assert reviewed.status_code == 200
+    name = client.get('/api/v1/auth/me', headers=owner).json()['display_name']
+    assert pending['requested_by_name'] == name
+    assert reviewed.json()['requested_by_name'] == name
+    response = client.get(path, headers=owner, params={'pending_only': True})
+    assert response.status_code == 200
+    assert response.json()['total'] == 1
+    assert [item['id'] for item in response.json()['items']] == [pending['id']]
+    response = client.get(path, headers=owner)
+    assert response.status_code == 200
+    assert response.json()['total'] == 2
+    assert [item['id'] for item in response.json()['items']] == [pending['id'], approved['id']]
+
+
+def test_approved_queue_supports_explicit_application_and_owner_followup(client, db):
+    path = '/api/v1/staff/access-requests'
+    owner = active_profile(client, db, SEL_IA)
+    other = active_profile(client, db, CAPT_IA)
+    admin = login(client, ADMIN)
+    pending, approved = request(client, other), request(client, owner)
+    target = f"{path}/{approved['id']}"
+    reviewed = client.post(f'{target}/review', headers=admin, json={'approved': True})
+    assert reviewed.status_code == 200
+    assert reviewed.json()['applied_assignment_id'] is None
+
+    def filtered(who, **params):
+        response = client.get(path, params=params, headers=who)
+        assert response.status_code == 200
+        return response.json()['items']
+
+    assert [row['id'] for row in filtered(admin, state='approved', limit=1)] == [approved['id']]
+    assert [row['id'] for row in filtered(admin, pending_only=True, state='approved')] == [pending['id']]
+    assert filtered(other, state='approved') == []
+    assert client.get(f'{target}/application-preview', headers=owner).status_code == 403
+    assert client.get(f'{target}/application', headers=other).status_code == 404
+    assert client.get(f'{target}/application', headers=owner).json()['assignment_active'] is None
+
+    preview = client.get(f'{target}/application-preview', headers=admin).json()
+    assert preview['can_apply'] is True
+    applied = client.post(f'{target}/apply', headers=admin, json={**preview['requested'], 'confirm': True})
+    assert applied.status_code == 200
+    assert applied.json()['assignment_active'] is True
+    assert filtered(admin, state='approved') == []
+    assert client.get(f'{target}/application', headers=owner).json() == applied.json()
+
+
+def test_rejected_request_cannot_be_applied_or_reviewed_again(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    admin = login(client, ADMIN)
+    row = request(client, owner)
+    target = '/api/v1/staff/access-requests/' + row['id']
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    rejected = client.post(f'{target}/review', headers=admin, json={'approved': False})
+    assert rejected.status_code == 200
+    assert rejected.json()['state'] == 'rejected'
+    assert rejected.json()['applied_assignment_id'] is None
+    assert client.post(f'{target}/review', headers=admin, json={'approved': True}).status_code == 409
+    response = client.post(f'{target}/apply', headers=admin, json={
+        'requested_role': 'docente', 'scope_type': 'cohort', 'scope_id': 'COH-IA', 'confirm': True})
+    assert response.status_code == 409
+    listed = client.get('/api/v1/staff/access-requests', headers=owner, params={'state': 'rejected'})
+    assert listed.status_code == 200
+    assert [item['id'] for item in listed.json()['items']] == [row['id']]
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
+
+
+def test_approved_application_requires_admin_and_exact_scope(client, db):
+    owner = active_profile(client, db, SEL_IA)
+    other = active_profile(client, db, CAPT_IA)
+    admin = login(client, ADMIN)
+    row = request(client, owner)
+    target = '/api/v1/staff/access-requests/' + row['id']
+    assert client.post(f'{target}/review', headers=admin, json={'approved': True}).status_code == 200
+    preview = client.get(f'{target}/application-preview', headers=admin).json()
+    assert preview['can_apply'] is True
+    confirmation = {**preview['requested'], 'confirm': True}
+    before = db.scalar(select(func.count()).select_from(RoleAssignment))
+    for actor in (owner, other):
+        assert client.post(f'{target}/apply', headers=actor, json=confirmation).status_code == 403
+    mismatch = client.post(f'{target}/apply', headers=admin, json={**confirmation, 'scope_id': 'COH-DATA'})
+    assert mismatch.status_code == 409
+    assert mismatch.json()['code'] == 'access_confirmation_mismatch'
+    current = client.get(f'{target}/application', headers=owner).json()
+    assert current['request_state'] == 'approved'
+    assert current['assignment_id'] is None
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before
+
+    applied = client.post(f'{target}/apply', headers=admin, json=confirmation)
+    assert applied.status_code == 200
+    assert applied.json()['assignment_active'] is True
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before + 1
+    repeated = client.post(f'{target}/apply', headers=admin, json=confirmation)
+    assert repeated.status_code == 200
+    assert repeated.json() == applied.json()
+    assert db.scalar(select(func.count()).select_from(RoleAssignment)) == before + 1
