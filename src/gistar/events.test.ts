@@ -60,3 +60,16 @@ it('filters inclusive date overlaps and rejects inverted ranges', () => {
   expect(overlapsEventDates(item, '', '2026-11-25')).toBe(false)
   expect(overlapsEventDates(item, '2026-11-28', '2026-11-26')).toBe(false)
 })
+
+
+it('combines upcoming, search and date overlap without including cancelled events', () => {
+  const items = [
+    event('match', { titulo: 'Orientación IA', fin: '2026-11-28T12:00' }),
+    event('cancelled', { titulo: 'Orientación IA', estado: 'cancelado' }),
+    event('other', { titulo: 'Otro taller' }),
+  ]
+  const visible = filterEvents(items, now, 'orientacion', 'taller', true)
+    .filter(item => overlapsEventDates(item, '2026-11-27', '2026-11-27'))
+  expect(visible.map(item => item.id)).toEqual(['match'])
+  expect(overlapsEventDates(items[0], '', '')).toBe(true)
+})
