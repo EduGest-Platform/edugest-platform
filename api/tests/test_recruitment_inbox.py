@@ -42,3 +42,48 @@ def test_inbox_limits_scope_and_filters_the_latest_action(client, db):
                            json={"decision": "convocada", "reason": "Synthetic human handoff"})
     assert decision.status_code == 201, decision.text
     assert client.get(URL, headers=ia).json() == {"items": [], "total": 0}
+
+
+def test_inbox_pagination_preserves_scope_and_total(client, db):
+    ia, data = login(client, CAPT_IA), login(client, CAPT_DATA)
+    own = []
+    for index, days in enumerate((0, 1, 2)):
+        application = create_application(client, "CONV-IA-2027A", f"page{index}@example.test")
+        own.append(application)
+        response = client.post(f"/api/v1/applications/{application}/events", headers=ia,
+                               json=contact(action(user_id(db, CAPT_IA), f"Page {index}", days)))
+        assert response.status_code == 201, response.text
+    foreign = create_application(client, "CONV-DATA-2027A", "page.foreign@example.test")
+    response = client.post(f"/api/v1/applications/{foreign}/events", headers=data,
+                           json=contact(action(user_id(db, CAPT_DATA), "Foreign page", 0)))
+    assert response.status_code == 201, response.text
+
+    other_owner = create_application(client, "CONV-IA-2027A", "page.other-owner@example.test")
+    response = client.post(f"/api/v1/applications/{other_owner}/events", headers=ia,
+                           json=contact(action(user_id(db, SEL_IA), "Other owner", 0)))
+    assert response.status_code == 201, response.text
+
+    unfiltered = client.get(URL, headers=ia, params={"limit": 10})
+    assert unfiltered.status_code == 200, unfiltered.text
+    assert unfiltered.json()["total"] == 4
+    assert {item["application_id"] for item in unfiltered.json()["items"]} == set(own + [other_owner])
+
+    seen = []
+    for offset in range(4):
+        response = client.get(URL, headers=ia, params={"limit": 1, "offset": offset, "mine": True})
+        assert response.status_code == 200, response.text
+        page = response.json()
+        assert page["total"] == 3
+        assert len(page["items"]) == (1 if offset < 3 else 0)
+        seen.extend(item["application_id"] for item in page["items"])
+    assert len(seen) == len(set(seen)) == 3
+    assert set(seen) == set(own)
+    assert foreign not in seen
+    assert other_owner not in seen
+
+
+def test_inbox_rejects_invalid_pagination(client):
+    headers = login(client, CAPT_IA)
+    for params in ({"limit": 0}, {"offset": -1}, {"limit": "invalid"}):
+        response = client.get(URL, headers=headers, params=params)
+        assert response.status_code == 422, response.text

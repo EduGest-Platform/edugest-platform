@@ -2,8 +2,8 @@
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0023"
-down_revision = "0022"
+revision = "0026_email_outbox"
+down_revision = "0025_merge_application_origin"
 branch_labels = None
 depends_on = None
 
