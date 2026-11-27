@@ -2065,6 +2065,25 @@
         "title": "CompetencyDistribution",
         "type": "object"
       },
+      "CompetencyLearner": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "display_name"
+        ],
+        "title": "CompetencyLearner",
+        "type": "object"
+      },
       "CompetencyOut": {
         "properties": {
           "codigo": {
@@ -2159,6 +2178,22 @@
           "items"
         ],
         "title": "CompetencyProgress",
+        "type": "object"
+      },
+      "CompetencyRoster": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyLearner"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CompetencyRoster",
         "type": "object"
       },
       "CompetencyWrite": {
@@ -10113,6 +10148,60 @@
           }
         ],
         "summary": "Elegir la versión publicada del árbol que usa una cohorte",
+        "tags": [
+          "competencies"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+      "get": {
+        "operationId": "get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "maxLength": 20,
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetencyRoster"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre el ámbito"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente",
         "tags": [
           "competencies"
         ]
