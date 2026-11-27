@@ -40,26 +40,30 @@ async function verifyContrast(selector, label) {
 }
 
 try {
+  await page.initScript('window.confirm = () => true')
   await page.goto(web)
+  if (!await page.waitText('Modo noche', 15000)) throw new Error('Appearance controls unavailable')
   if (await page.ev("document.documentElement.dataset.theme === 'dark'")) await page.click('Modo noche')
   for (const theme of ['light', 'dark']) {
     check(`${theme} theme active`, await page.ev(`document.documentElement.dataset.theme === '${theme}'`))
     if (!await page.nav('Rúbricas') || !await page.waitText('Nueva versión')) throw new Error('Rubric view unavailable')
     const primaryDefault = await verifyContrast(buttons.primary, `${theme} primary default`)
-    const clearPrimaryHover = await page.forceHover(buttons.primary)
+    const clearPrimaryHover = await page.hover(buttons.primary)
     await sleep(250)
     const primaryHover = await verifyContrast(buttons.primary, `${theme} primary hover`)
     check(`${theme} primary changes on hover`, primaryDefault !== primaryHover)
     await clearPrimaryHover()
+    await sleep(250)
     if (!await page.click('Duplicar') || !await page.waitText('Guardar borrador')) throw new Error('Rubric form unavailable')
     for (const variant of ['ghost', 'success', 'subtle']) {
       const selector = buttons[variant]
       const defaultBackground = await verifyContrast(selector, `${theme} ${variant} default`)
-      const clearHover = await page.forceHover(selector)
+      const clearHover = await page.hover(selector)
       await sleep(250)
       const hoverBackground = await verifyContrast(selector, `${theme} ${variant} hover`)
       check(`${theme} ${variant} changes on hover`, defaultBackground !== hoverBackground)
       await clearHover()
+      await sleep(250)
     }
     await page.ev(`document.querySelector('[role=dialog] [aria-label="Cerrar"]').focus()`)
     await page.tab()

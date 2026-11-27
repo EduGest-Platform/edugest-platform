@@ -93,3 +93,8 @@ html[data-theme="dark"] .bg-white { background-color: #1c293d; }
 html[data-theme="dark"] .bg-white\/90 { background-color: rgb(28 41 61 / 90%); }
 html[data-theme="dark"] .bg-white.text-navy { color: #edf2fa; }
 html[data-theme="dark"] :focus-visible { outline-color: #b8acf6; }
+
+@keyframes assistant-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

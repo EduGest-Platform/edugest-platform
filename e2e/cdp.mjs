@@ -132,15 +132,19 @@ export async function newBrowser() {
     click: (text, scope = 'document') =>
       ev(`(() => { const b = [...${scope}.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(${JSON.stringify(text)}) && !b.disabled); if (!b) return false; b.click(); return true })()`),
     nav: (label) => ev(`(() => { const b = [...document.querySelectorAll('nav[aria-label="Navegación principal"] button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true })()`),
-    forceHover: async selector => {
-      await send('DOM.enable', {}, s)
-      await send('CSS.enable', {}, s)
-      const { result: { root } } = await send('DOM.getDocument', {}, s)
-      const { result: { nodeId } } = await send('DOM.querySelector', { nodeId: root.nodeId, selector }, s)
-      if (!nodeId) throw new Error(`Could not find ${selector}`)
-      const result = await send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: ['hover'] }, s)
-      if (result.error) throw new Error(result.error.message)
-      return async () => { await send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [] }, s) }
+    hover: async selector => {
+      const point = await ev(`(() => {
+        const button = document.querySelector(${JSON.stringify(selector)})
+        if (!button) return null
+        button.scrollIntoView({ block: 'center' })
+        const bounds = button.getBoundingClientRect()
+        return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+      })()`)
+      if (!point) throw new Error(`Could not find ${selector}`)
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point }, s)
+      return async () => {
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 }, s)
+      }
     },
     rows: () => ev(`document.querySelectorAll('main tbody tr').length`),
     login: async (email) => {
