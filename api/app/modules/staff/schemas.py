@@ -68,6 +68,7 @@ class AccessRequestOut(BaseModel):
     scope_id: str | None
     state: str
     requested_by: uuid.UUID
+    requested_by_name: str | None = None
     requested_at: datetime
     reviewed_by: uuid.UUID | None
     reviewed_at: datetime | None
@@ -77,3 +78,15 @@ class AccessRequestOut(BaseModel):
 class AccessRequestList(BaseModel):
     items: list[AccessRequestOut]
     total: int
+
+
+class InvitationAccount(BaseModel):
+    user_id: uuid.UUID
+    display_name: str
+    profile_state: Literal['pending', 'active'] | None
+    latest_invitation: InvitationOut | None
+
+
+class InvitationDirectory(BaseModel):
+    items: list[InvitationAccount]
+    has_more: bool

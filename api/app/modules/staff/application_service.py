@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core import audit
 from app.core.authz import Scope
@@ -7,6 +7,7 @@ from app.modules.catalog.models import Call, Cohort, Program
 from app.modules.identity.models import RoleAssignment, User
 from app.modules.staff.application_policy import application_blockers, assignment_matches, request_tuple, require_matching_confirmation
 from app.modules.staff.application_schemas import AccessApplicationOut, AccessApplicationPreview
+from app.modules.staff.assignment_history import end_assignment
 from app.modules.staff.models import AccessChangeRequest, StaffProfile
 from app.modules.staff.policy import require_admin
 from app.modules.staff.schemas import AccessRequestCreate
@@ -118,7 +119,7 @@ def apply_access(db, actor, request_id, body):
     if blockers:
         raise UserFacingError(409, 'access_application_blocked', 'No se puede aplicar esta solicitud. Actualiza la previsualización y revisa sus bloqueos.')
     assignment = RoleAssignment(user_id=profile.user_id, role=row.requested_role,
-                                scope_type=row.scope_type, scope_id=row.scope_id)
+                                scope_type=row.scope_type, scope_id=row.scope_id, granted_by=actor.user.id)
     db.add(assignment)
     db.flush()
     row.state, row.applied_assignment_id = 'applied', assignment.id
@@ -126,3 +127,41 @@ def apply_access(db, actor, request_id, body):
                  assignment_id=str(assignment.id), role=row.requested_role, scope_type=row.scope_type, scope_id=row.scope_id)
     db.commit()
     return application_out(row, profile, assignment)
+
+
+def revoke_access(db, actor, request_id, body):
+    require_admin(actor)
+    # Recheck global authority after serializing revocations, including two admins acting on each other.
+    db.execute(select(func.pg_advisory_xact_lock(func.hashtext('staff.access_revocation'))))
+    admin_id = db.scalar(select(RoleAssignment.id).where(
+        RoleAssignment.user_id == actor.user.id, RoleAssignment.role == 'admin',
+        RoleAssignment.scope_type == 'global', RoleAssignment.revoked_at.is_(None),
+    ).limit(1))
+    if admin_id is None:
+        raise UserFacingError(403, 'access_revocation_permission', 'Se requiere una asignación activa de administración global.')
+    row, profile, _ = locked_application(db, actor, request_id)
+    require_matching_confirmation(row, body)
+    if profile.user_id == actor.user.id:
+        raise UserFacingError(403, 'access_self_revocation', 'Otra persona administradora debe revocar este acceso.')
+    if row.state not in ('applied', 'revoked') or row.applied_assignment_id != body.assignment_id:
+        raise UserFacingError(409, 'access_revocation_conflict', 'La asignación confirmada ya no corresponde a esta solicitud.')
+    assignment = db.scalar(lock_query(RoleAssignment, body.assignment_id))
+    if not assignment_matches(row, profile, assignment):
+        raise UserFacingError(409, 'access_assignment_mismatch', 'No podemos verificar la asignación vinculada.')
+    if row.state == 'revoked':
+        if assignment.revoked_at is None:
+            raise UserFacingError(409, 'access_assignment_mismatch', 'La asignación vinculada ya no coincide con la revocación.')
+        return application_out(row, profile, assignment)
+    if assignment.revoked_at is None and row.requested_role == 'docente' and row.scope_type == 'cohort':
+        another_teacher = db.scalar(select(RoleAssignment.id).where(
+            RoleAssignment.role == 'docente', RoleAssignment.scope_type == 'cohort', RoleAssignment.scope_id == row.scope_id,
+            RoleAssignment.id != assignment.id, RoleAssignment.revoked_at.is_(None),
+        ).limit(1))
+        if another_teacher is None:
+            raise UserFacingError(409, 'last_teacher', 'Añade a otra persona docente a la cohorte antes de retirar este permiso.')
+    end_assignment(db, assignment)
+    audit.record(db, actor, 'staff.access_revoked', 'access_change_request', str(row.id),
+                 assignment_id=str(assignment.id), role=row.requested_role, scope_type=row.scope_type, scope_id=row.scope_id)
+    result = application_out(row, profile, assignment)
+    db.commit()
+    return result

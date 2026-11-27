@@ -119,6 +119,11 @@ jobs:
           WEB_URL: http://localhost:8443/
           GISTAR_API: http://localhost:8000
         run: node e2e/learner-deliveries.mjs
+      - name: Staff invitation rotation and acceptance (KAN-232)
+        env:
+          WEB_URL: http://localhost:8443/
+        run: node e2e/staff-invitation-console.mjs
+
       - name: Assistant widget keyboard, streaming, and scope isolation
         env:
           WEB_URL: http://localhost:8443/

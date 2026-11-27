@@ -1360,6 +1360,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/access-requests/{request_id}/revoke-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revocar de forma explícita la asignación verificada de una solicitud aplicada */
+        post: operations["revoke_access_api_v1_staff_access_requests__request_id__revoke_access_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/invitation-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Buscar cuentas internas elegibles y consultar su última invitación sin revelar el código */
+        get: operations["invitation_accounts_api_v1_staff_invitation_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/invitations": {
         parameters: {
             query?: never;
@@ -1711,6 +1745,8 @@ export interface components {
              * Format: uuid
              */
             requested_by: string;
+            /** Requested By Name */
+            requested_by_name?: string | null;
             /** Requested Role */
             requested_role: string;
             /** Reviewed At */
@@ -1733,6 +1769,32 @@ export interface components {
         AccessReview: {
             /** Approved */
             approved: boolean;
+        };
+        /** AccessRevoke */
+        AccessRevoke: {
+            /**
+             * Assignment Id
+             * Format: uuid
+             * @description Assignment observed before administrative confirmation.
+             */
+            assignment_id: string;
+            /**
+             * Confirm
+             * @description Explicit administrative confirmation of the echoed role and scope.
+             */
+            confirm: boolean;
+            /**
+             * Requested Role
+             * @enum {string}
+             */
+            requested_role: "admin" | "captacion" | "seleccion" | "docente" | "coordinacion";
+            /** Scope Id */
+            scope_id?: string | null;
+            /**
+             * Scope Type
+             * @enum {string}
+             */
+            scope_type: "global" | "program" | "call" | "cohort";
         };
         /**
          * ApplicationCreate
@@ -3155,6 +3217,19 @@ export interface components {
              */
             token: string;
         };
+        /** InvitationAccount */
+        InvitationAccount: {
+            /** Display Name */
+            display_name: string;
+            latest_invitation: components["schemas"]["InvitationOut"] | null;
+            /** Profile State */
+            profile_state: ("pending" | "active") | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** InvitationCreate */
         InvitationCreate: {
             /**
@@ -3167,6 +3242,13 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
+        };
+        /** InvitationDirectory */
+        InvitationDirectory: {
+            /** Has More */
+            has_more: boolean;
+            /** Items */
+            items: components["schemas"]["InvitationAccount"][];
         };
         /** InvitationIssued */
         InvitationIssued: {
@@ -9098,6 +9180,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number;
+                pending_only?: boolean;
+                state?: ("requested" | "approved" | "rejected" | "applied" | "revoked") | null;
             };
             header?: never;
             path?: never;
@@ -9404,6 +9488,116 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    revoke_access_api_v1_staff_access_requests__request_id__revoke_access_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessRevoke"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessApplicationOut"];
+                };
+            };
+            /** @description Global administration required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Confirmation mismatch or revocation blocked */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    invitation_accounts_api_v1_staff_invitation_accounts_get: {
+        parameters: {
+            query?: {
+                search?: string;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationDirectory"];
+                };
+            };
+            /** @description Administración global requerida */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invitación no encontrada */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cuenta/ficha no elegible o invitación ya utilizada */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

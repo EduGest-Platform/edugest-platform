@@ -20,6 +20,8 @@ from app.core.errors import UserFacingError
 from app.modules.catalog.models import Cohort
 from app.modules.identity.models import RoleAssignment, User
 from app.modules.learning.access import require_cohort
+from app.modules.staff.assignment_history import end_assignment
+from app.modules.staff.models import AccessChangeRequest
 
 router = APIRouter(tags=["teaching-team"])
 
@@ -83,12 +85,18 @@ def add_teacher(user_id: uuid.UUID, p: CurrentPrincipal, db: DB, cohort_id: str 
     require_cohort(db, p, TEAM_MANAGE_PERMISSION, cohort_id)
     _lock_team(db, cohort_id)
     user = _staff_user(db, user_id)
-    row = db.scalar(select(RoleAssignment).where(RoleAssignment.user_id == user.id, RoleAssignment.role == TEACHER_ROLE,
-                                                 RoleAssignment.scope_type == "cohort", RoleAssignment.scope_id == cohort_id))
-    if row is None:
-        db.add(RoleAssignment(user_id=user.id, role=TEACHER_ROLE, scope_type="cohort", scope_id=cohort_id, granted_by=p.user.id))
-    elif row.revoked_at is not None:
-        row.revoked_at, row.granted_by, row.created_at = None, p.user.id, utcnow()
+    query = select(RoleAssignment).where(RoleAssignment.user_id == user.id, RoleAssignment.role == TEACHER_ROLE,
+                                         RoleAssignment.scope_type == "cohort", RoleAssignment.scope_id == cohort_id)
+    active = db.scalar(query.where(RoleAssignment.revoked_at.is_(None)))
+    if active is None:
+        # Plain team assignments can be reactivated. A staff request keeps its own immutable grant history.
+        reusable = db.scalar(query.where(~select(AccessChangeRequest.id).where(
+            AccessChangeRequest.applied_assignment_id == RoleAssignment.id,
+        ).exists()).order_by(RoleAssignment.created_at.desc(), RoleAssignment.id).limit(1))
+        if reusable is None:
+            db.add(RoleAssignment(user_id=user.id, role=TEACHER_ROLE, scope_type="cohort", scope_id=cohort_id, granted_by=p.user.id))
+        else:
+            reusable.revoked_at, reusable.granted_by, reusable.created_at = None, p.user.id, utcnow()
     audit.record(db, p, "cohort.teacher_added", "cohort", cohort_id, user_id=str(user.id))
     db.commit()
     return _team(db, cohort_id)
@@ -105,7 +113,7 @@ def remove_teacher(user_id: uuid.UUID, p: CurrentPrincipal, db: DB, cohort_id: s
         raise UserFacingError(status.HTTP_404_NOT_FOUND, "not_in_team", "Esta persona no forma parte del equipo docente de la cohorte.")
     if len(active) == 1:
         raise UserFacingError(status.HTTP_409_CONFLICT, "last_teacher", "Es la única persona docente de la cohorte. Añade a otra antes de quitarla.")
-    row.revoked_at = utcnow()
+    end_assignment(db, row)
     audit.record(db, p, "cohort.teacher_removed", "cohort", cohort_id, user_id=str(user_id))
     db.commit()
     return _team(db, cohort_id)
