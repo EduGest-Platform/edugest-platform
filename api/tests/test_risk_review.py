@@ -33,7 +33,9 @@ def test_human_review_has_a_history_and_never_changes_enrollment(client, db):
     stale = client.post(path + "/interventions", headers=teacher,
                         json={"kind": "closure", "note": note, "expected_state": "pending"})
     assert stale.status_code == 409
-    after_stale = client.get(path, headers=teacher).json()
+    after_stale_response = client.get(path, headers=teacher)
+    assert after_stale_response.status_code == 200
+    after_stale = after_stale_response.json()
     assert after_stale['alert']['review_state'] == 'in_review'
     assert [row['kind'] for row in after_stale['interventions']] == ['support']
     closed = client.post(path + "/interventions", headers=teacher,
