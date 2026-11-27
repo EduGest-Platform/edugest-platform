@@ -11,7 +11,7 @@ describe('dataSourceFor (KAN-89)', () => {
   })
 
   it('uses the API only for migrated views in API mode', () => {
-    const apiViews = ALL_VIEWS.filter((view) => ['coder', 'coordinacion'].some((role) => dataSourceFor(view, true, role) === 'api'))
+    const apiViews = ALL_VIEWS.filter((view) => ['coder', 'coordinacion', 'docente'].some((role) => dataSourceFor(view, true, role) === 'api'))
     expect(apiViews.sort()).toEqual([...API_VIEWS].sort())
   })
 

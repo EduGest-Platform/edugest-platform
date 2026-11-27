@@ -1,4 +1,4 @@
-import { BookOpen, CloudOff, LogOut, RotateCcw } from 'lucide-react'
+import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, type ReactElement } from 'react'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
@@ -21,6 +21,7 @@ import { Assistant } from './views/Assistant'
 import { AuditTrail, Coordination, Programs } from './views/Admin'
 import { API_SCREENS } from './apiScreens'
 import { LoginScreen } from './components/LoginScreen'
+import { UserManualLink } from './components/UserManualLink'
 
 const SCREENS: Record<View, () => ReactElement> = {
   dashboard: Dashboard,
@@ -111,11 +112,7 @@ export function Shell() {
             <span className="text-[15px] font-semibold text-ink">Acompañamos cada trayectoria de aprendizaje</span>
             <span className="rounded-md bg-[#d2caff] px-2 py-0.5 text-[11px] font-bold tracking-wide text-[#09152b]">DEMO · Datos sintéticos</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a href={`${import.meta.env.BASE_URL}user-manual.html`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-slate-100 focus-visible:outline focus-visible:outline-2" aria-label="Manual de usuario (abre en otra pestaña)">
-              <BookOpen className="size-4" aria-hidden />
-              Manual de usuario
-            </a>
+          <div className="flex items-center gap-2">
             {allowedRoles && session.me && (
               <span className="mr-1 hidden whitespace-nowrap border-r border-line pr-3 text-right text-xs leading-tight text-muted lg:block">
                 <b className="block text-sm font-semibold text-ink">{session.me.display_name}</b>
@@ -152,6 +149,7 @@ export function Shell() {
             </p>
           )}
           <Screen />
+          <div className="mt-6"><UserManualLink /></div>
           <p className="mt-10 border-t border-line pt-5 text-xs text-muted">
             {API_MODE
               ? 'Modo servidor: autenticación, permisos por rol y ámbito, inscripción, expedientes, auditoría y consultas documentales los gestiona la API. Datos sintéticos; asistente extractivo con citas, sin decisiones automáticas.'
