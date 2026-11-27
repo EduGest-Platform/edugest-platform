@@ -73,6 +73,42 @@ try {
   requireCheck('Data totals replace IA totals', await waitFor(page, stageCount('enviada', '21'))
     && await waitFor(page, stageCount('convocada', '6'))
     && !(await page.ev(stageCount('enviada', '16'))))
+  // KAN-275: a manual registration must refresh the totals on screen. Needs a freshly seeded database.
+  const total = (count) => `[...document.querySelectorAll('main .tabular-nums')]
+    .some(value => value.previousElementSibling?.textContent === 'Candidaturas totales' && value.textContent === '${count}')`
+  requireCheck('IA programme can be selected again', await page.set('#coordination-program', 'P-IA'))
+  requireCheck('Open IA call can be selected', await page.set('#coordination-call', 'CONV-IA-2027A'))
+  requireCheck('Totals before the manual registration', await waitFor(page, total(50)))
+  requireCheck('Open the manual intake form', await page.click('Registrar candidatura'))
+  requireCheck('Calls load in the form', await waitFor(page, "document.querySelectorAll('#manual-call option').length > 1"))
+  requireCheck('Choose call and origin', await page.set('#manual-call', 'CONV-IA-2027A') && await page.set('#manual-origin', 'telefono'))
+  requireCheck('Type synthetic data', await page.set('#manual-name', 'Persona Sintética Manual')
+    && await page.set('#manual-email', `manual.${Date.now()}@example.test`)
+    && await page.set('#manual-motivation', 'Solicitud sintética registrada por teléfono'))
+  await page.ev("document.querySelector('#manual-call').closest('form').querySelector('input[type=checkbox]').click()")
+  const email = await page.ev("document.querySelector('#manual-email').value")
+  const locked = "document.querySelector('#manual-name').closest('fieldset').disabled"
+  await page.networkLatency(1500)
+  requireCheck('Submit the manual registration', await page.click('Registrar'))
+  requireCheck('The form is locked while the request is pending', await waitFor(page, locked))
+  await page.networkLatency(0)
+  requireCheck('The new code is shown', await page.waitText('Candidatura registrada con el código'))
+  requireCheck('Totals refresh without reloading the page', await waitFor(page, total(51)))
+  requireCheck('The form is cleared and unlocked', await waitFor(page,
+    `document.querySelector('#manual-name').value === '' && !${locked}`))
+
+  // The same email on the same call is refused: the draft stays, the form unlocks and focus reaches the reason.
+  await page.set('#manual-origin', 'telefono')
+  await page.set('#manual-name', 'Persona Sintética Repetida')
+  await page.set('#manual-email', email)
+  await page.set('#manual-motivation', 'Segunda solicitud sintética con el mismo correo')
+  await page.ev("document.querySelector('#manual-call').closest('form').querySelector('input[type=checkbox]').click()")
+  requireCheck('Submit the repeated application', await page.click('Registrar'))
+  requireCheck('The refusal is announced', await page.waitText('Ya existe una candidatura'))
+  requireCheck('A refusal keeps the draft and unlocks the form', await waitFor(page,
+    `document.querySelector('#manual-name').value === 'Persona Sintética Repetida' && !${locked}`))
+  requireCheck('Focus moves to the result', await waitFor(page, "document.activeElement?.matches('[data-intake-result]')"))
+  requireCheck('A refusal does not change the totals', await page.ev(total(51)))
   requireCheck('No uncaught browser exceptions', errors.length === 0)
 } catch (error) {
   check('Coordination dashboard journey completes', false, error instanceof Error ? error.message : 'Unknown error')

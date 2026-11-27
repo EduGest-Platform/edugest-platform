@@ -29,6 +29,7 @@ erDiagram
         UUID id PK
         UUID person_id FK
         VARCHAR call_id FK
+        UUID created_by FK
     }
     application_event {
         UUID id PK
@@ -154,6 +155,9 @@ erDiagram
     person {
         UUID id PK
     }
+    portfolio_link {
+        UUID enrollment_id PK,FK
+    }
     preselection_decision {
         UUID id PK
         UUID application_id FK
@@ -183,6 +187,13 @@ erDiagram
         UUID id PK
         UUID user_id FK
         UUID granted_by FK
+    }
+    selection_appointment {
+        UUID id PK
+        UUID application_id FK
+        UUID previous_id FK
+        UUID created_by FK
+        UUID recorded_by FK
     }
     selection_approval {
         UUID id PK
@@ -227,6 +238,7 @@ erDiagram
     staff_profile ||--o{ access_change_request : staff_profile_id
     person |o--o| app_user : person_id
     call ||--o{ application : call_id
+    app_user |o--o{ application : created_by
     person ||--o{ application : person_id
     app_user |o--o{ application_event : actor_user_id
     application ||--o{ application_event : application_id
@@ -282,6 +294,7 @@ erDiagram
     app_user ||--o{ intervention : actor_user_id
     risk_alert ||--o{ intervention : alert_id
     knowledge_document ||--o{ knowledge_chunk : document_id
+    enrollment ||--o| portfolio_link : enrollment_id
     app_user ||--o{ preselection_decision : actor_user_id
     application ||--o{ preselection_decision : application_id
     application ||--o{ requirement_review : application_id
@@ -294,6 +307,10 @@ erDiagram
     enrollment ||--o{ risk_alert : enrollment_id
     app_user |o--o{ role_assignment : granted_by
     app_user ||--o{ role_assignment : user_id
+    application ||--o{ selection_appointment : application_id
+    app_user ||--o{ selection_appointment : created_by
+    selection_appointment |o--o| selection_appointment : previous_id
+    app_user |o--o{ selection_appointment : recorded_by
     app_user ||--o{ selection_approval : actor_user_id
     application ||--o{ selection_approval : application_id
     cohort |o--o{ selection_approval : cohort_id
@@ -325,6 +342,7 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | access_change_request | requested_role | ck_access_request_role | `["admin", "captacion", "seleccion", "docente", "coordinacion"]` |
 | access_change_request | scope_type | ck_access_request_scope | `["global", "program", "call", "cohort"]` |
 | access_change_request | state | ck_access_request_state | `["requested", "approved", "rejected", "applied", "revoked"]` |
+| application | origin_channel | ck_application_origin_channel | `["formulario", "correo", "telefono", "derivacion", "registro_manual", "redes"]` |
 | application | stage | ck_application_stage | `["enviada", "requisitos_en_revision", "convocada", "evaluacion_en_curso", "pendiente_decision_humana", "admitida", "lista_espera", "no_admitida", "retirada"]` |
 | application_event | tipo | ck_application_event_tipo | `["creada", "contacto", "nota", "recordatorio", "cambio_etapa"]` |
 | assignment | status | ck_assignment_status | `["draft", "published"]` |
@@ -349,6 +367,8 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | risk_alert | review_state | ck_risk_alert_review_state | `["pending", "in_review", "closed"]` |
 | role_assignment | role | ck_role_assignment_role | `["admin", "captacion", "seleccion", "docente", "coordinacion"]` |
 | role_assignment | scope_type | ck_role_assignment_scope_type | `["global", "program", "call", "cohort"]` |
+| selection_appointment | kind | ck_selection_appointment_kind | `["group_day", "individual_interview"]` |
+| selection_appointment | state | ck_selection_appointment_state | `["scheduled", "attended", "no_show", "rescheduled"]` |
 | selection_approval | decision | ck_selection_approval_decision | `["admitida", "lista_espera", "no_admitida"]` |
 | selection_decision | decision | ck_selection_decision_decision | `["admitida", "lista_espera", "no_admitida"]` |
 | simulated_reminder | kind | ck_simulated_reminder_kind | `["documentation", "exercises"]` |
@@ -429,12 +449,20 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 | motivacion | TEXT | no | — | — |
 | disponibilidad | VARCHAR(20) | no | — | — |
 | acepta_datos_sinteticos | BOOLEAN | no | — | — |
+| origin_channel | VARCHAR(20) | no | — | server: formulario; application (not evaluated / sin evaluar) |
+| created_by | UUID | sí / yes | app_user.id | — |
 | created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
 | updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_application_manual_author`: `origin_channel = 'formulario' OR created_by IS NOT NULL`
+
+- CHECK `ck_application_origin_channel`: `origin_channel IN ('formulario', 'correo', 'telefono', 'derivacion', 'registro_manual', 'redes')`
 
 - CHECK `ck_application_stage`: `stage IN ('enviada', 'requisitos_en_revision', 'convocada', 'evaluacion_en_curso', 'pendiente_decision_humana', 'admitida', 'lista_espera', 'no_admitida', 'retirada')`
 
 - FK `unnamed`: `(call_id) -> (call.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
 
 - FK `unnamed`: `(person_id) -> (person.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
 
@@ -1107,6 +1135,16 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - INDEX `ix_person_email`: `person.email`
 
+### portfolio_link
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| enrollment_id | UUID | no | enrollment.id | — |
+| url | VARCHAR(160) | no | — | — |
+| updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- FK `unnamed`: `(enrollment_id) -> (enrollment.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
 ### preselection_decision
 
 | Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
@@ -1273,6 +1311,46 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - UNIQUE `uq_role_assignment`: `user_id, role, scope_type, scope_id`
 
 - INDEX `ix_role_assignment_user_id`: `role_assignment.user_id`
+
+### selection_appointment
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| id | UUID | no | — | application (not evaluated / sin evaluar) |
+| application_id | UUID | no | application.id | — |
+| previous_id | UUID | sí / yes | selection_appointment.id | — |
+| kind | VARCHAR(24) | no | — | — |
+| state | VARCHAR(12) | no | — | application (not evaluated / sin evaluar) |
+| scheduled_at | TIMESTAMP WITH TIME ZONE | no | — | — |
+| location | VARCHAR(250) | sí / yes | — | — |
+| created_by | UUID | no | app_user.id | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+| recorded_by | UUID | sí / yes | app_user.id | — |
+| recorded_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+| conclusions | VARCHAR(1000) | sí / yes | — | — |
+| assessment | VARCHAR(500) | sí / yes | — | — |
+
+- CHECK `ck_selection_appointment_kind`: `kind IN ('group_day', 'individual_interview')`
+
+- CHECK `ck_selection_appointment_notes`: `state = 'attended' OR (conclusions IS NULL AND assessment IS NULL)`
+
+- CHECK `ck_selection_appointment_recorded`: `num_nonnulls(recorded_at, recorded_by) = CASE WHEN state IN ('attended', 'no_show') THEN 2 ELSE 0 END`
+
+- CHECK `ck_selection_appointment_state`: `state IN ('scheduled', 'attended', 'no_show', 'rescheduled')`
+
+- FK `unnamed`: `(application_id) -> (application.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(previous_id) -> (selection_appointment.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(recorded_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `unnamed`: `previous_id`
+
+- INDEX `ix_selection_appointment_application_id`: `selection_appointment.application_id`
+
+- UNIQUE INDEX `uq_selection_appointment_scheduled_kind`: `selection_appointment.application_id, selection_appointment.kind` WHERE `state = 'scheduled'`
 
 ### selection_approval
 

@@ -49,7 +49,7 @@ Reglas (implementadas en F1 salvo indicación):
 
 - Sesión con **token opaco** (`secrets.token_urlsafe`), solo se guarda su SHA-256, caduca (8 h) y se revoca por sesión (ADR-0003). Contraseñas `scrypt`.
 - `Principal.can(permiso, Scope(program, call, cohort))` en cada endpoint; los listados filtran en SQL por los ámbitos concedidos.
-- Permisos F1: `admin` = todo; `captacion`/`seleccion` = `applications.read`, `applications.crm`, `calls.aggregate`; `coordinacion` = `calls.aggregate`; `docente` = ninguno en admisión (académicos en F3).
+- Permisos F1: `admin` = todo; `captacion`/`seleccion` = `applications.read`, `applications.crm`, `calls.aggregate`; `coordinacion` = `calls.aggregate`; `docente` = ninguno en admisión (académicos en F3). KAN-275 añade `applications.create` a `seleccion` y `coordinacion`: dar altas, sin leer expedientes.
 - Minimización: el recibo de inscripción no devuelve datos personales; la persona aspirante solo ve `ApplicationSelfView` (sin notas internas); Coordinación recibe agregados con supresión (N < 5 o celdas < 3).
 
 ## Contratos API
@@ -61,6 +61,7 @@ Reglas (implementadas en F1 salvo indicación):
 | `GET /api/v1/calls/{id}/summary` | `calls.aggregate` en ámbito | **F1** |
 | `POST /api/v1/applications` | público / aspirante | **F1** |
 | `GET /api/v1/applications` · `GET /applications/{id}` | `applications.read` en ámbito | **F1** |
+| `GET /api/v1/manual-intake/calls` · `POST /manual-intake/applications` | `applications.create` en ámbito | **KAN-275** |
 | `POST /api/v1/applications/{id}/events` | `applications.crm` en ámbito | **F1** |
 | `GET /api/v1/me/applications` | la propia persona | **F1** |
 | `GET /api/v1/audit-events` | admin | **F1** |

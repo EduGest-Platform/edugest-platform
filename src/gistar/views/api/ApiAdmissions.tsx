@@ -10,11 +10,14 @@ import { AccessDenied } from '../../components/AccessDenied'
 import { Modal } from '../../components/Modal'
 import { ServerDiscussions } from './ServerDiscussions'
 import { ServerIdentityReview } from './ServerIdentityReview'
+import { ServerManualIntake } from './ServerManualIntake'
+import { ORIGIN_LABELS } from '../../manualIntake'
 import { ServerRequirementReview } from './ServerRequirementReview'
 import { RecruitmentInbox } from './RecruitmentInbox'
 import { RecruitmentReminders } from './RecruitmentReminders'
 import { ServerSilenceReview } from './ServerSilenceReview'
 import { ServerSelection } from './ServerSelection'
+import { SelectionAppointments } from './SelectionAppointments'
 import { inscriptionTarget } from './inscriptionTarget'
 import { NextActionFields, NextActionSummary, useCrmOwners } from './ServerNextAction'
 import { emptyNextAction, nextActionProblem, nextActionState, teamToday } from '../../nextAction'
@@ -288,6 +291,8 @@ export function ApiApplications() {
   const [denied, setDenied] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState<string | null>(null)
+  // Grows after a manual registration; the list then reloads with whatever filters are on screen at that moment.
+  const [registrations, setRegistrations] = useState(0)
   const activeRequest = useRef<AbortController | null>(null)
 
   const load = useCallback(async () => {
@@ -314,7 +319,7 @@ export function ApiApplications() {
         setLoadError('No se pudo conectar con el servidor. Usa Actualizar para volver a intentar.')
       }
     }
-  }, [callId, stage, q])
+  }, [callId, stage, q, registrations])
 
   useEffect(() => {
     const timer = setTimeout(load, 250)
@@ -336,7 +341,10 @@ export function ApiApplications() {
 
   return (
     <>
-      <PageTitle title="Candidaturas" sub="Expedientes únicos con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
+      <PageTitle title="Candidaturas" sub="Expedientes con historial CRM. Solo ves las convocatorias de tu ámbito: lo filtra la API." />
+      <div className="mb-5 empty:hidden">
+        <ServerManualIntake onRegistered={() => setRegistrations((value) => value + 1)} />
+      </div>
       <Card
         title="Expedientes"
         action={
@@ -416,6 +424,7 @@ export function ApiApplications() {
 
 function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () => void; onChanged: () => void }) {
   const [selectionDirty, setSelectionDirty] = useState(false)
+  const [appointmentsDirty, setAppointmentsDirty] = useState(false)
   const [discussionDirty, setDiscussionDirty] = useState(false)
   const [identityDirty, setIdentityDirty] = useState(false)
   const { role, toast } = useGistar()
@@ -475,7 +484,7 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
       open
       size="lg"
       onClose={onClose}
-      dirty={!!ev.resumen.trim() || nextActionState(nextAction) !== 'empty' || selectionDirty || discussionDirty || identityDirty}
+      dirty={!!ev.resumen.trim() || nextActionState(nextAction) !== 'empty' || selectionDirty || appointmentsDirty || discussionDirty || identityDirty}
       title={d ? `${d.person.display_name} · ${d.codigo}` : 'Expediente'}
       subtitle={d ? `${d.call_id} · ${d.person.email}` : undefined}
       footer={(requestClose) => <Button onClick={requestClose}>Cerrar</Button>}
@@ -501,10 +510,15 @@ function ApplicationFile({ id, onClose, onChanged }: { id: string; onClose: () =
             <p>
               <span className="text-muted">Disponibilidad:</span> {d.disponibilidad}
             </p>
+            <p>
+              <span className="text-muted">Canal de origen:</span> {ORIGIN_LABELS[d.origin_channel]}
+              {d.registered_by && ` · registrada por ${d.registered_by}`}
+            </p>
             <ServerIdentityReview key={`identity:${d.id}`} applicationId={d.id} onDirty={setIdentityDirty} onResolved={() => { void load(); onChanged() }} />
             {role === 'fundacion' && <RecruitmentReminders key={id} applicationId={id}
               canSimulate={d.stage === 'enviada' || d.stage === 'requisitos_en_revision'} />}
             <ServerRequirementReview key={`${d.id}:${d.call_id}`} applicationId={d.id} callId={d.call_id} />
+            <SelectionAppointments key={`appointments:${d.id}`} applicationId={d.id} onDirty={setAppointmentsDirty} />
             <ServerSelection applicationId={d.id} callId={d.call_id} onDirty={setSelectionDirty} onChanged={() => { void load(); onChanged() }} />
             <ServerDiscussions key={d.id} applicationId={d.id} onDirty={setDiscussionDirty} />
           </section>

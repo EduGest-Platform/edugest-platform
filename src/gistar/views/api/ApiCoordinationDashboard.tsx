@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { humanize } from '../../config'
 import { Button, Card, Empty, Field, Kpi, Notice, PageTitle, inputCls } from '../../ui'
+import { ServerManualIntake } from './ServerManualIntake'
 
 type Call = Schemas['CallOut']
 type CallSummary = Schemas['CallSummaryOut']
 type LoadState<T> = { status: 'loading' } | { status: 'ready'; data: T } | { status: 'error'; message: string }
 
-function CoordinationSummary({ call }: { call: Call }) {
+/** `revision` grows after a manual registration, so the totals are asked for again. */
+function CoordinationSummary({ call, revision }: { call: Call; revision: number }) {
   const [summary, setSummary] = useState<LoadState<CallSummary> | { status: 'denied' }>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
 
@@ -27,7 +29,7 @@ function CoordinationSummary({ call }: { call: Call }) {
       if (!controller.signal.aborted) setSummary({ status: 'error', message: 'No se pudo conectar con la API.' })
     })
     return () => controller.abort()
-  }, [call.id, attempt])
+  }, [call.id, attempt, revision])
 
   return (
     <Card title={call.nombre} action={
@@ -75,6 +77,7 @@ export function ApiCoordinationDashboard() {
   const [programId, setProgramId] = useState('')
   const [callId, setCallId] = useState('')
   const [attempt, setAttempt] = useState(0)
+  const [registrations, setRegistrations] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -102,6 +105,8 @@ export function ApiCoordinationDashboard() {
           Ver eventos <ArrowRight className="size-4" aria-hidden />
         </Button>
       </Card>
+
+      <ServerManualIntake onRegistered={() => setRegistrations(value => value + 1)} />
       {calls.status === 'loading' && <p role="status">Cargando convocatorias…</p>}
       {calls.status === 'error' && (
         <div>
@@ -133,7 +138,7 @@ export function ApiCoordinationDashboard() {
           </div>
         </Card>
       )}
-      {call && <CoordinationSummary key={call.id} call={call} />}
+      {call && <CoordinationSummary key={call.id} call={call} revision={registrations} />}
     </div>
   )
 }
