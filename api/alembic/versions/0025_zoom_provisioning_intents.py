@@ -3,7 +3,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "0025_zoom_provisioning_intents"
-down_revision = ("0024_merge_heads", "0023_zoom_meetings")
+down_revision = ("0025_merge_application_origin", "0023_zoom_meetings")
 branch_labels = None
 depends_on = None
 

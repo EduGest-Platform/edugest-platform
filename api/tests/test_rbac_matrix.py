@@ -25,20 +25,24 @@ NO_ACCESS = dict(
 SCOPED_STAFF = dict(
     list=200, detail_own=200, detail_other=403, event_own=201, event_other=403, summary_own=200, summary_other=403, audit=403,
 )
+# KAN-275: manual intake (`applications.create`). It grants no dossier access.
+NO_INTAKE = dict(intake_calls=403, intake_own=403, intake_other=403)
+SCOPED_INTAKE = dict(intake_calls=200, intake_own=201, intake_other=403)
+FULL_INTAKE = dict(intake_calls=200, intake_own=201, intake_other=201)
 LOGGED_IN = dict(mine=200, me=200)
 # Public routes: the credentials sent decide login; a bearer is optional for the public inscription form.
 PUBLIC = dict(login=200, create_application=201)
 
 # profile -> (account or None, expected status per endpoint). Staff accounts hold the program/call of the seed.
 MATRIX = {
-    "anonymous": (None, {**{key: 401 for key in [*NO_ACCESS, *LOGGED_IN]}, "login": 401, "create_application": 201}),
-    "aspirante": (ASPIRANTE, {**NO_ACCESS, **LOGGED_IN, **PUBLIC}),
-    "coder": (CODER, {**NO_ACCESS, **LOGGED_IN, **PUBLIC}),
-    "captacion": (CAPT_IA, {**SCOPED_STAFF, **LOGGED_IN, **PUBLIC}),
-    "seleccion": (SEL_IA, {**SCOPED_STAFF, **LOGGED_IN, **PUBLIC}),
-    "coordinacion": (COORD, {**NO_ACCESS, "summary_own": 200, "summary_other": 200, **LOGGED_IN, **PUBLIC}),
-    "docente": (DOCENTE, {**NO_ACCESS, **LOGGED_IN, **PUBLIC}),
-    "admin": (ADMIN, {**SCOPED_STAFF, "detail_other": 200, "event_other": 201, "summary_other": 200, "audit": 200, **LOGGED_IN, **PUBLIC}),
+    "anonymous": (None, {**{key: 401 for key in [*NO_ACCESS, *NO_INTAKE, *LOGGED_IN]}, "login": 401, "create_application": 201}),
+    "aspirante": (ASPIRANTE, {**NO_ACCESS, **NO_INTAKE, **LOGGED_IN, **PUBLIC}),
+    "coder": (CODER, {**NO_ACCESS, **NO_INTAKE, **LOGGED_IN, **PUBLIC}),
+    "captacion": (CAPT_IA, {**SCOPED_STAFF, **NO_INTAKE, **LOGGED_IN, **PUBLIC}),
+    "seleccion": (SEL_IA, {**SCOPED_STAFF, **SCOPED_INTAKE, **LOGGED_IN, **PUBLIC}),
+    "coordinacion": (COORD, {**NO_ACCESS, "summary_own": 200, "summary_other": 200, **FULL_INTAKE, **LOGGED_IN, **PUBLIC}),
+    "docente": (DOCENTE, {**NO_ACCESS, **NO_INTAKE, **LOGGED_IN, **PUBLIC}),
+    "admin": (ADMIN, {**SCOPED_STAFF, "detail_other": 200, "event_other": 201, "summary_other": 200, "audit": 200, **FULL_INTAKE, **LOGGED_IN, **PUBLIC}),
 }
 STAFF = {"captacion", "seleccion", "coordinacion", "docente", "admin"}
 
@@ -60,6 +64,13 @@ def call_endpoint(client, key, headers, app_ids, account):
         case "create_application":
             body = new_application(email=f"rbac.matrix.{next(email_counter)}@example.test")
             return client.post("/api/v1/applications", headers=headers, json=body)
+        case "intake_calls":
+            return client.get("/api/v1/manual-intake/calls", headers=headers)
+        case "intake_own" | "intake_other":
+            body = new_application(call_id=OWN_CALL if key == "intake_own" else OTHER_CALL, email=f"rbac.intake.{next(email_counter)}@example.test")
+            del body["acepta_datos_sinteticos"]
+            body.update(origin_channel="telefono", confirma_datos_sinteticos=True)
+            return client.post("/api/v1/manual-intake/applications", headers=headers, json=body)
         case "list":
             return client.get("/api/v1/applications", headers=headers)
         case "detail_own":
