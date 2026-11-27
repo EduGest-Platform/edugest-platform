@@ -4772,7 +4772,6 @@ export interface operations {
                 q?: string | null;
                 limit?: number;
                 offset?: number;
-                resolved?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7593,6 +7592,7 @@ export interface operations {
                 program_id?: string | null;
                 limit?: number;
                 offset?: number;
+                resolved?: boolean | null;
             };
             header?: never;
             path?: never;
