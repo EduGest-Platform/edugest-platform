@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import func, or_, select
@@ -23,6 +24,8 @@ from app.modules.admissions.schemas import (
     IdentityDecisionCreate,
     IdentityReviewOut,
     PersonOut,
+    RecruitmentInbox,
+    RecruitmentInboxItem,
     Stage,
 )
 from app.modules.admissions.service import create_application
@@ -112,6 +115,38 @@ def list_applications(
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
     rows = db.execute(base.order_by(Application.created_at.desc(), Application.codigo.desc()).limit(limit).offset(offset)).all()
     return ApplicationList(items=[_summary(*r) for r in rows], total=total)
+
+
+@router.get("/recruitment/inbox", response_model=RecruitmentInbox,
+            responses={403: {"description": "Sin permiso CRM sobre el ámbito"}},
+            summary="Última próxima acción de cada candidatura en preselección del ámbito CRM")
+def recruitment_inbox(p: CurrentPrincipal, db: DB, mine: bool = False,
+                      due_through: date | None = None, limit: int = Query(50, ge=1, le=100),
+                      offset: int = Query(0, ge=0)) -> RecruitmentInbox:
+    is_global, programs, calls = p.scopes_for("applications.crm")
+    if not (is_global or programs or calls):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No tienes permiso para consultar tareas de captación")
+    event = ApplicationEvent
+    latest = (select(event.id).where(event.application_id == Application.id, event.next_action.is_not(None))
+              .order_by(event.occurred_at.desc(), event.id.desc()).limit(1).correlate(Application).scalar_subquery())
+    rows = (select(Application, event).join(Call, Call.id == Application.call_id).join(event, event.id == latest)
+            .where(Application.stage.in_(("enviada", "requisitos_en_revision"))))
+    if not is_global:
+        rows = rows.where(or_(Call.program_id.in_(programs), Call.id.in_(calls)))
+    if mine:
+        rows = rows.where(event.next_action_owner_id == p.user.id)
+    if due_through is not None:
+        rows = rows.where(event.next_action_due_on <= due_through)
+    total = db.scalar(select(func.count()).select_from(rows.subquery())) or 0
+    matches = db.execute(rows.order_by(event.next_action_due_on, Application.id).limit(limit).offset(offset)).all()
+    names = owner_names(db, [entry for _, entry in matches])
+    items = []
+    for application, entry in matches:
+        action = next_action_out(entry, names)
+        if action is not None:
+            items.append(RecruitmentInboxItem(application_id=application.id, code=application.codigo,
+                                              call_id=application.call_id, action=action))
+    return RecruitmentInbox(items=items, total=total)
 
 
 @router.get("/applications/{application_id}", response_model=ApplicationDetail, summary="Ficha del expediente con historial CRM")

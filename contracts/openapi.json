@@ -1475,7 +1475,7 @@
           "expected_version": {
             "default": 0,
             "description": "0 para un código nuevo; versión anterior al publicar su sucesora",
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -1574,13 +1574,13 @@
         "description": "Pre-computed automated checks. The platform never runs submitted code.",
         "properties": {
           "passed": {
-            "minimum": 0.0,
+            "minimum": 0,
             "title": "Passed",
             "type": "integer"
           },
           "total": {
-            "exclusiveMinimum": 0.0,
-            "maximum": 10000.0,
+            "exclusiveMinimum": 0,
+            "maximum": 10000,
             "title": "Total",
             "type": "integer"
           }
@@ -1858,7 +1858,7 @@
             "type": "string"
           },
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -2297,7 +2297,7 @@
             "type": "string"
           },
           "version": {
-            "minimum": 2.0,
+            "minimum": 2,
             "title": "Version",
             "type": "integer"
           }
@@ -2355,7 +2355,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -3127,8 +3127,8 @@
         "properties": {
           "expires_hours": {
             "default": 24,
-            "maximum": 168.0,
-            "minimum": 1.0,
+            "maximum": 168,
+            "minimum": 1,
             "title": "Expires Hours",
             "type": "integer"
           },
@@ -3225,8 +3225,8 @@
         "properties": {
           "expires_hours": {
             "default": 24,
-            "maximum": 168.0,
-            "minimum": 1.0,
+            "maximum": 168,
+            "minimum": 1,
             "title": "Expires Hours",
             "type": "integer"
           }
@@ -4219,22 +4219,22 @@
         "properties": {
           "silence_days": {
             "description": "Días sin respuesta tras el último intento antes de la alerta de acción",
-            "maximum": 365.0,
-            "minimum": 1.0,
+            "maximum": 365,
+            "minimum": 1,
             "title": "Silence Days",
             "type": "integer"
           },
           "silence_max_contacts": {
             "description": "Intentos sin respuesta para la alerta de acción (confirmar o reprogramar el silencio)",
-            "maximum": 20.0,
-            "minimum": 1.0,
+            "maximum": 20,
+            "minimum": 1,
             "title": "Silence Max Contacts",
             "type": "integer"
           },
           "silence_warning_contacts": {
             "description": "Intentos sin respuesta para la alerta leve; salta sin esperar días",
-            "maximum": 20.0,
-            "minimum": 1.0,
+            "maximum": 20,
+            "minimum": 1,
             "title": "Silence Warning Contacts",
             "type": "integer"
           }
@@ -4375,7 +4375,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -4575,6 +4575,55 @@
           "status"
         ],
         "title": "RecordWrite",
+        "type": "object"
+      },
+      "RecruitmentInbox": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecruitmentInboxItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "RecruitmentInbox",
+        "type": "object"
+      },
+      "RecruitmentInboxItem": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/NextActionOut"
+          },
+          "application_id": {
+            "format": "uuid",
+            "title": "Application Id",
+            "type": "string"
+          },
+          "call_id": {
+            "title": "Call Id",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_id",
+          "code",
+          "call_id",
+          "action"
+        ],
+        "title": "RecruitmentInboxItem",
         "type": "object"
       },
       "ReminderSimulationRequest": {
@@ -4798,7 +4847,7 @@
           "expected_version": {
             "anyOf": [
               {
-                "minimum": 1.0,
+                "minimum": 1,
                 "type": "integer"
               },
               {
@@ -4897,7 +4946,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           },
@@ -4918,7 +4967,7 @@
         "properties": {
           "expected_revision": {
             "description": "Versión de la entrega que ha revisado el docente",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Revision",
             "type": "integer"
           }
@@ -5457,8 +5506,8 @@
         "properties": {
           "selection_quorum": {
             "description": "Personas distintas que deben coincidir en la decisión de selección (por defecto 2)",
-            "maximum": 5.0,
-            "minimum": 1.0,
+            "maximum": 5,
+            "minimum": 1,
             "title": "Selection Quorum",
             "type": "integer"
           }
@@ -6674,7 +6723,7 @@
         "additionalProperties": false,
         "properties": {
           "expected_version": {
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Expected Version",
             "type": "integer"
           }
@@ -6703,7 +6752,7 @@
           },
           "position": {
             "description": "Lugar en la lista según el criterio provisional (orden de entrada en la lista)",
-            "minimum": 1.0,
+            "minimum": 1,
             "title": "Position",
             "type": "integer"
           },
@@ -11640,6 +11689,97 @@
         "summary": "One published offer; drafts and unknown IDs are not found",
         "tags": [
           "catalog"
+        ]
+      }
+    },
+    "/api/v1/recruitment/inbox": {
+      "get": {
+        "operationId": "recruitment_inbox_api_v1_recruitment_inbox_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Mine",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "due_through",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Due Through"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecruitmentInbox"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso CRM sobre el ámbito"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Última próxima acción de cada candidatura en preselección del ámbito CRM",
+        "tags": [
+          "admissions"
         ]
       }
     },
