@@ -290,6 +290,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/ask/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Consultar el asistente con progreso y respuesta mediante eventos SSE */
+        post: operations["ask_stream_api_v1_assistant_ask_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance-records/{record_id}/revisions": {
         parameters: {
             query?: never;
@@ -653,6 +670,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/competency-roster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente */
+        get: operations["get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/progress-overview": {
         parameters: {
             query?: never;
@@ -941,6 +975,40 @@ export interface paths {
         get: operations["list_enrollment_submissions_api_v1_enrollments__enrollment_id__submissions_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback-drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Editar un borrador: crea una versión nueva y conserva la anterior */
+        put: operations["put_feedback_draft_api_v1_feedback_drafts__draft_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback-drafts/{draft_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Aprobar y publicar un borrador (solo el equipo docente de la cohorte) */
+        post: operations["post_feedback_approval_api_v1_feedback_drafts__draft_id__approve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1266,6 +1334,41 @@ export interface paths {
         get: operations["own_profile_api_v1_staff_me_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submission_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Feedback publicado de una entrega: el propio coder o el equipo docente. Nunca borradores */
+        get: operations["get_published_feedback_api_v1_submissions__submission_id__feedback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/submissions/{submission_id}/feedback-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Todas las versiones del feedback de una entrega (equipo docente) */
+        get: operations["list_feedback_drafts_api_v1_submissions__submission_id__feedback_drafts_get"];
+        put?: never;
+        /** Generar un borrador de feedback con la rúbrica y los tests (sin publicar) */
+        post: operations["post_feedback_draft_api_v1_submissions__submission_id__feedback_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1683,6 +1786,14 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** ApproveIn */
+        ApproveIn: {
+            /**
+             * Expected Revision
+             * @description Revisión de la entrega que el docente ha visto
+             */
+            expected_revision: number;
         };
         /** AskIn */
         AskIn: {
@@ -2234,6 +2345,16 @@ export interface components {
             /** Nombre */
             nombre: string;
         };
+        /** CompetencyLearner */
+        CompetencyLearner: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Enrollment Id
+             * Format: uuid
+             */
+            enrollment_id: string;
+        };
         /** CompetencyOut */
         CompetencyOut: {
             /** Codigo */
@@ -2271,6 +2392,11 @@ export interface components {
             min_group_size: number;
             /** Suppressed */
             suppressed: boolean;
+        };
+        /** CompetencyRoster */
+        CompetencyRoster: {
+            /** Items */
+            items: components["schemas"]["CompetencyLearner"][];
         };
         /** CompetencyWrite */
         CompetencyWrite: {
@@ -2381,6 +2507,19 @@ export interface components {
         /** DocumentationWrite */
         DocumentationWrite: {
             /** Expected Version */
+            expected_version: number;
+        };
+        /** DraftEdit */
+        DraftEdit: {
+            /**
+             * Body
+             * @description Texto revisado por el docente
+             */
+            body: string;
+            /**
+             * Expected Version
+             * @description Versión que el docente estaba editando (evita pisar cambios ajenos)
+             */
             expected_version: number;
         };
         /** EnrollmentAssessments */
@@ -2566,6 +2705,85 @@ export interface components {
             resumen: string;
             /** Tipo */
             tipo: string;
+        };
+        /** FeedbackDraftList */
+        FeedbackDraftList: {
+            /**
+             * Current Revision
+             * @description Revisión actual de la entrega
+             */
+            current_revision: number;
+            /**
+             * Items
+             * @description Todas las versiones, de la más antigua a la más reciente
+             */
+            items: components["schemas"]["FeedbackDraftOut"][];
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+        };
+        /**
+         * FeedbackDraftOut
+         * @description One version as the teaching team sees it. No user ids: who wrote and approved it stays in the database and audit.
+         */
+        FeedbackDraftOut: {
+            /** Approved At */
+            approved_at: string | null;
+            /** Body */
+            body: string;
+            /**
+             * Check Results
+             * @description Copia de los resultados de tests usados (procedencia)
+             */
+            check_results: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Label
+             * @description Texto que la interfaz debe mostrar junto al borrador
+             */
+            label: string;
+            /**
+             * Rubric
+             * @description Copia de la rúbrica usada (procedencia)
+             */
+            rubric: string[];
+            /**
+             * Source
+             * @description template = generado automáticamente con la rúbrica y los tests (sin LLM); teacher = editado por el docente
+             * @enum {string}
+             */
+            source: "template" | "teacher";
+            /**
+             * Status
+             * @description draft = no visible para el coder; approved = publicado
+             * @enum {string}
+             */
+            status: "draft" | "approved";
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Submission Revision
+             * @description Revisión de la entrega a la que corresponde este borrador
+             */
+            submission_revision: number;
+            /** Version */
+            version: number;
         };
         /** FrameworkList */
         FrameworkList: {
@@ -3259,6 +3477,33 @@ export interface components {
              * @enum {string}
              */
             state: "draft" | "published";
+        };
+        /**
+         * PublishedFeedback
+         * @description What the coder sees: only approved feedback, never drafts.
+         */
+        PublishedFeedback: {
+            /** @description Nulo si todavía no hay feedback aprobado */
+            feedback: components["schemas"]["PublishedFeedbackOut"] | null;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+        };
+        /** PublishedFeedbackOut */
+        PublishedFeedbackOut: {
+            /**
+             * Approved At
+             * Format: date-time
+             */
+            approved_at: string;
+            /** Body */
+            body: string;
+            /** Label */
+            label: string;
+            /** Version */
+            version: number;
         };
         /** RecordOut */
         RecordOut: {
@@ -5313,6 +5558,53 @@ export interface operations {
             };
         };
     };
+    ask_stream_api_v1_assistant_ask_stream_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Sesión no válida */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin documentos en tu ámbito o cohorte ajena */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_revisions_api_v1_attendance_records__record_id__revisions_get: {
         parameters: {
             query?: never;
@@ -6463,6 +6755,51 @@ export interface operations {
             };
         };
     };
+    get_competency_roster_api_v1_cohorts__cohort_id__competency_roster_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetencyRoster"];
+                };
+            };
+            /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_progress_overview_api_v1_cohorts__cohort_id__progress_overview_get: {
         parameters: {
             query?: {
@@ -7569,6 +7906,118 @@ export interface operations {
             };
         };
     };
+    put_feedback_draft_api_v1_feedback_drafts__draft_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_feedback_approval_api_v1_feedback_drafts__draft_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_applications_api_v1_me_applications_get: {
         parameters: {
             query?: never;
@@ -8501,6 +8950,148 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_published_feedback_api_v1_submissions__submission_id__feedback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedFeedback"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_feedback_drafts_api_v1_submissions__submission_id__feedback_drafts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftList"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_feedback_draft_api_v1_submissions__submission_id__feedback_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackDraftOut"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Sin resultados de tests, versión desfasada, entrega cambiada o ya aprobado */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
