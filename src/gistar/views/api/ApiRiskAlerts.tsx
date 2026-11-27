@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
+import { useLeaveGuard } from '../../useLeaveGuard'
 import { Modal } from '../../components/Modal'
 import { Button, Card, Field, Notice, PageTitle, inputCls } from '../../ui'
 import { useAcademicCohorts } from './ApiCohorts'
@@ -15,19 +16,26 @@ const time = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: '
 const pageSize = 25
 const value = (amount: number | null) => amount === null ? 'Sin dato' : number.format(amount)
 
-function ReviewAlert({ cohortId, id, onClose, onSaved }: {
+function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
   cohortId: string; id: string; onClose: () => void; onSaved: () => void
+  onBlockedChange: (blocked: boolean) => void
 }) {
   const [details, setDetails] = useState<Schemas['AlertReviewOut']>()
   const [attempt, setAttempt] = useState(0)
   const [kind, setKind] = useState<Intervention>('contact')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const [uncertain, setUncertain] = useState(false)
+  const [requiresHistoryReview, setRequiresHistoryReview] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const pending = useRef<AbortController | null>(null)
-  useEffect(() => () => pending.current?.abort(), [])
+  const blocked = busy || requiresHistoryReview
+  useLeaveGuard(blocked)
+  useEffect(() => { onBlockedChange(blocked) }, [blocked, onBlockedChange])
+  useEffect(() => () => {
+    pending.current?.abort()
+    onBlockedChange(false)
+  }, [onBlockedChange])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -35,10 +43,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
       params: { path: { cohort_id: cohortId, alert_id: id } }, signal: controller.signal,
     }).then(result => {
       if (controller.signal.aborted) return
-      if (result.data) {
-        setDetails(result.data)
-        setUncertain(false)
-      }
+      if (result.data) setDetails(result.data)
       else setError(errorMessage(result.error, 'No se pudo leer esta alerta.'))
     }).catch(() => {
       if (!controller.signal.aborted) setError('No se pudo conectar con el servidor.')
@@ -54,7 +59,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
 
   async function record(event: FormEvent) {
     event.preventDefault()
-    if (!details || details.alert.review_state === 'closed' || !note.trim() || uncertain || pending.current) return
+    if (!details || details.alert.review_state === 'closed' || !note.trim() || requiresHistoryReview || pending.current) return
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -72,12 +77,16 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
         reload()
         onSaved()
       } else {
-        if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) setUncertain(true)
+        if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) {
+          setRequiresHistoryReview(true)
+          reload()
+        }
         setError(errorMessage(result.error, 'No se pudo registrar la intervención.'))
       }
     } catch {
       if (!controller.signal.aborted) {
-        setUncertain(true)
+        setRequiresHistoryReview(true)
+        reload()
         setError('No se pudo confirmar el registro. Actualiza la alerta y comprueba el historial antes de reintentar.')
       }
     } finally {
@@ -88,13 +97,15 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
 
   const alert = details?.alert
   return (
-    <Modal open onClose={onClose} placement="end" title="Revisar alerta sintética"
-      subtitle={alert?.learner_name} dirty={Boolean(note.trim() || busy)}>
+    <Modal open onClose={() => { if (!pending.current && !requiresHistoryReview) onClose() }}
+      closeBlocked={blocked} placement="end" title="Revisar alerta sintética"
+      subtitle={alert?.learner_name} dirty={Boolean(note.trim())}>
       <div className="grid gap-4">
         <Notice>Datos sintéticos para revisión humana. El modelo carece de validación para decisiones sobre personas.</Notice>
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
         {notice && <Notice live="polite">{notice}</Notice>}
-        {uncertain && <Notice tone="warning">Actualiza la alerta y comprueba si la intervención ya aparece en el historial. Tu nota se conserva.</Notice>}
+        {busy && <p role="status">Registrando intervención…</p>}
+        {requiresHistoryReview && <Notice tone="warning">Actualiza la alerta y comprueba si la intervención ya aparece en el historial. Tu nota se conserva.</Notice>}
         <Button variant="ghost" className="justify-self-start" onClick={reload} disabled={busy}>Actualizar alerta</Button>
         {!details && !error && <p role="status">Cargando alerta…</p>}
         {alert && details && <>
@@ -118,6 +129,17 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
               <p className="mt-1 whitespace-pre-wrap wrap-anywhere">{item.note}</p>
             </li>)}
           </ol> : <p>Todavía no hay intervenciones.</p>}
+          {requiresHistoryReview && <div className="flex flex-wrap gap-2">
+            <Button variant="ghost" onClick={() => {
+              setNote('')
+              setRequiresHistoryReview(false)
+              setError('')
+            }}>Cerrar comprobación sin reenviar</Button>
+            {alert.review_state !== 'closed' && <Button variant="ghost" onClick={() => {
+              setRequiresHistoryReview(false)
+              setError('')
+            }}>He comprobado que la intervención no se registró</Button>}
+          </div>}
           {alert.review_state !== 'closed' ? (
             <form className="grid gap-3" onSubmit={record}>
               <Field label="Tipo de intervención" htmlFor="risk-kind">
@@ -130,7 +152,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
                 <textarea id="risk-note" className={inputCls} readOnly={busy} required maxLength={500}
                   value={note} onChange={event => setNote(event.target.value)} />
               </Field>
-              <Button type="submit" className="justify-self-start" disabled={busy || uncertain || !note.trim()}>
+              <Button type="submit" className="justify-self-start" disabled={busy || requiresHistoryReview || !note.trim()}>
                 {kind === 'closure' ? 'Cerrar alerta' : 'Registrar intervención'}
               </Button>
             </form>
@@ -147,7 +169,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved }: {
   )
 }
 
-function CohortAlerts({ cohortId }: { cohortId: string }) {
+function CohortAlerts({ cohortId, onBlockedChange }: { cohortId: string; onBlockedChange: (blocked: boolean) => void }) {
   const [filter, setFilter] = useState<ReviewState | ''>('')
   const [offset, setOffset] = useState(0)
   const [attempt, setAttempt] = useState(0)
@@ -203,7 +225,7 @@ function CohortAlerts({ cohortId }: { cohortId: string }) {
       {selected && <ReviewAlert cohortId={cohortId} id={selected} onClose={() => {
         setSelected('')
         setAttempt(value => value + 1)
-      }} onSaved={() => setAttempt(value => value + 1)} />}
+      }} onSaved={() => setAttempt(value => value + 1)} onBlockedChange={onBlockedChange} />}
     </Card>
   )
 }
@@ -211,6 +233,7 @@ function CohortAlerts({ cohortId }: { cohortId: string }) {
 export function ApiRiskAlerts() {
   const { cohorts, loading, error, retry } = useAcademicCohorts()
   const [selected, setSelected] = useState('')
+  const [blocked, setBlocked] = useState(false)
   const cohort = cohorts.find(item => item.id === selected) ?? cohorts[0]
   return (
     <div className="grid gap-4">
@@ -221,12 +244,12 @@ export function ApiRiskAlerts() {
       {cohort && <>
         <Card>
           <Field label="Cohorte" htmlFor="risk-cohort">
-            <select id="risk-cohort" className={inputCls} value={cohort.id} onChange={event => setSelected(event.target.value)}>
+            <select id="risk-cohort" className={inputCls} value={cohort.id} disabled={blocked} onChange={event => setSelected(event.target.value)}>
               {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
             </select>
           </Field>
         </Card>
-        <CohortAlerts key={cohort.id} cohortId={cohort.id} />
+        <CohortAlerts key={cohort.id} cohortId={cohort.id} onBlockedChange={setBlocked} />
       </>}
     </div>
   )

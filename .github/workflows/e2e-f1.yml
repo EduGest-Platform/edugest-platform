@@ -81,6 +81,12 @@ jobs:
         env:
           GISTAR_API: http://localhost:8000
         run: node e2e/intake-human-review.mjs
+      - name: Prepare a disposable risk review fixture (KAN-190)
+        run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-risk-review.py
+      - name: Intervention write dismissal and recovery (KAN-190)
+        env:
+          WEB_URL: http://localhost:8443/
+        run: node e2e/risk-pending.mjs
       - name: Prepare F2 synthetic cohort and teacher (KAN-72)
         run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
       - name: F2 HTTP waitlist promotion and private applicant outcome (KAN-49)
