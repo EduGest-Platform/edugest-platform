@@ -1,0 +1,34 @@
+# KAN-73 — Demo security acceptance gate / Gate de seguridad de demo
+
+27/11/2026 · Owner Elizabeth · Reviewer Yohanna · PROPOSED / BLOCKED on environment evidence and retention acceptance. No deployment, secrets read, credentials printed, production writes or real data.
+
+## ES — Matriz de verificación
+
+| Control | Evidencia de código y CI | Comprobación de entorno pendiente |
+|---|---|---|
+| Credenciales no predeterminadas | KAN-99/100/101, #37, Gitleaks, config.py exige contraseña no demo fuera de local | Operador confirma secretos distintos por entorno, rotación y no exposición; no copiar valores |
+| TLS y proxy | render.yaml, docs/deploy/README.md, #135, HSTS solo HTTPS no local | URL HTTPS válida, redirección segura y proxy hops efectivos |
+| Límites y cabeceras | #135, KAN-208; límites de sesión/intententos, no-store, nosniff | Verificar cabeceras API y configuración efectiva; rate limiting por proceso, no distribuido |
+| RBAC | #38, #17, #140, #148 y KAN-214; controles de ámbito, actor, expiración | Smoke sintético por rol, acceso anónimo denegado, ámbitos ajenos y privilegio mínimo; sin probar con terceros |
+| Datos sintéticos | Semilla sintética y CI entorno desechable | Confirmar dataset y cuentas de demo; no datos reales, no exportación pública |
+| Retención | KAN-209 / #25 inventario, no política aplicada | Aprobar plan, registrar configuración efectiva de plataforma/Actions/BD y responsable de borrado |
+
+### Propuesta de retención para DEMO sintética (no política legal ni aprobada)
+- Logs operativos y artefactos CI: objetivo 14 días desde generación, acceso restringido a equipo autorizado. Si proveedor impone otro límite, documentar valor efectivo y excepción.
+- Sesiones: TTL configurado y revocación; eliminar/resetear solo mediante procedimiento aprobado al desmantelar la demo.
+- BD, auditoría, CRM y evidencias sintéticas: mantener hasta defensa y revisión final, propuesta de retirada dentro de 30 días desde cierre del proyecto. Conservar únicamente informes agregados y artefactos sin identificadores si se autoriza. No ejecutar purga ni desactivar append-only; destrucción del entorno completo requiere aprobación y verificación.
+- Exportaciones/backups: deshabilitar exportaciones externas innecesarias; inventariar copias y permisos, aplicar fecha de retirada equivalente o excepción documentada. La eliminación de una copia no demuestra eliminación de todas.
+- Si se detectan datos reales, bloquear demo y escalar a PO/SM; no usar este plan para datos personales reales.
+
+### Checklist operativa reproducible (entorno autorizado)
+1. Registrar fecha, entorno, SHA desplegado, propietario y revisora; verificar que el SHA corresponde al CI aprobado y sin checks obligatorios omitidos. No desplegar por este documento.
+2. Confirmar configuración en panel por operador: entorno staging/production, secretos no default y distintos, CORS exacto, proxy hops, BD privada, cuentas sintéticas y mínimo privilegio. Registrar solo PASS/FAIL, no valores.
+3. Desde terminal autorizada: comprobar URL HTTPS y cabeceras con HEAD/GET de /health y una ruta API autenticada usando sesión sintética (no pegar tokens en informe). Validar certificado, no-store/nosniff y HSTS donde corresponda; documentar excepciones.
+4. Ejecutar smoke positivo y negativo con cuentas sintéticas: login/logout, recurso propio, otro ámbito 403/404, anónimo 401, rol no autorizado. Comprobar límites solo en entorno desechable o con aprobación explícita; no saturar staging compartido. No capturar secretos ni cuerpos con PII.
+5. PO aprueba plazos, propietario y mecanismo de retirada; operador registra retención efectiva de proveedor, Actions y BD/copia con fecha, evidencia redactada y desviaciones. Validar retirada primero en entorno desechable.
+6. Yohanna revisa evidencia; cualquier FAIL/NOT_RUN en control obligatorio impide cierre. Registrar aceptación explícita y enlace al artefacto sin secretos.
+
+CI observado: [#271 CI](https://github.com/EduGest-Platform/edugest-platform/actions/runs/46032355814) PASS (API/web/secrets/compose); [F1 E2E](https://github.com/EduGest-Platform/edugest-platform/actions/runs/46032355812) PASS en entorno desechable. No son evidencia del entorno real. #135 limita throttling por proceso; #25 declara retención pendiente; todos los hijos Jira finalizados no equivalen al DoD de la historia.
+
+## EN
+The table reconciles code-level controls with the missing environment checks. The proposed synthetic-demo retention targets (14 days for operational logs/CI artifacts and removal of the synthetic environment within 30 days after project closure) are recommendations, not approved policy or legal advice. Confirm provider limits, owners, backups and deletion mechanism; never purge or disable append-only without authorization. The checklist requires deployed SHA, TLS, headers, private DB, nondefault rotated secrets, scoped synthetic accounts and negative access checks, plus documented actual retention. No secrets, live traffic, real data, deployment or fresh local test execution were performed. The story stays open until mandatory evidence and Yohanna/PO acceptance are recorded.
