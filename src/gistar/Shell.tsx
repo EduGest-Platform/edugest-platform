@@ -25,7 +25,7 @@ import { StaffAccessPanel } from './views/api/StaffAccessPanel'
 import { AssistantWidget } from './components/AssistantWidget'
 import { LoginScreen } from './components/LoginScreen'
 
-const SCREENS: Record<View, () => ReactElement> = {
+const SCREENS: Record<Exclude<View, 'tablero'>, () => ReactElement> = {
   dashboard: Dashboard,
   analitica: GroupAnalytics,
   calendario: Calendar,
@@ -65,7 +65,7 @@ export function Shell() {
   const [staffPanelUser, setStaffPanelUser] = useState<string | null>(null)
   const allowedRoles = useMemo(() => (API_MODE && session.me ? uiRolesFor(session.me) : null), [session.me])
   const source = dataSourceFor(view, API_MODE, role)
-  const Screen = (source === 'api' ? API_SCREENS[view] : SCREENS[view]) ?? Dashboard
+  const Screen = (source === 'api' ? API_SCREENS[view] : view === 'tablero' ? undefined : SCREENS[view]) ?? Dashboard
 
   // In API mode the role is never free: it comes from the server-side assignments of the session.
   useEffect(() => {
