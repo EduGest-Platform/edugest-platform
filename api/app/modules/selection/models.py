@@ -58,3 +58,39 @@ class SelectionApproval(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     decision_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("selection_decision.id"))
     authority: Mapped[list | None] = mapped_column(JSON)
+
+
+class SelectionAppointment(Base):
+    """Internal selection record with an optional link to the previous appointment."""
+
+    __tablename__ = "selection_appointment"
+    __table_args__ = (
+        CheckConstraint("kind IN ('group_day', 'individual_interview')", name="ck_selection_appointment_kind"),
+        CheckConstraint("state IN ('scheduled', 'attended', 'no_show', 'rescheduled')", name="ck_selection_appointment_state"),
+        CheckConstraint(
+            "num_nonnulls(recorded_at, recorded_by) = CASE WHEN state IN ('attended', 'no_show') THEN 2 ELSE 0 END",
+            name="ck_selection_appointment_recorded",
+        ),
+        CheckConstraint(
+            "state = 'attended' OR (conclusions IS NULL AND assessment IS NULL)",
+            name="ck_selection_appointment_notes",
+        ),
+        Index(
+            "uq_selection_appointment_scheduled_kind", "application_id", "kind", unique=True,
+            postgresql_where=text("state = 'scheduled'"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    application_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("application.id", ondelete="CASCADE"), index=True)
+    previous_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("selection_appointment.id"), unique=True)
+    kind: Mapped[str] = mapped_column(String(24))
+    state: Mapped[str] = mapped_column(String(12), default="scheduled")
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    location: Mapped[str | None] = mapped_column(String(250))
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    recorded_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
+    recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    conclusions: Mapped[str | None] = mapped_column(String(1000))
+    assessment: Mapped[str | None] = mapped_column(String(500))
