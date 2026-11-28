@@ -35,7 +35,9 @@ try {
       const dialog = ${dialog}
       return dialog.querySelector('#risk-note').value === ${JSON.stringify(note)} &&
         Array.from(dialog.querySelectorAll('li')).filter(item => item.textContent.includes(${JSON.stringify(note)})).length === 1 &&
-        dialog.querySelector('button[type=submit]').disabled
+        dialog.querySelector('button[type=submit]').disabled &&
+        !Array.from(dialog.querySelectorAll('button')).some(button =>
+          button.textContent.includes('He comprobado que la intervención no se registró'))
     })()`))
   await page.click('Cerrar comprobación sin reenviar', dialog)
   await page.ev(`${dialog}.querySelector('[aria-label="Cerrar"]').click()`)

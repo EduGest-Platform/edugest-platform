@@ -25,10 +25,13 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
   const [kind, setKind] = useState<Intervention>('contact')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const [requiresHistoryReview, setRequiresHistoryReview] = useState(false)
+  const [uncertainWrite, setUncertainWrite] = useState<{
+    kind: Intervention; note: string; previousIds: Set<string>
+  }>()
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const pending = useRef<AbortController | null>(null)
+  const requiresHistoryReview = uncertainWrite !== undefined
   const blocked = busy || requiresHistoryReview
   useLeaveGuard(blocked)
   useEffect(() => { onBlockedChange(blocked) }, [blocked, onBlockedChange])
@@ -60,6 +63,10 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
   async function record(event: FormEvent) {
     event.preventDefault()
     if (!details || details.alert.review_state === 'closed' || !note.trim() || requiresHistoryReview || pending.current) return
+    const submitted = {
+      kind, note: note.trim(),
+      previousIds: new Set(details.interventions.map(item => item.id)),
+    }
     const controller = new AbortController()
     pending.current = controller
     setBusy(true)
@@ -68,7 +75,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
     try {
       const result = await api.POST('/api/v1/cohorts/{cohort_id}/risk-alerts/{alert_id}/interventions', {
         params: { path: { cohort_id: cohortId, alert_id: id } }, signal: controller.signal,
-        body: { kind, note: note.trim(), expected_state: details.alert.review_state },
+        body: { kind: submitted.kind, note: submitted.note, expected_state: details.alert.review_state },
       })
       if (controller.signal.aborted) return
       if (result.data) {
@@ -78,14 +85,14 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
         onSaved()
       } else {
         if (result.response.status >= 500 || result.response.status === 408 || result.response.status === 409) {
-          setRequiresHistoryReview(true)
+          setUncertainWrite(submitted)
           reload()
         }
         setError(errorMessage(result.error, 'No se pudo registrar la intervención.'))
       }
     } catch {
       if (!controller.signal.aborted) {
-        setRequiresHistoryReview(true)
+        setUncertainWrite(submitted)
         reload()
         setError('No se pudo confirmar el registro. Actualiza la alerta y comprueba el historial antes de reintentar.')
       }
@@ -96,6 +103,10 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
   }
 
   const alert = details?.alert
+  const hasMatchingNewIntervention = uncertainWrite && details?.interventions.some(item =>
+    !uncertainWrite.previousIds.has(item.id) &&
+    item.kind === uncertainWrite.kind && item.note === uncertainWrite.note,
+  )
   return (
     <Modal open onClose={() => { if (!pending.current && !requiresHistoryReview) onClose() }}
       closeBlocked={blocked} placement="end" title="Revisar alerta sintética"
@@ -129,27 +140,28 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
               <p className="mt-1 whitespace-pre-wrap wrap-anywhere">{item.note}</p>
             </li>)}
           </ol> : <p>Todavía no hay intervenciones.</p>}
+          {hasMatchingNewIntervention && <Notice>Hay una intervención nueva con el mismo tipo y nota. Revisa el historial y cierra la comprobación sin reenviar.</Notice>}
           {requiresHistoryReview && <div className="flex flex-wrap gap-2">
             <Button variant="ghost" onClick={() => {
               setNote('')
-              setRequiresHistoryReview(false)
+              setUncertainWrite(undefined)
               setError('')
             }}>Cerrar comprobación sin reenviar</Button>
-            {alert.review_state !== 'closed' && <Button variant="ghost" onClick={() => {
-              setRequiresHistoryReview(false)
+            {alert.review_state !== 'closed' && !hasMatchingNewIntervention && <Button variant="ghost" onClick={() => {
+              setUncertainWrite(undefined)
               setError('')
             }}>He comprobado que la intervención no se registró</Button>}
           </div>}
           {alert.review_state !== 'closed' ? (
             <form className="grid gap-3" onSubmit={record}>
               <Field label="Tipo de intervención" htmlFor="risk-kind">
-                <select id="risk-kind" className={inputCls} value={kind} disabled={busy}
+                <select id="risk-kind" className={inputCls} value={kind} disabled={blocked}
                   onChange={event => setKind(event.target.value as Intervention)}>
                   {Object.entries(actions).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                 </select>
               </Field>
               <Field label="Nota de apoyo" htmlFor="risk-note" hint="Evita incluir información personal sensible.">
-                <textarea id="risk-note" className={inputCls} readOnly={busy} required maxLength={500}
+                <textarea id="risk-note" className={inputCls} readOnly={blocked} required maxLength={500}
                   value={note} onChange={event => setNote(event.target.value)} />
               </Field>
               <Button type="submit" className="justify-self-start" disabled={busy || requiresHistoryReview || !note.trim()}>
