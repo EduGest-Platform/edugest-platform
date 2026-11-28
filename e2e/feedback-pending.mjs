@@ -79,6 +79,16 @@ try {
     await tryDismiss(page, '#feedback-cohort'))
   await page.ev('window.delayedWrites[1].release()')
   requireCheck('The edited draft appears once', await page.waitText('Versión 2 · Borrador'))
+  requireCheck('The edited version preserves its evidence for the teaching review', await page.ev(`(() => {
+    const summary = Array.from(${dialog}.querySelectorAll('summary')).find(item =>
+      item.textContent.trim() === 'Evidencia de la versión 2')
+    if (!summary) return false
+    summary.click()
+    const evidence = summary.parentElement.textContent
+    return evidence.includes('Revisión de la entrega: 1') &&
+      evidence.includes('Pruebas superadas: 2 de 3') && evidence.includes('Criterio sintético de feedback')
+  })()`))
+
   requireCheck('The learner can open feedback on their own submitted activity',
     await learner.nav('Entregas') && await learner.waitText(title) && await learner.ev(`(() => {
       const summary = (${learnerCard})?.querySelector('details summary')
@@ -109,7 +119,8 @@ try {
     await learner.ev(`(() => {
       const feedback = (${learnerCard})?.querySelector('details')
       return feedback?.textContent.includes('Versión 2') &&
-        feedback.textContent.includes(${JSON.stringify(feedbackNote)})
+        feedback.textContent.includes(${JSON.stringify(feedbackNote)}) &&
+        !feedback.textContent.includes('Evidencia de la versión')
     })()`))
   requireCheck('No uncaught browser errors', errors.length === 0)
 } catch (error) {
