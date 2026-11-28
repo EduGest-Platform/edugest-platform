@@ -16,6 +16,33 @@ const api = loopbackOrigin(process.env.GISTAR_API ?? 'http://localhost:8000/')
 if (process.env.GISTAR_E2E_FIXTURE !== 'disposable-synthetic' || !process.env.GISTAR_DEMO_PASSWORD) {
   throw new Error('Set the disposable fixture marker and the synthetic demo password.')
 }
+async function checkReadiness() {
+  const checks = [
+    ['web', web, response => response.headers.get('content-type')?.includes('text/html')],
+    ['API and database', new URL('/health', api), async response => {
+      const state = await response.json()
+      return state.status === 'ok' && state.database === 'ok'
+    }],
+  ]
+  const results = await Promise.all(checks.map(async ([label, url, expected]) => {
+    try {
+      const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(5000) })
+      const ready = response.ok && await expected(response)
+      if (label === 'web') await response.body?.cancel()
+      return { label, ready }
+    } catch {
+      return { label, ready: false }
+    }
+  }))
+  for (const { label, ready } of results) console.log(`Preflight ${label}: ${ready ? 'READY' : 'BLOCKED'}`)
+  return results.every(result => result.ready)
+}
+
+if (!await checkReadiness()) {
+  console.error('Rehearsal blocked before the first stage. Check the local web, API and database.')
+  process.exit(1)
+}
+
 const stages = [
   { label: 'Registration, unavailable call list and retry', script: 'f1-registration.mjs', fixture: 'demo-rehearsal-intake' },
   { label: 'Human quorum, out-of-scope denial and attendance', script: 'f2-admission-enrollment.mjs', fixture: 'demo-rehearsal-f2' },
