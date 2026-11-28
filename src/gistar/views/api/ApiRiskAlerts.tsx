@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
+import { useGistar } from '../../store'
 import { useLeaveGuard } from '../../useLeaveGuard'
 import { Modal } from '../../components/Modal'
 import { Button, Card, Field, Notice, PageTitle, inputCls } from '../../ui'
@@ -259,9 +260,9 @@ function CohortAlerts({ cohortId, onBlockedChange }: { cohortId: string; onBlock
 
 export function ApiRiskAlerts() {
   const { cohorts, loading, error, retry } = useAcademicCohorts()
-  const [selected, setSelected] = useState('')
+  const { teacherCohort, setTeacherCohort } = useGistar()
   const [blocked, setBlocked] = useState(false)
-  const cohort = cohorts.find(item => item.id === selected) ?? cohorts[0]
+  const cohort = cohorts.find(item => item.id === teacherCohort) ?? cohorts[0]
   return (
     <div className="grid gap-4">
       <PageTitle title="Alertas de apoyo" sub="Revisa evidencia sintética y registra acciones de apoyo de tu cohorte." />
@@ -271,7 +272,7 @@ export function ApiRiskAlerts() {
       {cohort && <>
         <Card>
           <Field label="Cohorte" htmlFor="risk-cohort">
-            <select id="risk-cohort" className={inputCls} value={cohort.id} disabled={blocked} onChange={event => setSelected(event.target.value)}>
+            <select id="risk-cohort" className={inputCls} value={cohort.id} disabled={blocked} onChange={event => setTeacherCohort(event.target.value)}>
               {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
             </select>
           </Field>
