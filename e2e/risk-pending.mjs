@@ -21,7 +21,13 @@ try {
   await page.goto(web.href)
   requireCheck('The teacher can sign in', await page.waitText('Iniciar sesión'))
   await page.login('docente@gistar.example')
-  requireCheck('The teacher can open alerts', await page.nav('alertas') && await page.waitText('Alertas de apoyo'))
+  requireCheck('The teacher can open aggregate analytics and pick a cohort',
+    await page.nav('Analítica del grupo') && await page.waitText('Revisar alertas de esta cohorte') &&
+    await page.set('#overview-cohort', 'COH-DATA'))
+  requireCheck('The alert view opens with the same authorised cohort',
+    await page.click('Revisar alertas de esta cohorte') && await page.waitText('Alertas de apoyo') &&
+    await page.waitText('No hay alertas sintéticas con este filtro.') &&
+    await page.ev("document.querySelector('#risk-cohort').value === 'COH-DATA'"))
   const cohortSelector = '#risk-cohort'
   let fixtureCohortAvailable = false
   for (let attempt = 0; attempt < 40 && !fixtureCohortAvailable; attempt++) {

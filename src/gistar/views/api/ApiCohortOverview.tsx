@@ -2,6 +2,7 @@ import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { useEffect, useState, type FormEvent } from 'react'
 import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { Button, Card, Empty, Field, Notice, PageTitle, inputCls } from '../../ui'
+import { useGistar } from '../../store'
 import { useAcademicCohorts } from './ApiCohorts'
 import { OverviewAttendanceCard } from './OverviewAttendanceCard'
 import { OverviewCompetenciesCard } from './OverviewCompetenciesCard'
@@ -89,8 +90,9 @@ function OverviewForCohort({ cohortId }: { cohortId: string }) {
 
 export function ApiCohortOverview() {
   const { cohorts, loading, error, retry } = useAcademicCohorts()
+  const { role, navigate, teacherCohort, setTeacherCohort } = useGistar()
   const [selected, setSelected] = useState('')
-  const cohort = cohorts.find(item => item.id === selected) ?? cohorts[0]
+  const cohort = cohorts.find(item => item.id === (role === 'docente' ? teacherCohort : selected)) ?? cohorts[0]
   return (
     <div className="space-y-5">
       <PageTitle title="Analítica del grupo" sub="Consulta el progreso agregado de tus cohortes." />
@@ -104,11 +106,18 @@ export function ApiCohortOverview() {
         )}
         {!loading && !error && !cohort && <Empty>No hay cohortes con acceso académico en tu cuenta.</Empty>}
         {cohort && !loading && !error && (
-          <Field label="Seleccionar cohorte" htmlFor="overview-cohort">
-            <select id="overview-cohort" className={`${inputCls} max-w-md`} value={cohort.id} onChange={event => setSelected(event.target.value)}>
-              {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
-            </select>
-          </Field>
+          <div className="grid justify-items-start gap-3">
+            <Field label="Seleccionar cohorte" htmlFor="overview-cohort">
+              <select id="overview-cohort" className={`${inputCls} max-w-md`} value={cohort.id}
+                onChange={event => (role === 'docente' ? setTeacherCohort : setSelected)(event.target.value)}>
+                {cohorts.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
+              </select>
+            </Field>
+            {role === 'docente' && <Button variant="ghost" onClick={() => {
+              setTeacherCohort(cohort.id)
+              navigate('alertas')
+            }}>Revisar alertas de esta cohorte</Button>}
+          </div>
         )}
       </Card>
       {cohort && !loading && !error && <OverviewForCohort key={cohort.id} cohortId={cohort.id} />}
