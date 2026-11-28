@@ -87,6 +87,8 @@ export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
   }
 
   const latest = versions?.items.at(-1)
+  const passed = latest?.check_results.passed
+  const total = latest?.check_results.total
   const current = latest?.submission_revision === versions?.current_revision
   const publishable = latest?.status === 'draft' && current && !edit
 
@@ -129,6 +131,20 @@ export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
               <p className="text-sm text-muted">{latest.label}</p>
               {!current && <p className="text-sm">Corresponde a la revisión {latest.submission_revision}. Genera un borrador de la revisión actual para publicar.</p>}
               <p className="mt-3 whitespace-pre-wrap wrap-anywhere text-sm">{latest.body}</p>
+              <details className="mt-3 rounded-lg border border-line p-3 text-sm">
+                <summary className="cursor-pointer font-medium">Evidencia de la versión {latest.version}</summary>
+                <p className="mt-2">Revisión de la entrega: {latest.submission_revision}.</p>
+                {typeof passed === 'number' && typeof total === 'number' ? (
+                  <p>Pruebas superadas: {passed} de {total}.</p>
+                ) : <p>No hay un recuento de pruebas en esta versión.</p>}
+                {latest.rubric.length > 0 ? (
+                  <>
+                    <p className="mt-2 font-medium">Criterios de la rúbrica</p>
+                    <ul className="list-disc pl-5">{latest.rubric.map((criterion, index) =>
+                      <li key={index} className="wrap-anywhere">{criterion}</li>)}</ul>
+                  </>
+                ) : <p>Esta versión no contiene criterios de rúbrica.</p>}
+              </details>
             </article>
             {publishable && <div className="grid gap-2 rounded-xl bg-mist p-3">
               <label className="flex items-start gap-2 text-sm">
