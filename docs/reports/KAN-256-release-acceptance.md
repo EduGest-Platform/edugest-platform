@@ -17,6 +17,19 @@
 | Feedback revisado por docentes / Teacher-reviewed feedback | El backend guarda borradores versionados y publica por aprobación explícita. / The backend versions drafts and requires explicit approval to publish. [#272](https://github.com/EduGest-Platform/edugest-platform/pull/272) | Integrar y verificar la pantalla de revisión. / Integrate and verify the review screen. [#274](https://github.com/EduGest-Platform/edugest-platform/pull/274) |
 | Demo segura, respaldo y documentación / Secure demo, fallback and documentation | CI y F1 E2E en verde para la base revisada. Hay guía de respaldo y comprobación de restauración desechable. / CI and F1 E2E passed on the reviewed baseline. The local fallback guide and disposable restore evidence are available. [CI](https://github.com/EduGest-Platform/edugest-platform/actions/runs/46095100362) · [F1](https://github.com/EduGest-Platform/edugest-platform/actions/runs/46095100396) · [Respaldo / Fallback](../deploy/KAN-212-local-fallback.md) | Registrar el ensayo humano y el gate del entorno, completar la revisión de los manuales y recoger aceptación. / Record the presenter rehearsal and environment gate, finish manual reviews and capture acceptance. |
 
+## Registro para la versión candidata / Release candidate record
+
+**ES** — Al preparar la versión para el ensayo, pegar el SHA candidato y los enlaces a CI y F1 para ese mismo SHA. Para cada fila, enlazar la evidencia ejecutada y registrar fecha, entorno, resultado y quién acepta. Si una prueba vive en un PR abierto, registrar el PR como pendiente de integración. Si falta evidencia del candidato, usar `NOT_RUN` y señalar quién debe obtenerla.
+
+**EN** — For the rehearsal candidate, record the candidate SHA and link CI and F1 runs for that SHA. For each criterion, link the executed evidence and record date, environment, outcome and approver. Track tests from open PRs as pending integration. When candidate evidence is missing, record `NOT_RUN` and identify who will obtain it.
+
+| Evidencia por reconciliar / Evidence to reconcile | Registro del candidato / Candidate record |
+| --- | --- |
+| Segunda entrevista individual / Second individual interview | [#309](https://github.com/EduGest-Platform/edugest-platform/pull/309) · Pendiente / Pending |
+| Alertas y publicación de feedback / Alerts and feedback publication | [#273](https://github.com/EduGest-Platform/edugest-platform/pull/273) · [#274](https://github.com/EduGest-Platform/edugest-platform/pull/274) · Pendiente / Pending |
+| Gate de seguridad y ensayo / Security gate and rehearsal | [#308](https://github.com/EduGest-Platform/edugest-platform/pull/308) · [#310](https://github.com/EduGest-Platform/edugest-platform/pull/310) · Pendiente / Pending |
+| Carga sintética y sus límites / Synthetic seed and its limits | [#312](https://github.com/EduGest-Platform/edugest-platform/pull/312) · Pendiente / Pending |
+
 **Estado / Status:** revisión técnica completada para esta base. La conformidad con el briefing y la aceptación de producto quedan para revisión de Elizabeth y Yohanna. / Technical reconciliation complete for this baseline. Elizabeth and Yohanna still need to review briefing conformance and product acceptance.
 
 [Alcance y fechas / Scope and dates](KAN-211-scope-freeze-proposal.md) · [Plan de proyecto / Project plan](../../projectplan.md)
