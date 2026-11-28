@@ -1,4 +1,4 @@
-/** KAN-174: record an absence and book a second individual interview from the dossier. */
+/** KAN-174: record an absence, book a second interview and reschedule a group day. */
 import { readFileSync } from 'node:fs'
 import { check, errors, finish, newBrowser, sleep } from './cdp.mjs'
 
@@ -32,6 +32,11 @@ async function waitFor(page, expression) {
   return false
 }
 
+function futureLocalDate(hours) {
+  const date = new Date(Date.now() + hours * 3600 * 1000)
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
 async function openDossier(page) {
   await page.goto(web.href)
   requireCheck('The sign-in form is ready', await page.waitText('Iniciar sesión'))
@@ -61,10 +66,8 @@ try {
     await page.ev(`${panel}.querySelector('fieldset').textContent.includes('Entrevista individual') &&
       !document.querySelector('#selection-appointment-kind')`))
 
-  const date = new Date(Date.now() + 48 * 3600 * 1000)
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
   requireCheck('Booking the second interview retains the previous appointment',
-    await page.set('#selection-appointment-time', local) &&
+    await page.set('#selection-appointment-time', futureLocalDate(48)) &&
     await page.click('Guardar cita', panel) && await page.waitText('Cita anterior:'))
 
   const another = await newBrowser()
@@ -92,6 +95,30 @@ try {
     const booked = items.find(item => item.state === 'scheduled')
     return (await dossier.json()).stage === 'convocada' && items.length === 2 &&
       items.every(item => item.kind === 'individual_interview') && !!missed && booked?.previous_id === missed.id
+  })()`))
+  requireCheck('Selection can book a group day alongside the individual interview',
+    await another.click('Agendar cita', panel) && await another.set('#selection-appointment-kind', 'group_day') &&
+    await another.set('#selection-appointment-time', futureLocalDate(72)) &&
+    await another.click('Guardar cita', panel) && await another.waitText('Jornada de selección · Programada'))
+  const group = `Array.from(${panel}.querySelectorAll('li')).find(item =>
+    item.textContent.includes('Jornada de selección · Programada'))`
+  requireCheck('Rescheduling the group day preserves its kind',
+    await another.click('Reprogramar cita', `(${group})`) && await another.waitText('Nueva fecha para la cita') &&
+    await another.ev(`${panel}.querySelector('fieldset').textContent.includes('Jornada de selección') &&
+      !document.querySelector('#selection-appointment-kind')`))
+  requireCheck('The group day shows its previous appointment after saving',
+    await another.set('#selection-appointment-time', futureLocalDate(96)) &&
+    await another.click('Guardar cita', panel) &&
+    await waitFor(another, `(${group})?.textContent.includes('Cita anterior:')`))
+  requireCheck('The persisted replacement keeps group and individual histories separate', await another.ev(`(async () => {
+    const headers = { Authorization: 'Bearer ' + sessionStorage.getItem('gistar-api-token') }
+    const response = await fetch(${JSON.stringify(new URL(path + '/selection-appointments', api).href)}, { headers })
+    if (!response.ok) return false
+    const { items } = await response.json()
+    const previous = items.find(item => item.kind === 'group_day' && item.state === 'rescheduled')
+    const replacement = items.find(item => item.kind === 'group_day' && item.state === 'scheduled')
+    return items.length === 4 && !!previous && replacement?.previous_id === previous.id &&
+      items.some(item => item.kind === 'individual_interview' && item.state === 'scheduled')
   })()`))
   requireCheck('No uncaught browser errors', errors.length === 0)
 } catch (error) {
