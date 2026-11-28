@@ -24,6 +24,12 @@ async function waitFor(page, expression) {
   return false
 }
 
+async function login(page, email) {
+  requireCheck('The demo sign-in form is ready', await waitFor(page,
+    "!!document.querySelector('#lg-email') && !!document.querySelector('#lg-pass')"))
+  await page.login(email)
+}
+
 async function applyAttendancePeriod(page, from, to) {
   requireCheck('Attendance period controls are available',
     await page.set('#overview-attendance-from', from) && await page.set('#overview-attendance-to', to))
@@ -59,7 +65,9 @@ const iaCompetencies = `(() => {
 try {
   const teacher = await newBrowser()
   await teacher.goto(web.href)
-  await teacher.login('docente@gistar.example')
+  await login(teacher, 'docente@gistar.example')
+  requireCheck('Teacher navigation is ready', await waitFor(teacher,
+    `document.querySelector('nav[aria-label="Navegación principal"]')?.textContent.includes('Analítica del grupo')`))
   requireCheck('Teacher can open server group analytics', await teacher.nav('Analítica del grupo'))
   requireCheck('Seed IA cohort is loaded', await waitFor(teacher, "document.querySelector('#overview-cohort')?.value === 'COH-IA'"))
 
@@ -85,8 +93,8 @@ try {
 
   const recruiter = await newBrowser()
   await recruiter.goto(web.href)
-  await recruiter.login('captacion.ia@gistar.example')
-  requireCheck('Recruitment navigation has no group analytics entry', await recruiter.ev(`(() => {
+  await login(recruiter, 'captacion.ia@gistar.example')
+  requireCheck('Recruitment navigation has no group analytics entry', await waitFor(recruiter, `(() => {
     const menu = document.querySelector('nav[aria-label="Navegación principal"]')
     return !!menu && menu.textContent.includes('Candidaturas') && !menu.textContent.includes('Analítica del grupo')
   })()`))

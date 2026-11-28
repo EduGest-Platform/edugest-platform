@@ -310,6 +310,17 @@
             "title": "Requested By",
             "type": "string"
           },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
           "requested_role": {
             "title": "Requested Role",
             "type": "string"
@@ -391,6 +402,64 @@
           "approved"
         ],
         "title": "AccessReview",
+        "type": "object"
+      },
+      "AccessRevoke": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_id": {
+            "description": "Assignment observed before administrative confirmation.",
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "confirm": {
+            "description": "Explicit administrative confirmation of the echoed role and scope.",
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "requested_role": {
+            "enum": [
+              "admin",
+              "captacion",
+              "seleccion",
+              "docente",
+              "coordinacion"
+            ],
+            "title": "Requested Role",
+            "type": "string"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "enum": [
+              "global",
+              "program",
+              "call",
+              "cohort"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested_role",
+          "scope_type",
+          "confirm",
+          "assignment_id"
+        ],
+        "title": "AccessRevoke",
         "type": "object"
       },
       "ApplicationCreate": {
@@ -2201,6 +2270,100 @@
         "title": "CommentList",
         "type": "object"
       },
+      "CommentMutationOut": {
+        "properties": {
+          "actor_user_id": {
+            "format": "uuid",
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo tras borrado lógico; no se expone el texto retenido",
+            "title": "Body"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "thread_id": {
+            "format": "uuid",
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "thread_version": {
+            "title": "Thread Version",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "thread_id",
+          "parent_id",
+          "actor_user_id",
+          "body",
+          "version",
+          "created_at",
+          "edited_at",
+          "deleted_at",
+          "thread_version"
+        ],
+        "title": "CommentMutationOut",
+        "type": "object"
+      },
       "CommentOut": {
         "properties": {
           "actor_user_id": {
@@ -2574,6 +2737,29 @@
           "assessed_at"
         ],
         "title": "CurrentLevel",
+        "type": "object"
+      },
+      "DiscussionProgram": {
+        "properties": {
+          "can_write": {
+            "title": "Can Write",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "can_write"
+        ],
+        "title": "DiscussionProgram",
         "type": "object"
       },
       "DocumentationHistory": {
@@ -3595,6 +3781,52 @@
         "title": "InvitationAccept",
         "type": "object"
       },
+      "InvitationAccount": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "latest_invitation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvitationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "pending",
+                  "active"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile State"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "profile_state",
+          "latest_invitation"
+        ],
+        "title": "InvitationAccount",
+        "type": "object"
+      },
       "InvitationCreate": {
         "additionalProperties": false,
         "properties": {
@@ -3615,6 +3847,27 @@
           "user_id"
         ],
         "title": "InvitationCreate",
+        "type": "object"
+      },
+      "InvitationDirectory": {
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationAccount"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "has_more"
+        ],
+        "title": "InvitationDirectory",
         "type": "object"
       },
       "InvitationIssued": {
@@ -11402,7 +11655,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentOut"
+                  "$ref": "#/components/schemas/CommentMutationOut"
                 }
               }
             },
@@ -11467,7 +11720,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentOut"
+                  "$ref": "#/components/schemas/CommentMutationOut"
                 }
               }
             },
@@ -11499,6 +11752,42 @@
           }
         ],
         "summary": "Editar el comentario propio o moderar como administración con versión observada",
+        "tags": [
+          "discussions"
+        ]
+      }
+    },
+    "/api/v1/discussion-programs": {
+      "get": {
+        "operationId": "discussion_programs_api_v1_discussion_programs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscussionProgram"
+                  },
+                  "title": "Response Discussion Programs Api V1 Discussion Programs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso en el ámbito"
+          },
+          "404": {
+            "description": "Hilo o ámbito no encontrado"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Programas en los que la cuenta puede leer conversaciones generales",
         "tags": [
           "discussions"
         ]
@@ -11577,6 +11866,22 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolved",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resolved"
             }
           }
         ],
@@ -11828,7 +12133,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentOut"
+                  "$ref": "#/components/schemas/CommentMutationOut"
                 }
               }
             },
@@ -13419,6 +13724,39 @@
               "title": "Offset",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "pending_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Pending Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "requested",
+                    "approved",
+                    "rejected",
+                    "applied",
+                    "revoked"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
           }
         ],
         "responses": {
@@ -13749,6 +14087,154 @@
           }
         ],
         "summary": "Revisión administrativa distinta de quien solicita; aprobar no aplica roles",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/access-requests/{request_id}/revoke-access": {
+      "post": {
+        "operationId": "revoke_access_api_v1_staff_access_requests__request_id__revoke_access_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccessRevoke"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessApplicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Global administration required"
+          },
+          "404": {
+            "description": "Request not found"
+          },
+          "409": {
+            "description": "Confirmation mismatch or revocation blocked"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revocar de forma explícita la asignación verificada de una solicitud aplicada",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/v1/staff/invitation-accounts": {
+      "get": {
+        "operationId": "invitation_accounts_api_v1_staff_invitation_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Search",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDirectory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Administración global requerida"
+          },
+          "404": {
+            "description": "Invitación no encontrada"
+          },
+          "409": {
+            "description": "Cuenta/ficha no elegible o invitación ya utilizada"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Buscar cuentas internas elegibles y consultar su última invitación sin revelar el código",
         "tags": [
           "staff"
         ]
