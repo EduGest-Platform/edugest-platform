@@ -24,6 +24,7 @@ import { StaffAccessPanel } from './views/api/StaffAccessPanel'
 
 import { AssistantWidget } from './components/AssistantWidget'
 import { LoginScreen } from './components/LoginScreen'
+import { UserManualLink } from './components/UserManualLink'
 
 const SCREENS: Record<Exclude<View, 'tablero'>, () => ReactElement> = {
   dashboard: Dashboard,
@@ -84,6 +85,9 @@ export function Shell() {
       <aside className="bg-navy md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:py-6">
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
+          <nav aria-label="Ayuda" className="md:mt-3">
+            <UserManualLink className="text-white hover:bg-white/10" />
+          </nav>
         </div>
         <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">Menú · {ROLES[role]}</p>
         <nav aria-label="Navegación principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">

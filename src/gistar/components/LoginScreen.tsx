@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { LogIn } from 'lucide-react'
 import { API_URL } from '../../shared/api/config'
 import { useApiSession } from '../../shared/api/session'
+import { UserManualLink } from './UserManualLink'
 import { InscriptionForm } from '../views/api/ApiAdmissions'
 import { PublicCatalog } from '../views/api/PublicCatalog'
 import { Button, Card, Field, Notice, inputCls } from '../ui'
@@ -135,7 +136,8 @@ export function LoginScreen() {
                 </Button>
               </div>
             </form>
-            <p className="mt-4 text-xs text-muted">Cada pestaña mantiene su propia sesión: abre otra pestaña para actuar con otro perfil a la vez. Los permisos los comprueba la API.</p>
+            <div className="mt-3"><UserManualLink /></div>
+            <p className="mt-3 text-xs text-muted">Cada pestaña mantiene su propia sesión: abre otra pestaña para actuar con otro perfil a la vez. Los permisos los comprueba la API.</p>
           </Card>
         ) : tab === 'catalogo' ? (
           <PublicCatalog onApply={(course) => navigateAccess({ view: 'inscripcion', callId: course.id })} />
