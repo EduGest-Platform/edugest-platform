@@ -86,13 +86,19 @@ def post_application(body: ApplicationCreate, db: DB, p: OptionalPrincipal) -> A
     return ApplicationReceipt(id=a.id, codigo=a.codigo, call_id=a.call_id, stage=a.stage, created_at=a.created_at)
 
 
-@router.get("/manual-intake/calls", response_model=list[ManualIntakeCallOut], summary="Convocatorias donde puedes registrar candidaturas a mano")
+@router.get("/manual-intake/calls", response_model=list[ManualIntakeCallOut],
+            responses={403: {"description": "Sin permiso para registrar candidaturas"}},
+            summary="Convocatorias donde puedes registrar candidaturas a mano")
 def list_manual_intake_calls(p: CurrentPrincipal, db: DB) -> list[ManualIntakeCallOut]:
     return [ManualIntakeCallOut(id=c.id, nombre=c.nombre) for c in manual_intake.registrable_calls(db, p)]
 
 
 @router.post("/manual-intake/applications", response_model=ApplicationReceipt, status_code=201,
-             responses={404: {"description": "Published offer not found"}},
+             responses={
+                 403: {"description": "Sin permiso para registrar candidaturas en la convocatoria"},
+                 404: {"description": "Convocatoria publicada no encontrada"},
+                 409: {"description": "Candidatura duplicada o convocatoria cerrada a inscripciones"},
+             },
              summary="Registrar a mano una candidatura llegada fuera del formulario, con su canal de origen")
 def post_manual_application(body: ManualApplicationCreate, db: DB, p: CurrentPrincipal) -> ApplicationReceipt:
     a = manual_intake.register_application(db, p, body)
