@@ -1,5 +1,6 @@
 import { CloudOff, LogOut, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactElement } from 'react'
+import { UserJourneyLink } from './components/UserJourneyLink'
 import { API_MODE, dataSourceFor } from '../shared/api/config'
 import { uiRolesFor, useApiSession } from '../shared/api/session'
 import { canOpen, menuFor, ROLES, VIEWS } from './config'
@@ -106,6 +107,7 @@ export function Shell() {
             )
           })}
         </nav>
+        <div className="px-3 pb-3"><UserJourneyLink className="text-white hover:bg-white/10" /></div>
         <footer className="mt-auto hidden px-6 text-xs leading-relaxed text-[#8fb0c6] md:block">
           EduGest v1 · Datos ficticios
           <br />

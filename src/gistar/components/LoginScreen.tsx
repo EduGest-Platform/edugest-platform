@@ -5,6 +5,7 @@ import { useApiSession } from '../../shared/api/session'
 import { InscriptionForm } from '../views/api/ApiAdmissions'
 import { PublicCatalog } from '../views/api/PublicCatalog'
 import { Button, Card, Field, Notice, inputCls } from '../ui'
+import { UserJourneyLink } from './UserJourneyLink'
 import { PublicAccessNavigation } from './PublicAccessNavigation'
 import { publicAccessUrl, readPublicAccess, type PublicAccessLocation } from './publicAccessLocation'
 
@@ -80,6 +81,7 @@ export function LoginScreen() {
             >
               Explorar el catálogo
             </Button>
+            <UserJourneyLink className="mt-5 text-white hover:bg-white/10" />
           </section>
         )}
         {notice && !apiDown && (
