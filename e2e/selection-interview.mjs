@@ -71,6 +71,14 @@ try {
   await openDossier(another)
   requireCheck('The second browser sees both persisted interview records',
     await another.waitText('Ausencia registrada') && await another.waitText('Entrevista individual · Programada'))
+  requireCheck('The reopened interview history offers no duplicate second opportunity',
+    await another.ev(`(() => {
+      const history = ${panel}
+      return history.textContent.includes('Cita anterior:') &&
+        !Array.from(history.querySelectorAll('button')).some(button =>
+          button.textContent.trim() === 'Agendar segunda oportunidad')
+    })()`))
+
   requireCheck('Selection retains its human decision boundary', await another.ev(`(async () => {
     const token = sessionStorage.getItem('gistar-api-token')
     const headers = { Authorization: 'Bearer ' + token }
