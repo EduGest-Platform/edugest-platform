@@ -69,6 +69,15 @@ def test_provisioning_survives_lost_response_and_is_reconciled_once(client, monk
     recovered = {"operation_id": uncertain["operation_id"], "provider_id": "123456789"}
     assert client.post(reconcile, headers=teacher, json=recovered).status_code == 403
     provider.recover_meeting.assert_not_called()
+    provider.recover_meeting.side_effect = ZoomError("No matching synthetic meeting")
+    assert client.post(reconcile, headers=admin, json=recovered).status_code == 409
+    assert client.get(base + "/provisioning", headers=teacher).json() == uncertain
+    assert client.get(base + "/meeting", headers=teacher).json() is None
+    assert client.post(base + "/meeting", headers=teacher, json=body).status_code == 409
+    provider.create_meeting.assert_called_once()
+
+    provider.recover_meeting.side_effect = None
+    provider.recover_meeting.reset_mock()
     result = client.post(reconcile, headers=admin, json=recovered)
     assert result.status_code == 200, result.text
     assert client.post(reconcile, headers=admin, json=recovered).json() == result.json()

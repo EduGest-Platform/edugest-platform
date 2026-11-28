@@ -8,16 +8,17 @@ Status: partial backend implementation, disabled by default. Target: staging fir
 - Synchronize attendance from participant reports after meetings. Match only verified enrollment identities; ambiguous or unmatched participants require manual review. Preserve manual attendance and audit changes; deduplicate by meeting occurrence and participant identity.
 - Validate webhook signatures and timestamp freshness, reject replay, and process events idempotently. Use bounded retries and reconciliation; never infer attendance from an unverified display name.
 
-## Implementation checklist
-- [ ] Confirm Jira scope, existing session and attendance contracts, account ownership and privacy approval.
-- [ ] Add disabled-by-default settings, OAuth client and mocked provider tests.
-- [ ] Add meeting persistence, migration, scoped endpoints and audit events.
-- [ ] Add calendar/session UI and permission checks.
-- [ ] Add attendance reconciliation and signed webhook handling.
-- [ ] Regenerate OpenAPI and client; test cross-cohort denial, retries, duplicates and manual overrides.
-- [ ] Validate staging with synthetic participants and real provider sandbox/account; document rollback.
+## Implemented and pending work
 
-Backend components exist for OAuth, meeting provisioning, webhook verification helpers, transcript processing and staff notes review. Calendar UI, attendance reconciliation and provider validation remain pending. No runtime integration is enabled by default. Do not merge as a completed feature until implementation and verification are complete.
+The attendance screen can create and look up a meeting for an academic session when provisioning is enabled. The server persists a provisioning intent before contacting Zoom and requires a verified provider meeting to reconcile an uncertain result. OAuth, meeting persistence, authentication modes, webhook signature verification helpers and internal notes review are implemented. The automated tests use a mocked provider.
+
+Calendar join links, incoming webhook processing, attendance reconciliation, and validation with the institution's provider account are pending. Both Zoom settings remain disabled by default. Institutional activation and real data processing require a separate decision.
+
+## Recovery when a meeting cannot be found
+
+An authorised staff administrator records the operation reference, academic session, configured host and expected start time, then asks the institutional Zoom account administrator to check the host's meetings and account records. If they find a candidate meeting, enter its provider ID in EduGest. EduGest verifies its operation reference, host and schedule before linking it.
+
+If the provider lookup fails or cannot verify a candidate, keep the existing provisioning intent and escalate with the operation reference. An empty listing or an unavailable account is inconclusive. EduGest keeps creation blocked and allows another status check or a verified reconciliation. Support should use the institution's existing approved contingency to run the session if needed. Releasing a blocked intent for a new provider call requires an auditable workflow and authoritative provider evidence that the original operation did not create a meeting. That workflow is pending.
 
 ## Per-session participant authentication (KAN-276)
 - Authorized session teachers and administrators can select open access (no Zoom account required), authenticated Zoom account access, or institutional access restricted to approved domains where supported by the Zoom account and authentication profile.

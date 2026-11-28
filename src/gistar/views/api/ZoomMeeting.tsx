@@ -151,6 +151,7 @@ export function ZoomMeeting({ sessions }: { sessions: Schemas["SessionOut"][] })
     </Field>
     {unresolved && <>
       <Notice tone="warning">Hay una solicitud de Zoom pendiente de conciliación. Referencia: {unresolved.operation_id}</Notice>
+      <p className="text-sm text-muted">Si no encuentras la reunión en Zoom, comparte esta referencia con el equipo administrador de la cuenta institucional. La creación seguirá bloqueada hasta verificar una reunión.</p>
       <Button variant="ghost" disabled={busy} onClick={() => setLookupAttempt(n => n + 1)}>Actualizar estado de la solicitud</Button>
       {unresolved.can_reconcile && <div className="grid gap-2">
         <Field label="ID de la reunión existente en Zoom" htmlFor="zoom-provider-id">
