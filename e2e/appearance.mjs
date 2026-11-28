@@ -31,6 +31,18 @@ async function measure(selector) {
   })()`)
 }
 
+async function hoverButton(selector) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const clearHover = await page.hover(selector)
+    await sleep(250)
+    if (await page.ev(`document.querySelector(${JSON.stringify(selector)})?.matches(':hover')`)) {
+      return clearHover
+    }
+    await clearHover()
+  }
+  throw new Error(`Pointer could not reach ${selector}`)
+}
+
 async function verifyContrast(selector, label) {
   const colors = await measure(selector)
   const contrast = colors ? ratio(colors.foreground, colors.background) : 0
@@ -48,8 +60,7 @@ try {
     check(`${theme} theme active`, await page.ev(`document.documentElement.dataset.theme === '${theme}'`))
     if (!await page.nav('Rúbricas') || !await page.waitText('Nueva versión')) throw new Error('Rubric view unavailable')
     const primaryDefault = await verifyContrast(buttons.primary, `${theme} primary default`)
-    const clearPrimaryHover = await page.hover(buttons.primary)
-    await sleep(250)
+    const clearPrimaryHover = await hoverButton(buttons.primary)
     const primaryHover = await verifyContrast(buttons.primary, `${theme} primary hover`)
     check(`${theme} primary changes on hover`, primaryDefault !== primaryHover)
     await clearPrimaryHover()
@@ -58,8 +69,7 @@ try {
     for (const variant of ['ghost', 'success', 'subtle']) {
       const selector = buttons[variant]
       const defaultBackground = await verifyContrast(selector, `${theme} ${variant} default`)
-      const clearHover = await page.hover(selector)
-      await sleep(250)
+      const clearHover = await hoverButton(selector)
       const hoverBackground = await verifyContrast(selector, `${theme} ${variant} hover`)
       check(`${theme} ${variant} changes on hover`, defaultBackground !== hoverBackground)
       await clearHover()
@@ -88,6 +98,12 @@ try {
     return document.documentElement.lang === 'es' && nav?.lang === 'en' &&
       nav.textContent.includes('Rubrics') && heading?.closest('[lang]')?.lang === 'es' &&
       heading.textContent.includes('Rúbricas')
+  })()`))
+  await page.goto(web)
+  check('Reload retains language and theme without changing the document language', await page.waitText('Night mode') && await page.ev(`(() => {
+    const controls = document.querySelector('section[aria-label="Appearance preferences"]')
+    return document.documentElement.lang === 'es' && document.documentElement.dataset.theme === 'dark' &&
+      controls?.querySelector('button[lang=en]')?.getAttribute('aria-pressed') === 'true'
   })()`))
   await page.click('ES')
   check('Spanish chrome and Spanish screen restore matching language', await page.ev(`
