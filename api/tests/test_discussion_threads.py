@@ -44,3 +44,50 @@ def test_thread_creation_rolls_back_if_audit_fails(client, db, monkeypatch):
     monkeypatch.setattr(audit, 'record', fail)
     assert create(client, headers).status_code == 500
     assert db.scalar(select(func.count()).select_from(DiscussionThread)) == before
+
+
+def test_board_directory_only_lists_authorized_programs(client):
+    directory = '/api/v1/discussion-programs'
+    assert client.get(directory).status_code == 401
+    for account, expected in ((CAPT_IA, {'P-IA'}), (CAPT_DATA, {'P-DATA'}), (SEL_IA, set()), (ADMIN, {'P-IA', 'P-DATA'})):
+        response = client.get(directory, headers=login(client, account))
+        assert response.status_code == 200, response.text
+        assert {row['id'] for row in response.json()} == expected
+        assert all(row['can_write'] is True for row in response.json())
+
+
+def test_program_board_counts_only_threads_matching_the_resolution_filter(client):
+    headers = login(client, CAPT_IA)
+    open_thread = create(client, headers, subject='Open synthetic topic').json()
+    closed = create(client, headers, subject='Resolved synthetic topic').json()
+    change = client.post(f"/api/v1/discussion-threads/{closed['id']}/resolution", headers=headers,
+                         json={'resolved': True, 'expected_version': closed['version']})
+    assert change.status_code == 200, change.text
+    path = '/api/v1/discussion-threads'
+    query = {'scope_type': 'program', 'program_id': 'P-IA', 'limit': 1}
+    for resolved, expected in ((False, open_thread), (True, closed)):
+        response = client.get(path, params={**query, 'resolved': resolved}, headers=headers)
+        assert response.status_code == 200
+        assert response.json()['total'] == 1
+        assert [row['id'] for row in response.json()['items']] == [expected['id']]
+
+
+def test_cross_program_resolution_cannot_change_thread(client):
+    owner = login(client, CAPT_IA)
+    outsider = login(client, CAPT_DATA)
+    created = create(client, owner)
+    assert created.status_code == 201, created.text
+    thread = created.json()
+    path = f"/api/v1/discussion-threads/{thread['id']}/resolution"
+    for resolved in (True, False):
+        forbidden = client.post(path, headers=outsider,
+                                json={'resolved': resolved, 'expected_version': thread['version']})
+        assert forbidden.status_code == 403, forbidden.text
+        allowed = client.post(path, headers=owner,
+                              json={'resolved': resolved, 'expected_version': thread['version']})
+        assert allowed.status_code == 200, allowed.text
+        thread = allowed.json()
+        listed = client.get('/api/v1/discussion-threads', headers=owner,
+                            params={'scope_type': 'program', 'program_id': 'P-IA', 'resolved': resolved})
+        assert listed.status_code == 200
+        assert [row['id'] for row in listed.json()['items']] == [thread['id']]

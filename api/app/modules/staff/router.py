@@ -1,16 +1,24 @@
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Query
 
 from app.core.deps import DB, CurrentPrincipal
-from app.modules.staff import service
-from app.modules.staff.schemas import InvitationCreate, InvitationIssued, InvitationOut, InvitationRenew
+from app.modules.staff import invitation_directory, service
+from app.modules.staff.schemas import InvitationCreate, InvitationDirectory, InvitationIssued, InvitationOut, InvitationRenew
 from app.modules.staff.schemas import InvitationAccept, StaffProfileOut
 from app.modules.staff.schemas import AccessRequestCreate, AccessRequestList, AccessRequestOut, AccessReview
 
 router = APIRouter(prefix='/staff', tags=['staff'])
 ERRORS = {403: {'description': 'Administración global requerida'}, 404: {'description': 'Invitación no encontrada'},
           409: {'description': 'Cuenta/ficha no elegible o invitación ya utilizada'}}
+
+
+@router.get('/invitation-accounts', response_model=InvitationDirectory, responses=ERRORS,
+            summary='Buscar cuentas internas elegibles y consultar su última invitación sin revelar el código')
+def invitation_accounts(p: CurrentPrincipal, db: DB, search: str = Query(default='', max_length=100),
+                        offset: int = Query(default=0, ge=0), limit: int = Query(default=20, ge=1, le=50)):
+    return invitation_directory.list_invitation_accounts(db, p, search, offset, limit)
 
 
 @router.post('/invitations', response_model=InvitationIssued, status_code=201, responses=ERRORS,
@@ -51,8 +59,10 @@ def create_access_request(body: AccessRequestCreate, p: CurrentPrincipal, db: DB
 
 @router.get('/access-requests', response_model=AccessRequestList, responses=ERRORS,
             summary='Solicitudes propias; administración global puede consultar todas')
-def list_access_requests(p: CurrentPrincipal, db: DB, limit: int = Query(default=50, ge=1, le=100), offset: int = Query(default=0, ge=0)):
-    return service.list_access_requests(db, p, limit, offset)
+def list_access_requests(p: CurrentPrincipal, db: DB, limit: int = Query(default=50, ge=1, le=100),
+                         offset: int = Query(default=0, ge=0), pending_only: bool = False,
+                         state: Literal["requested", "approved", "rejected", "applied", "revoked"] | None = None):
+    return service.list_access_requests(db, p, limit, offset, "requested" if pending_only else state)
 
 
 @router.post('/access-requests/{request_id}/review', response_model=AccessRequestOut,

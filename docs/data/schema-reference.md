@@ -1333,9 +1333,9 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 
 - FK `unnamed`: `(user_id) -> (app_user.id)`; ON DELETE `CASCADE`; ON UPDATE `NO ACTION`
 
-- UNIQUE `uq_role_assignment`: `user_id, role, scope_type, scope_id`
-
 - INDEX `ix_role_assignment_user_id`: `role_assignment.user_id`
+
+- UNIQUE INDEX `uq_active_role_assignment`: `role_assignment.user_id, role_assignment.role, role_assignment.scope_type, role_assignment.scope_id` WHERE `revoked_at IS NULL`
 
 ### selection_appointment
 

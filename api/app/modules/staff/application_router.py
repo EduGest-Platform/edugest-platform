@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.core.deps import DB, CurrentPrincipal
 from app.modules.staff import application_service as service
-from app.modules.staff.application_schemas import AccessApplicationOut, AccessApplicationPreview, AccessApply
+from app.modules.staff.application_schemas import AccessApplicationOut, AccessApplicationPreview, AccessApply, AccessRevoke
 
 router = APIRouter(prefix='/staff/access-requests', tags=['staff'])
 ERRORS = {403: {'description': 'Global administration required'}, 404: {'description': 'Request not found'}}
@@ -28,3 +28,10 @@ def apply_access(request_id: uuid.UUID, body: AccessApply, p: CurrentPrincipal, 
             summary='Own or global-administrative request application status; no effective-permission claim')
 def read_application(request_id: uuid.UUID, p: CurrentPrincipal, db: DB):
     return service.read_application(db, p, request_id)
+
+
+@router.post('/{request_id}/revoke-access', response_model=AccessApplicationOut,
+             responses={**ERRORS, 409: {'description': 'Confirmation mismatch or revocation blocked'}},
+             summary='Revocar de forma explícita la asignación verificada de una solicitud aplicada')
+def revoke_access(request_id: uuid.UUID, body: AccessRevoke, p: CurrentPrincipal, db: DB):
+    return service.revoke_access(db, p, request_id, body)
