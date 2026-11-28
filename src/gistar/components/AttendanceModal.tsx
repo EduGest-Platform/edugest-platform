@@ -9,7 +9,7 @@ import { Modal } from './Modal'
 import { Button, Notice, inputCls } from '../ui'
 
 const STATES: { id: AsistEstado; label: string; cls: string }[] = [
-  { id: 'presente', label: 'Presente', cls: 'bg-teal text-white' },
+  { id: 'presente', label: 'Presente', cls: 'bg-action-success text-action-solid-text' },
   { id: 'retraso', label: 'Retraso', cls: 'bg-amber-500 text-white' },
   { id: 'ausente', label: 'Ausente', cls: 'bg-rose-600 text-white' },
   { id: 'pendiente', label: 'Pendiente', cls: 'bg-slate-500 text-white' },

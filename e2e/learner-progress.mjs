@@ -76,10 +76,11 @@ try {
 
   await applicant.goto(web.href)
   await applicant.login('aspirante-01@example.test')
-  requireCheck('Aspirant menu has no learner progress view', await applicant.ev(`(() => {
-    const menu = document.querySelector('nav[aria-label="Navegación principal"]')
-    return !!menu && menu.textContent.includes('Mi candidatura') && !menu.textContent.includes('Mi progreso')
-  })()`))
+  const applicantMenu = `document.querySelector('nav[aria-label="Navegación principal"]')`
+  requireCheck('Aspirant navigation is ready', await applicant.waitFor(
+    `${applicantMenu}?.textContent.includes('Mi candidatura')`))
+  requireCheck('Aspirant menu has no learner progress view', await applicant.ev(
+    `!${applicantMenu}.textContent.includes('Mi progreso')`))
   for (const resource of ['attendance', 'competencies', 'portfolio']) {
     requireCheck(`Aspirant cannot read the learner's ${resource}`,
       await apiStatus(applicant, `/me/enrollments/${encodeURIComponent(enrollmentId)}/${resource}`) === 404)

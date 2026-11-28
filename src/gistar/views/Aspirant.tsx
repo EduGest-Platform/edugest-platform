@@ -108,7 +108,7 @@ export function MyApplication() {
                   {i < steps.length - 1 && <span className={`absolute left-[11px] top-6 h-[calc(100%-20px)] w-px ${i < reached ? 'bg-teal' : 'bg-line'}`} />}
                   <span
                     className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                      done ? 'bg-teal text-white' : active ? 'bg-navy text-white ring-4 ring-navy/10' : 'border border-line bg-white text-slate-400'
+                      done ? 'bg-action-success text-action-solid-text' : active ? 'bg-navy text-white ring-4 ring-navy/10' : 'border border-line bg-white text-slate-400'
                     }`}
                   >
                     {done ? <Check className="size-3.5" aria-hidden /> : i + 1}

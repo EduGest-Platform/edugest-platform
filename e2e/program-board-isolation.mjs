@@ -24,16 +24,23 @@ async function openBoard(email, programId) {
   const page = await newBrowser()
   await page.goto(web.href)
   await page.login(email)
-  requireCheck(`Open the board for ${programId}`, await page.nav('Tablero de programas') &&
-    await page.waitText('Asunto del nuevo hilo'))
+  // The signed-in shell can render before it applies the account's staff role.
+  requireCheck(`Open the board for ${programId}`, await page.waitText('Tablero de programas', 15000) &&
+    await page.nav('Tablero de programas') && await page.waitText('Asunto del nuevo hilo'))
   requireCheck(`See only the ${programId} program option`,
     await page.ev(`JSON.stringify(Array.from(document.querySelector('#discussion-program').options, option => option.value)) === ${JSON.stringify(JSON.stringify([programId]))}`))
   return page
 }
 
 async function createThread(page, subject, body) {
-  requireCheck('Create a scoped thread', await setLabeled(page, 'Asunto del nuevo hilo', subject) &&
-    await page.click('Crear hilo', board) && await page.waitText('Nuevo comentario'))
+  requireCheck('Create and select the new scoped thread', await setLabeled(page, 'Asunto del nuevo hilo', subject) &&
+    await page.click('Crear hilo', board) && await page.waitFor(`(() => {
+      const labels = Array.from(document.querySelectorAll('main label'))
+      const field = (name) => document.getElementById(labels.find(label => label.textContent.trim() === name)?.htmlFor)
+      const selected = field('Hilo')?.selectedOptions[0]
+      const composer = field('Nuevo comentario')
+      return selected?.textContent === ${JSON.stringify(subject)} && Boolean(composer && !composer.disabled)
+    })()`))
   requireCheck('Persist a synthetic comment', await setLabeled(page, 'Nuevo comentario', body) &&
     await page.click('Enviar comentario', board) && await page.waitText(body))
 }

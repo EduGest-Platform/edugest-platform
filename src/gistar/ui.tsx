@@ -38,10 +38,10 @@ export function Card({
 
 type Variant = 'primary' | 'ghost' | 'success' | 'subtle'
 const variants: Record<Variant, string> = {
-  primary: 'bg-blue text-white hover:bg-[#6854e8]',
-  ghost: 'bg-mist text-navy hover:bg-[#e9e5ff]',
-  success: 'bg-teal text-white hover:bg-[#0f776f]',
-  subtle: 'bg-transparent text-muted hover:bg-mist hover:text-navy',
+  primary: 'bg-action-primary text-action-solid-text action-hover:bg-action-primary-hover',
+  ghost: 'bg-action-quiet text-action-quiet-text action-hover:bg-action-quiet-hover',
+  success: 'bg-action-success text-action-solid-text action-hover:bg-action-success-hover',
+  subtle: 'bg-transparent text-muted action-hover:bg-action-quiet action-hover:text-action-quiet-text',
 }
 export function Button({
   variant = 'primary',

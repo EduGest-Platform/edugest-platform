@@ -78,6 +78,7 @@ export async function newBrowser() {
   const s = a.sessionId
   await send('Runtime.enable', {}, s)
   await send('Page.enable', {}, s)
+  await send('Page.bringToFront', {}, s)
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
   const waitFor = async (expression, timeoutMs = 15000) => {
     const deadline = Date.now() + timeoutMs
@@ -95,6 +96,7 @@ export async function newBrowser() {
   }
   const page = {
     ev,
+    waitFor,
     initScript: async (source) => {
       const result = await send('Page.addScriptToEvaluateOnNewDocument', { source }, s)
       if (result.error) throw new Error(result.error.message)
@@ -114,6 +116,12 @@ export async function newBrowser() {
     tab: () => pressKey('Tab', 9),
     enter: () => pressKey('Enter', 13, '\r'),
     escape: () => pressKey('Escape', 27),
+    emulateMotion: async (width, height, reducedMotion) => {
+      await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
+      await send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-reduced-motion', value: reducedMotion ? 'reduce' : 'no-preference' }],
+      }, s)
+    },
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
       await sleep(300)
@@ -140,6 +148,20 @@ export async function newBrowser() {
     click: (text, scope = 'document') =>
       ev(`(() => { const b = [...${scope}.querySelectorAll('button')].find(b => b.textContent.trim().startsWith(${JSON.stringify(text)}) && !b.disabled); if (!b) return false; b.click(); return true })()`),
     nav: (label) => ev(`(() => { const b = [...document.querySelectorAll('nav[aria-label="Navegación principal"] button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true })()`),
+    hover: async selector => {
+      const point = await ev(`(() => {
+        const button = document.querySelector(${JSON.stringify(selector)})
+        if (!button) return null
+        button.scrollIntoView({ block: 'center' })
+        const bounds = button.getBoundingClientRect()
+        return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+      })()`)
+      if (!point) throw new Error(`Could not find ${selector}`)
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point }, s)
+      return async () => {
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 }, s)
+      }
+    },
     rows: () => ev(`document.querySelectorAll('main tbody tr').length`),
     login: async (email) => {
       if (!await waitFor("!!document.querySelector('#lg-email') && !!document.querySelector('#lg-pass')")) {
