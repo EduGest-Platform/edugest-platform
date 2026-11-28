@@ -12572,8 +12572,14 @@
             },
             "description": "Successful Response"
           },
+          "403": {
+            "description": "Sin permiso para registrar candidaturas en la convocatoria"
+          },
           "404": {
-            "description": "Published offer not found"
+            "description": "Convocatoria publicada no encontrada"
+          },
+          "409": {
+            "description": "Candidatura duplicada o convocatoria cerrada a inscripciones"
           },
           "422": {
             "content": {
@@ -12614,6 +12620,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso para registrar candidaturas"
           }
         },
         "security": [

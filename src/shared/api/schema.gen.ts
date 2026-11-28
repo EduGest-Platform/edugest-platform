@@ -8577,8 +8577,22 @@ export interface operations {
                     "application/json": components["schemas"]["ApplicationReceipt"];
                 };
             };
-            /** @description Published offer not found */
+            /** @description Sin permiso para registrar candidaturas en la convocatoria */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Convocatoria publicada no encontrada */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Candidatura duplicada o convocatoria cerrada a inscripciones */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8612,6 +8626,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ManualIntakeCallOut"][];
                 };
+            };
+            /** @description Sin permiso para registrar candidaturas */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

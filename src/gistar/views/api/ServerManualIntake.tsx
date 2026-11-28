@@ -30,20 +30,29 @@ export function ServerManualIntake({ onRegistered }: { onRegistered?: () => void
 function useIntakeCalls(active: boolean) {
   const [calls, setCalls] = useState<IntakeCall[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const pending = useRef<AbortController | null>(null)
 
   const load = useCallback(async () => {
+    pending.current?.abort()
+    const controller = new AbortController()
+    pending.current = controller
+    const { signal } = controller
     setError(null)
     try {
-      const { data, error: apiError, response } = await api.GET('/api/v1/manual-intake/calls')
+      const { data, error: apiError, response } = await api.GET('/api/v1/manual-intake/calls', { signal })
+      if (signal.aborted) return
       setCalls(data ?? null)
       if (!data) setError(problemText(describeApiError(response.status, apiError)))
     } catch {
-      setError('No se pudieron cargar las convocatorias. Revisa tu conexión.')
+      if (!signal.aborted) setError('No se pudieron cargar las convocatorias. Revisa tu conexión.')
+    } finally {
+      if (pending.current === controller) pending.current = null
     }
   }, [])
 
   useEffect(() => {
     if (active) void load()
+    return () => pending.current?.abort()
   }, [active, load])
 
   return { calls, error, load }

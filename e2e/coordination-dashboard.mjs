@@ -29,6 +29,27 @@ function stageCount(stage, count) {
 
 try {
   const page = await newBrowser()
+  await page.initScript(`(() => {
+    const fetchRequest = window.fetch.bind(window);
+    const intake = window.manualIntakeTest = { delayCalls: false, rejectSubmission: false, summaryReads: 0 };
+    window.fetch = (request, options) => {
+      const path = new URL(request.url ?? request, location.href).pathname;
+      if (path.endsWith('/summary')) intake.summaryReads++;
+      if (path === '/api/v1/manual-intake/calls' && intake.delayCalls) {
+        intake.delayCalls = false;
+        return new Promise(resolve => {
+          intake.releaseCalls = () => resolve(new Response('{"detail":"Stale synthetic response"}', {
+            status: 503, headers: { 'Content-Type': 'application/json' },
+          }));
+        });
+      }
+      if (path === '/api/v1/manual-intake/applications' && intake.rejectSubmission) {
+        intake.rejectSubmission = false;
+        return Promise.reject(new TypeError('Synthetic connection loss'));
+      }
+      return fetchRequest(request, options);
+    };
+  })()`)
   await page.goto(web.href)
   await page.blockUrls(['*/api/v1/calls/*/summary'])
   await page.login('coordinacion@gistar.example')
@@ -79,8 +100,17 @@ try {
   requireCheck('IA programme can be selected again', await page.set('#coordination-program', 'P-IA'))
   requireCheck('Open IA call can be selected', await page.set('#coordination-call', 'CONV-IA-2027A'))
   requireCheck('Totals before the manual registration', await waitFor(page, total(50)))
+  await page.ev('window.manualIntakeTest.delayCalls = true')
   requireCheck('Open the manual intake form', await page.click('Registrar candidatura'))
-  requireCheck('Calls load in the form', await waitFor(page, "document.querySelectorAll('#manual-call option').length > 1"))
+  requireCheck('The first call list response is held', await waitFor(page, 'Boolean(window.manualIntakeTest.releaseCalls)'))
+  requireCheck('Reopen the form to start a new call list request', await page.click('Ocultar') && await page.click('Registrar candidatura'))
+  const validCalls = "document.querySelectorAll('#manual-call option').length > 1"
+  requireCheck('Calls load in the form', await waitFor(page, validCalls))
+  await page.ev(`(async () => {
+    window.manualIntakeTest.releaseCalls();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  })()`)
+  requireCheck('The older response cannot replace the call list', await page.ev(validCalls))
   requireCheck('Choose call and origin', await page.set('#manual-call', 'CONV-IA-2027A') && await page.set('#manual-origin', 'telefono'))
   requireCheck('Type synthetic data', await page.set('#manual-name', 'Persona Sintética Manual')
     && await page.set('#manual-email', `manual.${Date.now()}@example.test`)
@@ -108,7 +138,15 @@ try {
   requireCheck('A refusal keeps the draft and unlocks the form', await waitFor(page,
     `document.querySelector('#manual-name').value === 'Persona Sintética Repetida' && !${locked}`))
   requireCheck('Focus moves to the result', await waitFor(page, "document.activeElement?.matches('[data-intake-result]')"))
-  requireCheck('A refusal does not change the totals', await page.ev(total(51)))
+  await page.set('#manual-email', `unconfirmed.${Date.now()}@example.test`)
+  const summaryReads = await page.ev('window.manualIntakeTest.summaryReads')
+  await page.ev('window.manualIntakeTest.rejectSubmission = true')
+  requireCheck('Submit with a simulated connection loss', await page.click('Registrar'))
+  requireCheck('An unconfirmed send keeps the draft and unlocks the form', await waitFor(page,
+    `document.querySelector('#manual-name').value === 'Persona Sintética Repetida' && !${locked}
+      && document.querySelector('[data-intake-result]')?.textContent.includes('confirmar')`))
+  requireCheck('An unconfirmed send triggers a fresh indicator read',
+    await waitFor(page, `window.manualIntakeTest.summaryReads > ${summaryReads}`))
   requireCheck('No uncaught browser exceptions', errors.length === 0)
 } catch (error) {
   check('Coordination dashboard journey completes', false, error instanceof Error ? error.message : 'Unknown error')
