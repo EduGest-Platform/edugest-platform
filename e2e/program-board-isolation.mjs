@@ -33,8 +33,14 @@ async function openBoard(email, programId) {
 }
 
 async function createThread(page, subject, body) {
-  requireCheck('Create a scoped thread', await setLabeled(page, 'Asunto del nuevo hilo', subject) &&
-    await page.click('Crear hilo', board) && await page.waitText('Nuevo comentario'))
+  requireCheck('Create and select the new scoped thread', await setLabeled(page, 'Asunto del nuevo hilo', subject) &&
+    await page.click('Crear hilo', board) && await page.waitFor(`(() => {
+      const labels = Array.from(document.querySelectorAll('main label'))
+      const field = (name) => document.getElementById(labels.find(label => label.textContent.trim() === name)?.htmlFor)
+      const selected = field('Hilo')?.selectedOptions[0]
+      const composer = field('Nuevo comentario')
+      return selected?.textContent === ${JSON.stringify(subject)} && Boolean(composer && !composer.disabled)
+    })()`))
   requireCheck('Persist a synthetic comment', await setLabeled(page, 'Nuevo comentario', body) &&
     await page.click('Enviar comentario', board) && await page.waitText(body))
 }

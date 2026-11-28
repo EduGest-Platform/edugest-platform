@@ -96,6 +96,7 @@ export async function newBrowser() {
   }
   const page = {
     ev,
+    waitFor,
     initScript: async (source) => {
       const result = await send('Page.addScriptToEvaluateOnNewDocument', { source }, s)
       if (result.error) throw new Error(result.error.message)
