@@ -109,6 +109,27 @@ try {
   check('Spanish chrome and Spanish screen restore matching language', await page.ev(`
     document.querySelector('nav[aria-label="Navegación principal"]')?.lang === 'es' &&
     document.documentElement.lang === 'es'`))
+  if (!await page.set('#role', 'docente') || !await page.nav('Alumnado') ||
+      !await page.ev("!!document.querySelector('main [role=progressbar] > span')")) {
+    throw new Error('Teacher progress view unavailable')
+  }
+  for (const width of [1280, 390]) {
+    for (const reduce of [false, true]) {
+      await page.emulateMotion(width, 844, reduce)
+      check(`Motion preference at ${width}px (${reduce ? 'reduced' : 'normal'})`, await page.ev(`(() => {
+        const reduce = ${reduce}
+        const main = document.querySelector('main')
+        const nav = document.querySelector('nav[aria-label="Navegación principal"] button')
+        const button = Array.from(main.querySelectorAll('button')).find(el => el.classList.contains('motion-safe:duration-200'))
+        const progress = main.querySelector('[role=progressbar] > span')
+        if (![nav, button, progress].every(Boolean) || innerWidth !== ${width}) return false
+        const hasTransition = el => getComputedStyle(el).transitionDuration.split(',').some(value => parseFloat(value) > 0)
+        return matchMedia('(prefers-reduced-motion: reduce)').matches === reduce &&
+          (getComputedStyle(main).animationName !== 'none') === !reduce &&
+          [nav, button, progress].every(el => hasTransition(el) === !reduce)
+      })()`))
+    }
+  }
   check('No uncaught browser errors', errors.length === 0)
 } catch (error) {
   check('Appearance journey', false, error.message)

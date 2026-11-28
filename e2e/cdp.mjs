@@ -115,6 +115,12 @@ export async function newBrowser() {
     tab: () => pressKey('Tab', 9),
     enter: () => pressKey('Enter', 13, '\r'),
     escape: () => pressKey('Escape', 27),
+    emulateMotion: async (width, height, reducedMotion) => {
+      await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
+      await send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-reduced-motion', value: reducedMotion ? 'reduce' : 'no-preference' }],
+      }, s)
+    },
     shot: async (file, width = 1280, height = 900) => {
       await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false }, s)
       await sleep(300)
