@@ -24,6 +24,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
   const [attempt, setAttempt] = useState(0)
   const [kind, setKind] = useState<Intervention>('contact')
   const [note, setNote] = useState('')
+  const [closureConfirmed, setClosureConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [uncertainWrite, setUncertainWrite] = useState<{
     kind: Intervention; note: string; previousIds: Set<string>
@@ -63,6 +64,8 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
   async function record(event: FormEvent) {
     event.preventDefault()
     if (!details || details.alert.review_state === 'closed' || !note.trim() || requiresHistoryReview || pending.current) return
+    if (kind === 'closure' && !closureConfirmed) return
+    setClosureConfirmed(false)
     const submitted = {
       kind, note: note.trim(),
       previousIds: new Set(details.interventions.map(item => item.id)),
@@ -156,15 +159,27 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
             <form className="grid gap-3" onSubmit={record}>
               <Field label="Tipo de intervención" htmlFor="risk-kind">
                 <select id="risk-kind" className={inputCls} value={kind} disabled={blocked}
-                  onChange={event => setKind(event.target.value as Intervention)}>
+                  onChange={event => {
+                    setKind(event.target.value as Intervention)
+                    setClosureConfirmed(false)
+                  }}>
                   {Object.entries(actions).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                 </select>
               </Field>
               <Field label="Nota de apoyo" htmlFor="risk-note" hint="Evita incluir información personal sensible.">
                 <textarea id="risk-note" className={inputCls} readOnly={blocked} required maxLength={500}
-                  value={note} onChange={event => setNote(event.target.value)} />
+                  value={note} onChange={event => {
+                    setNote(event.target.value)
+                    setClosureConfirmed(false)
+                  }} />
               </Field>
-              <Button type="submit" className="justify-self-start" disabled={busy || requiresHistoryReview || !note.trim()}>
+              {kind === 'closure' && <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" className="mt-1" checked={closureConfirmed} disabled={blocked}
+                  onChange={event => setClosureConfirmed(event.target.checked)} />
+                Confirmo el cierre de esta alerta de apoyo. La matrícula no cambia.
+              </label>}
+              <Button type="submit" className="justify-self-start"
+                disabled={blocked || !note.trim() || (kind === 'closure' && !closureConfirmed)}>
                 {kind === 'closure' ? 'Cerrar alerta' : 'Registrar intervención'}
               </Button>
             </form>
