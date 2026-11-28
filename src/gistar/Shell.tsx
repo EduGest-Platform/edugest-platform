@@ -26,7 +26,28 @@ import { StaffAccessPanel } from './views/api/StaffAccessPanel'
 import { AssistantWidget } from './components/AssistantWidget'
 import { LoginScreen } from './components/LoginScreen'
 
-const EN_MENU: Record<View, string> = { dashboard: 'Home', analitica: 'Analytics', calendario: 'Calendar', rubricas: 'Rubrics', ficha: 'Student profile', programas: 'Programs', competencias: 'Competencies', auditoria: 'Audit', alumnado: 'Students', asistencia: 'Attendance', entregas: 'Submissions', alertas: 'Alerts', asistente: 'Assistant', progreso: 'My progress', inscripcion: 'Registration', candidatura: 'My application', candidaturas: 'Applications', cohortes: 'Cohorts', tablero: 'Program board' }
+const EN_MENU = {
+  dashboard: 'Home',
+  analitica: 'Analytics',
+  calendario: 'Calendar',
+  rubricas: 'Rubrics',
+  ficha: 'Student profile',
+  programas: 'Programs',
+  competencias: 'Competencies',
+  auditoria: 'Audit',
+  alumnado: 'Students',
+  asistencia: 'Attendance',
+  entregas: 'Submissions',
+  alertas: 'Alerts',
+  asistente: 'Assistant',
+  progreso: 'My progress',
+  inscripcion: 'Registration',
+  candidatura: 'My application',
+  candidaturas: 'Applications',
+  cohortes: 'Cohorts',
+  tablero: 'Program board',
+  eventos: 'Events',
+} satisfies Record<View | 'eventos', string>
 
 const SCREENS: Record<Exclude<View, 'tablero'>, () => ReactElement> = {
   dashboard: Dashboard,
