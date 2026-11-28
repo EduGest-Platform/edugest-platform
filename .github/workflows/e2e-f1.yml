@@ -91,6 +91,13 @@ jobs:
         env:
           GISTAR_API: http://localhost:8000
         run: node e2e/intake-human-review.mjs
+      - name: Individual selection interview and second opportunity (KAN-174)
+        env:
+          WEB_URL: http://localhost:8443/
+          GISTAR_API: http://localhost:8000
+        run: |
+          docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-selection-interview.py > "$RUNNER_TEMP/selection-interview.json"
+          node e2e/selection-interview.mjs "$RUNNER_TEMP/selection-interview.json"
       - name: Prepare F2 synthetic cohort and teacher (KAN-72)
         run: docker compose -f infra/compose.yaml exec -T -e GISTAR_E2E_FIXTURE=disposable-synthetic api python < e2e/prepare-f2.py
       - name: F2 HTTP waitlist promotion and private applicant outcome (KAN-49)
