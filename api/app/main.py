@@ -18,6 +18,7 @@ from app.modules.assistant_tools.router import router as assistant_tools_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.audit.router import router as audit_router
 from app.modules.discussions.router import router as discussion_router
+from app.modules.risk.router import router as risk_router
 from app.modules.feedback.router import router as feedback_router
 from app.modules.automation.router import router as automation_router
 from app.modules.catalog.router import router as catalog_router
@@ -79,6 +80,7 @@ for r in (
     submissions_router,
     feedback_router,
     assistant_router,
+    risk_router,
     assistant_tools_router,
     teaching_team_router,
     academic_directory_router,
