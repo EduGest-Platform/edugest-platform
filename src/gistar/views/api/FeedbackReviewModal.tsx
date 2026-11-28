@@ -9,6 +9,26 @@ type QueueItem = Schemas['FeedbackQueueItem']
 type Draft = Schemas['FeedbackDraftOut']
 type ResponseData = { data?: Draft; error?: unknown; response: Response }
 
+function FeedbackVersionEvidence({ draft }: { draft: Draft }) {
+  const { passed, total } = draft.check_results
+  return (
+    <details className="mt-3 rounded-lg border border-line p-3 text-sm">
+      <summary className="cursor-pointer font-medium">Evidencia de la versión {draft.version}</summary>
+      <p className="mt-2">Revisión de la entrega: {draft.submission_revision}.</p>
+      {typeof passed === 'number' && typeof total === 'number' ? (
+        <p>Pruebas superadas: {passed} de {total}.</p>
+      ) : <p>No hay un recuento de pruebas en esta versión.</p>}
+      {draft.rubric.length > 0 ? (
+        <>
+          <p className="mt-2 font-medium">Criterios de la rúbrica</p>
+          <ul className="list-disc pl-5">{draft.rubric.map((criterion, index) =>
+            <li key={index} className="wrap-anywhere">{criterion}</li>)}</ul>
+        </>
+      ) : <p>Esta versión no contiene criterios de rúbrica.</p>}
+    </details>
+  )
+}
+
 export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
   item: QueueItem; onClose: () => void; onBlockedChange: (blocked: boolean) => void
 }) {
@@ -87,8 +107,6 @@ export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
   }
 
   const latest = versions?.items.at(-1)
-  const passed = latest?.check_results.passed
-  const total = latest?.check_results.total
   const current = latest?.submission_revision === versions?.current_revision
   const publishable = latest?.status === 'draft' && current && !edit
 
@@ -131,20 +149,7 @@ export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
               <p className="text-sm text-muted">{latest.label}</p>
               {!current && <p className="text-sm">Corresponde a la revisión {latest.submission_revision}. Genera un borrador de la revisión actual para publicar.</p>}
               <p className="mt-3 whitespace-pre-wrap wrap-anywhere text-sm">{latest.body}</p>
-              <details className="mt-3 rounded-lg border border-line p-3 text-sm">
-                <summary className="cursor-pointer font-medium">Evidencia de la versión {latest.version}</summary>
-                <p className="mt-2">Revisión de la entrega: {latest.submission_revision}.</p>
-                {typeof passed === 'number' && typeof total === 'number' ? (
-                  <p>Pruebas superadas: {passed} de {total}.</p>
-                ) : <p>No hay un recuento de pruebas en esta versión.</p>}
-                {latest.rubric.length > 0 ? (
-                  <>
-                    <p className="mt-2 font-medium">Criterios de la rúbrica</p>
-                    <ul className="list-disc pl-5">{latest.rubric.map((criterion, index) =>
-                      <li key={index} className="wrap-anywhere">{criterion}</li>)}</ul>
-                  </>
-                ) : <p>Esta versión no contiene criterios de rúbrica.</p>}
-              </details>
+              <FeedbackVersionEvidence draft={latest} />
             </article>
             {publishable && <div className="grid gap-2 rounded-xl bg-mist p-3">
               <label className="flex items-start gap-2 text-sm">
@@ -164,6 +169,7 @@ export function FeedbackReviewModal({ item, onClose, onBlockedChange }: {
                 {versions.items.slice(0, -1).reverse().map(draft => <li key={draft.id} className="border-b border-line py-2 text-sm">
                   <p className="font-medium">Versión {draft.version} · Entrega {draft.submission_revision} · {draft.status === 'approved' ? 'Publicada' : 'Borrador'}</p>
                   <p className="whitespace-pre-wrap wrap-anywhere">{draft.body}</p>
+                  <FeedbackVersionEvidence draft={draft} />
                 </li>)}
               </ol>
             </details>}
