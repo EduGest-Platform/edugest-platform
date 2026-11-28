@@ -48,7 +48,9 @@ export const EXTRA_VIEWS: Partial<Record<Role, View[]>> = { docente: ['ficha'] }
 const API_ONLY_VIEWS: Partial<Record<Role, View[]>> = {
   coder: ['candidatura'],
   // KAN-275 (PO 27/11/2026): administration registers applications from the screen too.
-  admin: ['candidaturas'],
+  admin: ['candidaturas', 'tablero'],
+  fundacion: ['tablero'],
+  seleccion: ['tablero'],
 }
 
 export const menuFor = (role: Role, apiMode: boolean): View[] =>
@@ -76,6 +78,7 @@ export const VIEWS: Record<View, { label: string; icon: LucideIcon }> = {
   inscripcion: { label: 'Inscripción', icon: PenLine },
   candidatura: { label: 'Mi candidatura', icon: UserRoundCheck },
   candidaturas: { label: 'Candidaturas', icon: GraduationCap },
+  tablero: { label: 'Tablero de programas', icon: ClipboardList },
   cohortes: { label: 'Cohortes', icon: BookOpen },
 }
 

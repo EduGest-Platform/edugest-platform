@@ -2235,6 +2235,100 @@
         "title": "CommentList",
         "type": "object"
       },
+      "CommentMutationOut": {
+        "properties": {
+          "actor_user_id": {
+            "format": "uuid",
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nulo tras borrado lógico; no se expone el texto retenido",
+            "title": "Body"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "thread_id": {
+            "format": "uuid",
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "thread_version": {
+            "title": "Thread Version",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "thread_id",
+          "parent_id",
+          "actor_user_id",
+          "body",
+          "version",
+          "created_at",
+          "edited_at",
+          "deleted_at",
+          "thread_version"
+        ],
+        "title": "CommentMutationOut",
+        "type": "object"
+      },
       "CommentOut": {
         "properties": {
           "actor_user_id": {
@@ -2608,6 +2702,29 @@
           "assessed_at"
         ],
         "title": "CurrentLevel",
+        "type": "object"
+      },
+      "DiscussionProgram": {
+        "properties": {
+          "can_write": {
+            "title": "Can Write",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "can_write"
+        ],
+        "title": "DiscussionProgram",
         "type": "object"
       },
       "DocumentationHistory": {
@@ -11277,7 +11394,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentOut"
+                  "$ref": "#/components/schemas/CommentMutationOut"
                 }
               }
             },
@@ -11342,7 +11459,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentOut"
+                  "$ref": "#/components/schemas/CommentMutationOut"
                 }
               }
             },
@@ -11374,6 +11491,42 @@
           }
         ],
         "summary": "Editar el comentario propio o moderar como administración con versión observada",
+        "tags": [
+          "discussions"
+        ]
+      }
+    },
+    "/api/v1/discussion-programs": {
+      "get": {
+        "operationId": "discussion_programs_api_v1_discussion_programs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscussionProgram"
+                  },
+                  "title": "Response Discussion Programs Api V1 Discussion Programs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso en el ámbito"
+          },
+          "404": {
+            "description": "Hilo o ámbito no encontrado"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Programas en los que la cuenta puede leer conversaciones generales",
         "tags": [
           "discussions"
         ]
@@ -11452,6 +11605,22 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolved",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resolved"
             }
           }
         ],
@@ -11703,7 +11872,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommentOut"
+                  "$ref": "#/components/schemas/CommentMutationOut"
                 }
               }
             },

@@ -826,6 +826,23 @@ export interface paths {
         patch: operations["patch_comment_api_v1_discussion_comments__comment_id__patch"];
         trace?: never;
     };
+    "/api/v1/discussion-programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Programas en los que la cuenta puede leer conversaciones generales */
+        get: operations["discussion_programs_api_v1_discussion_programs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/discussion-threads": {
         parameters: {
             query?: never;
@@ -2539,6 +2556,44 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** CommentMutationOut */
+        CommentMutationOut: {
+            /**
+             * Actor User Id
+             * Format: uuid
+             */
+            actor_user_id: string;
+            /**
+             * Body
+             * @description Nulo tras borrado lógico; no se expone el texto retenido
+             */
+            body: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Deleted At */
+            deleted_at: string | null;
+            /** Edited At */
+            edited_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /**
+             * Thread Id
+             * Format: uuid
+             */
+            thread_id: string;
+            /** Thread Version */
+            thread_version: number;
+            /** Version */
+            version: number;
+        };
         /** CommentOut */
         CommentOut: {
             /**
@@ -2689,6 +2744,15 @@ export interface components {
             level: (1 | 2 | 3) | null;
             /** Nombre */
             nombre: string;
+        };
+        /** DiscussionProgram */
+        DiscussionProgram: {
+            /** Can Write */
+            can_write: boolean;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** DocumentationHistory */
         DocumentationHistory: {
@@ -7601,7 +7665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommentOut"];
+                    "application/json": components["schemas"]["CommentMutationOut"];
                 };
             };
             /** @description Sin permiso en el ámbito */
@@ -7657,7 +7721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommentOut"];
+                    "application/json": components["schemas"]["CommentMutationOut"];
                 };
             };
             /** @description Sin permiso en el ámbito */
@@ -7692,6 +7756,40 @@ export interface operations {
             };
         };
     };
+    discussion_programs_api_v1_discussion_programs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscussionProgram"][];
+                };
+            };
+            /** @description Sin permiso en el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Hilo o ámbito no encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_threads_api_v1_discussion_threads_get: {
         parameters: {
             query: {
@@ -7700,6 +7798,7 @@ export interface operations {
                 program_id?: string | null;
                 limit?: number;
                 offset?: number;
+                resolved?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -7902,7 +8001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CommentOut"];
+                    "application/json": components["schemas"]["CommentMutationOut"];
                 };
             };
             /** @description Sin permiso en el ámbito */

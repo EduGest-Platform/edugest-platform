@@ -96,8 +96,13 @@ describe('where each registrar finds the form', () => {
     expect(canOpen('admin', 'candidaturas')).toBe(false)
   })
 
-  it('does not change the menu of the other roles in server mode', () => {
-    for (const role of ['seleccion', 'coordinacion', 'docente', 'fundacion', 'aspirante'] as const) expect(menuFor(role, true)).toEqual(menuFor(role, false))
+  it('keeps manual intake access unchanged and adds the server board only to its roles', () => {
+    for (const role of ['coordinacion', 'docente', 'aspirante'] as const) {
+      expect(menuFor(role, true)).toEqual(menuFor(role, false))
+    }
+    for (const role of ['seleccion', 'fundacion'] as const) {
+      expect(menuFor(role, true)).toEqual([...menuFor(role, false), 'tablero'])
+    }
   })
 })
 
