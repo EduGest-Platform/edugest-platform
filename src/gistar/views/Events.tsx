@@ -49,15 +49,21 @@ export function Events() {
               <option value="ended">Finalizados</option>
             </select>
           </Field>
-          <Field label="Desde" htmlFor="events-from"><input id="events-from" type="date" className={inputCls} value={from} onChange={event => setFrom(event.target.value)} /></Field>
-          <Field label="Hasta" htmlFor="events-to"><input id="events-to" type="date" className={inputCls} value={to} onChange={event => setTo(event.target.value)} /></Field>
-          {invalidRange && <p role="alert" className="text-sm">La fecha final debe ser igual o posterior a la inicial.</p>}
+          <Field label="Desde" htmlFor="events-from">
+            <input id="events-from" type="date" className={inputCls} value={from} onChange={event => setFrom(event.target.value)} />
+          </Field>
+          <Field label="Hasta" htmlFor="events-to">
+            <input id="events-to" type="date" className={inputCls} value={to} min={from || undefined}
+              aria-invalid={invalidRange} aria-describedby={invalidRange ? 'events-date-error' : undefined}
+              onChange={event => setTo(event.target.value)} />
+          </Field>
+          {invalidRange && <p id="events-date-error" role="alert" className="text-sm">La fecha final debe ser igual o posterior a la inicial.</p>}
           <Button variant="ghost" disabled={!query && !type && !from && !to && phase === 'active'} onClick={() => { setQuery(""); setType(""); setPhase('active'); setFrom(""); setTo("") }}>Restablecer filtros</Button>
         </div>
       </Card>
       <div className="mt-5 grid gap-4">
-        <p role="status" className="text-sm text-muted">{items.length} {items.length === 1 ? "evento" : "eventos"}</p>
-        {!items.length && <Card title="Sin eventos"><p className="text-sm text-muted">No hay eventos con los filtros seleccionados.</p></Card>}
+        <p role="status" className="text-sm text-muted">{!invalidRange && `${items.length} ${items.length === 1 ? "evento" : "eventos"}`}</p>
+        {!invalidRange && !items.length && <Card title="Sin eventos"><p className="text-sm text-muted">No hay eventos con los filtros seleccionados.</p></Card>}
         {items.map(item => (
           <Card key={item.id} title={item.titulo}>
             <span className="mb-2 inline-block rounded-full border border-line px-2 py-1 text-xs font-semibold text-ink">{{ upcoming: 'Próximo', ongoing: 'En curso', ended: 'Finalizado' }[eventPhase(item, now)]}</span>
