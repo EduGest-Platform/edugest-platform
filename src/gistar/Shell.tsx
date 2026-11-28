@@ -86,6 +86,9 @@ export function Shell() {
         <div className="flex items-center justify-between px-2 py-3 md:block md:px-3 md:py-0">
           <Logo />
         </div>
+        <nav aria-label="Ayuda" className="px-3 pb-3">
+          <UserManualLink className="text-white hover:bg-white/10" />
+        </nav>
         <p className="mt-8 hidden px-6 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#d2caff] md:block">Menú · {ROLES[role]}</p>
         <nav aria-label="Navegación principal" className="flex gap-1 overflow-x-auto px-3 pb-3 md:mt-3 md:grid md:overflow-visible md:pb-0">
           {menuFor(role, API_MODE).map((v) => {
@@ -160,7 +163,6 @@ export function Shell() {
             </p>
           )}
           <Screen />
-          <div className="mt-6"><UserManualLink /></div>
           <p className="mt-10 border-t border-line pt-5 text-xs text-muted">
             {API_MODE
               ? 'Modo servidor: autenticación, permisos por rol y ámbito, inscripción, expedientes, auditoría y consultas documentales los gestiona la API. Datos sintéticos; asistente extractivo con citas, sin decisiones automáticas.'
