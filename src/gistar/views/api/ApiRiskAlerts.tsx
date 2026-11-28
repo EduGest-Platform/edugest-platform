@@ -3,6 +3,7 @@ import { api, errorMessage, type Schemas } from '../../../shared/api/client'
 import { useGistar } from '../../store'
 import { useLeaveGuard } from '../../useLeaveGuard'
 import { Modal } from '../../components/Modal'
+import { LoadingSkeleton } from '../../components/LoadingSkeleton'
 import { Button, Card, Field, Notice, PageTitle, inputCls } from '../../ui'
 import { useAcademicCohorts } from './ApiCohorts'
 
@@ -122,7 +123,7 @@ function ReviewAlert({ cohortId, id, onClose, onSaved, onBlockedChange }: {
         {busy && <p role="status">Registrando intervención…</p>}
         {requiresHistoryReview && <Notice tone="warning">Actualiza la alerta y comprueba si la intervención ya aparece en el historial. Tu nota se conserva.</Notice>}
         <Button variant="ghost" className="justify-self-start" onClick={reload} disabled={busy}>Actualizar alerta</Button>
-        {!details && !error && <p role="status">Cargando alerta…</p>}
+        {!details && !error && <LoadingSkeleton label="Cargando alerta…" rows={2} />}
         {alert && details && <>
           <div className="grid gap-2 text-sm">
             <p>{labels[alert.review_state]} · Modelo {alert.model_version} · Corte {alert.cutoff}</p>
@@ -233,7 +234,7 @@ function CohortAlerts({ cohortId, onBlockedChange }: { cohortId: string; onBlock
             {Object.entries(labels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
           </select>
         </Field>
-        {!data && !error && <p role="status">Cargando alertas…</p>}
+        {!data && !error && <LoadingSkeleton label="Cargando alertas…" rows={3} />}
         {error && <Notice tone="warning" live="assertive">{error}</Notice>}
         {data && <>
           {data.items.length ? <ul className="grid gap-2">
@@ -266,7 +267,7 @@ export function ApiRiskAlerts() {
   return (
     <div className="grid gap-4">
       <PageTitle title="Alertas de apoyo" sub="Revisa evidencia sintética y registra acciones de apoyo de tu cohorte." />
-      {loading && <p role="status">Cargando cohortes…</p>}
+      {loading && <LoadingSkeleton label="Cargando cohortes…" rows={1} />}
       {error && <><Notice tone="warning" live="assertive">{error}</Notice><Button onClick={retry}>Volver a cargar</Button></>}
       {!loading && !error && !cohort && <p>No hay cohortes disponibles en tu ámbito.</p>}
       {cohort && <>

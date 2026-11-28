@@ -13,6 +13,17 @@ function requireCheck(label, ok) {
 
 const page = await newBrowser()
 await interceptWrites(page, '/risk-alerts/[^/]+/interventions$')
+await page.initScript(`(() => {
+  const fetch = window.fetch.bind(window)
+  window.fetch = async (input, init) => {
+    const path = new URL(input.url ?? input, location.href).pathname
+    const method = init?.method ?? input.method ?? 'GET'
+    if (method === 'GET' && path.endsWith('/COH-DATA/risk-alerts') && !window.releaseAlertList) {
+      await new Promise(resolve => { window.releaseAlertList = resolve })
+    }
+    return fetch(input, init)
+  }
+})()`)
 const dialog = "document.querySelector('[role=dialog]')"
 const note = 'Nota de apoyo sintética con respuesta perdida.'
 const closureNote = 'Cierre docente sintético tras revisar el historial.'
@@ -26,8 +37,21 @@ try {
     await page.set('#overview-cohort', 'COH-DATA'))
   requireCheck('The alert view opens with the same authorised cohort',
     await page.click('Revisar alertas de esta cohorte') && await page.waitText('Alertas de apoyo') &&
-    await page.waitText('No hay alertas sintéticas con este filtro.') &&
+    await page.waitText('Cargando alertas…') &&
     await page.ev("document.querySelector('#risk-cohort').value === 'COH-DATA'"))
+  requireCheck('The list announces loading with decoration hidden from assistive technology',
+    await page.ev(`[...document.querySelectorAll('[role=status]')].some(status =>
+      status.textContent.includes('Cargando alertas…') && status.querySelector('[aria-hidden=true]'))`))
+  let responseHeld = false
+  for (let attempt = 0; attempt < 30 && !responseHeld; attempt++) {
+    responseHeld = await page.ev("typeof window.releaseAlertList === 'function'")
+    if (!responseHeld) await sleep(100)
+  }
+  requireCheck('The loading state was verified while the response was held', responseHeld)
+  await page.ev('window.releaseAlertList()')
+  requireCheck('The loading indicator gives way to the empty state',
+    await page.waitText('No hay alertas sintéticas con este filtro.') &&
+    await page.ev("!document.body.innerText.includes('Cargando alertas…')"))
   const cohortSelector = '#risk-cohort'
   let fixtureCohortAvailable = false
   for (let attempt = 0; attempt < 40 && !fixtureCohortAvailable; attempt++) {
