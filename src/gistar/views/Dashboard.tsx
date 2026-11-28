@@ -25,6 +25,18 @@ import { ReviewModal } from '../components/ReviewModal'
 import { ThisWeek, Upcoming } from '../components/ThisWeek'
 import { Button, Card, Field, Kpi, Metric, Notice, PageTitle, Status, SyntheticBadge, inputCls } from '../ui'
 
+function EventsCard() {
+  const { navigate } = useGistar()
+  return (
+    <Card title="Eventos" action={<CalendarDays className="size-5 text-blue" aria-hidden />}>
+      <p className="mb-3 text-sm text-muted">Consulta los próximos encuentros y actividades de tu ámbito.</p>
+      <Button variant="ghost" onClick={() => navigate('eventos')}>
+        Ver eventos <ArrowRight className="size-4" aria-hidden />
+      </Button>
+    </Card>
+  )
+}
+
 export function Dashboard() {
   const { role } = useGistar()
   if (role === 'docente') return <TeacherDashboard />
@@ -78,6 +90,7 @@ function GeneralDashboard() {
           </div>
         </Card>
         <ThisWeek />
+        <EventsCard />
         <Card title="Qué hace EduGest">
           <p className="text-sm leading-relaxed text-ink/85">Centraliza admisión, seguimiento competencial, entregas y tutorías, siempre con revisión humana en las decisiones.</p>
           <Notice tone="warning">
@@ -148,6 +161,7 @@ function TeacherDashboard() {
           </Button>
         </Card>
         <ThisWeek />
+        <EventsCard />
         <Card title="Correcciones pendientes" action={<Button size="sm" variant="ghost" onClick={() => navigate('entregas')}>Todas</Button>}>
           {!pending.length ? (
             <p className="text-sm text-muted">No hay correcciones pendientes.</p>
@@ -240,6 +254,7 @@ function CoderDashboard() {
           </ul>
         </Card>
         <ThisWeek />
+        <EventsCard />
         <Card title="Entregas" action={<Button size="sm" variant="ghost" onClick={() => navigate('entregas')}>Mis entregas</Button>}>
           <ul className="grid gap-2 text-sm">
             {own

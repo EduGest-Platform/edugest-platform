@@ -1,0 +1,75 @@
+import { describe, expect, it } from 'vitest'
+import { canOpen, MENUS } from './config'
+import { eventPhase, filterEvents, overlapsEventDates } from './events'
+import type { CalItem, Role } from './types'
+
+const now = '2026-11-26T10:00'
+const event = (id: string, overrides: Partial<CalItem> = {}): CalItem => ({
+  id, titulo: 'Taller de IA', tipo: 'taller', estado: 'programado',
+  inicio: '2026-11-26T11:00', fin: '2026-11-26T12:00',
+  ...overrides,
+} as CalItem)
+
+describe('Eventos', () => {
+  it('is reachable for every role in both modes', () => {
+    for (const role of Object.keys(MENUS) as Role[]) {
+      expect(canOpen(role, 'eventos')).toBe(true)
+      expect(canOpen(role, 'eventos', true)).toBe(true)
+    }
+  })
+  it('excludes cancelled events and deliveries even without upcoming filter', () => {
+    expect(filterEvents([event('ok'), event('cancel', { estado: 'cancelado' }), event('task', { tipo: 'entrega' })], now, '', '', false).map(x => x.id)).toEqual(['ok'])
+  })
+  it('includes ongoing events and excludes ended events by default', () => {
+    const items = [event('past', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:00' }), event('ongoing', { inicio: '2026-11-26T09:00' })]
+    expect(filterEvents(items, now, '', '', true).map(x => x.id)).toEqual(['ongoing'])
+    expect(filterEvents(items, now, '', '', false)).toHaveLength(2)
+  })
+  it('classifies upcoming, ongoing and ended events at boundaries', () => {
+    expect(eventPhase(event('future'), now)).toBe('upcoming')
+    expect(eventPhase(event('start', { inicio: now }), now)).toBe('ongoing')
+    expect(eventPhase(event('end', { inicio: '2026-11-26T09:00', fin: now }), now)).toBe('ongoing')
+    expect(eventPhase(event('past', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:59' }), now)).toBe('ended')
+  })
+  it('matches accented titles without requiring accents', () => {
+    const items = [event('a', { titulo: 'Orientación académica' }), event('b', { titulo: 'Taller' })]
+    expect(filterEvents(items, now, 'ORIENTACION ACADEMICA', '', true).map(x => x.id)).toEqual(['a'])
+  })
+  it('combines title and type filters and sorts without mutating input', () => {
+    const items = [event('b'), event('a'), event('other', { titulo: 'Otra actividad' })]
+    expect(filterEvents(items, now, '  TALLER ', 'taller', true).map(x => x.id)).toEqual(['a', 'b'])
+    expect(items.map(x => x.id)).toEqual(['b', 'a', 'other'])
+    expect(filterEvents(items, now, 'missing', '', true)).toEqual([])
+  })
+})
+
+
+it('orders by start before id and retains events ending exactly now', () => {
+  const items = [event('a'), event('z', { inicio: '2026-11-26T09:00', fin: now }), event('expired', { inicio: '2026-11-26T08:00', fin: '2026-11-26T09:59' })]
+  expect(filterEvents(items, now, '', '', true).map(x => x.id)).toEqual(['z', 'a'])
+  expect(filterEvents(items, now, '', '', false).map(x => x.id)).toEqual(['expired', 'z', 'a'])
+})
+
+
+it('filters inclusive date overlaps and rejects inverted ranges', () => {
+  const item = event('multi', { inicio: '2026-11-26T11:00', fin: '2026-11-28T12:00' })
+  expect(overlapsEventDates(item, '2026-11-27', '2026-11-27')).toBe(true)
+  expect(overlapsEventDates(item, '2026-11-28', '')).toBe(true)
+  expect(overlapsEventDates(item, '', '2026-11-26')).toBe(true)
+  expect(overlapsEventDates(item, '2026-11-29', '')).toBe(false)
+  expect(overlapsEventDates(item, '', '2026-11-25')).toBe(false)
+  expect(overlapsEventDates(item, '2026-11-28', '2026-11-26')).toBe(false)
+})
+
+
+it('combines upcoming, search and date overlap without including cancelled events', () => {
+  const items = [
+    event('match', { titulo: 'Orientación IA', fin: '2026-11-28T12:00' }),
+    event('cancelled', { titulo: 'Orientación IA', estado: 'cancelado' }),
+    event('other', { titulo: 'Otro taller' }),
+  ]
+  const visible = filterEvents(items, now, 'orientacion', 'taller', true)
+    .filter(item => overlapsEventDates(item, '2026-11-27', '2026-11-27'))
+  expect(visible.map(item => item.id)).toEqual(['match'])
+  expect(overlapsEventDates(items[0], '', '')).toBe(true)
+})

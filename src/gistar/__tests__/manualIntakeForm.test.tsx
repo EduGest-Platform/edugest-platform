@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import { canOpen, menuFor } from '../config'
 import { emptyManualIntake, sendManualApplication, type IntakeOutcome } from '../manualIntake'
+import { GistarProvider } from '../store'
 import { ApiCoordinationDashboard } from '../views/api/ApiCoordinationDashboard'
 import { ManualIntakeFields } from '../views/api/ServerManualIntake'
 
@@ -108,7 +109,7 @@ describe('where each registrar finds the form', () => {
 describe('coordination dashboard', () => {
   // The refresh itself is checked in a browser by e2e/coordination-dashboard.mjs, which CI runs.
   it('is told about each registration', () => {
-    renderToStaticMarkup(<ApiCoordinationDashboard />)
+    renderToStaticMarkup(<GistarProvider><ApiCoordinationDashboard /></GistarProvider>)
     expect(dashboard.onRegistered).toBeTypeOf('function')
   })
 })
