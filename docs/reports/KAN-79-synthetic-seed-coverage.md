@@ -17,17 +17,38 @@
 
 ## Reproducir / Reproduce
 
-**ES** — En una base PostgreSQL desechable nueva, cargar el dataset dos veces y ejecutar las suites con `GISTAR_TEST_DATABASE_URL` dirigido exclusivamente a esa base de pruebas.
+**ES** — Configurar `GISTAR_DATABASE_URL` y `GISTAR_TEST_DATABASE_URL` para que apunten a la misma base PostgreSQL desechable nueva. Cargar el dataset dos veces, tomar los recuentos y ejecutar las suites.
 
-**EN** — On a fresh disposable PostgreSQL database, load the dataset twice and run the suites with `GISTAR_TEST_DATABASE_URL` pointing exclusively to that test database.
+**EN** — Point both `GISTAR_DATABASE_URL` and `GISTAR_TEST_DATABASE_URL` to the same fresh disposable PostgreSQL database. Load the dataset twice, capture the counts, and run the suites.
 
 ```sh
 cd api
 alembic upgrade head
 python -m app.seed
+# Capture aggregate counts below.
 python -m app.seed
+# Capture the counts again and compare before running pytest.
 python -m pytest tests/test_seed_base_integrity.py tests/test_seed_academic.py
 ```
+
+### Recuentos agregados / Aggregate counts
+
+**ES** — Ejecutar estas consultas en la misma base desechable después de cada carga y antes de pytest. Guardar solo los recuentos y comparar las dos salidas. Así se comprueba que la segunda carga mantiene la distribución por origen, etapa, turno y estado de asistencia.
+
+**EN** — Run these queries in the same disposable database after each load and before pytest. Save only the counts and compare the two outputs. This checks that the second load preserves the distribution of application origins and stages, session shifts, and attendance statuses.
+
+```sql
+BEGIN READ ONLY;
+SELECT origin_channel, stage, count(*)
+  FROM application GROUP BY origin_channel, stage ORDER BY origin_channel, stage;
+SELECT shift, duration_fraction, count(*)
+  FROM attendance_session GROUP BY shift, duration_fraction ORDER BY shift, duration_fraction;
+SELECT status, justification, count(*)
+  FROM attendance_record GROUP BY status, justification ORDER BY status, justification;
+COMMIT;
+```
+
+**Resultado / Result:** Las dos ejecuciones devolvieron los mismos recuentos por categoría. / Both loads produced the same counts by category.
 
 **Pendiente / Pending:** acordar con Producto qué ejemplos adicionales deben pasar a la carga compartida y revisar la coherencia entre escenarios. / Agree which additional examples belong in the shared baseline and review cross-scenario consistency.
 
