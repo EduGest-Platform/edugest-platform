@@ -1,8 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.modules.audit.models import AuditEvent
 from app.modules.identity.models import Person, RoleAssignment, User
 from app.modules.learning.models import Enrollment
+from app.modules.risk.models import Intervention
 from tests.conftest import CODER, COORD, DOCENTE, login
 from tests.test_risk_evidence_models import evidence
 
@@ -70,3 +71,25 @@ def test_cohort_scope_and_synthetic_boundary(client, db):
     db.commit()
     admin = login(client, "admin@gistar.example")
     assert client.get("/api/v1/cohorts/COH-DATA/risk-alerts", headers=admin).json()["total"] == 0
+
+def test_denied_closure_leaves_no_intervention_or_enrollment_change(client, db):
+    alert, enrollment = setup_alert(db, "COH-IA")
+    initial_enrollment_state = enrollment.estado
+    teacher_id = db.scalar(select(User.id).where(User.email == DOCENTE))
+    db.query(RoleAssignment).filter(
+        RoleAssignment.user_id == teacher_id,
+        RoleAssignment.scope_id == "COH-IA",
+    ).delete()
+    db.commit()
+
+    path = f"{PATH}/{alert.id}/interventions"
+    payload = {"kind": "closure", "note": "Synthetic denied closure", "expected_state": "pending"}
+    assert client.post(path, json=payload).status_code == 401
+    for account in (DOCENTE, COORD, CODER):
+        assert client.post(path, headers=login(client, account), json=payload).status_code == 403
+
+    db.refresh(alert)
+    db.refresh(enrollment)
+    assert alert.review_state == "pending"
+    assert enrollment.estado == initial_enrollment_state
+    assert db.scalar(select(func.count()).select_from(Intervention)) == 0
