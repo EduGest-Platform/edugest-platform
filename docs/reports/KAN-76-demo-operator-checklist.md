@@ -28,11 +28,19 @@
 
 **EN** — On a data, permission or service failure, pause and check the environment and role once. If it persists, announce the switch to the pre-checked local stack, resume from its synthetic dossier and identify any repeated steps. If the fallback also fails, show the dated rehearsal evidence and record the live run as interrupted.
 
+### Escritura con resultado incierto / Write with an uncertain result
+
+**ES** — Si se pierde la respuesta después de enviar una candidatura, votar o registrar asistencia, comprobar el expediente, la decisión o el registro al actualizar la vista en ese mismo entorno. Si aparece el resultado, continuar desde ahí. Si no se puede comprobar, anotar «resultado incierto» y seguir desde un expediente sintético distinto en el respaldo. Antes del ensayo, comprobar que la cuenta del respaldo puede abrir ese expediente y que su punto de partida es el esperado.
+
+**EN** — If the response is lost after submitting an application, casting a vote or recording attendance, refresh the dossier, decision or attendance record in the same environment. Continue from the result if it is visible. If the result cannot be verified, record it as uncertain and continue with a different synthetic dossier in the fallback. Before the rehearsal, confirm that the fallback account can open that dossier and that it is at the expected stage.
+
 ## Acta del ensayo / Rehearsal record
 
 | Fecha y SHA / Date and SHA | Entorno / Environment | Presentación / Presenter | Total / Duration | Resultado y evidencia / Result and evidence |
 | --- | --- | --- | --- | --- |
 | Pendiente / Pending | — | — | — | NOT_RUN |
+
+**ES** — Si se usa el respaldo, registrar el tramo del guion, el último punto verificado, el entorno y SHA de respaldo y si se pudo completar el recorrido. / **EN** — If the fallback is used, record the script segment, last verified point, fallback environment and SHA, and whether the journey was completed.
 
 - [Guion inicial / Initial script](KAN-141-preselection-demo.md)
 - [Ensayo automatizado / Automated rehearsal](KAN-221-demo-rehearsal.md)
