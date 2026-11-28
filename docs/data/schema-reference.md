@@ -232,6 +232,21 @@ erDiagram
         UUID recorded_by FK
         UUID reviewed_by FK
     }
+    zoom_meeting {
+        UUID session_id PK,FK
+        UUID created_by FK
+    }
+    zoom_notes_version {
+        UUID id PK
+        UUID session_id FK
+        UUID created_by FK
+        UUID approved_by FK
+    }
+    zoom_provisioning_intent {
+        UUID session_id PK,FK
+        UUID created_by FK
+        UUID updated_by FK
+    }
     role_assignment |o--o{ access_change_request : applied_assignment_id
     app_user ||--o{ access_change_request : requested_by
     app_user |o--o{ access_change_request : reviewed_by
@@ -330,6 +345,14 @@ erDiagram
     enrollment ||--o{ submission : enrollment_id
     app_user ||--o{ submission : recorded_by
     app_user |o--o{ submission : reviewed_by
+    app_user ||--o{ zoom_meeting : created_by
+    attendance_session ||--o| zoom_meeting : session_id
+    app_user |o--o{ zoom_notes_version : approved_by
+    app_user ||--o{ zoom_notes_version : created_by
+    zoom_meeting ||--o{ zoom_notes_version : session_id
+    app_user ||--o{ zoom_provisioning_intent : created_by
+    attendance_session ||--o| zoom_provisioning_intent : session_id
+    app_user ||--o{ zoom_provisioning_intent : updated_by
 ```
 
 ## Dominios textuales declarados / Declared text domains
@@ -374,6 +397,8 @@ Las restricciones completas siguen debajo; que un campo no aparezca aquí no imp
 | simulated_reminder | kind | ck_simulated_reminder_kind | `["documentation", "exercises"]` |
 | staff_profile | state | ck_staff_profile_state | `["pending", "active", "inactive"]` |
 | submission | status | ck_submission_status | `["submitted", "reviewed"]` |
+| zoom_meeting | authentication_mode | ck_zoom_auth_mode | `["open", "authenticated", "institutional"]` |
+| zoom_provisioning_intent | state | ck_zoom_intent_state | `["pending", "uncertain", "confirmed"]` |
 
 ## Campos y estados almacenados / Fields and stored states
 
@@ -1532,6 +1557,88 @@ CHECK constraints preserve the stored state vocabulary. Transition/authorization
 - INDEX `ix_submission_assignment_id`: `submission.assignment_id`
 
 - INDEX `ix_submission_enrollment_id`: `submission.enrollment_id`
+
+### zoom_meeting
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| session_id | UUID | no | attendance_session.id | — |
+| provider_id | VARCHAR(32) | no | — | — |
+| join_url | VARCHAR(2048) | no | — | — |
+| host_id | VARCHAR(255) | no | — | — |
+| start_at | TIMESTAMP WITH TIME ZONE | no | — | — |
+| duration_minutes | INTEGER | no | — | — |
+| authentication_mode | VARCHAR(20) | no | — | — |
+| profile_id | VARCHAR(255) | sí / yes | — | — |
+| ai_settings | JSON | no | — | — |
+| created_by | UUID | no | app_user.id | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_zoom_auth_mode`: `authentication_mode IN ('open', 'authenticated', 'institutional')`
+
+- CHECK `ck_zoom_auth_profile`: `(authentication_mode = 'institutional' AND profile_id IS NOT NULL) OR (authentication_mode <> 'institutional' AND profile_id IS NULL)`
+
+- CHECK `ck_zoom_duration`: `duration_minutes BETWEEN 1 AND 1440`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(session_id) -> (attendance_session.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `unnamed`: `provider_id`
+
+### zoom_notes_version
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| id | UUID | no | — | application (not evaluated / sin evaluar) |
+| session_id | UUID | no | zoom_meeting.session_id | — |
+| version | INTEGER | no | — | — |
+| body | JSON | no | — | — |
+| transcript_sha256 | VARCHAR(64) | no | — | — |
+| created_by | UUID | no | app_user.id | — |
+| created_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+| approved_by | UUID | sí / yes | app_user.id | — |
+| approved_at | TIMESTAMP WITH TIME ZONE | sí / yes | — | — |
+
+- CHECK `ck_zoom_notes_approval`: `(approved_by IS NULL AND approved_at IS NULL) OR (approved_by IS NOT NULL AND approved_at IS NOT NULL)`
+
+- CHECK `ck_zoom_notes_version`: `version >= 1`
+
+- FK `unnamed`: `(approved_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(session_id) -> (zoom_meeting.session_id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `uq_zoom_notes_version`: `session_id, version`
+
+- INDEX `ix_zoom_notes_version_session_id`: `zoom_notes_version.session_id`
+
+### zoom_provisioning_intent
+
+| Campo / Field | PostgreSQL type | Nulo / Nullable | Referencia / Reference | Default declarado / Declared default |
+|---|---|---|---|---|
+| session_id | UUID | no | attendance_session.id | — |
+| operation_id | UUID | no | — | — |
+| state | VARCHAR(16) | no | — | — |
+| host_id | VARCHAR(255) | no | — | — |
+| start_at | TIMESTAMP WITH TIME ZONE | no | — | — |
+| duration_minutes | INTEGER | no | — | — |
+| authentication_mode | VARCHAR(20) | no | — | — |
+| profile_id | VARCHAR(255) | sí / yes | — | — |
+| created_by | UUID | no | app_user.id | — |
+| updated_by | UUID | no | app_user.id | — |
+| updated_at | TIMESTAMP WITH TIME ZONE | no | — | application (not evaluated / sin evaluar) |
+
+- CHECK `ck_zoom_intent_state`: `state IN ('pending', 'uncertain', 'confirmed')`
+
+- FK `unnamed`: `(created_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(session_id) -> (attendance_session.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- FK `unnamed`: `(updated_by) -> (app_user.id)`; ON DELETE `NO ACTION`; ON UPDATE `NO ACTION`
+
+- UNIQUE `unnamed`: `operation_id`
 
 ## Límites / Limits
 

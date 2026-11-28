@@ -10,6 +10,7 @@ import {
   inputCls,
 } from "../../ui"
 import { useAcademicCohorts, type AcademicCohort } from "./ApiCohorts"
+import { ZoomMeeting } from "./ZoomMeeting"
 import { attendanceDraft } from './attendanceDraft'
 
 export function AttendanceTotals({
@@ -271,6 +272,7 @@ function CohortAttendance({ cohort }: { cohort: AcademicCohort }) {
               Crear sesión
             </Button>
           </form>
+          <ZoomMeeting sessions={sessions} />
           <form onSubmit={(e) => void save(e, false)} className="grid gap-3">
             <h3 className="font-semibold">Registrar o corregir asistencia</h3>
             <Field label="Sesión celebrada" htmlFor="attendance-session">

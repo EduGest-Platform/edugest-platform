@@ -376,6 +376,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/attendance-sessions/{session_id}/zoom/meeting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Meeting */
+        get: operations["get_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_get"];
+        put?: never;
+        /** Create Meeting */
+        post: operations["create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notes */
+        get: operations["list_notes_api_v1_attendance_sessions__session_id__zoom_notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Notes */
+        post: operations["approve_notes_api_v1_attendance_sessions__session_id__zoom_notes_approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit Notes */
+        post: operations["edit_notes_api_v1_attendance_sessions__session_id__zoom_notes_edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/provisioning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Provisioning */
+        get: operations["get_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance-sessions/{session_id}/zoom/provisioning/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Provisioning */
+        post: operations["reconcile_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -1796,6 +1899,17 @@ export interface components {
              */
             scope_type: "global" | "program" | "call" | "cohort";
         };
+        /** ActionItem */
+        ActionItem: {
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceSpan"][];
+            /** Proposed Due Date */
+            proposed_due_date?: string | null;
+            /** Proposed Owner */
+            proposed_owner?: string | null;
+            /** Text */
+            text: string;
+        };
         /**
          * ApplicationCreate
          * @description Public inscription form.
@@ -2042,6 +2156,11 @@ export interface components {
              * @enum {string}
              */
             result: "attended" | "no_show";
+        };
+        /** ApprovalIn */
+        ApprovalIn: {
+            /** Expected Version */
+            expected_version: number;
         };
         /** ApproveIn */
         ApproveIn: {
@@ -2816,6 +2935,12 @@ export interface components {
              */
             expected_version: number;
         };
+        /** EditNotesIn */
+        EditNotesIn: {
+            draft: components["schemas"]["MeetingNotesDraft"];
+            /** Expected Version */
+            expected_version: number;
+        };
         /** EnrollmentAssessments */
         EnrollmentAssessments: {
             /** Current */
@@ -2999,6 +3124,13 @@ export interface components {
             resumen: string;
             /** Tipo */
             tipo: string;
+        };
+        /** EvidenceSpan */
+        EvidenceSpan: {
+            /** End Seconds */
+            end_seconds: number;
+            /** Start Seconds */
+            start_seconds: number;
         };
         /** FeedbackDraftList */
         FeedbackDraftList: {
@@ -3437,6 +3569,57 @@ export interface components {
             /** Roles */
             roles: components["schemas"]["RoleAssignmentOut"][];
         };
+        /** MeetingCreateIn */
+        MeetingCreateIn: {
+            /**
+             * Authentication Mode
+             * @default authenticated
+             * @enum {string}
+             */
+            authentication_mode: "open" | "authenticated" | "institutional";
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /** Topic */
+            topic: string;
+        };
+        /** MeetingNotesDraft */
+        MeetingNotesDraft: {
+            /** Action Items */
+            action_items?: components["schemas"]["ActionItem"][];
+            /** Key Topics */
+            key_topics?: components["schemas"]["NoteItem"][];
+            /** Reinforcement Topics */
+            reinforcement_topics?: components["schemas"]["NoteItem"][];
+            /** Summary */
+            summary: components["schemas"]["NoteItem"][];
+        };
+        /** MeetingOut */
+        MeetingOut: {
+            /**
+             * Authentication Mode
+             * @enum {string}
+             */
+            authentication_mode: "open" | "authenticated" | "institutional";
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Provider Id */
+            provider_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+        };
         /**
          * NextActionCreate
          * @description What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone.
@@ -3476,6 +3659,26 @@ export interface components {
              * Format: uuid
              */
             owner_user_id: string;
+        };
+        /** NoteItem */
+        NoteItem: {
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceSpan"][];
+            /** Text */
+            text: string;
+        };
+        /** NotesOut */
+        NotesOut: {
+            /** Approved At */
+            approved_at: string | null;
+            body: components["schemas"]["MeetingNotesDraft"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Version */
+            version: number;
         };
         /** OverviewAttendance */
         OverviewAttendance: {
@@ -3783,6 +3986,21 @@ export interface components {
              */
             silence_warning_contacts: number;
         };
+        /** ProvisioningOut */
+        ProvisioningOut: {
+            /** Can Reconcile */
+            can_reconcile: boolean;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "pending" | "uncertain" | "confirmed";
+        };
         /** PublicCourseList */
         PublicCourseList: {
             /** Items */
@@ -3883,6 +4101,16 @@ export interface components {
             label: string;
             /** Version */
             version: number;
+        };
+        /** ReconcileMeetingIn */
+        ReconcileMeetingIn: {
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id: string;
+            /** Provider Id */
+            provider_id: string;
         };
         /** RecordOut */
         RecordOut: {
@@ -6239,6 +6467,239 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetingCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notes_api_v1_attendance_sessions__session_id__zoom_notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_notes_api_v1_attendance_sessions__session_id__zoom_notes_approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_notes_api_v1_attendance_sessions__session_id__zoom_notes_edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditNotesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvisioningOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcileMeetingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeetingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

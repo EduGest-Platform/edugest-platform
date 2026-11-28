@@ -427,6 +427,56 @@
         "title": "AccessRevoke",
         "type": "object"
       },
+      "ActionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSpan"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "proposed_due_date": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Due Date"
+          },
+          "proposed_owner": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Owner"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence"
+        ],
+        "title": "ActionItem",
+        "type": "object"
+      },
       "ApplicationCreate": {
         "description": "Public inscription form.",
         "properties": {
@@ -1038,6 +1088,20 @@
           "result"
         ],
         "title": "AppointmentOutcome",
+        "type": "object"
+      },
+      "ApprovalIn": {
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "ApprovalIn",
         "type": "object"
       },
       "ApproveIn": {
@@ -2863,6 +2927,24 @@
         "title": "DraftEdit",
         "type": "object"
       },
+      "EditNotesIn": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/MeetingNotesDraft"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version",
+          "draft"
+        ],
+        "title": "EditNotesIn",
+        "type": "object"
+      },
       "EnrollmentAssessments": {
         "properties": {
           "current": {
@@ -3284,6 +3366,27 @@
           "next_action"
         ],
         "title": "EventOut",
+        "type": "object"
+      },
+      "EvidenceSpan": {
+        "additionalProperties": false,
+        "properties": {
+          "end_seconds": {
+            "minimum": 0.0,
+            "title": "End Seconds",
+            "type": "integer"
+          },
+          "start_seconds": {
+            "minimum": 0.0,
+            "title": "Start Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_seconds",
+          "end_seconds"
+        ],
+        "title": "EvidenceSpan",
         "type": "object"
       },
       "FeedbackDraftList": {
@@ -4285,6 +4388,127 @@
         "title": "MeOut",
         "type": "object"
       },
+      "MeetingCreateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "authentication_mode": {
+            "default": "authenticated",
+            "enum": [
+              "open",
+              "authenticated",
+              "institutional"
+            ],
+            "title": "Authentication Mode",
+            "type": "string"
+          },
+          "duration_minutes": {
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "start_at",
+          "duration_minutes"
+        ],
+        "title": "MeetingCreateIn",
+        "type": "object"
+      },
+      "MeetingNotesDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "action_items": {
+            "items": {
+              "$ref": "#/components/schemas/ActionItem"
+            },
+            "maxItems": 50,
+            "title": "Action Items",
+            "type": "array"
+          },
+          "key_topics": {
+            "items": {
+              "$ref": "#/components/schemas/NoteItem"
+            },
+            "maxItems": 50,
+            "title": "Key Topics",
+            "type": "array"
+          },
+          "reinforcement_topics": {
+            "items": {
+              "$ref": "#/components/schemas/NoteItem"
+            },
+            "maxItems": 30,
+            "title": "Reinforcement Topics",
+            "type": "array"
+          },
+          "summary": {
+            "items": {
+              "$ref": "#/components/schemas/NoteItem"
+            },
+            "maxItems": 30,
+            "title": "Summary",
+            "type": "array"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "title": "MeetingNotesDraft",
+        "type": "object"
+      },
+      "MeetingOut": {
+        "properties": {
+          "authentication_mode": {
+            "enum": [
+              "open",
+              "authenticated",
+              "institutional"
+            ],
+            "title": "Authentication Mode",
+            "type": "string"
+          },
+          "duration_minutes": {
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "provider_id": {
+            "title": "Provider Id",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "provider_id",
+          "start_at",
+          "duration_minutes",
+          "authentication_mode"
+        ],
+        "title": "MeetingOut",
+        "type": "object"
+      },
       "NextActionCreate": {
         "description": "What happens next after a contact. It is a work reminder for staff: nothing is sent to anyone.",
         "properties": {
@@ -4344,6 +4568,68 @@
           "due_on"
         ],
         "title": "NextActionOut",
+        "type": "object"
+      },
+      "NoteItem": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSpan"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence"
+        ],
+        "title": "NoteItem",
+        "type": "object"
+      },
+      "NotesOut": {
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "body": {
+            "$ref": "#/components/schemas/MeetingNotesDraft"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "body",
+          "created_at",
+          "approved_at"
+        ],
+        "title": "NotesOut",
         "type": "object"
       },
       "OverviewAttendance": {
@@ -5084,6 +5370,35 @@
         "title": "PreselectionPolicy",
         "type": "object"
       },
+      "ProvisioningOut": {
+        "properties": {
+          "can_reconcile": {
+            "title": "Can Reconcile",
+            "type": "boolean"
+          },
+          "operation_id": {
+            "format": "uuid",
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "uncertain",
+              "confirmed"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "state",
+          "can_reconcile"
+        ],
+        "title": "ProvisioningOut",
+        "type": "object"
+      },
       "PublicCourseList": {
         "properties": {
           "items": {
@@ -5316,6 +5631,27 @@
           "approved_at"
         ],
         "title": "PublishedFeedbackOut",
+        "type": "object"
+      },
+      "ReconcileMeetingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {
+            "format": "uuid",
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "provider_id": {
+            "pattern": "^[0-9]{1,32}$",
+            "title": "Provider Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "provider_id"
+        ],
+        "title": "ReconcileMeetingIn",
         "type": "object"
       },
       "RecordOut": {
@@ -9439,6 +9775,400 @@
         "summary": "Registrar o corregir la asistencia de una persona en una sesión",
         "tags": [
           "attendance"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/meeting": {
+      "get": {
+        "operationId": "get_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MeetingOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Meeting Api V1 Attendance Sessions  Session Id  Zoom Meeting Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Meeting",
+        "tags": [
+          "zoom"
+        ]
+      },
+      "post": {
+        "operationId": "create_meeting_api_v1_attendance_sessions__session_id__zoom_meeting_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Meeting",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes": {
+      "get": {
+        "operationId": "list_notes_api_v1_attendance_sessions__session_id__zoom_notes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotesOut"
+                  },
+                  "title": "Response List Notes Api V1 Attendance Sessions  Session Id  Zoom Notes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Notes",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/approve": {
+      "post": {
+        "operationId": "approve_notes_api_v1_attendance_sessions__session_id__zoom_notes_approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve Notes",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/notes/edit": {
+      "post": {
+        "operationId": "edit_notes_api_v1_attendance_sessions__session_id__zoom_notes_edit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditNotesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Edit Notes",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/provisioning": {
+      "get": {
+        "operationId": "get_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProvisioningOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Provisioning Api V1 Attendance Sessions  Session Id  Zoom Provisioning Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Provisioning",
+        "tags": [
+          "zoom"
+        ]
+      }
+    },
+    "/api/v1/attendance-sessions/{session_id}/zoom/provisioning/reconcile": {
+      "post": {
+        "operationId": "reconcile_provisioning_api_v1_attendance_sessions__session_id__zoom_provisioning_reconcile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReconcileMeetingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeetingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Reconcile Provisioning",
+        "tags": [
+          "zoom"
         ]
       }
     },
