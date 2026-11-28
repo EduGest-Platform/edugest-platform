@@ -23,15 +23,37 @@
 ### Checklist operativa reproducible (entorno autorizado)
 1. Registrar fecha, entorno, SHA desplegado, propietario y revisora; verificar que el SHA corresponde al CI aprobado y sin checks obligatorios omitidos. No desplegar por este documento.
 2. Confirmar configuración en panel por operador: entorno staging/production, secretos no default y distintos, CORS exacto, proxy hops, BD privada, cuentas sintéticas y mínimo privilegio. Registrar solo PASS/FAIL, no valores.
-3. Desde terminal autorizada: comprobar URL HTTPS y cabeceras con HEAD/GET de /health y una ruta API autenticada usando sesión sintética (no pegar tokens en informe). Validar certificado, no-store/nosniff y HSTS donde corresponda; documentar excepciones.
+3. Desde terminal autorizada, comprobar TLS y las cabeceras con las peticiones GET de la tabla siguiente. Registrar solo estado y cabeceras enumeradas. Los controles de autenticación se ejecutan por separado en el paso 4.
 4. Ejecutar smoke positivo y negativo con cuentas sintéticas: login/logout, recurso propio, otro ámbito 403/404, anónimo 401, rol no autorizado. Comprobar límites solo en entorno desechable o con aprobación explícita; no saturar staging compartido. No capturar secretos ni cuerpos con PII.
 5. PO aprueba plazos, propietario y mecanismo de retirada; operador registra retención efectiva de proveedor, Actions y BD/copia con fecha, evidencia redactada y desviaciones. Validar retirada primero en entorno desechable.
 6. Yohanna revisa evidencia; cualquier FAIL/NOT_RUN en control obligatorio impide cierre. Registrar aceptación explícita y enlace al artefacto sin secretos.
 
+### Comprobación HTTP por ruta / HTTP check by route
+
+| Petición / Request | Código y cabeceras esperados / Expected status and headers |
+|---|---|
+| `GET /health` | `200` si responden servicio y BD; `503` es fallo de disponibilidad. Exigir `X-Content-Type-Options: nosniff`. La política de la aplicación no exige `Cache-Control: no-store` en esta ruta. / `200` when service and database are healthy; `503` fails availability. Require `X-Content-Type-Options: nosniff`. Application policy does not require `Cache-Control: no-store` on this route. |
+| `GET /api/v1/calls` | `200`, `Cache-Control: no-store` y `X-Content-Type-Options: nosniff`. El catálogo es público y no requiere token. / `200`, `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. The catalogue is public and requires no token. |
+
+**ES** — Usar el origen HTTPS de la API autorizado. En HTTPS fuera de local, comprobar también `Strict-Transport-Security` en ambas rutas. La aplicación emite `max-age=31536000` cuando ASGI reconoce HTTPS. Si la cabecera la aplica el proxy, contrastar el valor con la política efectiva del entorno. En local no se exige HSTS. `HEAD /health` devuelve `405`; la comprobación obligatoria usa `GET`.
+
+**EN** — Use the authorized HTTPS API origin. Outside local development, also check both routes for `Strict-Transport-Security`. The application emits `max-age=31536000` when ASGI recognizes HTTPS. If the proxy sets HSTS, compare the value with the environment policy. Local development does not require HSTS. `HEAD /health` returns `405`; the mandatory check uses `GET`.
+
+```sh
+: "${DEMO_API_ORIGIN:?Set the authorized HTTPS API origin}"
+for path in /health /api/v1/calls; do
+  printf '%s\n' "$path"
+  headers=$(curl --silent --show-error --proto '=https' --max-time 10 \
+    --output /dev/null --dump-header - "${DEMO_API_ORIGIN%/}$path") || exit 1
+  printf '%s\n' "$headers" |
+    awk 'tolower($0) ~ /^(http\/|cache-control:|x-content-type-options:|strict-transport-security:)/'
+done
+```
+
 CI observado: [#271 CI](https://github.com/EduGest-Platform/edugest-platform/actions/runs/46032355814) PASS (API/web/secrets/compose); [F1 E2E](https://github.com/EduGest-Platform/edugest-platform/actions/runs/46032355812) PASS en entorno desechable. No son evidencia del entorno real. #135 limita throttling por proceso; #25 declara retención pendiente; todos los hijos Jira finalizados no equivalen al DoD de la historia.
 
 ## EN
-The table reconciles code-level controls with the missing environment checks. The proposed synthetic-demo retention targets (14 days for operational logs/CI artifacts and removal of the synthetic environment within 30 days after project closure) are recommendations, not approved policy or legal advice. Confirm provider limits, owners, backups and deletion mechanism; never purge or disable append-only without authorization. The checklist requires deployed SHA, TLS, headers, private DB, nondefault rotated secrets, scoped synthetic accounts and negative access checks, plus documented actual retention. No secrets, live traffic, real data, deployment or fresh local test execution were performed. The story stays open until mandatory evidence and Yohanna/PO acceptance are recorded.
+The table reconciles code-level controls with the missing environment checks. The proposed synthetic-demo retention targets (14 days for operational logs/CI artifacts and removal of the synthetic environment within 30 days after project closure) are recommendations, not approved policy or legal advice. Confirm provider limits, owners, backups and deletion mechanism; never purge or disable append-only without authorization. The checklist requires deployed SHA, TLS, headers, private DB, nondefault rotated secrets, scoped synthetic accounts and negative access checks, plus documented actual retention. Local checks on disposable PostgreSQL confirmed GET and HEAD status codes and the header differences in the table. HSTS and actual deployment acceptance still require evidence from the authorized environment. The story stays open until mandatory evidence and Yohanna/PO acceptance are recorded.
 
 
 ## Evidence record / Registro de evidencias (template — NOT_RUN)
@@ -43,7 +65,9 @@ Complete one record per authorized environment and deployed SHA. / Completar un 
 | Deployment identity / Identidad | Deployed SHA matches reviewed CI; synthetic environment identified | NOT_RUN | — | Operator |
 | Secrets / Secretos | No defaults, rotation confirmed, no values exposed | NOT_RUN | — | Operator |
 | TLS / TLS | Valid HTTPS certificate, safe HTTP redirect or explicitly approved controlled environment | NOT_RUN | — | Operator |
-| Headers and limits / Cabeceras y límites | Expected API headers and effective rate limits confirmed; no shared-environment load test | NOT_RUN | — | Operator + QA |
+| Health headers / Cabeceras de salud | `GET /health`: 200, nosniff, HSTS where applicable | NOT_RUN | — | Operator |
+| API headers / Cabeceras de API | `GET /api/v1/calls`: 200, no-store, nosniff, HSTS where applicable | NOT_RUN | — | Operator |
+| Rate limits / Límites | Effective limits confirmed; no shared-environment load test | NOT_RUN | — | Operator + QA |
 | Access / Acceso | Authorized request succeeds; anonymous 401, forbidden/out-of-scope 403 or 404; no disclosure | NOT_RUN | — | QA |
 | Synthetic data / Datos sintéticos | Synthetic fixtures only, least-privilege demo roles | NOT_RUN | — | Operator + QA |
 | Retention / Retención | Effective provider, CI, database and backup periods recorded; owner and removal date approved | NOT_RUN | — | PO + Operator |
