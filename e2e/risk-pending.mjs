@@ -1,5 +1,5 @@
 /** Verify recovery of a committed synthetic note after the response is lost. */
-import { check, errors, finish, newBrowser } from './cdp.mjs'
+import { check, errors, finish, newBrowser, sleep } from './cdp.mjs'
 import { interceptWrites, tryDismiss, waitForWrite } from './pending-response.mjs'
 
 const web = new URL(process.env.WEB_URL ?? 'http://localhost:8443/')
@@ -20,9 +20,17 @@ try {
   await page.goto(web.href)
   requireCheck('The teacher can sign in', await page.waitText('Iniciar sesión'))
   await page.login('docente@gistar.example')
-  requireCheck('The teacher can review the synthetic alert', await page.nav('alertas') &&
-    await page.waitText('Revisar alerta') && await page.click('Revisar alerta') &&
-    await page.waitText('Registrar intervención'))
+  requireCheck('The teacher can open alerts', await page.nav('alertas') && await page.waitText('Alertas de apoyo'))
+  const cohortSelector = '#risk-cohort'
+  let fixtureCohortAvailable = false
+  for (let attempt = 0; attempt < 40 && !fixtureCohortAvailable; attempt++) {
+    fixtureCohortAvailable = await page.ev(`!!document.querySelector('${cohortSelector} option[value="COH-IA"]')`)
+    if (!fixtureCohortAvailable) await sleep(150)
+  }
+  requireCheck('Select the cohort containing the synthetic risk fixture',
+    fixtureCohortAvailable && await page.set(cohortSelector, 'COH-IA'))
+  requireCheck('The teacher can review the synthetic alert', await page.waitText('Revisar alerta') &&
+    await page.click('Revisar alerta') && await page.waitText('Registrar intervención'))
   await page.ev('window.dropNextWrite = true')
   requireCheck('Commit the support note while its response is pending',
     await page.set('#risk-kind', 'support') && await page.set('#risk-note', note) &&
