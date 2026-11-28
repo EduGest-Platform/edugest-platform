@@ -89,6 +89,19 @@ try {
       evidence.includes('Pruebas superadas: 2 de 3') && evidence.includes('Criterio sintético de feedback')
   })()`))
 
+  requireCheck('Historical versions show their own evidence in the teacher panel', await page.ev(`(() => {
+    const history = Array.from(${dialog}.querySelectorAll('summary')).find(item =>
+      item.textContent.trim() === 'Versiones anteriores')
+    if (!history) return false
+    history.click()
+    const summary = Array.from(history.parentElement.querySelectorAll('summary')).find(item =>
+      item.textContent.trim() === 'Evidencia de la versión 1')
+    if (!summary) return false
+    summary.click()
+    const evidence = summary.parentElement.textContent
+    return summary.parentElement.open && evidence.includes('Revisión de la entrega: 1') &&
+      evidence.includes('Pruebas superadas: 2 de 3') && evidence.includes('Criterio sintético de feedback')
+  })()`))
   requireCheck('The learner can open feedback on their own submitted activity',
     await learner.nav('Entregas') && await learner.waitText(title) && await learner.ev(`(() => {
       const summary = (${learnerCard})?.querySelector('details summary')
