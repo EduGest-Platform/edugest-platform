@@ -29,3 +29,7 @@ class AccessApplicationOut(BaseModel):
     request_state: str
     assignment_id: uuid.UUID | None = Field(description='Null before application or when the linked assignment cannot be verified.')
     assignment_active: bool | None = Field(description='Whether the linked role row is unrevoked; not a claim of effective permissions or account activation.')
+
+
+class AccessRevoke(AccessApply):
+    assignment_id: uuid.UUID = Field(description='Assignment observed before administrative confirmation.')

@@ -6,7 +6,7 @@ export const API_URL: string | undefined = import.meta.env.VITE_GISTAR_API_URL?.
 export const API_MODE = !!API_URL
 
 /** Views whose data already comes from the API in API mode (increment F1). */
-export const API_VIEWS = new Set(['inscripcion', 'candidatura', 'candidaturas', 'auditoria', 'cohortes', 'asistencia', 'asistente', 'progreso', 'analitica', 'entregas', 'dashboard', 'competencias', 'rubricas', 'alertas'])
+export const API_VIEWS = new Set(['inscripcion', 'candidatura', 'candidaturas', 'auditoria', 'cohortes', 'asistencia', 'asistente', 'progreso', 'analitica', 'entregas', 'dashboard', 'competencias', 'rubricas', 'alertas', 'tablero'])
 
 export type DataSource = 'api' | 'local'
 
