@@ -24,8 +24,9 @@ async function openBoard(email, programId) {
   const page = await newBrowser()
   await page.goto(web.href)
   await page.login(email)
-  requireCheck(`Open the board for ${programId}`, await page.nav('Tablero de programas') &&
-    await page.waitText('Asunto del nuevo hilo'))
+  // The signed-in shell can render before it applies the account's staff role.
+  requireCheck(`Open the board for ${programId}`, await page.waitText('Tablero de programas', 15000) &&
+    await page.nav('Tablero de programas') && await page.waitText('Asunto del nuevo hilo'))
   requireCheck(`See only the ${programId} program option`,
     await page.ev(`JSON.stringify(Array.from(document.querySelector('#discussion-program').options, option => option.value)) === ${JSON.stringify(JSON.stringify([programId]))}`))
   return page
