@@ -46,6 +46,41 @@
         "title": "AcademicCohortOut",
         "type": "object"
       },
+      "AcademicNotificationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "available_at": {
+            "format": "date-time",
+            "title": "Available At",
+            "type": "string"
+          },
+          "enrollment_id": {
+            "format": "uuid",
+            "title": "Enrollment Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enrollment_id",
+          "idempotency_key",
+          "topic",
+          "available_at"
+        ],
+        "title": "AcademicNotificationIn",
+        "type": "object"
+      },
       "AccessApplicationOut": {
         "properties": {
           "assignment_active": {
@@ -4344,6 +4379,69 @@
           "due_on"
         ],
         "title": "NextActionOut",
+        "type": "object"
+      },
+      "NotificationAcceptedOut": {
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "title": "NotificationAcceptedOut",
+        "type": "object"
+      },
+      "NotificationHistoryOut": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "available_at": {
+            "format": "date-time",
+            "title": "Available At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "status",
+          "attempts",
+          "created_at",
+          "available_at",
+          "sent_at"
+        ],
+        "title": "NotificationHistoryOut",
         "type": "object"
       },
       "OverviewAttendance": {
@@ -10966,6 +11064,169 @@
         "summary": "Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/email/notifications": {
+      "get": {
+        "operationId": "notification_history_api_v1_cohorts__cohort_id__email_notifications_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationHistoryOut"
+                  },
+                  "title": "Response Notification History Api V1 Cohorts  Cohort Id  Email Notifications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Notification History",
+        "tags": [
+          "email"
+        ]
+      },
+      "post": {
+        "operationId": "request_academic_notification_api_v1_cohorts__cohort_id__email_notifications_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademicNotificationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Request Academic Notification",
+        "tags": [
+          "email"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/email/notifications/{message_id}/cancel": {
+      "post": {
+        "operationId": "cancel_academic_notification_api_v1_cohorts__cohort_id__email_notifications__message_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationAcceptedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Academic Notification",
+        "tags": [
+          "email"
         ]
       }
     },

@@ -38,6 +38,8 @@ ACADEMIC_AGGREGATE_PERMISSIONS = {ATTENDANCE_AGGREGATE_PERMISSION, SUBMISSION_AG
 # ADR-0005 (KAN-151): course documents for the RAG assistant, inside the caller's scope. Coders do not need a role:
 # they read the documents of the cohorts where they have an active enrollment (app/modules/knowledge/scope.py).
 KNOWLEDGE_READ_PERMISSION = "knowledge.read"
+# KAN-277: academic notifications; proposed teacher grant limited to explicit cohort assignments.
+EMAIL_SEND_PERMISSION = "email.send"
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"*"},
@@ -51,7 +53,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     # Records attendance, configures/assesses competencies and reviews submissions of its own cohorts (KAN-55, KAN-57, KAN-56).
     # Q15: also the cohort indicators of coordination and the teaching team of its cohorts. Never the admission decision.
     "docente": {*REQUIREMENT_EXCEPTION_PERMISSIONS, *PRESELECTION_PERMISSIONS, *ATTENDANCE_PERMISSIONS, *COMPETENCY_PERMISSIONS, *SUBMISSION_PERMISSIONS,
-                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION, KNOWLEDGE_READ_PERMISSION},
+                *ACADEMIC_AGGREGATE_PERMISSIONS, TEAM_MANAGE_PERMISSION, KNOWLEDGE_READ_PERMISSION, EMAIL_SEND_PERMISSION},
 }
 
 
@@ -72,6 +74,8 @@ class Principal:
         return sorted({a.role for a in self.assignments})
 
     def _grants(self, a: RoleAssignment, perm: str) -> bool:
+        if perm == EMAIL_SEND_PERMISSION and a.role == "docente" and a.scope_type != "cohort":
+            return False
         perms = ROLE_PERMISSIONS.get(a.role, set())
         return "*" in perms or perm in perms
 
