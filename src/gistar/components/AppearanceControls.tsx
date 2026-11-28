@@ -26,7 +26,9 @@ export function useAppearance() {
   return { language, setLanguage, theme, setTheme }
 }
 
-export function AppearanceControls({ language, setLanguage, theme, setTheme }: ReturnType<typeof useAppearance>) {
+export type AppearancePreferences = ReturnType<typeof useAppearance>
+
+export function AppearanceControls({ language, setLanguage, theme, setTheme }: AppearancePreferences) {
   const en = language === 'en'
   const dark = theme === 'dark'
   return <section aria-label={en ? 'Appearance preferences' : 'Preferencias de apariencia'} lang={language}

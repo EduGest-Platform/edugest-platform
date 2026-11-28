@@ -56,6 +56,10 @@ jobs:
           WEB_URL: http://localhost:8443/
           GISTAR_API: http://localhost:8000
         run: node e2e/coordination-dashboard.mjs
+      - name: Public sign-in language and theme (KAN-281)
+        env:
+          WEB_URL: http://localhost:8443/
+        run: node e2e/login-appearance.mjs
       - name: Internal discussion keyboard and concurrent edit recovery (KAN-74)
         env:
           WEB_URL: http://localhost:8443/

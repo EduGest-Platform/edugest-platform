@@ -38,6 +38,14 @@ try {
   await page.goto(web)
   requireCheck('API login entry remains available', await page.waitText('Iniciar sesión'))
   requireCheck('Public welcome introduces the catalogue', await page.waitText('Encuentra tu próxima formación'))
+  for (const label of ['ES', 'EN', 'Modo noche']) {
+    await page.tab()
+    requireCheck(`Keyboard reaches the ${label} appearance control`, await page.ev(`(() => {
+      const control = document.activeElement;
+      return control?.closest('[aria-label="Preferencias de apariencia"]')
+        && control.textContent.trim() === ${JSON.stringify(label)} && control.matches(':focus-visible')
+    })()`))
+  }
   await page.tab()
   requireCheck('Keyboard reaches the catalogue action with a visible focus outline', await page.ev(`(() => {
     const action = document.activeElement;

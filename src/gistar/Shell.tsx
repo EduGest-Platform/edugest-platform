@@ -103,7 +103,7 @@ export function Shell() {
   }, [session.me])
 
   if (API_MODE && session.loading) return <p className="p-10 text-sm text-muted">Conectando con la API…</p>
-  if (API_MODE && !session.me) return <LoginScreen />
+  if (API_MODE && !session.me) return <LoginScreen appearance={appearance} />
 
   return (
     <div className="min-h-screen md:flex">
