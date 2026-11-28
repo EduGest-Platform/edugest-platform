@@ -18,6 +18,7 @@ export type View =
   | 'inscripcion'
   | 'candidatura'
   | 'candidaturas'
+  | 'tablero'
   | 'cohortes'
 
 export type Level = 1 | 2 | 3

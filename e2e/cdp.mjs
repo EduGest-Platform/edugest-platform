@@ -80,6 +80,15 @@ export async function newBrowser() {
   await send('Page.enable', {}, s)
   await send('Page.bringToFront', {}, s)
   const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, s)).result?.result?.value
+  const waitFor = async (expression, timeoutMs = 15000) => {
+    const deadline = Date.now() + timeoutMs
+    do {
+      const value = await ev(expression)
+      if (value) return value
+      await sleep(100)
+    } while (Date.now() < deadline)
+    return null
+  }
   const pressKey = async (name, virtualKeyCode, text) => {
     const key = { key: name, code: name, windowsVirtualKeyCode: virtualKeyCode }
     await send('Input.dispatchKeyEvent', { ...key, type: text ? 'keyDown' : 'rawKeyDown', text }, s)
@@ -148,10 +157,20 @@ export async function newBrowser() {
     },
     rows: () => ev(`document.querySelectorAll('main tbody tr').length`),
     login: async (email) => {
+      if (!await waitFor("!!document.querySelector('#lg-email') && !!document.querySelector('#lg-pass')")) {
+        throw new Error('Synthetic login form did not load.')
+      }
       await page.set('#lg-email', email)
       await page.set('#lg-pass', PASSWORD)
-      await page.click('Entrar')
-      await sleep(900)
+      if (!await page.click('Entrar')) throw new Error('Synthetic login could not be submitted.')
+      const outcome = await waitFor(`(() => {
+        if (document.querySelector('#login-error')) return 'rejected'
+        if (document.querySelector('button[aria-label="Cerrar sesión"]')) return 'authenticated'
+        return null
+      })()`)
+      if (outcome !== 'authenticated') {
+        throw new Error(outcome === 'rejected' ? 'Synthetic login was rejected.' : 'Synthetic login did not complete.')
+      }
     },
   }
   return page

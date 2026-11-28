@@ -16,6 +16,7 @@ export function Modal({
   children,
   footer,
   dirty = false,
+  closeBlocked = false,
   size = 'xl',
   placement = 'center',
 }: {
@@ -26,18 +27,22 @@ export function Modal({
   children: ReactNode
   footer?: ReactNode | ((requestClose: () => void) => ReactNode)
   dirty?: boolean
+  closeBlocked?: boolean
   size?: 'md' | 'lg' | 'xl'
   placement?: 'center' | 'end'
 }) {
   const titleId = useId()
   const subtitleId = useId()
   const ref = useRef<HTMLDivElement>(null)
+  const blockedRef = useRef(closeBlocked)
+  blockedRef.current = closeBlocked
   const dirtyRef = useRef(dirty)
   dirtyRef.current = dirty
   const closeRef = useRef(onClose)
   closeRef.current = onClose
 
   const requestClose = () => {
+    if (blockedRef.current) return
     if (dirtyRef.current && !confirm('Hay cambios sin guardar. ¿Quieres descartarlos?')) return
     closeRef.current()
   }
@@ -97,7 +102,7 @@ export function Modal({
             </h2>
             {subtitle && <div id={subtitleId} className="mt-0.5 text-sm text-muted">{subtitle}</div>}
           </div>
-          <button type="button" onClick={requestClose} aria-label="Cerrar" className="-mr-2 cursor-pointer rounded-lg p-2 text-muted hover:bg-mist hover:text-ink">
+          <button type="button" onClick={requestClose} disabled={closeBlocked} aria-label="Cerrar" className="-mr-2 cursor-pointer rounded-lg p-2 text-muted hover:bg-mist hover:text-ink">
             <X className="size-5" aria-hidden />
           </button>
         </header>

@@ -6,7 +6,7 @@ from app.core.db import utcnow
 from app.core.errors import UserFacingError
 from app.modules.discussions.access import require_any_scope, require_scope, require_thread
 from app.modules.discussions.models import DiscussionComment, DiscussionThread
-from app.modules.discussions.schemas import CommentOut, ThreadOut, ThreadScope
+from app.modules.discussions.schemas import CommentMutationOut, CommentOut, ThreadOut, ThreadScope
 
 
 def thread_out(thread):
@@ -24,13 +24,15 @@ def create_thread(db, actor, body):
     return thread_out(thread)
 
 
-def list_threads(db, actor, scope, limit, offset):
+def list_threads(db, actor, scope, limit, offset, resolved=None):
     require_scope(db, actor, scope)
     query = select(DiscussionThread).where(DiscussionThread.scope_type == scope.scope_type)
     if scope.scope_type == 'application':
         query = query.where(DiscussionThread.application_id == scope.application_id)
     else:
         query = query.where(DiscussionThread.program_id == scope.program_id)
+    if resolved is not None:
+        query = query.where(DiscussionThread.resolved_at.is_not(None) if resolved else DiscussionThread.resolved_at.is_(None))
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     rows = list(db.scalars(query.order_by(DiscussionThread.created_at, DiscussionThread.id).limit(limit).offset(offset)))
     audit.record(db, actor, 'discussion.threads_viewed', 'discussion_scope', str(scope.application_id or scope.program_id), scope_type=scope.scope_type)
@@ -69,8 +71,9 @@ def create_comment(db, actor, thread_id, body):
     thread.version += 1
     audit.record(db, actor, 'discussion.comment_created', 'discussion_comment', str(comment.id),
                  thread_id=str(thread.id), parent_id=str(comment.parent_id) if comment.parent_id else None, version=comment.version)
+    result = CommentMutationOut(**comment_out(comment).model_dump(), thread_version=thread.version)
     db.commit()
-    return comment_out(comment)
+    return result
 
 
 def list_comments(db, actor, thread_id, limit, offset):
@@ -121,8 +124,9 @@ def edit_comment(db, actor, comment_id, body):
     comment.version += 1
     thread.version += 1
     audit.record(db, actor, 'discussion.comment_edited', 'discussion_comment', str(comment.id), thread_id=str(thread.id), version=comment.version)
+    result = CommentMutationOut(**comment_out(comment).model_dump(), thread_version=thread.version)
     db.commit()
-    return comment_out(comment)
+    return result
 
 
 def delete_comment(db, actor, comment_id, body):
@@ -132,8 +136,9 @@ def delete_comment(db, actor, comment_id, body):
     comment.version += 1
     thread.version += 1
     audit.record(db, actor, 'discussion.comment_deleted', 'discussion_comment', str(comment.id), thread_id=str(thread.id), version=comment.version)
+    result = CommentMutationOut(**comment_out(comment).model_dump(), thread_version=thread.version)
     db.commit()
-    return comment_out(comment)
+    return result
 
 
 def resolve_thread(db, actor, thread_id, body):
