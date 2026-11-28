@@ -30,6 +30,24 @@
 | Gate de seguridad y ensayo / Security gate and rehearsal | [#308](https://github.com/EduGest-Platform/edugest-platform/pull/308) · [#310](https://github.com/EduGest-Platform/edugest-platform/pull/310) · Pendiente / Pending |
 | Carga sintética y sus límites / Synthetic seed and its limits | [#312](https://github.com/EduGest-Platform/edugest-platform/pull/312) · Pendiente / Pending |
 
+### Verificar CI y F1 en el SHA candidato / Verify CI and F1 on the candidate SHA
+
+**ES** — Desde el repositorio, consultar las ejecuciones del SHA completo que se quiere aceptar. Usar ejecuciones de integración (`push` a `dev`) para evaluar ese candidato. Registrar el enlace de CI y el de F1 solo cuando ambos tengan el mismo `headSha` y hayan terminado en `success`. Un resultado de una rama hija sirve como evidencia de esa rama.
+
+**EN** — From the repository, inspect runs for the full SHA under review. Use integration runs (`push` to `dev`) for that candidate. Record CI and F1 links when both show the same `headSha` and completed with `success`. A child branch run is evidence for that branch.
+
+```sh
+candidate='<full candidate SHA>'
+gh run list --branch dev --event push --commit "$candidate" --limit 20 \
+  --json name,headSha,status,conclusion,url
+```
+
+| Resultado / Result | Qué anotar en el acta / What to record |
+| --- | --- |
+| CI y F1 completados con éxito para el candidato / CI and F1 completed successfully for the candidate | Enlaces, SHA y entorno que ejecutó las comprobaciones. La aceptación humana se registra aparte. / Links, SHA and execution environment. Record human acceptance separately. |
+| Ejecución pendiente o ausente / Pending or missing run | Identificar el workflow y conservar el resultado como pendiente o `NOT_RUN`. / Identify the workflow and keep the outcome pending or `NOT_RUN`. |
+| Ejecución fallida o cancelada / Failed or cancelled run | Enlazar la ejecución y registrar el check bloqueante para ese SHA. / Link the run and record the blocking check for that SHA. |
+
 **Estado / Status:** revisión técnica completada para esta base. La conformidad con el briefing y la aceptación de producto quedan para revisión de Elizabeth y Yohanna. / Technical reconciliation complete for this baseline. Elizabeth and Yohanna still need to review briefing conformance and product acceptance.
 
 [Alcance y fechas / Scope and dates](KAN-211-scope-freeze-proposal.md) · [Plan de proyecto / Project plan](../../projectplan.md)
