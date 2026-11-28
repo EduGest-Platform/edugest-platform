@@ -3413,6 +3413,67 @@
         "title": "FeedbackDraftOut",
         "type": "object"
       },
+      "FeedbackQueue": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeedbackQueueItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "FeedbackQueue",
+        "type": "object"
+      },
+      "FeedbackQueueItem": {
+        "properties": {
+          "assignment_title": {
+            "title": "Assignment Title",
+            "type": "string"
+          },
+          "has_check_results": {
+            "title": "Has Check Results",
+            "type": "boolean"
+          },
+          "learner_name": {
+            "title": "Learner Name",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          },
+          "submitted_at": {
+            "format": "date-time",
+            "title": "Submitted At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submission_id",
+          "assignment_title",
+          "learner_name",
+          "revision",
+          "submitted_at",
+          "has_check_results"
+        ],
+        "title": "FeedbackQueueItem",
+        "type": "object"
+      },
       "FrameworkList": {
         "properties": {
           "items": {
@@ -10966,6 +11027,82 @@
         "summary": "Matrículas y nombres necesarios para evaluar competencias dentro del ámbito docente",
         "tags": [
           "competencies"
+        ]
+      }
+    },
+    "/api/v1/cohorts/{cohort_id}/feedback-queue": {
+      "get": {
+        "operationId": "list_feedback_queue_api_v1_cohorts__cohort_id__feedback_queue_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cohort_id",
+            "required": true,
+            "schema": {
+              "title": "Cohort Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackQueue"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Sin permiso sobre la cohorte"
+          },
+          "404": {
+            "description": "No encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Entregas de una cohorte para revisión de feedback docente",
+        "tags": [
+          "feedback"
         ]
       }
     },

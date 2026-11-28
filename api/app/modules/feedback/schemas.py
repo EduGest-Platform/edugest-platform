@@ -59,3 +59,17 @@ class PublishedFeedback(BaseModel):
 
     submission_id: uuid.UUID
     feedback: PublishedFeedbackOut | None = Field(description="Nulo si todavía no hay feedback aprobado")
+
+
+class FeedbackQueueItem(BaseModel):
+    submission_id: uuid.UUID
+    assignment_title: str
+    learner_name: str
+    revision: int
+    submitted_at: datetime
+    has_check_results: bool
+
+
+class FeedbackQueue(BaseModel):
+    items: list[FeedbackQueueItem]
+    total: int

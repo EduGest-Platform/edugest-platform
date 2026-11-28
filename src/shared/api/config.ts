@@ -16,7 +16,7 @@ export type DataSource = 'api' | 'local'
  */
 export function dataSourceFor(view: string, apiMode: boolean = API_MODE, role?: string): DataSource {
   if (!API_VIEWS.has(view) || !apiMode) return 'local'
-  if (view === 'entregas' && role !== 'coder') return 'local'
+  if (view === 'entregas' && role !== 'coder' && role !== 'docente') return 'local'
   if ((view === 'competencias' || view === 'rubricas') && role !== 'docente' && role !== 'admin') return 'local'
   if (view === 'dashboard' && role !== 'coordinacion') return 'local'
   return 'api'

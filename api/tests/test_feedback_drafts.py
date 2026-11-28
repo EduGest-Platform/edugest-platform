@@ -123,3 +123,17 @@ def test_staff_without_review_permission_and_coders_cannot_draft(client, db, cas
     db.query(RoleAssignment).filter(RoleAssignment.user_id == teacher_id, RoleAssignment.scope_id == COHORT).delete()
     db.commit()
     assert client.post(drafts_path(case), headers=login(client, DOCENTE)).status_code == 403
+
+
+def test_review_queue_lists_only_scoped_submission_metadata(client, db, case):
+    url = f"/api/v1/cohorts/{COHORT}/feedback-queue"
+    response = client.get(url, headers=case.teacher, params={"limit": 1})
+    assert response.status_code == 200
+    [entry] = response.json()["items"]
+    assert response.json()["total"] == 1 and entry["submission_id"] == case.submission_id
+    assert entry["has_check_results"] is True and entry["assignment_title"] == "Ejercicio sintético de feedback"
+    assert PRIVATE_URL not in response.text and CODER not in response.text
+    assert client.get(url, headers=case.coder).status_code == 403
+    db.query(RoleAssignment).filter(RoleAssignment.scope_id == COHORT).delete()
+    db.commit()
+    assert client.get(url, headers=case.teacher).status_code == 403

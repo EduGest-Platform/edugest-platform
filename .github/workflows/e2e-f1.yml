@@ -119,6 +119,10 @@ jobs:
           WEB_URL: http://localhost:8443/
           GISTAR_API: http://localhost:8000
         run: node e2e/learner-deliveries.mjs
+      - name: Feedback write dismissal and recovery (KAN-197)
+        env:
+          WEB_URL: http://localhost:8443/
+        run: node e2e/feedback-pending.mjs
       - name: Staff invitation rotation and acceptance (KAN-232)
         env:
           WEB_URL: http://localhost:8443/

@@ -722,6 +722,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cohorts/{cohort_id}/feedback-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Entregas de una cohorte para revisión de feedback docente */
+        get: operations["list_feedback_queue_api_v1_cohorts__cohort_id__feedback_queue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cohorts/{cohort_id}/progress-overview": {
         parameters: {
             query?: never;
@@ -3078,6 +3095,34 @@ export interface components {
             submission_revision: number;
             /** Version */
             version: number;
+        };
+        /** FeedbackQueue */
+        FeedbackQueue: {
+            /** Items */
+            items: components["schemas"]["FeedbackQueueItem"][];
+            /** Total */
+            total: number;
+        };
+        /** FeedbackQueueItem */
+        FeedbackQueueItem: {
+            /** Assignment Title */
+            assignment_title: string;
+            /** Has Check Results */
+            has_check_results: boolean;
+            /** Learner Name */
+            learner_name: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Submission Id
+             * Format: uuid
+             */
+            submission_id: string;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
         };
         /** FrameworkList */
         FrameworkList: {
@@ -7313,6 +7358,54 @@ export interface operations {
                 };
             };
             /** @description Sin permiso sobre el ámbito */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No encontrado */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_feedback_queue_api_v1_cohorts__cohort_id__feedback_queue_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                cohort_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackQueue"];
+                };
+            };
+            /** @description Sin permiso sobre la cohorte */
             403: {
                 headers: {
                     [name: string]: unknown;
