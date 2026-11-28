@@ -32,6 +32,12 @@ GISTAR_E2E_FIXTURE=disposable-synthetic WEB_URL=http://localhost:8443/ \
 
 The automated rehearsal passed in **23 seconds**, with **67** registration checks, two HTTP enrollment and attendance journeys, and **10** assistant checks. Follow-up database verification confirmed one enrollment and one attendance record. The live presenter rehearsal is pending.
 
+## Preflight automatizado / Automated preflight
+
+**ES** — El comando comprueba en paralelo que la web entrega HTML y que `GET /health` confirma el estado de FastAPI y PostgreSQL. Cada comprobación tiene cinco segundos de espera máxima. Si alguna falla, el comando identifica el servicio, sale con error y no inicia el registro ni las demás etapas. El preflight no consume el presupuesto de 15 minutos.
+
+**EN** — The command checks in parallel that the web serves HTML and that `GET /health` confirms the FastAPI and PostgreSQL status. Each check has a five-second timeout. If either fails, the command identifies the service and exits before registration or other stages begin. Preflight runs before the 15-minute timer starts.
+
 ## Diagnóstico / Diagnostics
 
 El comando muestra la duración y el resultado de cada etapa ejecutada, junto con el presupuesto restante, incluso si una etapa falla. Los tiempos no incluyen la preparación de servicios ni sustituyen el ensayo humano.
