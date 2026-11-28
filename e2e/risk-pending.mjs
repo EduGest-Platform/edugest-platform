@@ -15,6 +15,7 @@ const page = await newBrowser()
 await interceptWrites(page, '/risk-alerts/[^/]+/interventions$')
 const dialog = "document.querySelector('[role=dialog]')"
 const note = 'Nota de apoyo sintética con respuesta perdida.'
+const closureNote = 'Cierre docente sintético tras revisar el historial.'
 
 try {
   await page.goto(web.href)
@@ -53,6 +54,25 @@ try {
     await page.click('Revisar alerta') &&
     await page.waitText(note) && await page.ev(`window.delayedWrites.length === 1 &&
       Array.from(${dialog}.querySelectorAll('li')).filter(item => item.textContent.includes(${JSON.stringify(note)})).length === 1`))
+  requireCheck('Closure requires explicit confirmation before sending',
+    await page.set('#risk-kind', 'closure') && await page.set('#risk-note', 'Borrador de cierre.') &&
+    await page.ev(`${dialog}.querySelector('button[type=submit]').disabled && window.delayedWrites.length === 1`))
+  await page.ev(`${dialog}.querySelector('input[type=checkbox]').click()`)
+  requireCheck('Editing the closure note requires a new confirmation',
+    await page.set('#risk-note', closureNote) &&
+    await page.ev(`${dialog}.querySelector('button[type=submit]').disabled`))
+  await page.ev(`${dialog}.querySelector('input[type=checkbox]').click()`)
+  requireCheck('A confirmed closure is the second write',
+    await page.click('Cerrar alerta', dialog) && await waitForWrite(page, 1))
+  await page.ev('window.delayedWrites[1].release()')
+  requireCheck('Closure renders the saved note and keeps the alert read-only',
+    await page.waitText('Alerta cerrada.') && await page.waitText(closureNote) &&
+    await page.ev(`!${dialog}.querySelector('button[type=submit]')`))
+  await page.ev(`${dialog}.querySelector('[aria-label="Cerrar"]').click()`)
+  requireCheck('The closed filter finds the alert and reopening retains the closure',
+    await page.set('#risk-state', 'closed') && await page.waitText('Revisar alerta') &&
+    await page.click('Revisar alerta') && await page.waitText(closureNote) &&
+    await page.ev(`!${dialog}.querySelector('button[type=submit]') && window.delayedWrites.length === 2`))
   requireCheck('No uncaught browser errors', errors.length === 0)
 } catch (error) {
   check('Risk intervention recovery', false, error.message)
